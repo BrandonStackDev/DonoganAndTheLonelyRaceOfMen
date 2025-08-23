@@ -246,10 +246,10 @@ static Vector3 PickGoalAroundHome(Whale* A) {
 
 // Decide next after Cruise (equal chance)
 static void DecideAfterCruise(Whale* A) {
-    int r = GetRandomValue(0, 5); // 0..2
+    int r = GetRandomValue(0, 6); // 
     if (r < 3) { A->state = SPIN_ROLL; } //0,1,2 -> gentle rolls, changes direction but I am okay with that for now, looks okay
-    else if (r == 3) { A->state = TURN_DIVE; } //3 -> breach
-    else { A->state = GENTLE_BREACH_SWIM; } //4,5 -> gentle breach, blow or tail slap
+    else if (r == 3 || r==4) { A->state = TURN_DIVE; } //3 -> breach
+    else { A->state = GENTLE_BREACH_SWIM; } //4..
     //A->state = GENTLE_BREACH_SWIM;//manually set what we are testing
     A->stateTime = 0.0f;
 }

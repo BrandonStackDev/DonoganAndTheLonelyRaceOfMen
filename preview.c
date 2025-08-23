@@ -10,6 +10,7 @@
 #include "whale.h"
 #include "truck.h"
 #include "control.h"
+#include "jc.h" //homes (Jimmy Carter)
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -479,15 +480,18 @@ float GetTerrainHeightFromMeshXZ(Chunk chunk, float x, float z)
 ////////////////////////////////////////////////////////////////////////////////
 // Strip GPU buffers but keep CPU data
 void UnloadMeshGPU(Mesh *mesh) {
+    MUTEX_LOCK(mutex);
     rlUnloadVertexArray(mesh->vaoId);
     for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) {
-        MUTEX_LOCK(mutex);
-        if (mesh->vboId[i] > 0) rlUnloadVertexBuffer(mesh->vboId[i]);
+        if (mesh->vboId[i] > 0)
+        {
+            rlUnloadVertexBuffer(mesh->vboId[i]);
+        }
         mesh->vboId[i] = 0;
-        MUTEX_UNLOCK(mutex);
     }
     mesh->vaoId = 0;
     mesh->vboId[0] = 0;
+    MUTEX_UNLOCK(mutex);
 }
 
 int loadTileCnt = 0; //-- need this counter to be global, counted in these functions
@@ -1434,30 +1438,11 @@ int main(void) {
     starShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(starShader, "mvp");
     // end all shaders
 
-    //tree model
-    Model treeCubeModel, treeModel, bgTreeModel, rockModel;
-    Texture bgTreeTexture, rockTexture;
-    char treePath[64];
-    char bgTreePath[64];
-    char bgTreeTexturePath[64];
-    char rockPath[64];
-    char rockTexturePath[64];
-    snprintf(treePath, sizeof(treePath), "models/tree.glb");
-    snprintf(bgTreePath, sizeof(bgTreePath), "models/tree_bg.glb");
-    snprintf(bgTreeTexturePath, sizeof(bgTreeTexturePath), "textures/tree_skin2.png");
-    snprintf(rockPath, sizeof(rockPath), "models/rock1.glb");
-    snprintf(rockTexturePath, sizeof(rockTexturePath), "textures/rock1.png");
-    //trees
-    treeModel = LoadModel(treePath);
-    bgTreeModel = LoadModel(bgTreePath);
+    //tree model //todo: replace with bounding boxes for reals in the models.h stuff
+    Model treeCubeModel;
     treeCubeModel = LoadModelFromMesh(GenMeshCube(0.67f, 16.0f, 0.67f));
     treeCubeModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = DARKGREEN;
     BoundingBox treeOrigBox = GetModelBoundingBox(treeCubeModel);
-    bgTreeTexture = LoadTexture(bgTreeTexturePath);//for cookies (todo: try the small one)
-    //rocks
-    rockModel = LoadModel(rockPath);
-    rockTexture = LoadTexture(rockTexturePath);//for rocks
-    rockModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = rockTexture;
     //game map
     Texture2D mapTexture;
     bool showMap = true;
@@ -1466,7 +1451,7 @@ int main(void) {
     mapTexture = LoadTexture("map/elevation_color_map.png");
     
     //controller and truck
-    // Load truck
+    // Load  //todo: move this and most of the truck stuff into truck.h
     Model truck = LoadModel("models/truck.obj");
     truck.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
     Material truckMaterial = LoadMaterialDefault();
@@ -1496,6 +1481,8 @@ int main(void) {
         {  1.6f, 0.0f, -2.64f }, // Rear-right
         { -1.6f, 0.0f, -2.64f }  // Rear-left
     };
+    //load the homes models/scenese and stuff like that
+    InitHomes();
     //more lb stuff
     Mesh sphereMesh = GenMeshHemiSphere(0.108f,8, 8);
     Material sphereMaterial = LoadMaterialDefault();
@@ -2372,6 +2359,19 @@ int main(void) {
             rotationTruck.m12 = truckOrigin.x;
             rotationTruck.m13 = Lerp(truckOrigin.y + truckYOffsetDraw, truckOrigin.y + truckYOffsetDraw + truckPitchYOffset, 0.01f); //!!!!SPACE TRUCK!!!!
             rotationTruck.m14 = truckOrigin.z;
+            //homes
+            if (onLoad)
+            {
+                rlDisableBackfaceCulling();
+                for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
+                {
+                    DrawModelEx(HomeModels[Scenes[i].modelType], Scenes[i].pos, 
+                        (Vector3) { 0, 1, 0 }, Scenes[i].yaw * RAD2DEG,
+                        (Vector3) { Scenes[i].scale , Scenes[i].scale, Scenes[i].scale}, 
+                        WHITE);
+                }
+                rlEnableBackfaceCulling();
+            }
             //whales
             if (onLoad)
             {
@@ -2764,8 +2764,7 @@ int main(void) {
                     if(chunks[cx][cy].treeCount>0){TraceLog(LOG_INFO, "trees (%d,%d) ->  %d", cx,cy,chunks[cx][cy].treeCount);}
                 }
             }
-            camera.position.x = -16; //3000;//
-            camera.position.z = -16; //3000;//
+            camera.position = Scenes[SCENE_HOME_CABIN_02].pos; //start at home cabin
         }
         DrawFPS(10,130);
         EndDrawing();

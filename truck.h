@@ -15,7 +15,7 @@ typedef enum {
 
 bool displayTruckPoints = false;
 bool displayTruckForward = false;
-Vector3 truckPosition = { 4.0f, 0.0f, 10.0f };
+Vector3 truckPosition = { 1279.45f, 333.71f, 1249.00f };
 Vector3 truckBedPosition = { 0.0f, 1.362f, 0.0f };
 Vector3 truckForward = { 0.0f, 0.0f, 1.0f };  // Forward is along +Z
 Vector3 rearAxleOffset = { 0, 0, -1.5f }; // adjust Z as needed
