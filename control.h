@@ -127,6 +127,23 @@ Vector3 RotateZ(Vector3 v, float angle) {
     };
 }
 
+// Set axis deadzones
+const float leftStickDeadzoneX = 0.1f;
+const float leftStickDeadzoneY = 0.1f;
+const float rightStickDeadzoneX = 0.1f;
+const float rightStickDeadzoneY = 0.1f;
+const float leftTriggerDeadzone = -0.9f;
+const float rightTriggerDeadzone = -0.9f;
+//controller input constants for truck
+float bounceCollector = 0.0f; //gets set
+const float acceleration = 0.0178f;
+const float deceleration = 0.046f;
+const float steeringSpeed = 1.5f;
+const float maxSpeed = 1.54321;
+const float maxSpeedReverse = -0.75f;
+float steerInput = 0; //gets set
+float verticalVelocity = 0.0f; //gets set
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif // CONTROL_H
