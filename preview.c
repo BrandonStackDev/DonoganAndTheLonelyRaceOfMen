@@ -8,6 +8,8 @@
 //me
 #include "models.h"
 #include "whale.h"
+#include "truck.h"
+#include "control.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -49,20 +51,14 @@
   static void sleep_ms(unsigned ms) { Sleep(ms); }
   static void sleep_s(unsigned s)   { Sleep(s*1000u); }
 #else
-  #error This project is now Windows-only.
+  #error This project is currently Windows-only.
 #endif
 
 #ifndef GL_POLYGON_OFFSET_FILL
 #define GL_POLYGON_OFFSET_FILL 0x8037
 #endif
 
-/////windows section
-#define MAX_TURN_ANGLE 0.25f //radians
-typedef enum {
-    GROUND,
-    AIRBORNE,
-    LANDING
-} Truck_Air_State;
+/////end windows section
 
 #define GRAVITY 9.86f //would be nice if this actually works well
 
@@ -91,7 +87,7 @@ typedef enum {
 
 //water
 #define MAX_WATER_PATCHES_PER_CHUNK 64
-#define WATER_Y_OFFSET 19.15f //lets get wet!
+#define WATER_Y_OFFSET 20.02f //lets get wet!
 #define PLAYER_FLOAT_Y_POSITION 298.75f 
 #define WHALE_SURFACE 300.0f 
 
@@ -248,138 +244,10 @@ Vector3 LightTargetTargetDay = { 1.0f, 0.0f, 0.0f };
 Vector3 LightTargetTargetNight = { 4.0f, 50.0f, 5.0f };
 Vector3 LightTargetDraw = { 4.0f, 0.0f, 5.0f };
 Color lightColorTargetNight = {  20,   30, 140, 202 };
-Color lightColorTargetDay = {  102, 191, 255, 255 };
+Color lightColorTargetDay = {  100, 180, 220, 255 };
 Color lightColorDraw = {  102, 191, 255, 255 };
 Color lightTileColor = {  254, 254, 254, 254 };
-///////////////////////CONTROLLER STUFF////////////////////////////////////////////
-// Controller state with the exact field names preview.c uses
-typedef struct {
-    float lx;
-    float ly;
-    float rx;
-    float ry;
-    float normLX;
-    float normLY;
-    float normRX;
-    float normRY;
-    uint8_t buttons1;
-    uint8_t buttons2;
-    uint8_t buttons3;
-    int dpad;
-    int dpad_up;
-    int dpad_down;
-    int dpad_left;
-    int dpad_right;
-    int btnSquare;
-    int btnCross;
-    int btnCircle;
-    int btnTriangle;
-    int btnL1;
-    int btnR1;
-    int btnL2;
-    int btnR2;
-    int btnL3;
-    int btnR3;
-} ControllerData;
 
-// You read this name elsewhere; make it real.
-static bool contInvertY = false;
-
-// Poll raylib and fill the state above. Returns true if a pad is present.
-static bool ReadControllerWindows(int index, ControllerData *out)
-{
-    memset(out, 0, sizeof(*out));
-    if (!IsGamepadAvailable(index)) return false;
-
-    // Axes
-    out->lx = GetGamepadAxisMovement(index, GAMEPAD_AXIS_LEFT_X);
-    out->ly = GetGamepadAxisMovement(index, GAMEPAD_AXIS_LEFT_Y);
-    out->rx = GetGamepadAxisMovement(index, GAMEPAD_AXIS_RIGHT_X);
-    out->ry = GetGamepadAxisMovement(index, GAMEPAD_AXIS_RIGHT_Y);
-
-    // Simple deadzone to produce the *norm* fields your code uses
-    const float DZ = 0.15f;
-    out->normLX = (fabsf(out->lx) < DZ) ? 0.0f : out->lx;
-    out->normLY = (fabsf(out->ly) < DZ) ? 0.0f : out->ly;
-    out->normRX = (fabsf(out->rx) < DZ) ? 0.0f : out->rx;
-    out->normRY = (fabsf(out->ry) < DZ) ? 0.0f : out->ry;
-
-    // Face buttons: map to PS naming used in the file
-    out->btnSquare   = IsGamepadButtonDown(index, GAMEPAD_BUTTON_RIGHT_FACE_LEFT);
-    out->btnCross    = IsGamepadButtonDown(index, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
-    out->btnCircle   = IsGamepadButtonDown(index, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT);
-    out->btnTriangle = IsGamepadButtonDown(index, GAMEPAD_BUTTON_RIGHT_FACE_UP);
-
-    // Bumpers
-    out->btnL1 = IsGamepadButtonDown(index, GAMEPAD_BUTTON_LEFT_TRIGGER_1);
-    out->btnR1 = IsGamepadButtonDown(index, GAMEPAD_BUTTON_RIGHT_TRIGGER_1);
-
-    // Treat analog triggers as booleans too (your code checks btnL2/btnR2)
-    float lt = GetGamepadAxisMovement(index, GAMEPAD_AXIS_LEFT_TRIGGER);
-    float rt = GetGamepadAxisMovement(index, GAMEPAD_AXIS_RIGHT_TRIGGER);
-    out->btnL2 = lt > 0.5f;
-    out->btnR2 = rt > 0.5f;
-
-    // Stick clicks
-    out->btnL3 = IsGamepadButtonDown(index, GAMEPAD_BUTTON_LEFT_THUMB);
-    out->btnR3 = IsGamepadButtonDown(index, GAMEPAD_BUTTON_RIGHT_THUMB);
-
-    // D-pad
-    out->dpad_up    = IsGamepadButtonDown(index, GAMEPAD_BUTTON_LEFT_FACE_UP);
-    out->dpad_down  = IsGamepadButtonDown(index, GAMEPAD_BUTTON_LEFT_FACE_DOWN);
-    out->dpad_left  = IsGamepadButtonDown(index, GAMEPAD_BUTTON_LEFT_FACE_LEFT);
-    out->dpad_right = IsGamepadButtonDown(index, GAMEPAD_BUTTON_LEFT_FACE_RIGHT);
-
-    return true;
-}
-void PrintMatrix(Matrix m)
-{
-    printf("Matrix:\n");
-    printf("[ %8.3f %8.3f %8.3f %8.3f ]\n", m.m0,  m.m4,  m.m8,  m.m12);
-    printf("[ %8.3f %8.3f %8.3f %8.3f ]\n", m.m1,  m.m5,  m.m9,  m.m13);
-    printf("[ %8.3f %8.3f %8.3f %8.3f ]\n", m.m2,  m.m6,  m.m10, m.m14);
-    printf("[ %8.3f %8.3f %8.3f %8.3f ]\n", m.m3,  m.m7,  m.m11, m.m15);
-}
-
-// Vector3 Vector3Lerp(Vector3 a, Vector3 b, float t) { //raylib has this, possibly in raymath
-//     return (Vector3){
-//         a.x + (b.x - a.x) * t,
-//         a.y + (b.y - a.y) * t,
-//         a.z + (b.z - a.z) * t
-//     };
-// }
-
-Vector3 RotateY(Vector3 v, float angle) {
-    float cs = cosf(angle);
-    float sn = sinf(angle);
-    return (Vector3){
-        v.x * cs - v.z * sn,
-        v.y,
-        v.x * sn + v.z * cs
-    };
-}
-
-Vector3 RotateX(Vector3 v, float angle) {
-    float cs = cosf(angle);
-    float sn = sinf(angle);
-    return (Vector3){
-        v.x,
-        v.y * cs - v.z * sn,
-        v.y * sn + v.z * cs
-    };
-}
-
-Vector3 RotateZ(Vector3 v, float angle) {
-    float cs = cosf(angle);
-    float sn = sinf(angle);
-    return (Vector3){
-        v.x * cs - v.y * sn,
-        v.x * sn + v.y * cs,
-        v.z
-    };
-}
-
-////////////////////////////////////////////////////////////////////////////////
 BoundingBox UpdateBoundingBox(BoundingBox box, Vector3 pos)
 {
     // Calculate the half-extents from the current box
@@ -613,8 +481,10 @@ float GetTerrainHeightFromMeshXZ(Chunk chunk, float x, float z)
 void UnloadMeshGPU(Mesh *mesh) {
     rlUnloadVertexArray(mesh->vaoId);
     for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) {
+        MUTEX_LOCK(mutex);
         if (mesh->vboId[i] > 0) rlUnloadVertexBuffer(mesh->vboId[i]);
         mesh->vboId[i] = 0;
+        MUTEX_UNLOCK(mutex);
     }
     mesh->vaoId = 0;
     mesh->vboId[0] = 0;
@@ -732,40 +602,6 @@ static void UpdateLightPbr(Shader shader, Light light)
     SetShaderValue(shader, light.colorLoc, &light.color, SHADER_UNIFORM_VEC4);
     //SetShaderValue(shader, light.intensityLoc, &light.intensity, SHADER_UNIFORM_FLOAT);
 }
-// Create light with provided data
-// NOTE: It updated the global lightCount and it's limited to MAX_LIGHTS
-static Light CreateLightPbr(int type, Vector3 position, Vector3 target, Color color, float intensity, Shader shader)
-{
-    Light light = { 0 };
-
-    if (lightCount < MAX_LIGHTS)
-    {
-        light.enabled = 1;
-        light.type = type;
-        light.position = position;
-        light.target = target;
-        light.color.r = (float)color.r/255.0f;
-        light.color.g = (float)color.g/255.0f;
-        light.color.b = (float)color.b/255.0f;
-        light.color.a = (float)color.a/255.0f;
-        //light.intensity = intensity;
-        
-        // NOTE: Shader parameters names for lights must match the requested ones
-        light.enabledLoc = GetShaderLocation(shader, TextFormat("lights[%i].enabled", lightCount));
-        light.typeLoc = GetShaderLocation(shader, TextFormat("lights[%i].type", lightCount));
-        light.positionLoc = GetShaderLocation(shader, TextFormat("lights[%i].position", lightCount));
-        light.targetLoc = GetShaderLocation(shader, TextFormat("lights[%i].target", lightCount));
-        light.colorLoc = GetShaderLocation(shader, TextFormat("lights[%i].color", lightCount));
-        //light.intensityLoc = GetShaderLocation(shader, TextFormat("lights[%i].intensity", lightCount));
-        
-        UpdateLightPbr(shader, light);
-
-        lightCount++;
-    }
-
-    return light;
-}
-
 bool bugGenHappened = false;
 LightningBug *GenerateLightningBugs(Vector3 cameraPos, int count, float maxDistance)
 {
@@ -1426,10 +1262,10 @@ void LoadChunk(int cx, int cy)
              cx, cy, position.x, position.y, position.z);
 }
 
-
+bool quitFileManager = false;
 static unsigned __stdcall FileManagerThread(void *arg)
 {
-    while(true)
+    while(!quitFileManager)
     {
         sleep_s(1);
         int localCount;
@@ -1500,17 +1336,6 @@ static unsigned __stdcall ChunkLoaderThread(void *arg)
     return 0u;   // not NULL
 }
 
-// void StartChunkLoader() {
-//     pthread_t thread;
-//     pthread_create(&thread, NULL, ChunkLoaderThread, NULL);
-//     pthread_detach(thread);
-// }
-
-// void StartFileManger() {
-//     pthread_t thread;
-//     pthread_create(&thread, NULL, FileMangerThread, NULL);
-//     pthread_detach(thread);
-// }
 void StartChunkLoader() { thread_start_detached(ChunkLoaderThread, NULL); }
 void StartFileManger()  { thread_start_detached(FileManagerThread,  NULL); }
 
@@ -2335,7 +2160,7 @@ int main(void) {
             UpdateLightValues(instancingLightShader,instanceLight);
             lightDir = LerpVector3(lightDir,(Vector3){ -10.2f, -100.0f, -10.3f },0.02f);
             SetShaderValue(heightShaderLight, lightDirLoc, &lightDir, SHADER_UNIFORM_VEC3);
-            lightTileColor = LerpColor(lightTileColor, (Color){254,254,254,254}, 0.02f);
+            lightTileColor = LerpColor(lightTileColor, (Color){160,180,200,254}, 0.02f);
         }
         else { //night time
             skyboxTint = LerpColor(skyboxTint, skyboxNight, 0.02f);
@@ -2437,20 +2262,7 @@ int main(void) {
                             if(tireYOffset[i]>0.12f){tireYOffset[i]=0.12f;}
                             if(tireYOffset[i]<-0.23f){tireYOffset[i]=-0.23f;}
                             rebuildFromTires = true;
-                            // if(i<2){truckPitch-=0.001*GetFrameTime();}//front
-                            // else{truckPitch+=0.001*GetFrameTime();}//back
-                            // if(i%2==0){truckRoll+=0.1*GetFrameTime();}//left
-                            // else{truckRoll-=0.1*GetFrameTime();}//right
-                            // if(truckRoll>PI/16.0f){truckRoll=PI/16.0f;}
-                            // if(truckRoll<-PI/16.0f){truckRoll=-PI/16.0f;}
                         }
-                        // else
-                        // {
-                        //     tireYOffsets[i] = Lerp(tireYOffsets[i], 0.0f, 0.02f);//+=truckPosition.y * GetFrameTime();
-                        // }
-
-                        // if(tireYOffsets[i]>0.1f){tireYOffsets[i]=0.1f;}
-                        // if(tireYOffsets[i]<-0.21f){tireYOffsets[i]=-0.21f;}
                     }
                 } else { //not airborne, either landing or ground
                     if(gpad.btnCross>0)
@@ -3009,7 +2821,6 @@ int main(void) {
         else if(!onLoad)//this used to do something useful, now it does nothing really but snap the player a bit
         {
             onLoad = true;
-            float seaLevel = 0.0f;
             float totalY = 0.0f;
             int totalVerts = 0;
             for (int cy = 0; cy < CHUNK_COUNT; cy++) {
@@ -3025,25 +2836,13 @@ int main(void) {
                     if(chunks[cx][cy].treeCount>0){TraceLog(LOG_INFO, "trees (%d,%d) ->  %d", cx,cy,chunks[cx][cy].treeCount);}
                 }
             }
-            //TODO: Sealvel off for trees
-            seaLevel = (totalY / totalVerts);
-            TraceLog(LOG_INFO, "seaLevel: %f", seaLevel);
-            //seaLevel = 666.666;
-            for (int cy = 0; cy < CHUNK_COUNT; cy++) {
-                for (int cx = 0; cx < CHUNK_COUNT; cx++) {
-                    // Offset the entire chunk's Y to make sea level align with Y=0
-                    //chunks[cx][cy].position.y += seaLevel;
-                    //chunks[cx][cy].center.y += seaLevel;
-                    //chunks[cx][cy].box = UpdateBoundingBox(chunks[cx][cy].origBox, chunks[cx][cy].center);
-                }
-            }
             camera.position.x = -16; //3000;//
             camera.position.z = -16; //3000;//
         }
         DrawFPS(10,130);
         EndDrawing();
     }
-
+    quitFileManager = true;
     UnloadModel(truck);
     UnloadModel(tire);
     //unload skybox
@@ -3075,16 +2874,7 @@ int main(void) {
             }
         }
     }
-    // for (int y = 0; y < CHUNK_COUNT; y++) { //... nice little report
-    //     for (int x = 0; x < CHUNK_COUNT; x++) {
-    //         Vector3 min = {
-    //             (x - (CHUNK_COUNT / 2 - 1)) * CHUNK_WORLD_SIZE,
-    //             0,
-    //             (y - (CHUNK_COUNT / 2 - 1)) * CHUNK_WORLD_SIZE
-    //         };
-    //         TraceLog(LOG_INFO, "Chunk %d,%d covers from %.1f to %.1f", x, y, min.x, min.x + CHUNK_WORLD_SIZE);
-    //     }
-    // }
+
     for (int x = 0; x < CHUNK_COUNT; x++) {
         free(chunks[x]);
     }
