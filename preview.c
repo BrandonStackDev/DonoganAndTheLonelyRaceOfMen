@@ -11,6 +11,7 @@
 #include "truck.h"
 #include "control.h"
 #include "jc.h" //homes (Jimmy Carter)
+#include "fish.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -190,9 +191,6 @@ Color starColors[4] = {
     {200, 100, 255, 255}  // purple-ish
 };
 //////////////////////IMPORTANT GLOBAL VARIABLES///////////////////////////////
-//int curTreeIdx = 0;
-int tree_elf = 0;
-
 //very very important
 float gravityCollected = 0.0f;
 int chosenX = 7;
@@ -1065,7 +1063,6 @@ bool FindAnyTreeInWorld(Camera *camera, float radius, Model_Type type) {
     while (attempts < maxAttempts) {
         int cx = rand() % MAX_CHUNK_DIM;
         int cy = rand() % MAX_CHUNK_DIM;
-        tree_elf++;
 
         if (FindNextTreeInChunk(camera, cx, cy, radius, type)) {
             TraceLog(LOG_INFO, "Found tree in chunk_%02d_%02d", cx, cy);
@@ -1394,8 +1391,32 @@ int main(void) {
     InitWhale(&whales[4], (Vector3) { 6000, 130, -6000 }, 50, WHALE_SURFACE);
     if (!LoadWhale(&whales[4])) { return 1; }
     ////end whales setup-----------------------------------------
-    //shaders  
-        // - 
+        // fish
+    // --- FISH SETUP --------------------------------------------------------------
+    Model fishModel = LoadModel("models/fish.obj");
+    fishModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+    fishModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/fish.png");
+
+    // School allocation + seeding
+    int schoolCount = 42;
+    Fish* fish = MemAlloc(sizeof(Fish) * schoolCount);
+    Vector3 schoolCenter = (Vector3){ 1513, 245, 4951 };   // pick a water-ish height you like
+    float   schoolRadius = 25.0f;
+
+    for (int i = 0; i < schoolCount; i++) {
+        float a = ((float)GetRandomValue(0, 360)) * DEG2RAD;
+        float r = (float)GetRandomValue(0, 1000) / 1000.0f * schoolRadius;
+        fish[i].pos = (Vector3){ schoolCenter.x + sinf(a) * r, schoolCenter.y + GetRandomValue(-5,5) * 0.2f, schoolCenter.z + cosf(a) * r };
+        fish[i].yawDeg = (float)GetRandomValue(0, 359);
+        fish[i].scale = 1.0f;                    // uniform scale (important for the shader)
+        fish[i].vel = (Vector3){ 0 };          // start calm; UpdateSchool will push them
+    }
+
+    // A target the school will “want” to wander toward (you’ll update it every frame)
+    Vector3 fishTarget = schoolCenter;
+    // ---------------------------------------------------------------------------
+
+        // - shaders
     Shader heightShaderLight = LoadShader("shaders/120/height_color_lighting.vs", "shaders/120/height_color_lighting.fs");
     int mvpLocLight = GetShaderLocation(heightShaderLight, "mvp");
     int modelLocLight = GetShaderLocation(heightShaderLight, "model");
@@ -2372,9 +2393,10 @@ int main(void) {
                 }
                 rlEnableBackfaceCulling();
             }
-            //whales
+            //whales and fish
             if (onLoad)
             {
+                //whales
                 for (int i = 0; i < numWhales; i++)
                 {
                     FSM_Tick(&whales[i], (float)GetTime(), GetFrameTime());
@@ -2386,6 +2408,21 @@ int main(void) {
                     DrawMesh(whales[i].model.meshes[0], whales[i].model.materials[0], whaleXform);
                     //DrawSphere(whales[i].pos, 4.0f, RED);
                 }
+                //fish
+                // //fish movmemnt
+                // === FISH UPDATE + DRAW ======================================================
+                // 2a) steer the school target a bit each frame (orbit + optional player nudge)
+                static float schoolTheta = 0.0f;
+                float dt = GetFrameTime();
+                schoolTheta += dt * 0.4f; // slow orbit
+                fishTarget.x = schoolCenter.x + sinf(schoolTheta) * (schoolRadius * 0.6f);
+                fishTarget.z = schoolCenter.z + cosf(schoolTheta) * (schoolRadius * 0.6f);
+                // 2b) boids-lite update (moves & turns each fish)
+                UpdateSchool(fish, schoolCount, fishTarget, dt);
+                for (int i = 0; i < schoolCount; i++) {
+                    DrawModelEx(fishModel, fish[i].pos, (Vector3) { 0, 1, 0 }, fish[i].yawDeg, (Vector3) { fish[i].scale, fish[i].scale, fish[i].scale}, WHITE);
+                }
+                // ============================================================================
             }
             if (onLoad && truck.meshCount > 0)
             {
