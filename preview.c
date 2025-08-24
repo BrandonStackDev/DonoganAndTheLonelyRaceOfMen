@@ -1499,7 +1499,7 @@ int main(void) {
     bool showMap = true;
     float mapZoom = 1.0f;
     Rectangle mapViewport = { SCREEN_WIDTH - GAME_MAP_SIZE - 10, 10, 128, 128 };  // Map position + size
-    mapTexture = LoadTexture("map/elevation_color_map.png");
+    mapTexture = LoadTexture("map/treasure_map.png"); //mapTexture = LoadTexture("map/elevation_color_map.png");
     
     //controller and truck
     // Load  //todo: move this and most of the truck stuff into truck.h

@@ -12,6 +12,12 @@ Not yet even close to ready. Release date will be 1-2 years in the future.
 
 [![House](readme_assets/home3.png)](readme_assets/home3.png)
 
+[![Eclectic](readme_assets/truck_whale_fish.png)](readme_assets/truck_whale_fish.png)
+
+[![Fish Night](readme_assets/fish_night.png)](readme_assets/fish_night.png)
+
+[![Fish Day](readme_assets/fish_day.png)](readme_assets/fish_day.png)
+
 
 
 
