@@ -480,13 +480,13 @@ float GetTerrainHeightFromMeshXZ(Chunk chunk, float x, float z)
 void UnloadMeshGPU(Mesh *mesh) {
     MUTEX_LOCK(mutex);
     rlUnloadVertexArray(mesh->vaoId);
-    for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) {
-        if (mesh->vboId[i] > 0)
+    /*for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) { //this always fails so just removing it
+        if ((mesh->vboId[i]) != 0)
         {
             rlUnloadVertexBuffer(mesh->vboId[i]);
         }
         mesh->vboId[i] = 0;
-    }
+    }*/
     mesh->vaoId = 0;
     mesh->vboId[0] = 0;
     MUTEX_UNLOCK(mutex);
@@ -1275,7 +1275,7 @@ static unsigned __stdcall FileManagerThread(void *arg)
             if(!wasTilesDocumented){continue;}
             if(!foundTiles[te].isReady && chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64)
             {
-                //MUTEX_LOCK(mutex);
+                //MUTEX_LOCK(mutex); //this will make the program freeze!
                 foundTiles[te].model = LoadModel(foundTiles[te].path);
                 foundTiles[te].mesh = foundTiles[te].model.meshes[0];
                 foundTiles[te].isReady = true;
@@ -1286,7 +1286,7 @@ static unsigned __stdcall FileManagerThread(void *arg)
                     chunks[foundTiles[te].cx][foundTiles[te].cy].lod==LOD_16||
                     chunks[foundTiles[te].cx][foundTiles[te].cy].lod==LOD_8))
             {
-                //MUTEX_LOCK(mutex);
+                //MUTEX_LOCK(mutex); //this will make the program freeze!
                 UnloadModel(foundTiles[te].model);
                 foundTiles[te].isReady = false;
                 //MUTEX_UNLOCK(mutex);
@@ -1467,6 +1467,7 @@ int main(void) {
     Light instanceLight = CreateLight(LIGHT_DIRECTIONAL, LightPosDraw, LightTargetDraw, lightColorDraw, instancingLightShader);
     //init the static game props stuff
     InitStaticGameProps(instancingLightShader);//get the high fi models ready
+    fishModel.materials[0].shader = instancingLightShader; //use this guy for fish as well
     //END -- lighting shader---------------------------------------------------------------------------------------
     //START -- lightning bug shader :)---------------------------------------------------------------------------------------
     // Load PBR shader and setup all required locations
@@ -2431,20 +2432,40 @@ int main(void) {
                 // === FISH UPDATE + DRAW ======================================================
                 for (int s = 0; s < numSchools; s++)
                 {
-                    // 2a) steer the school target a bit each frame (orbit + optional player nudge)
+                    // 1) steer the school target a bit each frame (orbit + optional player nudge)
                     static float schoolTheta = 0.0f;
                     float dt = GetFrameTime();
                     schoolTheta += dt * 0.4f; // slow orbit
                     fish[s].fishTarget.x = fish[s].center.x + sinf(schoolTheta) * (fish[s].schoolRadius * 0.6f);
                     fish[s].fishTarget.z = fish[s].center.z + cosf(schoolTheta) * (fish[s].schoolRadius * 0.6f);
-                    // 2b) boids-lite update (moves & turns each fish)
-                    UpdateSchool(fish[s].fish, schoolCount, fish[s].fishTarget, dt);
-                    for (int i = 0; i < schoolCount; i++) {
-                        DrawModelEx(fishModel, fish[s].fish[i].pos, 
-                            (Vector3) { 0, 1, 0 }, fish[s].fish[i].yawDeg, 
-                            (Vector3) { fish[s].fish[i].scale, fish[s].fish[i].scale, fish[s].fish[i].scale }, 
-                            WHITE);
+
+                    // 2) boids-lite update (moves & turns each fish)
+                    UpdateSchool(fish[s].fish, fish[s].schoolCount, fish[s].fishTarget, dt);
+
+                    // 3) build per-instance transforms for this school
+                    static Matrix* schoolMatrices = NULL;
+                    static int maxSchoolCount = 0;
+                    if (schoolCount > maxSchoolCount) {
+                        if (schoolMatrices) { MemFree(schoolMatrices); }
+                        schoolMatrices = MemAlloc(sizeof(Matrix) * schoolCount);
+                        maxSchoolCount = schoolCount;
                     }
+                    for (int i = 0; i < schoolCount; i++) {
+                        Fish* f = &fish[s].fish[i];
+                        Matrix rot = MatrixRotateY(DEG2RAD * f->yawDeg);
+                        Matrix sca = MatrixScale(f->scale, f->scale, f->scale);
+                        Matrix tra = MatrixTranslate(f->pos.x, f->pos.y, f->pos.z);
+                        schoolMatrices[i] = MatrixMultiply(MatrixMultiply(sca, rot), tra);
+                    }
+
+                    // 4) draw entire school in one GPU instancing call
+                    DrawMeshInstanced(
+                        fishModel.meshes[0],
+                        fishModel.materials[0],
+                        schoolMatrices,
+                        schoolCount
+                    );
+                    //if (schoolMatrices) { MemFree(schoolMatrices); } //this fails for me, not sure what to do with it...
                 }
                 // ============================================================================
             }
