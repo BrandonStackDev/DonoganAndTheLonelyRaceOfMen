@@ -1398,22 +1398,40 @@ int main(void) {
     fishModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/fish.png");
 
     // School allocation + seeding
+    int numSchools = 5;
     int schoolCount = 42;
-    Fish* fish = MemAlloc(sizeof(Fish) * schoolCount);
-    Vector3 schoolCenter = (Vector3){ 1513, 245, 4951 };   // pick a water-ish height you like
-    float   schoolRadius = 25.0f;
+    // First allocate the top-level array of pointers (one per school)
+    School* fish = MemAlloc(sizeof(School) * numSchools);
 
-    for (int i = 0; i < schoolCount; i++) {
-        float a = ((float)GetRandomValue(0, 360)) * DEG2RAD;
-        float r = (float)GetRandomValue(0, 1000) / 1000.0f * schoolRadius;
-        fish[i].pos = (Vector3){ schoolCenter.x + sinf(a) * r, schoolCenter.y + GetRandomValue(-5,5) * 0.2f, schoolCenter.z + cosf(a) * r };
-        fish[i].yawDeg = (float)GetRandomValue(0, 359);
-        fish[i].scale = 1.0f;                    // uniform scale (important for the shader)
-        fish[i].vel = (Vector3){ 0 };          // start calm; UpdateSchool will push them
+    // For each school, allocate its own array of Fish structs
+    for (int s = 0; s < numSchools; s++) {
+        fish[s].fish = MemAlloc(sizeof(Fish) * schoolCount);
+        fish[s].schoolCount = schoolCount;
+        fish[s].schoolRadius = 25.8f;
     }
 
     // A target the school will “want” to wander toward (you’ll update it every frame)
-    Vector3 fishTarget = schoolCenter;
+    fish[0].center = (Vector3){ 1513, 235, 4951 };
+    fish[1].center = (Vector3){ -4498, 145, 6150 };
+    fish[2].center = (Vector3){ 6000, 150, 6000 };
+    fish[3].center = (Vector3){ -6000, 100, -6000 };
+    fish[4].center = (Vector3){ 6000, 130, -6000 };
+
+    for (int s = 0; s < numSchools; s++) {
+        fish[s].schoolCount = schoolCount;
+        fish[s].schoolRadius = 25.8f;
+        for (int i = 0; i < schoolCount; i++) {
+            float a = ((float)GetRandomValue(0, 360)) * DEG2RAD;
+            float r = (float)GetRandomValue(0, 1000) / 1000.0f * fish[s].schoolRadius;
+            Vector3 c = fish[s].center; // <- use the chosen school center
+            fish[s].fish[i].pos = (Vector3){ c.x + sinf(a) * r, c.y + GetRandomValue(-5,5) * 0.2f, c.z + cosf(a) * r };
+            fish[s].fish[i].yawDeg = (float)GetRandomValue(0, 359);
+            fish[s].fish[i].scale = 1.0f;  // bump to 3–10 if your model is tiny
+            fish[s].fish[i].vel = (Vector3){ 0 };
+        }
+        fish[s].fishTarget = fish[s].center;
+    }
+
     // ---------------------------------------------------------------------------
 
         // - shaders
@@ -2411,16 +2429,22 @@ int main(void) {
                 //fish
                 // //fish movmemnt
                 // === FISH UPDATE + DRAW ======================================================
-                // 2a) steer the school target a bit each frame (orbit + optional player nudge)
-                static float schoolTheta = 0.0f;
-                float dt = GetFrameTime();
-                schoolTheta += dt * 0.4f; // slow orbit
-                fishTarget.x = schoolCenter.x + sinf(schoolTheta) * (schoolRadius * 0.6f);
-                fishTarget.z = schoolCenter.z + cosf(schoolTheta) * (schoolRadius * 0.6f);
-                // 2b) boids-lite update (moves & turns each fish)
-                UpdateSchool(fish, schoolCount, fishTarget, dt);
-                for (int i = 0; i < schoolCount; i++) {
-                    DrawModelEx(fishModel, fish[i].pos, (Vector3) { 0, 1, 0 }, fish[i].yawDeg, (Vector3) { fish[i].scale, fish[i].scale, fish[i].scale}, WHITE);
+                for (int s = 0; s < numSchools; s++)
+                {
+                    // 2a) steer the school target a bit each frame (orbit + optional player nudge)
+                    static float schoolTheta = 0.0f;
+                    float dt = GetFrameTime();
+                    schoolTheta += dt * 0.4f; // slow orbit
+                    fish[s].fishTarget.x = fish[s].center.x + sinf(schoolTheta) * (fish[s].schoolRadius * 0.6f);
+                    fish[s].fishTarget.z = fish[s].center.z + cosf(schoolTheta) * (fish[s].schoolRadius * 0.6f);
+                    // 2b) boids-lite update (moves & turns each fish)
+                    UpdateSchool(fish[s].fish, schoolCount, fish[s].fishTarget, dt);
+                    for (int i = 0; i < schoolCount; i++) {
+                        DrawModelEx(fishModel, fish[s].fish[i].pos, 
+                            (Vector3) { 0, 1, 0 }, fish[s].fish[i].yawDeg, 
+                            (Vector3) { fish[s].fish[i].scale, fish[s].fish[i].scale, fish[s].fish[i].scale }, 
+                            WHITE);
+                    }
                 }
                 // ============================================================================
             }

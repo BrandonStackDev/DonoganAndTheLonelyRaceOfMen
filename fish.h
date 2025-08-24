@@ -13,6 +13,14 @@ typedef struct {
     float yawDeg, scale;
 } Fish;
 
+typedef struct {
+    Vector3 center;
+    int schoolCount;
+    float schoolRadius;
+    Fish* fish;
+    Vector3 fishTarget;
+} School;
+
 void UpdateSchool(Fish* f, int n, Vector3 target, float dt) {
     const float maxSpeed = 3.5f, maxTurn = 90.0f; // deg/s
     const float neighbor = 2.0f, sep = 0.8f;
