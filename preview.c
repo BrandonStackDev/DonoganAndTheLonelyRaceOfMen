@@ -1372,7 +1372,7 @@ int main(void) {
     //DisableCursor();
     SetTargetFPS(60);
     ////whales---------------------------------------------------
-    int numWhales = 5; // five whales right now
+    int numWhales = 6; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
     //init whale struct
     whales[0] = (Whale){ 0 };
@@ -1390,6 +1390,9 @@ int main(void) {
     whales[4] = (Whale){ 0 };
     InitWhale(&whales[4], (Vector3) { 6000, 130, -6000 }, 50, WHALE_SURFACE);
     if (!LoadWhale(&whales[4])) { return 1; }
+    whales[5] = (Whale){ 0 };
+    InitWhale(&whales[5], (Vector3) { 2782.00, 140, -2063.00 }, 80, WHALE_SURFACE);
+    if (!LoadWhale(&whales[5])) { return 1; }
     ////end whales setup-----------------------------------------
         // fish
     // --- FISH SETUP --------------------------------------------------------------
@@ -1398,7 +1401,7 @@ int main(void) {
     fishModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/fish.png");
 
     // School allocation + seeding
-    int numSchools = 10;
+    int numSchools = 13;
     int schoolCount = 42;
     // First allocate the top-level array of pointers (one per school)
     School* fish = MemAlloc(sizeof(School) * numSchools);
@@ -1421,6 +1424,9 @@ int main(void) {
     fish[7].center = (Vector3){ 1821.18f, 220, 3307.20f };
     fish[8].center = (Vector3){ 3183.93f, 220, 5489.83f };
     fish[9].center = (Vector3){ -2541.69, 278, 714.14 };
+    fish[10].center = (Vector3){ 2782.14, 100, -2063.78 };
+    fish[11].center = (Vector3){ 2782.00, 140, -2063.00 };
+    fish[12].center = (Vector3){ 2780.00, 180, -2060.00 };
 
     for (int s = 0; s < numSchools; s++) {
         fish[s].schoolCount = schoolCount;
