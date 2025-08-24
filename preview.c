@@ -1398,7 +1398,7 @@ int main(void) {
     fishModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/fish.png");
 
     // School allocation + seeding
-    int numSchools = 5;
+    int numSchools = 10;
     int schoolCount = 42;
     // First allocate the top-level array of pointers (one per school)
     School* fish = MemAlloc(sizeof(School) * numSchools);
@@ -1416,6 +1416,11 @@ int main(void) {
     fish[2].center = (Vector3){ 6000, 150, 6000 };
     fish[3].center = (Vector3){ -6000, 100, -6000 };
     fish[4].center = (Vector3){ 6000, 130, -6000 };
+    fish[5].center = (Vector3){ 4467.84f, 160, 4253.51f };
+    fish[6].center = (Vector3){ 4467.84f, 200, 4253.51f };
+    fish[7].center = (Vector3){ 1821.18f, 220, 3307.20f };
+    fish[8].center = (Vector3){ 3183.93f, 220, 5489.83f };
+    fish[9].center = (Vector3){ -2541.69, 278, 714.14 };
 
     for (int s = 0; s < numSchools; s++) {
         fish[s].schoolCount = schoolCount;
