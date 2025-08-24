@@ -2827,6 +2827,24 @@ int main(void) {
                 dest.y + normalizedY * dest.height
             };
             DrawCircleV(marker, 3, RED);
+            // Facing triangle (yellow "nose" pointing the player's yaw)
+            float local_yaw = vehicleMode ? truckAngle : -(yaw + (PI / 2.0f)); //
+            float local_x_sign = vehicleMode ? 1.0f : -1.0f;
+            Vector2 dir = (Vector2){ (local_x_sign)*sinf(local_yaw), (local_x_sign)*cosf(local_yaw) }; // yaw in radians
+            // Tiny arrow just outside the 3px circle
+            float tipLen = 10.0f;   // pixels from center to tip
+            float baseAlong = 4.5f;    // how far the base sits from center
+            float halfWidth = 3.5f;    // half the triangle base width
+            Vector2 tip = (Vector2){ marker.x + dir.x * tipLen,     marker.y + dir.y * tipLen };
+            Vector2 baseCenter = (Vector2){ marker.x + dir.x * baseAlong,  marker.y + dir.y * baseAlong };
+            // Perpendicular for triangle base
+            Vector2 perp = (Vector2){ -dir.y, dir.x };
+            Vector2 left = (Vector2){ baseCenter.x + perp.x * halfWidth, baseCenter.y + perp.y * halfWidth };
+            Vector2 right = (Vector2){ baseCenter.x - perp.x * halfWidth, baseCenter.y - perp.y * halfWidth };
+            DrawTriangle(left, right, marker, YELLOW);
+            // Optional crisp outline
+            // DrawTriangleLines(left, right, tip, BLACK);
+
         }
         if(!loadedEem || !wasTilesDocumented)
         {
