@@ -2193,7 +2193,9 @@ int main(void) {
         else if (donnyMode && !vehicleMode)
         {
             //are we in water?
-            bool inWater = don.pos.y < PLAYER_FLOAT_Y_POSITION;
+            //bool inWater = don.pos.y < PLAYER_FLOAT_Y_POSITION;
+            float feetY = DonFeetWorldY(&don);         // from donogan.h
+            bool inWater = (feetY <= PLAYER_FLOAT_Y_POSITION + 0.01f); // tiny epsilon
             if (onLoad)//he floats underwater
             {
                 if (closestCX < 0 || closestCY < 0 || closestCX >= CHUNK_COUNT || closestCY >= CHUNK_COUNT) {TraceLog(LOG_INFO, "Outside of world bounds: %d,%d", closestCX, closestCY);}
@@ -2201,12 +2203,15 @@ int main(void) {
                 {
                     float groundY = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], don.pos.x, don.pos.z);
                     if (groundY < -9000.0f) { groundY = don.pos.y; } // if we error, dont change y
-                    if (!inWater)
+                    if (inWater)
                     {
-                        inWater = false;
-                        don.groundY = groundY;
+                        don.seabedY = groundY;
+                        if (don.pos.y < groundY)
+                        {
+                            don.groundY = groundY;
+                        }
                     }
-                    else if ((inWater && don.pos.y < groundY))
+                    else
                     {
                         don.groundY = groundY;
                     }
@@ -2219,7 +2224,7 @@ int main(void) {
                 StartTimer(&don.swimEnterToExitLock);
                 DonEnterWater(&don, moveMag);
             }
-            else if (don.inWater && !inWater && HasTimerElapsed(&don.swimEnterToExitLock)) {
+            else if (don.inWater && (don.groundY > PLAYER_FLOAT_Y_POSITION + 0.01f) && HasTimerElapsed(&don.swimEnterToExitLock)) {
                 ResetTimer(&don.swimEnterToExitLock);
                 bool runHeld = gpad.btnL3;
                 TraceLog(LOG_INFO, "Exiting Water");
@@ -2415,6 +2420,10 @@ int main(void) {
             Matrix rotY = MatrixRotateY(don.yawY);
             don.model.transform = MatrixMultiply(MatrixRotateX(DEG2RAD * don.modelYawX), rotY);
         }
+        if (don.inWater)
+        {
+            don.camPitch = pitch;    // your orbit pitch
+        }
         DonUpdate(&don, havePad ? &gpad : NULL, dt);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
@@ -2493,6 +2502,7 @@ int main(void) {
             {
                 // Draw Donogan
                 DrawModel(don.model, don.pos, don.scale, WHITE); // uses model.transform for rotation
+                if (don.inWater) { DonDrawBubbles(&don); }
             }
             //homes
             if (onLoad)

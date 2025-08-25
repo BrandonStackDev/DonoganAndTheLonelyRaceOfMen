@@ -14,6 +14,9 @@
 #include "util.h"
 #include "timer.h"
 
+//bubbles
+#define DON_MAX_BUBBLES 128
+
 // ---------- Character states ----------
 typedef enum {
     DONOGAN_STATE_IDLE,
@@ -84,7 +87,14 @@ typedef enum {
     DONOGAN_ANIM_YMCA,
 } DonoganAnim;
 
-
+//bubbles
+typedef struct Bubble {
+    Vector3 pos;
+    Vector3 vel;
+    float   radius;
+    float   life, maxLife;
+    unsigned char alive;
+} Bubble;
 // ---------- Donogan runtime ----------
 typedef struct {
     // Animation & model
@@ -144,7 +154,7 @@ typedef struct {
     bool  inWater;          // are we in water volume?
     float swimSpeed;        // meters/sec in water
     float swimTurnSpeed;    // slower turn in water
-    float swimFloatOffset;  // how high to ride above water surface
+    //float swimFloatOffset;  // how high to ride above water surface
     // Swim thresholds (hysteresis)
     float swimMoveEnter;  // need this stick magnitude to switch to SWIM_MOVE
     float swimMoveExit;   // drop below this to fall back to SWIM_IDLE
@@ -162,6 +172,20 @@ typedef struct {
 
     bool runLock;   // true = run is locked on
     bool prevL3;    // previous frame’s L3, for edge detection
+
+    // Camera (set from preview each frame)
+    float camPitch;
+
+    // Water & seabed levels
+    float waterY;      // water surface Y
+    float seabedY;     // terrain/seabed Y at current XZ
+
+    // Dive control
+    Vector3 swimDiveVel;     // carries burst + continued motion
+    float   swimDiveBurst;   // initial impulse (m/s)
+    float   swimDiveDrag;    // velocity damping (1/sec)
+    Bubble bubbles[DON_MAX_BUBBLES];
+    int    bubbleHead;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -220,6 +244,66 @@ static void FreeRemapped(ModelAnimation* a) {
     if (!a) return;
     for (int f = 0; f < (int)a->frameCount; ++f) if (a->framePoses[f]) MemFree(a->framePoses[f]);
     if (a->framePoses) MemFree(a->framePoses);
+}
+
+static inline float frand01(void) {
+    return (float)GetRandomValue(0, 1000) * (1.0f / 1000.0f);
+}
+
+// Approx butt world-space anchor: ~55% up from feet, nudged backward along facing
+static inline Vector3 DonButtWorld(const Donogan* d) {
+    float height = (d->firstBB.max.y - d->firstBB.min.y) * d->scale;
+    float feetY = DonFeetWorldY(d);                           // you already have this helper
+    float buttY = feetY + 0.55f * height;                       // “hips”
+    Vector3 fwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) }; // your yaw-only forward
+    Vector3 butt = d->pos;
+    butt.y = buttY;
+    butt = Vector3Add(butt, Vector3Scale(fwd, -0.12f * height)); // small back offset
+    return butt;
+}
+
+static inline void DonSpawnBubbles(Donogan* d, int count, float strength) {
+    for (int i = 0; i < count; i++) {
+        Bubble* b = &d->bubbles[d->bubbleHead++ % DON_MAX_BUBBLES];
+        Vector3 base = DonButtWorld(d);
+        // jitter spawn around butt
+        base.x += (frand01() - 0.5f) * 0.05f;
+        base.y += (frand01() - 0.5f) * 0.03f;
+        base.z += (frand01() - 0.5f) * 0.05f;
+
+        // Upward + some backwash + sideways randomness
+        Vector3 up = (Vector3){ 0,1,0 };
+        Vector3 fwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) }; // yaw forward
+        Vector3 side = (Vector3){ cosf(d->yawY), 0.0f,-sinf(d->yawY) };
+        Vector3 vel = Vector3Add(Vector3Scale(up, 0.7f + 0.6f * frand01()),
+            Vector3Add(Vector3Scale(fwd, -0.4f * strength),
+                Vector3Scale(side, (frand01() - 0.5f) * 0.6f)));
+
+        b->pos = base;
+        b->vel = vel;
+        b->radius = 0.03f + 0.04f * frand01();
+        b->life = 0.0f;
+        b->maxLife = 0.9f + 0.5f * frand01();
+        b->alive = 1;
+    }
+}
+
+static inline void DonUpdateBubbles(Donogan* d, float dt) {
+    for (int i = 0; i < DON_MAX_BUBBLES; i++) {
+        Bubble* b = &d->bubbles[i];
+        if (!b->alive) continue;
+        // simple buoyancy + gentle drag
+        b->vel.y += 0.8f * dt;
+        b->vel.x *= (1.0f - 0.9f * dt);
+        b->vel.z *= (1.0f - 0.9f * dt);
+        b->pos = Vector3Add(b->pos, Vector3Scale(b->vel, dt));
+        // tiny size drift
+        b->radius *= (1.0f + 0.4f * dt);
+        b->life += dt;
+
+        // kill if above surface or life over
+        if (b->life >= b->maxLife || b->pos.y > d->waterY + 0.05f) b->alive = 0;
+    }
 }
 
 // ---------- Init / Free ----------
@@ -292,7 +376,7 @@ static Donogan InitDonogan(void)
     d.inWater = false;
     d.swimSpeed = 6.666f;
     d.swimTurnSpeed = DEG2RAD * 240.0f;
-    d.swimFloatOffset = 0.90f;   // ~chest at surface
+    //d.swimFloatOffset = 0.90f;   // ~chest at surface
 
     d.groundEps = 0.81f;
     d.stepDownTolerance = 0.35f;  // roughly ankle height – tweak to taste
@@ -312,6 +396,15 @@ static Donogan InitDonogan(void)
 
     d.runLock = false;
     d.prevL3 = false;
+
+    d.camPitch = 0.0f;
+    d.waterY = PLAYER_FLOAT_Y_POSITION;      // start same; preview will set both properly
+    d.seabedY = d.groundY;
+
+    d.swimDiveVel = (Vector3){ 0 };
+    d.swimDiveBurst = 88.88f;   // try 8–14
+    d.swimDiveDrag = 3.732f;    // higher = stops sooner
+    //d.swimMinClear = 0.25f;   // ~ankle clearance
 
     DonSnapToGround(&d);
     return d;
@@ -403,8 +496,8 @@ static void DonSetState(Donogan* d, DonoganState s)
 //water helpers------------------------------------------------------------------------------------
 static inline void DonClampToWater(Donogan* d) {
     // Keep the body riding at the surface
-    float surfaceY = d->groundY; // treat groundY as water level 
-    d->pos.y = surfaceY - d->firstBB.min.y * d->scale + d->swimFloatOffset;
+    float surfaceY = d->waterY; // treat groundY as water level 
+    d->pos.y = surfaceY - d->firstBB.min.y * d->scale; // +d->swimFloatOffset;
     d->velY = 0.0f;
 }
 
@@ -446,20 +539,63 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
 
     // --- Water locomotion (no gravity) ---
     if (d->inWater) {
-        // Read stick as usual
-        bool padPresent = (pad != NULL);
-        float lx = padPresent ? pad->normLX : 0.0f;
-        float ly = padPresent ? pad->normLY : 0.0f;
+        //1) Read stick as usual 1
         DonProcessRunToggle(d, L3);
-        // choose swim idle vs move
+        //2) choose swim idle vs move 2
         float moveMag = sqrtf(lx * lx + ly * ly);
         bool wantMove = (d->state == DONOGAN_STATE_SWIM_MOVE)
             ? (moveMag > d->swimMoveExit)
             : (moveMag > d->swimMoveEnter);
+        // 3) DIVE burst on X press (edge)
+        // Camera forward from yaw/pitch/roll (right-handed, Y up)
+        float cy = cosf(d->yawY), sy = sinf(d->yawY);
+        float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
+        // roll is optional for now; you can include it if you want banked dives
+        Vector3 fwd = (Vector3){ sy * cp, -sp, cy * cp };
+        fwd = Vector3Normalize(fwd);
+        if (crossPressed) {
+            d->swimDiveVel = Vector3Scale(fwd, d->swimDiveBurst);
+            DonSpawnBubbles(d, 18 + GetRandomValue(0, 6), 1.0f); // whoosh!
+        }
+        else if (wantMove)
+        {
+            d->swimDiveVel = Vector3Scale(fwd, d->swimSpeed);
+        }
+
+        // 4) Integrate dive velocity (drag) + standard swim move
+        //   - Horizontal (XZ): from sticks if in SWIM_MOVE
+        //   - Vertical: from swimDiveVel only (we don’t “bob” up)
+        float dtLoc = dt;
+        if (d->state == DONOGAN_STATE_SWIM_MOVE) {
+            // camera-relative planar move (you already compute lx/ly elsewhere)
+            Vector3 camFwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+            Vector3 camRight = (Vector3){ cosf(d->yawY), 0.0f,-sinf(d->yawY) };
+            Vector3 moveXZ = Vector3Add(Vector3Scale(camRight, lx), Vector3Scale(camFwd, ly));
+            if (Vector3Length(moveXZ) > 0.001f) {
+                moveXZ = Vector3Normalize(moveXZ);
+                d->pos = Vector3Add(d->pos, Vector3Scale(moveXZ, d->swimSpeed * dtLoc));
+            }
+        }
+
+        // Apply dive velocity
+        d->pos = Vector3Add(d->pos, Vector3Scale(d->swimDiveVel, dtLoc));
+        // drag
+        float drag = fmaxf(0.0f, 1.0f - d->swimDiveDrag * dtLoc);
+        d->swimDiveVel = Vector3Scale(d->swimDiveVel, drag);
+
+        // 5) Clamp vertical between seabed (with clearance) and surface (never pop out)
+        float feetOff = -d->firstBB.min.y * d->scale;  // feet offset from origin
+        float minY = d->seabedY + feetOff; // + d->swimMinClear;
+        float maxY = d->waterY - feetOff; // +d->swimFloatOffset; // surface ride height
+        if (d->pos.y < minY) d->pos.y = minY;
+        if (d->pos.y > maxY) d->pos.y = maxY;
+        //6)
         DonSetState(d, wantMove ? DONOGAN_STATE_SWIM_MOVE : DONOGAN_STATE_SWIM_IDLE);
         d->onGround = false;         // prevent land logic from firing while in water
         // keep body at surface
-        DonClampToWater(d);
+        if (d->state == DONOGAN_STATE_SWIM_IDLE && Vector3LengthSqr(d->swimDiveVel) < 1e-6f) {
+            DonClampToWater(d);
+        }
         // then fall through to your existing frame-stepper at the end of DonUpdate()
     }
     else
@@ -615,6 +751,23 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
     }
 
     DonApplyFrame(d);
+    DonUpdateBubbles(d, dt);
 }
 
+#include "rlgl.h"  // at top of preview.c
+
+// ... in your 3D draw loop, after DrawModel(don.model, ...) ...
+void DonDrawBubbles(const Donogan* d) {
+    // draw transparent without writing depth to avoid sorting artifacts
+    rlDisableDepthMask();
+    for (int i = 0; i < DON_MAX_BUBBLES; i++) {
+        const Bubble* b = &d->bubbles[i];
+        if (!b->alive) continue;
+        float t = b->life / b->maxLife;             // 0..1
+        unsigned char a = (unsigned char)((1.0f - t) * 160); // fade out
+        Color c = (Color){ 180, 220, 255, a };      // light blue with alpha
+        DrawSphereEx(b->pos, b->radius, 8, 8, c);   // small, simple sphere
+    }
+    rlEnableDepthMask();
+}
 #endif // DONOGAN_H
