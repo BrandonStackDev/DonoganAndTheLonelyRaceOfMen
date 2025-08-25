@@ -270,15 +270,14 @@ static inline void DonSpawnBubbles(Donogan* d, int count, float strength) {
         base.x += (frand01() - 0.5f) * 0.05f;
         base.y += (frand01() - 0.5f) * 0.03f;
         base.z += (frand01() - 0.5f) * 0.05f;
-
         // Upward + some backwash + sideways randomness
         Vector3 up = (Vector3){ 0,1,0 };
         Vector3 fwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) }; // yaw forward
         Vector3 side = (Vector3){ cosf(d->yawY), 0.0f,-sinf(d->yawY) };
-        Vector3 vel = Vector3Add(Vector3Scale(up, 0.7f + 0.6f * frand01()),
-            Vector3Add(Vector3Scale(fwd, -0.4f * strength),
-                Vector3Scale(side, (frand01() - 0.5f) * 0.6f)));
-
+        // New (spreads faster)
+        Vector3 vel = Vector3Add(Vector3Scale(up, 1.4f + 1.2f * frand01()),
+            Vector3Add(Vector3Scale(fwd, -0.7f * strength),
+                Vector3Scale(side, (frand01() - 0.5f) * 1.6f)));
         b->pos = base;
         b->vel = vel;
         b->radius = 0.03f + 0.04f * frand01();
@@ -374,7 +373,7 @@ static Donogan InitDonogan(void)
 
     //water swimming
     d.inWater = false;
-    d.swimSpeed = 6.666f;
+    d.swimSpeed = 9.666f;
     d.swimTurnSpeed = DEG2RAD * 240.0f;
     //d.swimFloatOffset = 0.90f;   // ~chest at surface
 
@@ -557,9 +556,12 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
             d->swimDiveVel = Vector3Scale(fwd, d->swimDiveBurst);
             DonSpawnBubbles(d, 18 + GetRandomValue(0, 6), 1.0f); // whoosh!
         }
-        else if (wantMove)
-        {
-            d->swimDiveVel = Vector3Scale(fwd, d->swimSpeed);
+        else if (wantMove) {
+            Vector3 planar = (Vector3){ fwd.x, 0.0f, fwd.z };
+            if (Vector3Length(planar) > 0.001f) {
+                planar = Vector3Normalize(planar);
+                d->pos = Vector3Add(d->pos, Vector3Scale(planar, d->swimSpeed * dt));
+            }
         }
 
         // 4) Integrate dive velocity (drag) + standard swim move
@@ -740,10 +742,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
     if (frameCount < 1) frameCount = 1;
 
     if (d->animLoop) {
-        d->curFrame = (d->curFrame + 1) % frameCount;
+        d->curFrame = (d->curFrame + 2) % frameCount;
     }
     else {
-        d->curFrame+=2; //d->curFrame++; //do this twice because it feels slow
+        d->curFrame+=(d->curAnimId == DONOGAN_ANIM_Jump_Land ? 11 : 2); //d->curFrame++; //do this twice because it feels slow, 10 for landing
         if (d->curFrame >= frameCount) {
             d->curFrame = frameCount - 1;
             d->animFinished = true;
