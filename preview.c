@@ -14,6 +14,7 @@
 #include "fish.h"
 #include "donogan.h"
 #include "util.h"
+#include "timer.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -430,7 +431,7 @@ float GetTerrainHeightFromMeshXZ(Chunk chunk, float x, float z)
 ////////////////////////////////////////////////////////////////////////////////
 // Strip GPU buffers but keep CPU data
 void UnloadMeshGPU(Mesh *mesh) {
-    MUTEX_LOCK(mutex);
+    //MUTEX_LOCK(mutex);
     rlUnloadVertexArray(mesh->vaoId);
     /*for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) { //this always fails so just removing it
         if ((mesh->vboId[i]) != 0)
@@ -440,8 +441,8 @@ void UnloadMeshGPU(Mesh *mesh) {
         mesh->vboId[i] = 0;
     }*/
     mesh->vaoId = 0;
-    mesh->vboId[0] = 0;
-    MUTEX_UNLOCK(mutex);
+    //mesh->vboId[0] = 0;
+    //MUTEX_UNLOCK(mutex);
 }
 
 int loadTileCnt = 0; //-- need this counter to be global, counted in these functions
@@ -2214,10 +2215,14 @@ int main(void) {
             //water
             // Edge transitions (use current stick magnitude & run-held for sensible initial state)
             if (!don.inWater && inWater) {
+                TraceLog(LOG_INFO, "Entering Water");
+                StartTimer(&don.swimEnterToExitLock);
                 DonEnterWater(&don, moveMag);
             }
-            else if (don.inWater && !inWater) {
+            else if (don.inWater && !inWater && HasTimerElapsed(&don.swimEnterToExitLock)) {
+                ResetTimer(&don.swimEnterToExitLock);
                 bool runHeld = gpad.btnL3;
+                TraceLog(LOG_INFO, "Exiting Water");
                 DonExitWater(&don, moveMag, runHeld);
             }
         }

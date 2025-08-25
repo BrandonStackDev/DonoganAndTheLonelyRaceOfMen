@@ -12,6 +12,7 @@
 //me
 #include "control.h"
 #include "util.h"
+#include "timer.h"
 
 // ---------- Character states ----------
 typedef enum {
@@ -147,6 +148,7 @@ typedef struct {
     // Swim thresholds (hysteresis)
     float swimMoveEnter;  // need this stick magnitude to switch to SWIM_MOVE
     float swimMoveExit;   // drop below this to fall back to SWIM_IDLE
+    Timer swimEnterToExitLock;
     // Grounding thresholds
     float groundEps;          // tiny landing epsilon (meters), e.g. 0.02
     float stepDownTolerance;  // max step-down we auto-snap to (meters), e.g. 0.35
@@ -289,6 +291,8 @@ static Donogan InitDonogan(void)
 
     d.stepUpRate = 6.0f;   // climbs up to 6 m/s
     d.stepUpMaxInstant = 0.25f;  // allows a small pop for jaggy ground
+
+    d.swimEnterToExitLock = CreateTimer(0.12f);//very short
 
     DonSnapToGround(&d);
     return d;
