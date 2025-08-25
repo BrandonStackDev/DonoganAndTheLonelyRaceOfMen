@@ -159,6 +159,9 @@ typedef struct {
     float slopeFollowRate;    // 0 = snap; >0 = smooth follow (units: 1/sec)
     float stepUpRate;        // max climb speed (m/s)
     float stepUpMaxInstant;  // small instant “pop” allowed (m)
+
+    bool runLock;   // true = run is locked on
+    bool prevL3;    // previous frame’s L3, for edge detection
 } Donogan;
 
 // Assets (adjust if needed)
@@ -173,6 +176,19 @@ static inline void DonSnapToGround(Donogan* d) {
     d->pos.y = d->groundY - d->firstBB.min.y * d->scale; // place feet exactly on ground
     d->velY = 0.0f;
     d->onGround = true;
+}
+/// <summary>
+/// Run logic to lock and unlock
+/// </summary>
+/// <param name="d"></param>
+/// <param name="L3"></param>
+static inline void DonProcessRunToggle(Donogan* d, bool L3)
+{
+    bool pressed = L3 && !d->prevL3;   // rising edge
+    d->prevL3 = L3;
+    if (pressed) d->runLock = !d->runLock;
+    // runningHeld is what the rest of your code uses to choose run/walk & jump speed
+    d->runningHeld = d->runLock;       // (if you also want hold-to-run, use: d->runLock || L3)
 }
 
 // --------- Anim track name→index and remap (fixes “warpy skin”) ----------
@@ -294,6 +310,9 @@ static Donogan InitDonogan(void)
 
     d.swimEnterToExitLock = CreateTimer(0.12f);//very short
 
+    d.runLock = false;
+    d.prevL3 = false;
+
     DonSnapToGround(&d);
     return d;
 }
@@ -369,6 +388,11 @@ static void DonSetState(Donogan* d, DonoganState s)
                     || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN 
                     || s == DONOGAN_STATE_JUMPING
                     || s == DONOGAN_STATE_SWIM_IDLE || s == DONOGAN_STATE_SWIM_MOVE );
+    bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN);
+    if (!locomotion) {
+        d->runLock = false;      // auto-break on jumping/rolling/etc.
+        d->runningHeld = false;
+    }
     DonPlay(d, AnimForState(s), loop, true);
 
     if (s == DONOGAN_STATE_JUMPING) d->jumpTimer = 0.0f;
@@ -383,6 +407,9 @@ static inline void DonClampToWater(Donogan* d) {
 }
 
 static inline void DonEnterWater(Donogan* d, float moveMag) {
+    d->runLock = false;
+    d->runningHeld = false;
+    d->prevL3 = false;   // avoid an immediate retrigger on first frame back
     d->inWater = true;
     DonClampToWater(d);
     DonSetState(d, (moveMag > 0.1f) ? DONOGAN_STATE_SWIM_MOVE : DONOGAN_STATE_SWIM_IDLE);
@@ -421,8 +448,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
         bool padPresent = (pad != NULL);
         float lx = padPresent ? pad->normLX : 0.0f;
         float ly = padPresent ? pad->normLY : 0.0f;
-        bool L3 = padPresent ? pad->btnL3 : IsKeyDown(KEY_LEFT_SHIFT);
-        d->runningHeld = L3; // not used for speed in water but kept consistent
+        DonProcessRunToggle(d, L3);
         // choose swim idle vs move
         float moveMag = sqrtf(lx * lx + ly * ly);
         bool wantMove = (d->state == DONOGAN_STATE_SWIM_MOVE)
@@ -515,7 +541,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
         default: { // IDLE / WALK / RUN (grounded locomotion)
             // Update runningHeld etc. as you already do...
             // Hold-to-run refresh (must happen every frame on ground)
-            d->runningHeld = L3;
+            DonProcessRunToggle(d, L3);
             // If player pressed jump, do your existing liftoff (keep it first)
             if (crossPressed && d->onGround) {
                 d->velY = d->runningHeld ? d->runJumpSpeed : d->jumpSpeed;
