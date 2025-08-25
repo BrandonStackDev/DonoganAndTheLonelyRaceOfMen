@@ -144,6 +144,9 @@ typedef struct {
     float swimSpeed;        // meters/sec in water
     float swimTurnSpeed;    // slower turn in water
     float swimFloatOffset;  // how high to ride above water surface
+    // Swim thresholds (hysteresis)
+    float swimMoveEnter;  // need this stick magnitude to switch to SWIM_MOVE
+    float swimMoveExit;   // drop below this to fall back to SWIM_IDLE
     // Grounding thresholds
     float groundEps;          // tiny landing epsilon (meters), e.g. 0.02
     float stepDownTolerance;  // max step-down we auto-snap to (meters), e.g. 0.35
@@ -152,6 +155,8 @@ typedef struct {
     float fallGapThreshold;   // max drop we auto-stick to ground (meters)
     float stepUpMax;          // max upward “step” we accept instantly (meters)
     float slopeFollowRate;    // 0 = snap; >0 = smooth follow (units: 1/sec)
+    float stepUpRate;        // max climb speed (m/s)
+    float stepUpMaxInstant;  // small instant “pop” allowed (m)
 } Donogan;
 
 // Assets (adjust if needed)
@@ -245,8 +250,8 @@ static Donogan InitDonogan(void)
     d.animFps = 24.0f; // nominal
 
     // Movement tunables
-    d.walkSpeed = 3.2f;
-    d.runSpeed = 9.1f;
+    d.walkSpeed = 6.2f;
+    d.runSpeed = 12.8f;
     d.turnSpeed = DEG2RAD * 540.0f; // turn quickly to face motion
     d.runningHeld = false;
 
@@ -267,7 +272,7 @@ static Donogan InitDonogan(void)
 
     //water swimming
     d.inWater = false;
-    d.swimSpeed = 1.6f;
+    d.swimSpeed = 6.666f;
     d.swimTurnSpeed = DEG2RAD * 240.0f;
     d.swimFloatOffset = 0.90f;   // ~chest at surface
 
@@ -278,6 +283,12 @@ static Donogan InitDonogan(void)
     d.fallGapThreshold = 1.20f;   // your “only fall if > 1.2f”
     d.stepUpMax = 0.60f;   // how high he can “step up” instantly
     d.slopeFollowRate = 0.0f;    // 0 = snap; try 12.0f for smoothing
+
+    d.swimMoveEnter = 0.14f;  // enter when stick > 14%
+    d.swimMoveExit = 0.08f;  // stay moving until < 8%
+
+    d.stepUpRate = 6.0f;   // climbs up to 6 m/s
+    d.stepUpMaxInstant = 0.25f;  // allows a small pop for jaggy ground
 
     DonSnapToGround(&d);
     return d;
@@ -408,15 +419,15 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
         float ly = padPresent ? pad->normLY : 0.0f;
         bool L3 = padPresent ? pad->btnL3 : IsKeyDown(KEY_LEFT_SHIFT);
         d->runningHeld = L3; // not used for speed in water but kept consistent
-
         // choose swim idle vs move
         float moveMag = sqrtf(lx * lx + ly * ly);
-        DonSetState(d, (moveMag > 0.1f) ? DONOGAN_STATE_SWIM_MOVE : DONOGAN_STATE_SWIM_IDLE);
-
+        bool wantMove = (d->state == DONOGAN_STATE_SWIM_MOVE)
+            ? (moveMag > d->swimMoveExit)
+            : (moveMag > d->swimMoveEnter);
+        DonSetState(d, wantMove ? DONOGAN_STATE_SWIM_MOVE : DONOGAN_STATE_SWIM_IDLE);
+        d->onGround = false;         // prevent land logic from firing while in water
         // keep body at surface
         DonClampToWater(d);
-        // (Horizontal XZ integration still happens in main.c using swimSpeed)
-
         // then fall through to your existing frame-stepper at the end of DonUpdate()
     }
     else
@@ -522,29 +533,23 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
             float dy = targetY - d->pos.y;
 
             if (dy >= 0.0f) {
-                // slope UP (ground is above us) -> climb up to it (within a step limit)
-                if (dy <= d->stepUpMax) {
-                    if (d->slopeFollowRate <= 0.0f) d->pos.y = targetY;
-                    else d->pos.y += dy * Clampf(d->slopeFollowRate * dt, 0.0f, 1.0f);
-                    d->onGround = true;
-                }
-                else {
-                    // too tall to step this frame: remain where you are (walk against wall)
-                    d->onGround = true; // still considered on ground
-                }
+                float maxUpThisFrame = d->stepUpMaxInstant + d->stepUpRate * dt;
+                float climb = (dy < maxUpThisFrame) ? dy : maxUpThisFrame;
+                d->pos.y += climb;
+                d->onGround = true;
             }
             else {
-                // slope DOWN (ground is below us): stick if drop is small
-                float drop = -dy;  // positive
+                float drop = -dy;
                 if (drop <= d->fallGapThreshold) {
+                    // follow downward (snap or smooth if you’ve set slopeFollowRate)
                     if (d->slopeFollowRate <= 0.0f) d->pos.y = targetY;
                     else d->pos.y -= drop * Clampf(d->slopeFollowRate * dt, 0.0f, 1.0f);
                     d->onGround = true;
                 }
                 else {
-                    // Big cliff: become airborne
+                    // big cliff: go airborne
                     d->onGround = false;
-                    d->velY = 0.0f;                // start falling from rest
+                    d->velY = 0.0f;
                     DonSetState(d, DONOGAN_STATE_JUMPING);
                     break;
                 }
