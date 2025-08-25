@@ -144,6 +144,14 @@ typedef struct {
     float swimSpeed;        // meters/sec in water
     float swimTurnSpeed;    // slower turn in water
     float swimFloatOffset;  // how high to ride above water surface
+    // Grounding thresholds
+    float groundEps;          // tiny landing epsilon (meters), e.g. 0.02
+    float stepDownTolerance;  // max step-down we auto-snap to (meters), e.g. 0.35
+    float liftoffBump;        // how far to raise on jump start (>= stepDownTolerance + groundEps)
+    // Ground stickiness
+    float fallGapThreshold;   // max drop we auto-stick to ground (meters)
+    float stepUpMax;          // max upward “step” we accept instantly (meters)
+    float slopeFollowRate;    // 0 = snap; >0 = smooth follow (units: 1/sec)
 } Donogan;
 
 // Assets (adjust if needed)
@@ -262,6 +270,14 @@ static Donogan InitDonogan(void)
     d.swimSpeed = 1.6f;
     d.swimTurnSpeed = DEG2RAD * 240.0f;
     d.swimFloatOffset = 0.90f;   // ~chest at surface
+
+    d.groundEps = 0.81f;
+    d.stepDownTolerance = 0.35f;  // roughly ankle height – tweak to taste
+    d.liftoffBump = d.stepDownTolerance + (d.groundEps/4.0f) + 0.01f;
+
+    d.fallGapThreshold = 1.20f;   // your “only fall if > 1.2f”
+    d.stepUpMax = 0.60f;   // how high he can “step up” instantly
+    d.slopeFollowRate = 0.0f;    // 0 = snap; try 12.0f for smoothing
 
     DonSnapToGround(&d);
     return d;
@@ -405,7 +421,8 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
     }
     else
     {
-        d->onGround = (DonFeetWorldY(d) <= d->groundY + 0.001f);
+        float feetY = DonFeetWorldY(d);
+        d->onGround = (feetY <= d->groundY + d->groundEps);
         // --- State machine with physics ---
         switch (d->state) {
         case DONOGAN_STATE_JUMP_START:
@@ -481,33 +498,62 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
         } break;
 
         default: { // IDLE / WALK / RUN (grounded locomotion)
-            // Ground snap guard
-            if (!d->onGround) {
-                // fell off a ledge: switch to jumping loop immediately
-                DonSetState(d, DONOGAN_STATE_JUMPING);
-                break;
-            }
-
+            // Update runningHeld etc. as you already do...
+            // Hold-to-run refresh (must happen every frame on ground)
             d->runningHeld = L3;
-
+            // If player pressed jump, do your existing liftoff (keep it first)
             if (crossPressed && d->onGround) {
-                // Takeoff: set vertical speed and start the jump
                 d->velY = d->runningHeld ? d->runJumpSpeed : d->jumpSpeed;
-                d->pos.y = d->pos.y + 0.22f;
-                //d->jumpTimer = 0.0f;
-                DonSetState(d, DONOGAN_STATE_JUMP_START); // one-shot start
-                break;
-            }
-            if (circlePressed && d->onGround)
-            {
-                DonSetState(d, DONOGAN_STATE_ROLL); // one-shot start
+                d->pos.y += d->liftoffBump;   // you already have this bump
+                d->onGround = false;
+                d->jumpTimer = 0.0f;
+                DonSetState(d, DONOGAN_STATE_JUMP_START);
                 break;
             }
 
-            // Locomotion selection from stick
+            // roll:
+            if (circlePressed && d->onGround) {
+                DonSetState(d, DONOGAN_STATE_ROLL);
+                break;
+            }
+
+            // --- Ground stick logic ---
+            float targetY = d->groundY - d->firstBB.min.y * d->scale;
+            float dy = targetY - d->pos.y;
+
+            if (dy >= 0.0f) {
+                // slope UP (ground is above us) -> climb up to it (within a step limit)
+                if (dy <= d->stepUpMax) {
+                    if (d->slopeFollowRate <= 0.0f) d->pos.y = targetY;
+                    else d->pos.y += dy * Clampf(d->slopeFollowRate * dt, 0.0f, 1.0f);
+                    d->onGround = true;
+                }
+                else {
+                    // too tall to step this frame: remain where you are (walk against wall)
+                    d->onGround = true; // still considered on ground
+                }
+            }
+            else {
+                // slope DOWN (ground is below us): stick if drop is small
+                float drop = -dy;  // positive
+                if (drop <= d->fallGapThreshold) {
+                    if (d->slopeFollowRate <= 0.0f) d->pos.y = targetY;
+                    else d->pos.y -= drop * Clampf(d->slopeFollowRate * dt, 0.0f, 1.0f);
+                    d->onGround = true;
+                }
+                else {
+                    // Big cliff: become airborne
+                    d->onGround = false;
+                    d->velY = 0.0f;                // start falling from rest
+                    DonSetState(d, DONOGAN_STATE_JUMPING);
+                    break;
+                }
+            }
+
+            // Decide locomotion from stick (your existing code)
             float moveMag = sqrtf(lx * lx + ly * ly);
-            if (moveMag > 0.1f) DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
-            else                DonSetState(d, DONOGAN_STATE_IDLE);
+            DonSetState(d, (moveMag > 0.1f) ? (d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK)
+                : DONOGAN_STATE_IDLE);
         } break;
         }
     }
