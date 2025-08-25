@@ -12,6 +12,8 @@
 #include "control.h"
 #include "jc.h" //homes (Jimmy Carter)
 #include "fish.h"
+#include "donogan.h"
+#include "util.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -61,56 +63,6 @@
 #endif
 
 /////end windows section
-
-#define GRAVITY 9.86f //would be nice if this actually works well
-
-#define MAX_CHUNK_DIM 16
-#define CHUNK_COUNT 16
-#define CHUNK_SIZE 64
-#define CHUNK_WORLD_SIZE 1024.0f
-#define MAX_WORLD_SIZE (CHUNK_COUNT * CHUNK_WORLD_SIZE)
-#define WORLD_WIDTH  MAX_WORLD_SIZE
-#define WORLD_HEIGHT MAX_WORLD_SIZE
-#define GAME_MAP_SIZE 128
-#define MAP_SIZE (CHUNK_COUNT * CHUNK_SIZE)
-#define MAX_CHUNKS_TO_QUEUE (CHUNK_COUNT * CHUNK_COUNT)
-#define MAP_SCALE 16
-#define MAP_VERTICAL_OFFSET 0 //(MAP_SCALE * -64)
-#define PLAYER_HEIGHT 1.7f
-#define FULL_TREE_DIST 85.42f //112.2f
-
-//chunk tile system
-#define TILE_GRID_SIZE 8 //sync with main.c
-#define TILE_WORLD_SIZE (CHUNK_WORLD_SIZE / TILE_GRID_SIZE)
-#define WORLD_ORIGIN_OFFSET (CHUNK_COUNT / 2 * CHUNK_WORLD_SIZE)
-#define MAX_TILES ((CHUNK_WORLD_SIZE * CHUNK_WORLD_SIZE / TILE_GRID_SIZE / TILE_GRID_SIZE))
-#define ACTIVE_TILE_GRID_OFFSET 2 //controls the size of the active tile grid, set to 0=1x1, 1=3x3, 2=5x5 etc... (0 may not work?)
-#define TILE_GPU_UPLOAD_GRID_DIST 4
-
-//water
-#define MAX_WATER_PATCHES_PER_CHUNK 64
-#define WATER_Y_OFFSET 20.02f //lets get wet!
-#define PLAYER_FLOAT_Y_POSITION 298.75f 
-#define WHALE_SURFACE 300.0f 
-
-
-//movement
-#define GOKU_DASH_DIST 512.333f
-#define GOKU_DASH_DIST_SHORT 128.2711f
-#define MOVE_SPEED 16.16f
-
-//screen
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 800
-
-//raylib gpu system stuff
-#define MAX_MESH_VERTEX_BUFFERS 7
-
-//display/render settings
-#define USE_TREE_CUBES false
-#define USE_TILES_ONLY false
-#define USE_GPU_INSTANCING true //required, never set to false
-
 
 //enums
 typedef enum {
@@ -1351,6 +1303,16 @@ int main(void) {
     LightningBug *bugs;
     Star *stars;
     bool vehicleMode = false;
+    // --- Donny mode state ---
+    bool donnyMode = false;
+    Vector3 donMove = (Vector3){ 0 };
+    ControllerData gpad = { 0 };
+    bool havePad = false;
+    float moveMag = 0.0f;
+    // --- Third-person orbit camera state (around don.pos) ---
+    float yaw = 0.0f, pitch = 0.25f, radius = 8.0f;
+
+
     int pad_axis = 0;
     bool mouse = false;
     int gamepad = 0; // which gamepad to display
@@ -1371,6 +1333,8 @@ int main(void) {
     InitAudioDevice();
     //DisableCursor();
     SetTargetFPS(60);
+    //load the homes models/scenese and stuff like that
+    InitHomes();
     ////whales---------------------------------------------------
     int numWhales = 6; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
@@ -1501,7 +1465,10 @@ int main(void) {
     Rectangle mapViewport = { SCREEN_WIDTH - GAME_MAP_SIZE - 10, 10, 128, 128 };  // Map position + size
     mapTexture = LoadTexture("map/treasure_map.png"); //mapTexture = LoadTexture("map/elevation_color_map.png");
     
-    //controller and truck
+    //controller and truck and donny
+    // //donny boy
+    Donogan don = InitDonogan();
+    don.pos = Scenes[SCENE_HOME_CABIN_02].pos;
     // Load  //todo: move this and most of the truck stuff into truck.h
     Model truck = LoadModel("models/truck.obj");
     truck.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
@@ -1532,8 +1499,6 @@ int main(void) {
         {  1.6f, 0.0f, -2.64f }, // Rear-right
         { -1.6f, 0.0f, -2.64f }  // Rear-left
     };
-    //load the homes models/scenese and stuff like that
-    InitHomes();
     //more lb stuff
     Mesh sphereMesh = GenMeshHemiSphere(0.108f,8, 8);
     Material sphereMaterial = LoadMaterialDefault();
@@ -1654,90 +1619,121 @@ int main(void) {
     skyCam.fovy = 60.0f;
     skyCam.projection = CAMERA_PERSPECTIVE;
 
-    float pitch = 0.0f;
-    float yaw = 0.0f;  // Face toward -Z (the terrain is likely laid out in +X, +Z space)
-
     while (!WindowShouldClose()) {
         //controller and truck stuff
-        // Read from interrupt IN endpoint (0x84)
-        int actual_length = 0;
-        ControllerData gpad = {0};
-        ReadControllerWindows(0, &gpad);
-        if(truckAirState==AIRBORNE) //gravity
+        havePad = ReadControllerWindows(0, &gpad);
+        if (!vehicleMode && donnyMode)
         {
-            truckPitch+=0.0001*GetFrameTime();//dip it slightly down
-            if(truckPitch>PI/7.0f){truckPitch=PI/7.0f;}
-            truckPosition.y -= GetFrameTime() * GRAVITY * gravityCollected;
-            gravityCollected+= GetFrameTime() * GRAVITY;
-            truckForward.y = Lerp(truckForward.y, 0, GetFrameTime() * GRAVITY * gravityCollected);
-            //update tricks - dont shut them off here, just upadte them
-            if(doing360){truckTrickYaw+=GetFrameTime()*16.0f;}
-            if(doingFlip){truckTrickPitch+=GetFrameTime()*7.6f;}
-            if(doingRoll){truckTrickRoll+=GetFrameTime()*13.666f;}
-            if(doingBonkers)
+            float dt = GetFrameTime();
+            // Right stick controls camera orbit (mouse RMB fallback also works)
+            float rsx = havePad ? gpad.normRX : 0.0f;
+            float rsy = havePad ? gpad.normRY : 0.0f;
+            const float camStickSens = 1.6f; // tweak as desired
+
+            yaw += rsx * camStickSens * dt;
+            float invert = contInvertY ? 1.0f : -1.0f;
+            pitch += rsy * invert * camStickSens * dt;
+            pitch = Clampf(pitch, -1.2f, 1.2f);
+
+            // Mouse RMB can also orbit
+            if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+                Vector2 dm = GetMouseDelta();
+                yaw += dm.x * 0.005f;
+                pitch += dm.y * 0.005f;
+                pitch = Clampf(pitch, -1.2f, 1.2f);
+            }
+
+            float wheel = GetMouseWheelMove();
+            radius = Clampf(radius - wheel * 0.75f, 2.0f, 30.0f);
+
+            // Update camera position from yaw/pitch/radius
+            camera.position.x = camera.target.x + radius * cosf(pitch) * sinf(yaw);
+            camera.position.y = camera.target.y + radius * sinf(pitch);
+            camera.position.z = camera.target.z + radius * cosf(pitch) * cosf(yaw);
+
+            // Keep camera target around Donogan’s torso height so jumps stay framed
+            camera.target.x = don.pos.x;
+            camera.target.y = don.pos.y + 1.0f;
+            camera.target.z = don.pos.z;
+        }
+        else if (vehicleMode)
+        {
+            if (truckAirState == AIRBORNE) //gravity
             {
-                for (int i=0; i <4; i++)
+                truckPitch += 0.0001 * GetFrameTime();//dip it slightly down
+                if (truckPitch > PI / 7.0f) { truckPitch = PI / 7.0f; }
+                truckPosition.y -= GetFrameTime() * GRAVITY * gravityCollected;
+                gravityCollected += GetFrameTime() * GRAVITY;
+                truckForward.y = Lerp(truckForward.y, 0, GetFrameTime() * GRAVITY * gravityCollected);
+                //update tricks - dont shut them off here, just upadte them
+                if (doing360) { truckTrickYaw += GetFrameTime() * 16.0f; }
+                if (doingFlip) { truckTrickPitch += GetFrameTime() * 7.6f; }
+                if (doingRoll) { truckTrickRoll += GetFrameTime() * 13.666f; }
+                if (doingBonkers)
                 {
-                    tireOffsets[i] = LerpVector3(tireOffsets[i],bonkersPeeked?bonkersStartOffsets[i]:bonkersPeekOffsets[i],GetFrameTime()*8.0f);
+                    for (int i = 0; i < 4; i++)
+                    {
+                        tireOffsets[i] = LerpVector3(tireOffsets[i], bonkersPeeked ? bonkersStartOffsets[i] : bonkersPeekOffsets[i], GetFrameTime() * 8.0f);
+                    }
                 }
             }
-        }
-        else if(truckAirState==LANDING)
-        {
-            truckAirState = GROUND;
-            truckForward.y = 0.0f;
-            gravityCollected = 0.0f;//temp, dont know what goes here, or if this is valid at all
-            bounceCollector+=fabs(GetFrameTime() * (maxSpeed - truckSpeed + 0.014f)); //maxSpeed - truckSpeed (0->1.5, 1->0.5, 1.5->0 ? +delta)
-            //bounceCollector+=fabs(GetFrameTime() * truckSpeed); //or maybe we want abs value of truck speed ... ?
-            if(bounceCollector > 0.18f)
+            else if (truckAirState == LANDING)
             {
-                truckAirState=GROUND;
-                bounceCollector = 0;
+                truckAirState = GROUND;
+                truckForward.y = 0.0f;
+                gravityCollected = 0.0f;//temp, dont know what goes here, or if this is valid at all
+                bounceCollector += fabs(GetFrameTime() * (maxSpeed - truckSpeed + 0.014f)); //maxSpeed - truckSpeed (0->1.5, 1->0.5, 1.5->0 ? +delta)
+                //bounceCollector+=fabs(GetFrameTime() * truckSpeed); //or maybe we want abs value of truck speed ... ?
+                if (bounceCollector > 0.18f)
+                {
+                    truckAirState = GROUND;
+                    bounceCollector = 0;
+                }
             }
-        }
-        else //GROUND
-        {
-            truckForward.y = 0.0f;
-            gravityCollected = 0.0f;
-        }
-        //shut off tricks
-        if(doing360 && (truckAirState!=AIRBORNE || truckTrickYaw>=2.0f*PI)) //if weve gone more than two pi, 360!
-        {
-            doing360 = false;
-            truckTrickYaw=0.0f;
-            if(truckAirState==AIRBORNE){points+=100;}//points 
-        }
-        if(doingFlip && (truckAirState!=AIRBORNE || truckTrickPitch>=2.0f*PI)) //if weve gone more than two pi, Back Flip!
-        {
-            doingFlip = false;
-            truckTrickPitch=0.0f;
-            if(truckAirState==AIRBORNE){points+=400;}//points 
-        }
-        if(doingRoll && (truckAirState!=AIRBORNE || truckTrickRoll>=2.0f*PI)) //if weve gone more than two pi, Kick Flip!
-        {
-            doingRoll = false;
-            truckTrickRoll=0.0f;
-            if(truckAirState==AIRBORNE){points+=150;}//points 
-        }
-        if(doingBonkers) //this one is alittle different because of how we identify the completion
-        {
-            bool phase = true;
-            for (int i=0; i <4; i++)
+            else //GROUND
             {
-                phase = fabsf(tireOffsets[i].x - (bonkersPeeked?bonkersStartOffsets[i]:bonkersPeekOffsets[i]).x)<0.1f;
-                phase = fabsf(tireOffsets[i].y - (bonkersPeeked?bonkersStartOffsets[i]:bonkersPeekOffsets[i]).y)<0.1f;
-                phase = fabsf(tireOffsets[i].z - (bonkersPeeked?bonkersStartOffsets[i]:bonkersPeekOffsets[i]).z)<0.1f;
+                truckForward.y = 0.0f;
+                gravityCollected = 0.0f;
             }
-            if(phase && !bonkersPeeked){phase=false; bonkersPeeked = true;}//1st phase complete
-            if(truckAirState!=AIRBORNE || (bonkersPeeked && phase)) //if we hit the ground or completed the trick
+            //shut off tricks
+            if (doing360 && (truckAirState != AIRBORNE || truckTrickYaw >= 2.0f * PI)) //if weve gone more than two pi, 360!
             {
-                doingBonkers = false;
-                bonkersPeeked = false;
-                if(truckAirState==AIRBORNE){points+=650;}//points 
+                doing360 = false;
+                truckTrickYaw = 0.0f;
+                if (truckAirState == AIRBORNE) { points += 100; }//points 
             }
+            if (doingFlip && (truckAirState != AIRBORNE || truckTrickPitch >= 2.0f * PI)) //if weve gone more than two pi, Back Flip!
+            {
+                doingFlip = false;
+                truckTrickPitch = 0.0f;
+                if (truckAirState == AIRBORNE) { points += 400; }//points 
+            }
+            if (doingRoll && (truckAirState != AIRBORNE || truckTrickRoll >= 2.0f * PI)) //if weve gone more than two pi, Kick Flip!
+            {
+                doingRoll = false;
+                truckTrickRoll = 0.0f;
+                if (truckAirState == AIRBORNE) { points += 150; }//points 
+            }
+            if (doingBonkers) //this one is alittle different because of how we identify the completion
+            {
+                bool phase = true;
+                for (int i = 0; i < 4; i++)
+                {
+                    phase = fabsf(tireOffsets[i].x - (bonkersPeeked ? bonkersStartOffsets[i] : bonkersPeekOffsets[i]).x) < 0.1f;
+                    phase = fabsf(tireOffsets[i].y - (bonkersPeeked ? bonkersStartOffsets[i] : bonkersPeekOffsets[i]).y) < 0.1f;
+                    phase = fabsf(tireOffsets[i].z - (bonkersPeeked ? bonkersStartOffsets[i] : bonkersPeekOffsets[i]).z) < 0.1f;
+                }
+                if (phase && !bonkersPeeked) { phase = false; bonkersPeeked = true; }//1st phase complete
+                if (truckAirState != AIRBORNE || (bonkersPeeked && phase)) //if we hit the ground or completed the trick
+                {
+                    doingBonkers = false;
+                    bonkersPeeked = false;
+                    if (truckAirState == AIRBORNE) { points += 650; }//points 
+                }
+            }
+            //truckPitch = Lerp(truckPitch,0,0.01f); //slowly go to 0
+            //truckRoll = Lerp(truckRoll,0,0.01f); //slowly go to zero
         }
-        //truckPitch = Lerp(truckPitch,0,0.01f); //slowly go to 0
-        //truckRoll = Lerp(truckRoll,0,0.01f); //slowly go to zero
         //old important stuff
         float time = GetTime();
         SetShaderValue(waterShader, timeLoc, &time, SHADER_UNIFORM_FLOAT);
@@ -1908,7 +1904,7 @@ int main(void) {
         if (IsKeyDown(KEY_MINUS)) mapZoom -= 0.01f;  // Zoom out (- key)
         mapZoom = Clamp(mapZoom, 0.5f, 4.0f);
         //end map input
-        if (onLoad && IsKeyPressed(KEY_V)) {vehicleMode = !vehicleMode; EnableCursor();}
+        if (onLoad && IsKeyPressed(KEY_V)) { vehicleMode = !vehicleMode; donnyMode = false; EnableCursor(); }
         if (IsKeyPressed(KEY_B)) {displayBoxes = !displayBoxes;}
         if (IsKeyPressed(KEY_L)) {displayLod = !displayLod;}
         if (IsKeyPressed(KEY_F12)) {TakeScreenshotWithTimestamp();}
@@ -1926,10 +1922,11 @@ int main(void) {
         if (IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
         if (IsKeyDown(KEY_Z)) { dayTime=!dayTime;}
         if (IsKeyDown(KEY_LEFT_SHIFT)) move.y -= (1.0f * MAP_SCALE);
+        if (IsKeyPressed(KEY_LEFT_CONTROL)) { donnyMode = !donnyMode; vehicleMode = false; }
         if (IsKeyDown(KEY_SPACE)) move.y += (1.0f * MAP_SCALE);
         if (IsKeyDown(KEY_ENTER)) {chunks[chosenX][chosenY].curTreeIdx=0;closestCX=chosenX;closestCY=chosenY;camera.position.x=chunks[closestCX][closestCY].center.x;camera.position.z=chunks[closestCX][closestCY].center.z;}
         //handle controller input
-        if (true)
+        if (vehicleMode)
         {
             if(gpad.btnR1 > 0 && truckAirState==AIRBORNE)
             {
@@ -2027,6 +2024,23 @@ int main(void) {
             // Clamp pitch so the camera doesn't go under or flip
             if (relativePitch < 5.0f) relativePitch = 5.0f;
             if (relativePitch > 85.0f) relativePitch = 85.0f;
+        }
+        else if (donnyMode)
+        {
+            // -------- Character movement (camera-relative) --------
+            float lx = havePad ? gpad.normLX : 0.0f;
+            float ly = havePad ? gpad.normLY : 0.0f;
+            moveMag = sqrtf(lx * lx + ly * ly);
+
+            // Camera forward/right on the XZ plane
+            Vector3 camFwd = { sinf(yaw), 0.0f, cosf(yaw) };
+            Vector3 camRight = { cosf(yaw), 0.0f, -sinf(yaw) };
+
+            // Left stick up = forward (-ly), right = +lx
+            donMove = Vector3Add(Vector3Scale(camRight, lx), Vector3Scale(camFwd, ly));
+            if (moveMag > 0.001f) { donMove = Vector3Normalize(donMove); }
+            don.velXZ = (Vector3){ donMove.x, 0, donMove.z };
+            //DonUpdate(&don, havePad ? &gpad : NULL, dt);
         }
         //adjust LOD for applied movement----------------------------------------------------------------------
         //truck position
@@ -2157,7 +2171,7 @@ int main(void) {
             }
         }
         //collision section----------------------------------------------------------------
-        if(!vehicleMode)
+        if(!vehicleMode && !donnyMode)
         {
             camera.target = Vector3Add(camera.position, forward);
             if(onLoad && camera.position.y > PLAYER_FLOAT_Y_POSITION)//he floats underwater
@@ -2173,6 +2187,38 @@ int main(void) {
                     if(groundY < -9000.0f){groundY=camera.position.y - PLAYER_HEIGHT;} // if we error, dont change y
                     camera.position.y = groundY + PLAYER_HEIGHT;  // e.g. +1.8f for standing
                 }
+            }
+        }
+        else if (donnyMode && !vehicleMode)
+        {
+            //are we in water?
+            bool inWater = don.pos.y < PLAYER_FLOAT_Y_POSITION;
+            if (onLoad)//he floats underwater
+            {
+                if (closestCX < 0 || closestCY < 0 || closestCX >= CHUNK_COUNT || closestCY >= CHUNK_COUNT) {TraceLog(LOG_INFO, "Outside of world bounds: %d,%d", closestCX, closestCY);}
+                else
+                {
+                    float groundY = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], don.pos.x, don.pos.z);
+                    if (groundY < -9000.0f) { groundY = don.pos.y; } // if we error, dont change y
+                    if (!inWater)
+                    {
+                        inWater = false;
+                        don.groundY = groundY;
+                    }
+                    else if ((inWater && don.pos.y < groundY))
+                    {
+                        don.groundY = groundY;
+                    }
+                }
+            }
+            //water
+            // Edge transitions (use current stick magnitude & run-held for sensible initial state)
+            if (!don.inWater && inWater) {
+                DonEnterWater(&don, moveMag);
+            }
+            else if (don.inWater && !inWater) {
+                bool runHeld = gpad.btnL3;
+                DonExitWater(&don, moveMag, runHeld);
             }
         }
         else //time to rock and roll!
@@ -2331,17 +2377,44 @@ int main(void) {
             camera.target = Vector3Lerp(camera.target, desiredTarget, followSpeed);
         }
         //end collision section -----------------------------------------------------------------------------------------------------------------
+
+        //updates before drawing--------------------------------------------------------
         UpdateCamera(&camera, vehicleMode?CAMERA_THIRD_PERSON:CAMERA_FIRST_PERSON);
         UpdateCamera(&skyCam, CAMERA_FIRST_PERSON);
+        // -------- State + animation update from controller --------
+        if (!vehicleMode && donnyMode)
+        {
+            // Pick speed from Donogan state (will be set by DonUpdate), account for swimming
+            float speed = don.inWater ? don.swimSpeed :
+                (don.state == DONOGAN_STATE_RUN) ? don.runSpeed :
+                (don.state == DONOGAN_STATE_WALK) ? don.walkSpeed : 0.0f;
 
+
+            // Integrate position
+            don.pos = Vector3Add(don.pos, Vector3Scale(donMove, speed * dt));
+
+            // Face movement direction when moving (turn smoothly)
+            if (moveMag > 0.1f) {
+                float targetYaw = atan2f(donMove.x, donMove.z);
+                float dy = targetYaw - don.yawY;
+                // wrap shortest path
+                while (dy > PI) dy -= 2.0f * PI;
+                while (dy < -PI) dy += 2.0f * PI;
+                float maxTurn = don.turnSpeed * dt;
+                if (dy > maxTurn) dy = maxTurn;
+                else if (dy < -maxTurn) dy = -maxTurn;
+                don.yawY += dy;
+            }
+
+            // Apply facing rotation into model.transform (Y) on top of baked X fix
+            Matrix rotY = MatrixRotateY(don.yawY);
+            don.model.transform = MatrixMultiply(MatrixRotateX(DEG2RAD * don.modelYawX), rotY);
+        }
+        DonUpdate(&don, havePad ? &gpad : NULL, dt);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
-            //update stars?              
-        // for (int i = 0; i < MAX_LIGHTS; i++)
-        // {
-        //     UpdateLightValues(starShader, starLights[i]);//update
-        // }
+        //-------------------------------------------------------------------------------
 
         BeginDrawing();
         ClearBackground(backGroundColor);
@@ -2410,6 +2483,12 @@ int main(void) {
             rotationTruck.m12 = truckOrigin.x;
             rotationTruck.m13 = Lerp(truckOrigin.y + truckYOffsetDraw, truckOrigin.y + truckYOffsetDraw + truckPitchYOffset, 0.01f); //!!!!SPACE TRUCK!!!!
             rotationTruck.m14 = truckOrigin.z;
+            //donogan
+            if (onLoad)
+            {
+                // Draw Donogan
+                DrawModel(don.model, don.pos, don.scale, WHITE); // uses model.transform for rotation
+            }
             //homes
             if (onLoad)
             {
