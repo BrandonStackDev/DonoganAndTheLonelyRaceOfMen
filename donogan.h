@@ -388,9 +388,11 @@ static void DonSetState(Donogan* d, DonoganState s)
                     || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN 
                     || s == DONOGAN_STATE_JUMPING
                     || s == DONOGAN_STATE_SWIM_IDLE || s == DONOGAN_STATE_SWIM_MOVE );
-    bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN);
+    bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN
+                        || s == DONOGAN_STATE_JUMPING || s == DONOGAN_STATE_JUMP_START || s == DONOGAN_STATE_JUMP_LAND
+                        || s == DONOGAN_STATE_ROLL || s == DONOGAN_STATE_AIR_ROLL);
     if (!locomotion) {
-        d->runLock = false;      // auto-break on jumping/rolling/etc.
+        d->runLock = false;      // auto-break on swimming
         d->runningHeld = false;
     }
     DonPlay(d, AnimForState(s), loop, true);

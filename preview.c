@@ -136,7 +136,7 @@ typedef struct {
     float timer; 
     float alpha; 
 } Star;
-#define STAR_COUNT 512 //oh yeah!
+#define STAR_COUNT 512 //oh yeah!!
 Color starColors[4] = {
     {255, 200, 100, 255}, // warm
     {100, 200, 255, 255}, // cool
