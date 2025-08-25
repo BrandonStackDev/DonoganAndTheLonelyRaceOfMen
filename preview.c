@@ -2912,8 +2912,8 @@ int main(void) {
             };
             DrawCircleV(marker, 3, RED);
             // Facing triangle (yellow "nose" pointing the player's yaw)
-            float local_yaw = vehicleMode ? truckAngle : -(yaw + (PI / 2.0f)); //
-            float local_x_sign = vehicleMode ? 1.0f : -1.0f;
+            float local_yaw = donnyMode ? +(yaw + (PI / 2.0f)) : vehicleMode ? truckAngle : -(yaw + (PI / 2.0f)); //
+            float local_x_sign = vehicleMode|| donnyMode ? 1.0f : -1.0f;
             Vector2 dir = (Vector2){ (local_x_sign)*sinf(local_yaw), (local_x_sign)*cosf(local_yaw) }; // yaw in radians
             // Tiny arrow just outside the 3px circle
             float tipLen = 10.0f;   // pixels from center to tip

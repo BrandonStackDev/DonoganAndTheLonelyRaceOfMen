@@ -308,7 +308,7 @@ static Donogan InitDonogan(void)
     d.stepUpRate = 6.0f;   // climbs up to 6 m/s
     d.stepUpMaxInstant = 0.25f;  // allows a small pop for jaggy ground
 
-    d.swimEnterToExitLock = CreateTimer(0.12f);//very short
+    d.swimEnterToExitLock = CreateTimer(0.42f);//very short
 
     d.runLock = false;
     d.prevL3 = false;
