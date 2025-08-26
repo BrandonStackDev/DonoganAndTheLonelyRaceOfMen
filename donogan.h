@@ -598,8 +598,8 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             DonSetState(d, wantMove ? DONOGAN_STATE_SWIM_MOVE : DONOGAN_STATE_SWIM_IDLE);
             d->onGround = false;         // prevent land logic from firing while in water
             // keep body at surface
-            if (d->state == DONOGAN_STATE_SWIM_IDLE && Vector3LengthSqr(d->swimDiveVel) < 1e-6f) {
-                DonClampToWater(d);
+            if (d->state == DONOGAN_STATE_SWIM_IDLE && Vector3LengthSqr(d->swimDiveVel) < 1e-6f && d->pos.y < PLAYER_FLOAT_Y_POSITION) {
+                d->pos.y += dt;
             }
             // then fall through to your existing frame-stepper at the end of DonUpdate()
         }
