@@ -1316,7 +1316,6 @@ int main(void) {
     //day-night timer
     Timer nightTimer = CreateTimer(128); //128 seconds, just above 2 minutes
 
-
     int pad_axis = 0;
     bool mouse = false;
     int gamepad = 0; // which gamepad to display
