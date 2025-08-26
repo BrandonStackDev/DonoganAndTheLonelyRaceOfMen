@@ -373,7 +373,7 @@ static Donogan InitDonogan(void)
 
     //water swimming
     d.inWater = false;
-    d.swimSpeed = 9.666f;
+    d.swimSpeed = 19.666f;
     d.swimTurnSpeed = DEG2RAD * 240.0f;
     //d.swimFloatOffset = 0.90f;   // ~chest at surface
 
@@ -554,35 +554,27 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
         fwd = Vector3Normalize(fwd);
         if (crossPressed) {
             d->swimDiveVel = Vector3Scale(fwd, d->swimDiveBurst);
-            DonSpawnBubbles(d, 18 + GetRandomValue(0, 6), 1.0f); // whoosh!
+            DonSpawnBubbles(d, 18 + GetRandomValue(0, 6), 1.0f);
         }
-        else if (wantMove) {
-            Vector3 planar = (Vector3){ fwd.x, 0.0f, fwd.z };
-            if (Vector3Length(planar) > 0.001f) {
-                planar = Vector3Normalize(planar);
-                d->pos = Vector3Add(d->pos, Vector3Scale(planar, d->swimSpeed * dt));
-            }
-        }
-
-        // 4) Integrate dive velocity (drag) + standard swim move
-        //   - Horizontal (XZ): from sticks if in SWIM_MOVE
-        //   - Vertical: from swimDiveVel only (we don’t “bob” up)
-        float dtLoc = dt;
-        if (d->state == DONOGAN_STATE_SWIM_MOVE) {
-            // camera-relative planar move (you already compute lx/ly elsewhere)
+        // do this in a separate `if` (not `else if`) so burst + swim can happen same frame
+        if (wantMove) {
+            // camera-yaw basis (ignores pitch so speed doesn't collapse when looking up/down)
             Vector3 camFwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
             Vector3 camRight = (Vector3){ cosf(d->yawY), 0.0f,-sinf(d->yawY) };
-            Vector3 moveXZ = Vector3Add(Vector3Scale(camRight, lx), Vector3Scale(camFwd, ly));
-            if (Vector3Length(moveXZ) > 0.001f) {
-                moveXZ = Vector3Normalize(moveXZ);
-                d->pos = Vector3Add(d->pos, Vector3Scale(moveXZ, d->swimSpeed * dtLoc));
+
+            // stick → world planar direction
+            Vector3 moveXZ = Vector3Add(Vector3Scale(camRight, lx), Vector3Scale(camFwd, -ly));
+            float m = Vector3Length(moveXZ);
+            if (m > 0.001f) {
+                moveXZ = Vector3Scale(moveXZ, 1.0f / m);
+                d->pos = Vector3Add(d->pos, Vector3Scale(moveXZ, d->swimSpeed * dt)); // or dtLoc
             }
         }
 
-        // Apply dive velocity
-        d->pos = Vector3Add(d->pos, Vector3Scale(d->swimDiveVel, dtLoc));
+        //4) Apply dive velocity
+        d->pos = Vector3Add(d->pos, Vector3Scale(d->swimDiveVel, dt));
         // drag
-        float drag = fmaxf(0.0f, 1.0f - d->swimDiveDrag * dtLoc);
+        float drag = fmaxf(0.0f, 1.0f - d->swimDiveDrag * dt);
         d->swimDiveVel = Vector3Scale(d->swimDiveVel, drag);
 
         // 5) Clamp vertical between seabed (with clearance) and surface (never pop out)
