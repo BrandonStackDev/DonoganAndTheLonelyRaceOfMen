@@ -145,6 +145,7 @@ Color starColors[4] = {
 };
 //////////////////////IMPORTANT GLOBAL VARIABLES///////////////////////////////
 //very very important
+float scaleNightTransition = 0.0989f;
 float gravityCollected = 0.0f;
 int chosenX = 7;
 int chosenY = 7;
@@ -1312,6 +1313,8 @@ int main(void) {
     float moveMag = 0.0f;
     // --- Third-person orbit camera state (around don.pos) ---
     float yaw = 0.0f, pitch = 0.25f, radius = 8.0f;
+    //day-night timer
+    Timer nightTimer = CreateTimer(128); //128 seconds, just above 2 minutes
 
 
     int pad_axis = 0;
@@ -1532,6 +1535,7 @@ int main(void) {
     SetShaderValueV(starShader, idAttribLoc, instanceIDs, SHADER_ATTRIB_FLOAT, STAR_COUNT);
 
     //END -- lighting bug shader---------AND STARS!------------------------------------------------------------------------------
+    skyboxTint = skyboxDay;
     //skybox stuff
     skyboxPanelMesh = GenMeshCube(1.0f, 1.0f, 0.01f); // very flat panel
     skyboxPanelFrontModel = LoadModelFromMesh(skyboxPanelMesh);
@@ -1626,6 +1630,16 @@ int main(void) {
     skyCam.projection = CAMERA_PERSPECTIVE;
 
     while (!WindowShouldClose()) {
+        //auto flip day and night
+        if (onLoad)
+        {
+            if (!nightTimer.running) { StartTimer(&nightTimer); }
+            if (HasTimerElapsed(&nightTimer))
+            {
+                dayTime = !dayTime;
+                ResetTimer(&nightTimer);
+            }
+        }
         //controller and truck stuff
         havePad = ReadControllerWindows(0, &gpad);
         if (!vehicleMode && donnyMode)
@@ -2135,32 +2149,32 @@ int main(void) {
         //----------------------------------------------------------------------------------------------------
         //fade to black, end scene...
         if (dayTime) {
-            skyboxTint = LerpColor(skyboxTint, skyboxDay, 0.02f);
-            backGroundColor = LerpColor(backGroundColor, backgroundDay, 0.004f);
-            LightPosDraw = LerpVector3(LightPosDraw, LightPosTargetDay, 0.04f);
-            LightTargetDraw = LerpVector3(LightTargetDraw, LightTargetTargetDay, 0.04f);
-            lightColorDraw = LerpColor(lightColorDraw, lightColorTargetDay, 0.05f);
+            skyboxTint = LerpColor(skyboxTint, skyboxDay, 0.02f); //dont scale this one
+            backGroundColor = LerpColor(backGroundColor, backgroundDay, 0.004f * scaleNightTransition);
+            LightPosDraw = LerpVector3(LightPosDraw, LightPosTargetDay, 0.04f * scaleNightTransition);
+            LightTargetDraw = LerpVector3(LightTargetDraw, LightTargetTargetDay, 0.04f * scaleNightTransition);
+            lightColorDraw = LerpColor(lightColorDraw, lightColorTargetDay, 0.05f * scaleNightTransition);
             instanceLight.position = LightPosDraw;
             instanceLight.target = LightTargetDraw;
             instanceLight.color = lightColorDraw;
             UpdateLightValues(instancingLightShader,instanceLight);
-            lightDir = LerpVector3(lightDir,(Vector3){ -10.2f, -100.0f, -10.3f },0.02f);
+            lightDir = LerpVector3(lightDir,(Vector3){ -10.2f, -100.0f, -10.3f },0.02f * scaleNightTransition);
             SetShaderValue(heightShaderLight, lightDirLoc, &lightDir, SHADER_UNIFORM_VEC3);
-            lightTileColor = LerpColor(lightTileColor, (Color){160,180,200,254}, 0.02f);
+            lightTileColor = LerpColor(lightTileColor, (Color){160,180,200,254}, 0.02f * scaleNightTransition);
         }
         else { //night time
-            skyboxTint = LerpColor(skyboxTint, skyboxNight, 0.02f);
-            backGroundColor = LerpColor(backGroundColor, backgroundNight, 0.002f);
-            LightPosDraw = LerpVector3(LightPosDraw, LightPosTargetNight, 0.04f);
-            LightTargetDraw = LerpVector3(LightTargetDraw, LightTargetTargetNight, 0.04f);
-            lightColorDraw = LerpColor(lightColorDraw, lightColorTargetNight, 0.05f);
+            skyboxTint = LerpColor(skyboxTint, skyboxNight, 0.02f); //dont scale this one
+            backGroundColor = LerpColor(backGroundColor, backgroundNight, 0.002f * scaleNightTransition);
+            LightPosDraw = LerpVector3(LightPosDraw, LightPosTargetNight, 0.04f * scaleNightTransition);
+            LightTargetDraw = LerpVector3(LightTargetDraw, LightTargetTargetNight, 0.04f * scaleNightTransition);
+            lightColorDraw = LerpColor(lightColorDraw, lightColorTargetNight, 0.05f * scaleNightTransition);
             instanceLight.position = LightPosDraw;
             instanceLight.target = LightTargetDraw;
             instanceLight.color = lightColorDraw;
             UpdateLightValues(instancingLightShader,instanceLight);
-            lightDir = LerpVector3(lightDir,(Vector3){ -5.2f, -70.0f, 15.3f },0.02f);
+            lightDir = LerpVector3(lightDir,(Vector3){ -5.2f, -70.0f, 15.3f },0.02f * scaleNightTransition);
             SetShaderValue(heightShaderLight, lightDirLoc, &lightDir, SHADER_UNIFORM_VEC3);
-            lightTileColor = LerpColor(lightTileColor, (Color){50,50,112,180}, 0.005f);
+            lightTileColor = LerpColor(lightTileColor, (Color){50,50,112,180}, 0.005f * scaleNightTransition);
             if(onLoad && !bugGenHappened)
             {
                 bugs = GenerateLightningBugs(camera.position, BUG_COUNT, 256.0256f);
