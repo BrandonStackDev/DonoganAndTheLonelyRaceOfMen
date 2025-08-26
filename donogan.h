@@ -667,7 +667,17 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 // Exponential-ish damping
                 float drag = fmaxf(0.0f, 1.0f - d->rollDrag * dt);
                 d->rollVel = Vector3Scale(d->rollVel, drag);
+                //stick to ground
+                // // --- Ground stick logic ---
+                float targetY = d->groundY - d->firstBB.min.y * d->scale;
+                float dy = targetY - d->pos.y;
 
+                if (dy >= 0.0f) {
+                    //float maxUpThisFrame = d->stepUpMaxInstant + d->stepUpRate * dt;
+                    //float climb = (dy < maxUpThisFrame) ? dy : maxUpThisFrame;
+                    d->pos.y += dy;// climb;
+                    d->onGround = true;
+                }
                 // Stay in ROLL until the non-looping animation finishes
                 if (d->animFinished) {
                     // Return to locomotion based on stick
