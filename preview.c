@@ -1471,6 +1471,10 @@ int main(void) {
     Donogan don = InitDonogan();
     don.pos = Scenes[SCENE_HOME_CABIN_02].pos;
     don.pos.y = 533.333f;
+    //tree of Life
+    Model tol = LoadModel("models/tree_of_life.obj");
+    tol.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/tree_of_life.png");
+    Vector3 tolPos = {-334.0f, 564.0f, -497.35f};
     // Load  //todo: move this and most of the truck stuff into truck.h
     Model truck = LoadModel("models/truck.obj");
     truck.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
@@ -2505,6 +2509,11 @@ int main(void) {
                 // Draw Donogan
                 DrawModel(don.model, don.pos, don.scale, WHITE); // uses model.transform for rotation
                 if (don.inWater) { DonDrawBubbles(&don); }
+            }
+            //tree of life
+            if (true)
+            {
+                DrawModel(tol, tolPos, 8.0f, WHITE); //(Color) {160,100,220,255}//purple lol!
             }
             //homes
             if (onLoad)
