@@ -186,6 +186,11 @@ typedef struct {
     float   swimDiveDrag;    // velocity damping (1/sec)
     Bubble bubbles[DON_MAX_BUBBLES];
     int    bubbleHead;
+
+    // Roll impulse (ground): seeded on Circle press and decays during roll
+    Vector3 rollVel;     // carried forward velocity (XZ)
+    float   rollBurst;   // initial impulse magnitude (m/s)
+    float   rollDrag;    // damping (1/sec), higher = stops sooner
 } Donogan;
 
 // Assets (adjust if needed)
@@ -404,6 +409,11 @@ static Donogan InitDonogan(void)
     d.swimDiveBurst = 58.88f;   // try 8–14
     d.swimDiveDrag = 3.732f;    // higher = stops sooner
     //d.swimMinClear = 0.25f;   // ~ankle clearance
+    
+    // roll burst
+    d.rollVel = (Vector3){ 0 };
+    d.rollBurst = 10.0f;   // ~1.25x your run speed; tweak 12–20
+    d.rollDrag = 6.5f;    // 1/sec; 6–10 gives a snappy decel
 
     DonSnapToGround(&d);
     return d;
@@ -622,6 +632,17 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
                 if (circlePressed && !d->onGround)
                 {
+                    // Use current planar move direction (velXZ set from preview.c each frame)
+                    float m = Vector3Length(d->velXZ);
+                    if (m > 0.1f) {
+                        Vector3 dir = Vector3Scale(d->velXZ, 1.0f / m);
+                        d->rollVel = Vector3Scale(dir, d->rollBurst);
+                        // optional: face the roll direction instantly
+                        d->yawY = atan2f(dir.x, dir.z);
+                    }
+                    else {
+                        d->rollVel = (Vector3){ 0 };
+                    }
                     DonSetState(d, DONOGAN_STATE_AIR_ROLL); // one-shot start
                     break;
                 }
@@ -640,7 +661,12 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
             case DONOGAN_STATE_ROLL: {
                 // (Optional) keep some horizontal impulse during roll:
-                d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+                //old way of updating the pos when rolling //d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+                // Propel forward using the seeded roll velocity
+                d->pos = Vector3Add(d->pos, Vector3Scale(d->rollVel, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+                // Exponential-ish damping
+                float drag = fmaxf(0.0f, 1.0f - d->rollDrag * dt);
+                d->rollVel = Vector3Scale(d->rollVel, drag);
 
                 // Stay in ROLL until the non-looping animation finishes
                 if (d->animFinished) {
@@ -658,7 +684,12 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 d->pos.y += d->velY * dt;
 
                 // (Optional) drift horizontally with current air velocity:
-                d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+                //d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+                //d->pos = Vector3Add(d->pos, Vector3Scale(d->rollVel, dt));
+                d->pos = Vector3Add(d->pos, Vector3Scale(d->rollVel, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+                // Exponential-ish damping
+                float drag = fmaxf(0.0f, 1.0f - d->rollDrag * dt);
+                d->rollVel = Vector3Scale(d->rollVel, drag);
 
                 // If we touch ground during/after air roll, snap & exit
                 if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY) {
@@ -687,6 +718,17 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
                 // roll:
                 if (circlePressed && d->onGround) {
+                    // Use current planar move direction (velXZ set from preview.c each frame)
+                    float m = Vector3Length(d->velXZ);
+                    if (m > 0.1f) {
+                        Vector3 dir = Vector3Scale(d->velXZ, 1.0f / m);
+                        d->rollVel = Vector3Scale(dir, d->rollBurst);
+                        // optional: face the roll direction instantly
+                        d->yawY = atan2f(dir.x, dir.z);
+                    }
+                    else {
+                        d->rollVel = (Vector3){ 0 };
+                    }
                     DonSetState(d, DONOGAN_STATE_ROLL);
                     break;
                 }
