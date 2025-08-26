@@ -4,6 +4,8 @@
 // Includes
 #include "raylib.h"
 #include "raymath.h"
+//me
+#include "timer.h"
 
 #define MAX_TURN_ANGLE 0.25f //radians
 typedef enum {
@@ -12,7 +14,7 @@ typedef enum {
     LANDING
 } Truck_Air_State;
 
-
+Timer truckInteractTimer;
 bool displayTruckPoints = false;
 bool displayTruckForward = false;
 Vector3 truckPosition = { 1279.45f, 333.71f, 1249.00f };

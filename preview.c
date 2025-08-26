@@ -15,6 +15,7 @@
 #include "donogan.h"
 #include "util.h"
 #include "timer.h"
+#include "interact.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -1507,6 +1508,8 @@ int main(void) {
         {  1.6f, 0.0f, -2.64f }, // Rear-right
         { -1.6f, 0.0f, -2.64f }  // Rear-left
     };
+    truckInteractTimer = CreateTimer(1.0f);
+    StartTimer(&truckInteractTimer);
     //more lb stuff
     Mesh sphereMesh = GenMeshHemiSphere(0.108f,8, 8);
     Material sphereMaterial = LoadMaterialDefault();
@@ -1561,9 +1564,10 @@ int main(void) {
     //         }
     //     }
     // }
+    // INIT INTERACTIVE POINTS OF INTEREST
+    InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
     //init the stuff before launching thread launcher
     //INIT
-    
     //----------------------init chunks---------------------
     chunks = malloc(sizeof(Chunk *) * CHUNK_COUNT);
     for (int i = 0; i < CHUNK_COUNT; i++) chunks[i] = calloc(CHUNK_COUNT, sizeof(Chunk));
@@ -1674,6 +1678,14 @@ int main(void) {
             camera.target.x = don.pos.x;
             camera.target.y = don.pos.y + 1.0f;
             camera.target.z = don.pos.z;
+
+            if (gpad.btnTriangle > 0 
+                && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
+                && HasTimerElapsed(&truckInteractTimer))
+            {
+                StartTimer(&truckInteractTimer);
+                vehicleMode = true; donnyMode = false;
+            }
         }
         else if (vehicleMode)
         {
@@ -1750,8 +1762,12 @@ int main(void) {
                     if (truckAirState == AIRBORNE) { points += 650; }//points 
                 }
             }
-            //truckPitch = Lerp(truckPitch,0,0.01f); //slowly go to 0
-            //truckRoll = Lerp(truckRoll,0,0.01f); //slowly go to zero
+            if (gpad.btnTriangle > 0 && HasTimerElapsed(&truckInteractTimer))
+            {
+                StartTimer(&truckInteractTimer);
+                vehicleMode = false; donnyMode = true;
+                don.pos = Vector3Add(truckPosition, (Vector3) {3,0,-2});
+            }
         }
         //old important stuff
         float time = GetTime();
@@ -1995,7 +2011,6 @@ int main(void) {
                 }
             }
             if(gpad.btnCircle > 0){displayTruckPoints = !displayTruckPoints;}
-            if(gpad.btnTriangle > 0){displayTruckForward = !displayTruckForward;}
             //some extra stuff for the truck - steering
             steerInput = gpad.normLX * GetFrameTime();
             float turnMax = 0.8f;
@@ -2249,7 +2264,7 @@ int main(void) {
                 DonExitWater(&don, moveMag, runHeld);
             }
         }
-        else //time to rock and roll!
+        if(onLoad) //time to rock and roll!
         {
             bool rebuildFromTires = false;
             if (closestCX < 0 || closestCY < 0 || closestCX >= CHUNK_COUNT || closestCY >= CHUNK_COUNT) {
@@ -2384,25 +2399,30 @@ int main(void) {
             if(truckRoll<-PI){truckRoll=-PI;}
             if(truckPitch>PI){truckPitch=PI;}
             if(truckPitch<-PI){truckPitch=-PI;}
-            camYaw = truckAngle * RAD2DEG + relativeYaw;
-            float radYaw = camYaw * DEG2RAD;
-            float radPitch = relativePitch * DEG2RAD;
-            float followSpeed = 5.0f * GetFrameTime();
-            Vector3 offset = {
-                camDistance * cosf(radPitch) * sinf(radYaw),
-                camDistance * sinf(radPitch),
-                camDistance * cosf(radPitch) * cosf(radYaw)
-            };
+            if (vehicleMode)
+            {
+                camYaw = truckAngle * RAD2DEG + relativeYaw;
+                float radYaw = camYaw * DEG2RAD;
+                float radPitch = relativePitch * DEG2RAD;
+                float followSpeed = 5.0f * GetFrameTime();
+                Vector3 offset = {
+                    camDistance * cosf(radPitch) * sinf(radYaw),
+                    camDistance * sinf(radPitch),
+                    camDistance * cosf(radPitch) * cosf(radYaw)
+                };
 
-            Vector3 desiredCameraPos = Vector3Add(truckPosition, offset);
-            camera.position = Vector3Lerp(camera.position, desiredCameraPos, followSpeed);
+                Vector3 desiredCameraPos = Vector3Add(truckPosition, offset);
+                camera.position = Vector3Lerp(camera.position, desiredCameraPos, followSpeed);
 
-            Vector3 desiredTarget = Vector3Add(
-                Vector3Add(truckPosition, 
-                    RotateY((Vector3){ 0.0f, 0.0f, truckFrontDim-0.8f},
-                        -truckAngle)), 
-                (Vector3){ 0.0f, 2.0f, 0.0f });
-            camera.target = Vector3Lerp(camera.target, desiredTarget, followSpeed);
+                Vector3 desiredTarget = Vector3Add(
+                    Vector3Add(truckPosition,
+                        RotateY((Vector3) { 0.0f, 0.0f, truckFrontDim - 0.8f },
+                            -truckAngle)),
+                    (Vector3) {
+                    0.0f, 2.0f, 0.0f
+                });
+                camera.target = Vector3Lerp(camera.target, desiredTarget, followSpeed);
+            }
         }
         //end collision section -----------------------------------------------------------------------------------------------------------------
 
