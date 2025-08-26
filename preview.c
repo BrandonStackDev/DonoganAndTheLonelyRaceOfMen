@@ -1307,7 +1307,7 @@ int main(void) {
     Star *stars;
     bool vehicleMode = false;
     // --- Donny mode state ---
-    bool donnyMode = false;
+    bool donnyMode = true;
     Vector3 donMove = (Vector3){ 0 };
     ControllerData gpad = { 0 };
     bool havePad = false;
@@ -2538,7 +2538,7 @@ int main(void) {
             rotationTruck.m13 = Lerp(truckOrigin.y + truckYOffsetDraw, truckOrigin.y + truckYOffsetDraw + truckPitchYOffset, 0.01f); //!!!!SPACE TRUCK!!!!
             rotationTruck.m14 = truckOrigin.z;
             //donogan
-            if (onLoad)
+            if (onLoad && donnyMode)
             {
                 // Draw Donogan
                 DrawModel(don.model, don.pos, don.scale, WHITE); // uses model.transform for rotation
