@@ -2425,7 +2425,7 @@ int main(void) {
         {
             don.camPitch = pitch;    // your orbit pitch
         }
-        DonUpdate(&don, havePad ? &gpad : NULL, dt);
+        DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);

@@ -373,7 +373,7 @@ static Donogan InitDonogan(void)
 
     //water swimming
     d.inWater = false;
-    d.swimSpeed = 19.666f;
+    d.swimSpeed = 13.666f;
     d.swimTurnSpeed = DEG2RAD * 240.0f;
     //d.swimFloatOffset = 0.90f;   // ~chest at surface
 
@@ -401,7 +401,7 @@ static Donogan InitDonogan(void)
     d.seabedY = d.groundY;
 
     d.swimDiveVel = (Vector3){ 0 };
-    d.swimDiveBurst = 88.88f;   // try 8–14
+    d.swimDiveBurst = 58.88f;   // try 8–14
     d.swimDiveDrag = 3.732f;    // higher = stops sooner
     //d.swimMinClear = 0.25f;   // ~ankle clearance
 
@@ -518,210 +518,212 @@ static inline void DonExitWater(Donogan* d, float moveMag, bool runningHeld) {
 // --------------------------------------------------------------------------------------------------------
 
 // ---------- Per-frame update (controller → state → anim/frame) ----------
-static void DonUpdate(Donogan* d, const ControllerData* pad, float dt)
+static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool freeze)
 {
     if (!d) return;
-
-    // --- Input ---
-    bool padPresent = (pad != NULL);
-    float lx = padPresent ? pad->normLX : 0.0f;
-    float ly = padPresent ? pad->normLY : 0.0f;
-    bool cross = padPresent ? pad->btnCross : IsKeyDown(KEY_SPACE);
-    bool circle = padPresent ? pad->btnCircle : IsKeyDown(KEY_O);
-    bool L3 = padPresent ? pad->btnL3 : IsKeyDown(KEY_LEFT_SHIFT);
-
-    // Edge for X (jump)
-    bool crossPressed = (cross && !d->prevCross);
-    d->prevCross = cross;
-    bool circlePressed = (circle && !d->prevCircle);
-    d->prevCircle = circle;
-
-    // --- Water locomotion (no gravity) ---
-    if (d->inWater) {
-        //1) Read stick as usual 1
-        DonProcessRunToggle(d, L3);
-        //2) choose swim idle vs move 2
-        float moveMag = sqrtf(lx * lx + ly * ly);
-        bool wantMove = (d->state == DONOGAN_STATE_SWIM_MOVE)
-            ? (moveMag > d->swimMoveExit)
-            : (moveMag > d->swimMoveEnter);
-        // 3) DIVE burst on X press (edge)
-        // Camera forward from yaw/pitch/roll (right-handed, Y up)
-        float cy = cosf(d->yawY), sy = sinf(d->yawY);
-        float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
-        // roll is optional for now; you can include it if you want banked dives
-        Vector3 fwd = (Vector3){ sy * cp, -sp, cy * cp };
-        fwd = Vector3Normalize(fwd);
-        if (crossPressed) {
-            d->swimDiveVel = Vector3Scale(fwd, d->swimDiveBurst);
-            DonSpawnBubbles(d, 18 + GetRandomValue(0, 6), 1.0f);
-        }
-        // do this in a separate `if` (not `else if`) so burst + swim can happen same frame
-        if (wantMove) {
-            // camera-yaw basis (ignores pitch so speed doesn't collapse when looking up/down)
-            Vector3 camFwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
-            Vector3 camRight = (Vector3){ cosf(d->yawY), 0.0f,-sinf(d->yawY) };
-
-            // stick → world planar direction
-            Vector3 moveXZ = Vector3Add(Vector3Scale(camRight, lx), Vector3Scale(camFwd, -ly));
-            float m = Vector3Length(moveXZ);
-            if (m > 0.001f) {
-                moveXZ = Vector3Scale(moveXZ, 1.0f / m);
-                d->pos = Vector3Add(d->pos, Vector3Scale(moveXZ, d->swimSpeed * dt)); // or dtLoc
-            }
-        }
-
-        //4) Apply dive velocity
-        d->pos = Vector3Add(d->pos, Vector3Scale(d->swimDiveVel, dt));
-        // drag
-        float drag = fmaxf(0.0f, 1.0f - d->swimDiveDrag * dt);
-        d->swimDiveVel = Vector3Scale(d->swimDiveVel, drag);
-
-        // 5) Clamp vertical between seabed (with clearance) and surface (never pop out)
-        float feetOff = -d->firstBB.min.y * d->scale;  // feet offset from origin
-        float minY = d->seabedY + feetOff; // + d->swimMinClear;
-        float maxY = d->waterY - feetOff; // +d->swimFloatOffset; // surface ride height
-        if (d->pos.y < minY) d->pos.y = minY;
-        if (d->pos.y > maxY) d->pos.y = maxY;
-        //6)
-        DonSetState(d, wantMove ? DONOGAN_STATE_SWIM_MOVE : DONOGAN_STATE_SWIM_IDLE);
-        d->onGround = false;         // prevent land logic from firing while in water
-        // keep body at surface
-        if (d->state == DONOGAN_STATE_SWIM_IDLE && Vector3LengthSqr(d->swimDiveVel) < 1e-6f) {
-            DonClampToWater(d);
-        }
-        // then fall through to your existing frame-stepper at the end of DonUpdate()
-    }
-    else
+    if (!freeze)
     {
-        float feetY = DonFeetWorldY(d);
-        d->onGround = (feetY <= d->groundY + d->groundEps);
-        // --- State machine with physics ---
-        switch (d->state) {
-        case DONOGAN_STATE_JUMP_START:
-        case DONOGAN_STATE_JUMPING: {
-            // Airborne: integrate vertical physics
-            d->velY += d->gravity * dt;
-            d->pos.y += d->velY * dt;
+        // --- Input ---
+        bool padPresent = (pad != NULL);
+        float lx = padPresent ? pad->normLX : 0.0f;
+        float ly = padPresent ? pad->normLY : 0.0f;
+        bool cross = padPresent ? pad->btnCross : IsKeyDown(KEY_SPACE);
+        bool circle = padPresent ? pad->btnCircle : IsKeyDown(KEY_O);
+        bool L3 = padPresent ? pad->btnL3 : IsKeyDown(KEY_LEFT_SHIFT);
 
-            // Switch Jump_Start -> Jump_Loop after some time OR after we stop rising
-            if (d->state == DONOGAN_STATE_JUMP_START) {
-                d->jumpTimer += dt;
-                if (d->jumpTimer >= d->startToLoopTime || d->velY <= 0.0f) {
-                    DonSetState(d, DONOGAN_STATE_JUMPING); // loops
+        // Edge for X (jump)
+        bool crossPressed = (cross && !d->prevCross);
+        d->prevCross = cross;
+        bool circlePressed = (circle && !d->prevCircle);
+        d->prevCircle = circle;
+
+        // --- Water locomotion (no gravity) ---
+        if (d->inWater) {
+            //1) Read stick as usual 1
+            DonProcessRunToggle(d, L3);
+            //2) choose swim idle vs move 2
+            float moveMag = sqrtf(lx * lx + ly * ly);
+            bool wantMove = (d->state == DONOGAN_STATE_SWIM_MOVE)
+                ? (moveMag > d->swimMoveExit)
+                : (moveMag > d->swimMoveEnter);
+            // 3) DIVE burst on X press (edge)
+            // Camera forward from yaw/pitch/roll (right-handed, Y up)
+            float cy = cosf(d->yawY), sy = sinf(d->yawY);
+            float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
+            // roll is optional for now; you can include it if you want banked dives
+            Vector3 fwd = (Vector3){ sy * cp, -sp, cy * cp };
+            fwd = Vector3Normalize(fwd);
+            if (crossPressed) {
+                d->swimDiveVel = Vector3Scale(fwd, d->swimDiveBurst);
+                DonSpawnBubbles(d, 18 + GetRandomValue(0, 6), 1.0f);
+            }
+            // do this in a separate `if` (not `else if`) so burst + swim can happen same frame
+            if (wantMove) {
+                // camera-yaw basis (ignores pitch so speed doesn't collapse when looking up/down)
+                Vector3 camFwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+                Vector3 camRight = (Vector3){ cosf(d->yawY), 0.0f,-sinf(d->yawY) };
+
+                // stick → world planar direction
+                Vector3 moveXZ = Vector3Add(Vector3Scale(camRight, lx), Vector3Scale(camFwd, -ly));
+                float m = Vector3Length(moveXZ);
+                if (m > 0.001f) {
+                    moveXZ = Vector3Scale(moveXZ, 1.0f / m);
+                    d->pos = Vector3Add(d->pos, Vector3Scale(moveXZ, d->swimSpeed * dt)); // or dtLoc
                 }
             }
 
-            // Land if feet cross ground while falling
-            if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY) {
-                DonSnapToGround(d);
-                DonSetState(d, DONOGAN_STATE_JUMP_LAND); // one-shot
-            }
-            d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+            //4) Apply dive velocity
+            d->pos = Vector3Add(d->pos, Vector3Scale(d->swimDiveVel, dt));
+            // drag
+            float drag = fmaxf(0.0f, 1.0f - d->swimDiveDrag * dt);
+            d->swimDiveVel = Vector3Scale(d->swimDiveVel, drag);
 
-            if (circlePressed && !d->onGround)
-            {
-                DonSetState(d, DONOGAN_STATE_AIR_ROLL); // one-shot start
+            // 5) Clamp vertical between seabed (with clearance) and surface (never pop out)
+            float feetOff = -d->firstBB.min.y * d->scale;  // feet offset from origin
+            float minY = d->seabedY + feetOff; // + d->swimMinClear;
+            float maxY = d->waterY - feetOff; // +d->swimFloatOffset; // surface ride height
+            if (d->pos.y < minY) d->pos.y = minY;
+            if (d->pos.y > maxY) d->pos.y = maxY;
+            //6)
+            DonSetState(d, wantMove ? DONOGAN_STATE_SWIM_MOVE : DONOGAN_STATE_SWIM_IDLE);
+            d->onGround = false;         // prevent land logic from firing while in water
+            // keep body at surface
+            if (d->state == DONOGAN_STATE_SWIM_IDLE && Vector3LengthSqr(d->swimDiveVel) < 1e-6f) {
+                DonClampToWater(d);
+            }
+            // then fall through to your existing frame-stepper at the end of DonUpdate()
+        }
+        else
+        {
+            float feetY = DonFeetWorldY(d);
+            d->onGround = (feetY <= d->groundY + d->groundEps);
+            // --- State machine with physics ---
+            switch (d->state) {
+            case DONOGAN_STATE_JUMP_START:
+            case DONOGAN_STATE_JUMPING: {
+                // Airborne: integrate vertical physics
+                d->velY += d->gravity * dt;
+                d->pos.y += d->velY * dt;
+
+                // Switch Jump_Start -> Jump_Loop after some time OR after we stop rising
+                if (d->state == DONOGAN_STATE_JUMP_START) {
+                    d->jumpTimer += dt;
+                    if (d->jumpTimer >= d->startToLoopTime || d->velY <= 0.0f) {
+                        DonSetState(d, DONOGAN_STATE_JUMPING); // loops
+                    }
+                }
+
+                // Land if feet cross ground while falling
+                if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY) {
+                    DonSnapToGround(d);
+                    DonSetState(d, DONOGAN_STATE_JUMP_LAND); // one-shot
+                }
+                d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+
+                if (circlePressed && !d->onGround)
+                {
+                    DonSetState(d, DONOGAN_STATE_AIR_ROLL); // one-shot start
+                    break;
+                }
+
+            } break;
+
+            case DONOGAN_STATE_JUMP_LAND:
+                // Non-loop; when finished → locomotion or idle
+                if (d->animFinished) {
+                    if (fabsf(lx) > 0.1f || fabsf(ly) > 0.1f)
+                        DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    else
+                        DonSetState(d, DONOGAN_STATE_IDLE);
+                }
                 break;
-            }
 
-        } break;
+            case DONOGAN_STATE_ROLL: {
+                // (Optional) keep some horizontal impulse during roll:
+                d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
 
-        case DONOGAN_STATE_JUMP_LAND:
-            // Non-loop; when finished → locomotion or idle
-            if (d->animFinished) {
-                if (fabsf(lx) > 0.1f || fabsf(ly) > 0.1f)
-                    DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
-                else
-                    DonSetState(d, DONOGAN_STATE_IDLE);
-            }
-            break;
+                // Stay in ROLL until the non-looping animation finishes
+                if (d->animFinished) {
+                    // Return to locomotion based on stick
+                    if (fabsf(lx) > 0.1f || fabsf(ly) > 0.1f)
+                        DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    else
+                        DonSetState(d, DONOGAN_STATE_IDLE);
+                }
+            } break;
 
-        case DONOGAN_STATE_ROLL: {
-            // (Optional) keep some horizontal impulse during roll:
-            d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+            case DONOGAN_STATE_AIR_ROLL: {
+                // Air roll = like JUMPING but with roll pose; keep vertical physics
+                d->velY += d->gravity * dt;
+                d->pos.y += d->velY * dt;
 
-            // Stay in ROLL until the non-looping animation finishes
-            if (d->animFinished) {
-                // Return to locomotion based on stick
-                if (fabsf(lx) > 0.1f || fabsf(ly) > 0.1f)
-                    DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
-                else
-                    DonSetState(d, DONOGAN_STATE_IDLE);
-            }
-        } break;
+                // (Optional) drift horizontally with current air velocity:
+                d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
 
-        case DONOGAN_STATE_AIR_ROLL: {
-            // Air roll = like JUMPING but with roll pose; keep vertical physics
-            d->velY += d->gravity * dt;
-            d->pos.y += d->velY * dt;
+                // If we touch ground during/after air roll, snap & exit
+                if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY) {
+                    DonSnapToGround(d);
+                    DonSetState(d, DONOGAN_STATE_JUMP_LAND);
+                    break;
+                }
 
-            // (Optional) drift horizontally with current air velocity:
-            d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
+                // Otherwise, wait for the one-shot to end and then go to JUMPING (fall loop)
+                if (d->animFinished) DonSetState(d, DONOGAN_STATE_JUMPING);
+            } break;
 
-            // If we touch ground during/after air roll, snap & exit
-            if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY) {
-                DonSnapToGround(d);
-                DonSetState(d, DONOGAN_STATE_JUMP_LAND);
-                break;
-            }
+            default: { // IDLE / WALK / RUN (grounded locomotion)
+                // Update runningHeld etc. as you already do...
+                // Hold-to-run refresh (must happen every frame on ground)
+                DonProcessRunToggle(d, L3);
+                // If player pressed jump, do your existing liftoff (keep it first)
+                if (crossPressed && d->onGround) {
+                    d->velY = d->runningHeld ? d->runJumpSpeed : d->jumpSpeed;
+                    d->pos.y += d->liftoffBump;   // you already have this bump
+                    d->onGround = false;
+                    d->jumpTimer = 0.0f;
+                    DonSetState(d, DONOGAN_STATE_JUMP_START);
+                    break;
+                }
 
-            // Otherwise, wait for the one-shot to end and then go to JUMPING (fall loop)
-            if (d->animFinished) DonSetState(d, DONOGAN_STATE_JUMPING);
-        } break;
+                // roll:
+                if (circlePressed && d->onGround) {
+                    DonSetState(d, DONOGAN_STATE_ROLL);
+                    break;
+                }
 
-        default: { // IDLE / WALK / RUN (grounded locomotion)
-            // Update runningHeld etc. as you already do...
-            // Hold-to-run refresh (must happen every frame on ground)
-            DonProcessRunToggle(d, L3);
-            // If player pressed jump, do your existing liftoff (keep it first)
-            if (crossPressed && d->onGround) {
-                d->velY = d->runningHeld ? d->runJumpSpeed : d->jumpSpeed;
-                d->pos.y += d->liftoffBump;   // you already have this bump
-                d->onGround = false;
-                d->jumpTimer = 0.0f;
-                DonSetState(d, DONOGAN_STATE_JUMP_START);
-                break;
-            }
+                // --- Ground stick logic ---
+                float targetY = d->groundY - d->firstBB.min.y * d->scale;
+                float dy = targetY - d->pos.y;
 
-            // roll:
-            if (circlePressed && d->onGround) {
-                DonSetState(d, DONOGAN_STATE_ROLL);
-                break;
-            }
-
-            // --- Ground stick logic ---
-            float targetY = d->groundY - d->firstBB.min.y * d->scale;
-            float dy = targetY - d->pos.y;
-
-            if (dy >= 0.0f) {
-                float maxUpThisFrame = d->stepUpMaxInstant + d->stepUpRate * dt;
-                float climb = (dy < maxUpThisFrame) ? dy : maxUpThisFrame;
-                d->pos.y += climb;
-                d->onGround = true;
-            }
-            else {
-                float drop = -dy;
-                if (drop <= d->fallGapThreshold) {
-                    // follow downward (snap or smooth if you’ve set slopeFollowRate)
-                    if (d->slopeFollowRate <= 0.0f) d->pos.y = targetY;
-                    else d->pos.y -= drop * Clampf(d->slopeFollowRate * dt, 0.0f, 1.0f);
+                if (dy >= 0.0f) {
+                    float maxUpThisFrame = d->stepUpMaxInstant + d->stepUpRate * dt;
+                    float climb = (dy < maxUpThisFrame) ? dy : maxUpThisFrame;
+                    d->pos.y += climb;
                     d->onGround = true;
                 }
                 else {
-                    // big cliff: go airborne
-                    d->onGround = false;
-                    d->velY = 0.0f;
-                    DonSetState(d, DONOGAN_STATE_JUMPING);
-                    break;
+                    float drop = -dy;
+                    if (drop <= d->fallGapThreshold) {
+                        // follow downward (snap or smooth if you’ve set slopeFollowRate)
+                        if (d->slopeFollowRate <= 0.0f) d->pos.y = targetY;
+                        else d->pos.y -= drop * Clampf(d->slopeFollowRate * dt, 0.0f, 1.0f);
+                        d->onGround = true;
+                    }
+                    else {
+                        // big cliff: go airborne
+                        d->onGround = false;
+                        d->velY = 0.0f;
+                        DonSetState(d, DONOGAN_STATE_JUMPING);
+                        break;
+                    }
                 }
-            }
 
-            // Decide locomotion from stick (your existing code)
-            float moveMag = sqrtf(lx * lx + ly * ly);
-            DonSetState(d, (moveMag > 0.1f) ? (d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK)
-                : DONOGAN_STATE_IDLE);
-        } break;
+                // Decide locomotion from stick (your existing code)
+                float moveMag = sqrtf(lx * lx + ly * ly);
+                DonSetState(d, (moveMag > 0.1f) ? (d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK)
+                    : DONOGAN_STATE_IDLE);
+            } break;
+            }
         }
     }
     // --- Animation stepping (smooth): advance one frame every (1/fps) seconds ---
