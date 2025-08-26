@@ -363,9 +363,9 @@ static Donogan InitDonogan(void)
 
     // --- Physics defaults ---
     d.groundY = 0.0f;
-    d.gravity = -20.0f;  // gamey gravity; tweak  (-9.81 feels floaty with 24fps anims)
-    d.jumpSpeed = 6.8f;    // ~1.5m jump apex with gravity=-20
-    d.runJumpSpeed = 9.64f;    // ~1.5m jump apex with gravity=-20
+    d.gravity = -40.0f;  // gamey gravity; tweak  (-9.81 feels floaty with 24fps anims)
+    d.jumpSpeed = 12.0f;    // ~1.5m jump apex with gravity=-20
+    d.runJumpSpeed = 20.0f;    //
     d.velY = 0.0f;
     d.onGround = false;
     d.startToLoopTime = 0.18f; // how long Jump_Start should play before switching to Jump_Loop
