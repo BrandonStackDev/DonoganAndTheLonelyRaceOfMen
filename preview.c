@@ -1470,6 +1470,7 @@ int main(void) {
     // //donny boy
     Donogan don = InitDonogan();
     don.pos = Scenes[SCENE_HOME_CABIN_02].pos;
+    don.pos.y = 533.333f;
     // Load  //todo: move this and most of the truck stuff into truck.h
     Model truck = LoadModel("models/truck.obj");
     truck.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
