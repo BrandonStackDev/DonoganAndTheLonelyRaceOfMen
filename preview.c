@@ -2144,6 +2144,7 @@ int main(void) {
             }
         }
 
+        if (!vehicleMode) { truckSpeed = 0; }
         truckForward = (Vector3){ sinf(truckAngle), sinf(-truckPitch), cosf(truckAngle) };
         Vector3 tempTruck = Vector3Scale(truckForward, truckSpeed);
         if(isTruckSliding)
