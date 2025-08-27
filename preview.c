@@ -2972,12 +2972,24 @@ int main(void) {
             // Player marker (assume position normalized to map range)
             float normalizedX = (camera.position.x + (MAX_WORLD_SIZE/2)) / WORLD_WIDTH;
             float normalizedY = (camera.position.z + (MAX_WORLD_SIZE/2)) / WORLD_HEIGHT;
-
+            float normalizedTruckX = (truckPosition.x + (MAX_WORLD_SIZE / 2)) / WORLD_WIDTH;
+            float normalizedTruckY = (truckPosition.z + (MAX_WORLD_SIZE / 2)) / WORLD_HEIGHT;
+            //truck marker
+            if (!vehicleMode)
+            {
+                Vector2 t_marker = {
+                dest.x + normalizedTruckX * dest.width,
+                dest.y + normalizedTruckY * dest.height
+                };
+                DrawCircleV(t_marker, 3, BLUE);
+            }
+            //main marker
             Vector2 marker = {
                 dest.x + normalizedX * dest.width,
                 dest.y + normalizedY * dest.height
             };
             DrawCircleV(marker, 3, RED);
+
             // Facing triangle (yellow "nose" pointing the player's yaw)
             float local_yaw = donnyMode ? +(yaw + (2.0f * (PI / 2.0f))) : vehicleMode ? truckAngle : -(yaw + (PI / 2.0f)); //
             float local_x_sign = vehicleMode|| donnyMode ? 1.0f : -1.0f;
