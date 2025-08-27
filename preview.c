@@ -377,8 +377,15 @@ float GetTerrainHeightFromMeshXZ(float x, float z)
     int half = CHUNK_COUNT / 2;
     int cx = (int)floor(x / CHUNK_WORLD_SIZE) + half;
     int cy = (int)floor(z / CHUNK_WORLD_SIZE) + half;
+
     Chunk chunk = chunks[cx][cy];
     Mesh mesh = chunk.model.meshes[0];
+
+    int S = (int)sqrtf(mesh.triangleCount / 2); float cell = (float)CHUNK_WORLD_SIZE / S;
+    int gx = (int)floorf((x - chunk.position.x) / cell), gz = (int)floorf((z - chunk.position.z) / cell);
+    if (gx < 0) gx = 0; else if (gx >= S) gx = S - 1; if (gz < 0) gz = 0; else if (gz >= S) gz = S - 1;
+    int firstTri = (gz * S + gx) * 2, lastTri = firstTri + 2;
+
     float *verts = (float *)mesh.vertices;
     unsigned short *tris = (unsigned short *)mesh.indices;
     //TraceLog(LOG_INFO, "chunk pos (%f, %f, %f)", chunk.position.x, chunk.position.y, chunk.position.z);
@@ -394,7 +401,8 @@ float GetTerrainHeightFromMeshXZ(float x, float z)
 
     Vector3 p = { x, 0.0f, z };
 
-    for (int i = 0; i < mesh.triangleCount; i++) {
+    for (int i = firstTri; i < lastTri; i++)
+    {
         int i0, i1, i2;
 
         if (tris) {
