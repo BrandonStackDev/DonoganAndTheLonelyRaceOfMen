@@ -2556,7 +2556,7 @@ int main(void) {
                 DrawModel(don.model, don.pos, don.scale, WHITE); // uses model.transform for rotation
 
                 //bow stuff
-                if (true)
+                if (don.bowMode)
                 {
                     // --- Bow draw snippet ---
                 // Get bone rotation delta (bind → current)
