@@ -18,6 +18,173 @@
 #define DON_MAX_BUBBLES 128
 
 // ---------- Character states ----------
+// ===== Donny (67 bones) ======================================================
+
+typedef enum DonBone {
+    DON_BONE_ROOT = 0,
+    DON_BONE_DEF_HIPS = 1,
+    DON_BONE_DEF_SPINE001 = 2,
+    DON_BONE_DEF_SPINE002 = 3,
+    DON_BONE_DEF_SPINE003 = 4,
+    DON_BONE_DEF_NECK = 5,
+    DON_BONE_DEF_NECK01 = 6,
+    DON_BONE_DEF_HEAD = 7,
+    DON_BONE_DEF_HEADTIP = 8,
+    DON_BONE_DEF_SHOULDER_L = 9,
+    DON_BONE_DEF_UPPER_ARM_L = 10,
+    DON_BONE_DEF_FOREARM_L = 11,
+    DON_BONE_DEF_HAND_L = 12,
+    DON_BONE_DEF_F_INDEX01_L = 13,
+    DON_BONE_DEF_F_INDEX02_L = 14,
+    DON_BONE_DEF_F_INDEX03_L = 15,
+    DON_BONE_DEF_F_INDEX04TIP_L = 16,
+    DON_BONE_DEF_F_MIDDLE01_L = 17,
+    DON_BONE_DEF_F_MIDDLE02_L = 18,
+    DON_BONE_DEF_F_MIDDLE03_L = 19,
+    DON_BONE_DEF_F_MIDDLE04TIP_L = 20,
+    DON_BONE_DEF_F_PINKY01_L = 21,
+    DON_BONE_DEF_F_PINKY02_L = 22,
+    DON_BONE_DEF_F_PINKY03_L = 23,
+    DON_BONE_DEF_F_PINKY04TIP_L = 24,
+    DON_BONE_DEF_F_RING01_L = 25,
+    DON_BONE_DEF_F_RING02_L = 26,
+    DON_BONE_DEF_F_RING03_L = 27,
+    DON_BONE_DEF_F_RING04TIP_L = 28,
+    DON_BONE_DEF_THUMB01_L = 29,
+    DON_BONE_DEF_THUMB02_L = 30,
+    DON_BONE_DEF_THUMB03_L = 31,
+    DON_BONE_DEF_THUMB04TIP_L = 32,
+    DON_BONE_DEF_SHOULDER_R = 33,
+    DON_BONE_DEF_UPPER_ARM_R = 34,
+    DON_BONE_DEF_FOREARM_R = 35,
+    DON_BONE_DEF_HAND_R = 36,
+    DON_BONE_DEF_F_INDEX01_R = 37,
+    DON_BONE_DEF_F_INDEX02_R = 38,
+    DON_BONE_DEF_F_INDEX03_R = 39,
+    DON_BONE_DEF_F_INDEX04TIP_R = 40,
+    DON_BONE_DEF_F_MIDDLE01_R = 41,
+    DON_BONE_DEF_F_MIDDLE02_R = 42,
+    DON_BONE_DEF_F_MIDDLE03_R = 43,
+    DON_BONE_DEF_F_MIDDLE04TIP_R = 44,
+    DON_BONE_DEF_F_PINKY01_R = 45,
+    DON_BONE_DEF_F_PINKY02_R = 46,
+    DON_BONE_DEF_F_PINKY03_R = 47,
+    DON_BONE_DEF_F_PINKY04TIP_R = 48,
+    DON_BONE_DEF_F_RING01_R = 49,
+    DON_BONE_DEF_F_RING02_R = 50,
+    DON_BONE_DEF_F_RING03_R = 51,
+    DON_BONE_DEF_F_RING04TIP_R = 52,
+    DON_BONE_DEF_THUMB01_R = 53,
+    DON_BONE_DEF_THUMB02_R = 54,
+    DON_BONE_DEF_THUMB03_R = 55,
+    DON_BONE_DEF_THUMB04TIP_R = 56,
+    DON_BONE_DEF_THIGH_L = 57,
+    DON_BONE_DEF_SHIN_L = 58,
+    DON_BONE_DEF_FOOT_L = 59,
+    DON_BONE_DEF_TOE_L = 60,
+    DON_BONE_DEF_TOETIP_L = 61,
+    DON_BONE_DEF_THIGH_R = 62,
+    DON_BONE_DEF_SHIN_R = 63,
+    DON_BONE_DEF_FOOT_R = 64,
+    DON_BONE_DEF_TOE_R = 65,
+    DON_BONE_DEF_TOETIP_R = 66,
+    DON_BONE_COUNT = 67
+} DonBone;
+
+//static const char* kDonBoneName[DON_BONE_COUNT] = {
+//    "root",
+//    "DEF-hips",
+//    "DEF-spine001",
+//    "DEF-spine002",
+//    "DEF-spine003",
+//    "DEF-neck",
+//    "DEF-neck01",
+//    "DEF-head",
+//    "DEF-headtip",
+//    "DEF-shoulderL",
+//    "DEF-upper_armL",
+//    "DEF-forearmL",
+//    "DEF-handL",
+//    "DEF-f_index01L",
+//    "DEF-f_index02L",
+//    "DEF-f_index03L",
+//    "DEF-f_index04tipL",
+//    "DEF-f_middle01L",
+//    "DEF-f_middle02L",
+//    "DEF-f_middle03L",
+//    "DEF-f_middle04tipL",
+//    "DEF-f_pinky01L",
+//    "DEF-f_pinky02L",
+//    "DEF-f_pinky03L",
+//    "DEF-f_pinky04tipL",
+//    "DEF-f_ring01L",
+//    "DEF-f_ring02L",
+//    "DEF-f_ring03L",
+//    "DEF-f_ring04tipL",
+//    "DEF-thumb01L",
+//    "DEF-thumb02L",
+//    "DEF-thumb03L",
+//    "DEF-thumb04tipL",
+//    "DEF-shoulderR",
+//    "DEF-upper_armR",
+//    "DEF-forearmR",
+//    "DEF-handR",
+//    "DEF-f_index01R",
+//    "DEF-f_index02R",
+//    "DEF-f_index03R",
+//    "DEF-f_index04tipR",
+//    "DEF-f_middle01R",
+//    "DEF-f_middle02R",
+//    "DEF-f_middle03R",
+//    "DEF-f_middle04tipR",
+//    "DEF-f_pinky01R",
+//    "DEF-f_pinky02R",
+//    "DEF-f_pinky03R",
+//    "DEF-f_pinky04tipR",
+//    "DEF-f_ring01R",
+//    "DEF-f_ring02R",
+//    "DEF-f_ring03R",
+//    "DEF-f_ring04tipR",
+//    "DEF-thumb01R",
+//    "DEF-thumb02R",
+//    "DEF-thumb03R",
+//    "DEF-thumb04tipR",
+//    "DEF-thighL",
+//    "DEF-shinL",
+//    "DEF-footL",
+//    "DEF-toeL",
+//    "DEF-toetipL",
+//    "DEF-thighR",
+//    "DEF-shinR",
+//    "DEF-footR",
+//    "DEF-toeR",
+//    "DEF-toetipR"
+//};
+
+// ===== Bow (7 bones) ==========================================================
+// (Two roots here: "Bone" and "Bone.004". Names kept literal, dots -> underscores)
+
+typedef enum BowBone {
+    BOW_BONE = 0,
+    BOW_BONE_001 = 1,
+    BOW_BONE_002 = 2,
+    BOW_BONE_003 = 3,
+    BOW_BONE_004 = 4,
+    BOW_BONE_005 = 5,
+    BOW_BONE_006 = 6,
+    BOW_BONE_COUNT = 7
+} BowBone;
+
+//static const char* kBowBoneName[BOW_BONE_COUNT] = {
+//    "Bone",
+//    "Bone.001",
+//    "Bone.002",
+//    "Bone.003",
+//    "Bone.004",
+//    "Bone.005",
+//    "Bone.006"
+//};
+
 typedef enum {
     DONOGAN_STATE_IDLE,
     DONOGAN_STATE_WALK,
@@ -100,6 +267,14 @@ typedef struct {
     // Animation & model
     Model model;
     Texture2D tex;
+
+    Model bowModel;
+    Texture2D bowTex;
+    // (optional, for later attachment tuning)
+    Vector3 bowOffset;       // local offset from Donogan origin
+    Vector3 bowEulerDeg;     // local rotation (degrees)
+    float   bowScale;
+    int bowBoneIndex;
 
     // Raw animations from GLB and a remapped copy that matches model->bones order
     unsigned int animCount;
@@ -196,6 +371,8 @@ typedef struct {
 // Assets (adjust if needed)
 static const char* GLB = "models/donogan_anim.glb";
 static const char* PNG = "textures/donogan.png";
+static const char* BOW_GLB = "models/bow.glb";
+static const char* BOW_PNG = "textures/bow.png";
 
 // Feet world Y using model-space BB (only Y-rotation on model transform, so Y extent is stable)
 static inline float DonFeetWorldY(const Donogan* d) {
@@ -206,6 +383,68 @@ static inline void DonSnapToGround(Donogan* d) {
     d->velY = 0.0f;
     d->onGround = true;
 }
+//bone print
+// Print the full bone list as a tree with bind-pose data
+// Forward decl
+static void PrintBoneRecursive(const Model* m, int boneIndex, int depth);
+
+// Print the full bone list as a tree with bind-pose data
+void PrintModelBones(const Model* m) {
+    if (!m) { printf("PrintModelBones: model == NULL\n"); return; }
+    if (m->boneCount <= 0 || !m->bones) {
+        printf("PrintModelBones: no bones\n");
+        return;
+    }
+    printf("=== Bones (%d) ===\n", m->boneCount);
+
+    // Print all roots (parent == -1), then recurse into children
+    for (int i = 0; i < m->boneCount; ++i) {
+        if (m->bones[i].parent == -1) {
+            PrintBoneRecursive(m, i, 0);
+        }
+    }
+
+    // Also list any unparented-but-non-root anomalies (just in case)
+    for (int i = 0; i < m->boneCount; ++i) {
+        if (m->bones[i].parent >= m->boneCount) {
+            printf("[WARN] Bone %d ('%s') has invalid parent index %d\n",
+                i, m->bones[i].name, m->bones[i].parent);
+        }
+    }
+}
+
+static void PrintBoneRecursive(const Model* m, int boneIndex, int depth) {
+    const BoneInfo* bi = &m->bones[boneIndex];
+    // Indent
+    for (int d = 0; d < depth; ++d) printf("  ");
+
+    // Header line with index/name/parent
+    printf("└─[%3d] '%s'  parent=%d", boneIndex, bi->name, bi->parent);
+
+    // Bind pose (if available)
+    if (m->bindPose) {
+        const Transform tp = m->bindPose[boneIndex];
+        printf("\n");
+        for (int d = 0; d < depth; ++d) printf("  ");
+        printf("    T=(%.3f, %.3f, %.3f)  "
+            "Rquat=(%.3f, %.3f, %.3f, %.3f)  "
+            "S=(%.3f, %.3f, %.3f)\n",
+            tp.translation.x, tp.translation.y, tp.translation.z,
+            tp.rotation.x, tp.rotation.y, tp.rotation.z, tp.rotation.w,
+            tp.scale.x, tp.scale.y, tp.scale.z);
+    }
+    else {
+        printf("  (no bindPose)\n");
+    }
+
+    // Recurse: find children (linear scan; simple & safe)
+    for (int j = 0; j < m->boneCount; ++j) {
+        if (m->bones[j].parent == boneIndex) {
+            PrintBoneRecursive(m, j, depth + 1);
+        }
+    }
+}
+
 /// <summary>
 /// Run logic to lock and unlock
 /// </summary>
@@ -309,6 +548,21 @@ static inline void DonUpdateBubbles(Donogan* d, float dt) {
         if (b->life >= b->maxLife || b->pos.y > d->waterY + 0.05f) b->alive = 0;
     }
 }
+//helper for drawing
+static Matrix DonBoneGlobalMatrix(const Donogan* d, int boneIndex) {
+    Matrix M = MatrixIdentity();
+    const Transform* frame = d->anims[d->curAnimId].framePoses[d->curFrame];
+    // Walk up the hierarchy, multiplying local (scale*rot*trans) at each parent
+    for (int b = boneIndex; b != -1; b = d->model.bones[b].parent) {
+        Transform t = frame[b];
+        Matrix L = MatrixMultiply(
+            MatrixScale(t.scale.x, t.scale.y, t.scale.z),
+            MatrixMultiply(QuaternionToMatrix(t.rotation), MatrixTranslate(t.translation.x, t.translation.y, t.translation.z))
+        );
+        M = MatrixMultiply(L, M);
+    }
+    return M;
+}
 
 // ---------- Init / Free ----------
 static Donogan InitDonogan(void)
@@ -326,6 +580,15 @@ static Donogan InitDonogan(void)
         for (int i = 0; i < d.model.materialCount; i++)
             SetMaterialTexture(&d.model.materials[i], MATERIAL_MAP_ALBEDO, d.tex);
     }
+
+    //bow
+    d.bowModel = LoadModel(BOW_GLB);
+    d.bowTex = LoadTexture(BOW_PNG);
+    SetMaterialTexture(&d.bowModel.materials[0], MATERIAL_MAP_ALBEDO, d.bowTex);
+    d.bowOffset = (Vector3){ 0.0f, -1.0f, 0.0f };  // start at exact Donogan origin
+    d.bowEulerDeg = (Vector3){ 0.0f, 0.0f, 0.0f };
+    d.bowScale = 2.00f;
+    d.bowBoneIndex = DON_BONE_DEF_SPINE002;
 
     // Load animations and build remapped copies by bone name
     d.animsRaw = LoadModelAnimations(GLB, &d.animCount);
@@ -414,6 +677,9 @@ static Donogan InitDonogan(void)
     d.rollVel = (Vector3){ 0 };
     d.rollBurst = 10.0f;   // ~1.25x your run speed; tweak 12–20
     d.rollDrag = 6.5f;    // 1/sec; 6–10 gives a snappy decel
+
+    PrintModelBones(&d.model);
+    PrintModelBones(&d.bowModel);
 
     DonSnapToGround(&d);
     return d;

@@ -2554,6 +2554,32 @@ int main(void) {
             {
                 // Draw Donogan
                 DrawModel(don.model, don.pos, don.scale, WHITE); // uses model.transform for rotation
+
+                //bow stuff
+                // Character pieces
+                Matrix RfixYaw = don.model.transform;          // your X-fix + yaw is already here
+                Matrix Schar = MatrixScale(don.scale, don.scale, don.scale);
+                Matrix Tchar = MatrixTranslate(don.pos.x, don.pos.y, don.pos.z);
+
+                // Bone global (current frame)
+                Matrix B = DonBoneGlobalMatrix(&don, don.bowBoneIndex);
+
+                // Local bow placement you already have knobs for
+                Matrix L = MatrixMultiply(
+                    MatrixTranslate(don.bowOffset.x, don.bowOffset.y, don.bowOffset.z),
+                    MatrixMultiply(
+                        MatrixRotateXYZ((Vector3) { DEG2RAD* don.bowEulerDeg.x, DEG2RAD* don.bowEulerDeg.y, DEG2RAD* don.bowEulerDeg.z }),
+                        MatrixScale(don.bowScale, don.bowScale, don.bowScale)
+                    )
+                );
+
+                // Final world xform (mirrors your whale compose style: Scale * (Rot * Trans))
+                Matrix worldNoScale = MatrixMultiply(RfixYaw, MatrixMultiply(B, L));
+                Matrix finalM = MatrixMultiply(Schar, MatrixMultiply(worldNoScale, Tchar));
+
+                // Use a valid material slot
+                DrawMesh(don.bowModel.meshes[0], don.bowModel.materials[0], finalM);
+                //bubbles
                 if (don.inWater) { DonDrawBubbles(&don); }
             }
             //tree of life
