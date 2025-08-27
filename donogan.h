@@ -585,10 +585,10 @@ static Donogan InitDonogan(void)
     d.bowModel = LoadModel(BOW_GLB);
     d.bowTex = LoadTexture(BOW_PNG);
     SetMaterialTexture(&d.bowModel.materials[0], MATERIAL_MAP_ALBEDO, d.bowTex);
-    d.bowOffset = (Vector3){ 0.0f, -1.0f, 0.0f };  // start at exact Donogan origin
+    d.bowOffset = (Vector3){ 0.8f, 2.6f, -0.5f };  // start at exact Donogan origin
     d.bowEulerDeg = (Vector3){ 0.0f, 0.0f, 0.0f };
-    d.bowScale = 2.00f;
-    d.bowBoneIndex = DON_BONE_DEF_SPINE002;
+    d.bowScale = 1.76f;
+    d.bowBoneIndex = DON_BONE_DEF_SPINE002; //DON_BONE_DEF_HAND_L;
 
     // Load animations and build remapped copies by bone name
     d.animsRaw = LoadModelAnimations(GLB, &d.animCount);
