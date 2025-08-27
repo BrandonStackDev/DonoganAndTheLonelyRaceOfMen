@@ -372,8 +372,12 @@ float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
     return u * a.y + v * b.y + w * c.y;
 }
 
-float GetTerrainHeightFromMeshXZ(Chunk chunk, float x, float z)
+float GetTerrainHeightFromMeshXZ(float x, float z)
 {
+    int half = CHUNK_COUNT / 2;
+    int cx = (int)floor(x / CHUNK_WORLD_SIZE) + half;
+    int cy = (int)floor(z / CHUNK_WORLD_SIZE) + half;
+    Chunk chunk = chunks[cx][cy];
     Mesh mesh = chunk.model.meshes[0];
     float *verts = (float *)mesh.vertices;
     unsigned short *tris = (unsigned short *)mesh.indices;
@@ -578,7 +582,7 @@ LightningBug *GenerateLightningBugs(Vector3 cameraPos, int count, float maxDista
         float z = cameraPos.z + sinf(angle) * dist;
         bugs[i].angle = 0.0f;
         bugs[i].pos = (Vector3){ x, 0.0f, z }; // you'll set .y later
-        bugs[i].pos.y = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], bugs[i].pos.x, bugs[i].pos.z);
+        bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z);
         bugs[i].pos.y = bugs[i].pos.y + GetRandomValue(1, 10);
         if(bugs[i].pos.y<-5000){bugs[i].pos.y=500;}
         bugs[i].rate = GetRandomValue(0.1f, 10.01f);
@@ -606,7 +610,7 @@ void RegenerateLightningBugs(LightningBug *bugs, Vector3 cameraPos, int count, f
         float z = cameraPos.z + sinf(angle) * dist;
         bugs[i].angle = 0.0f;
         bugs[i].pos = (Vector3){ x, 0.0f, z }; // you'll set .y later
-        bugs[i].pos.y = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], bugs[i].pos.x, bugs[i].pos.z);
+        bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z);
         bugs[i].pos.y = bugs[i].pos.y + GetRandomValue(1, 10);
         if(bugs[i].pos.y<-5000){bugs[i].pos.y=500;}
         bugs[i].rate = GetRandomValue(0.1f, 10.01f);
@@ -2217,7 +2221,7 @@ int main(void) {
                 }
                 else
                 {
-                    float groundY = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], camera.position.x, camera.position.z);
+                    float groundY = GetTerrainHeightFromMeshXZ(camera.position.x, camera.position.z);
                     //TraceLog(LOG_INFO, "setting camera y: (%d,%d){%f,%f,%f}[%f]", closestCX, closestCY, camera.position.x, camera.position.y, camera.position.z, groundY);
                     if(groundY < -9000.0f){groundY=camera.position.y - PLAYER_HEIGHT;} // if we error, dont change y
                     camera.position.y = groundY + PLAYER_HEIGHT;  // e.g. +1.8f for standing
@@ -2235,7 +2239,7 @@ int main(void) {
                 if (closestCX < 0 || closestCY < 0 || closestCX >= CHUNK_COUNT || closestCY >= CHUNK_COUNT) {TraceLog(LOG_INFO, "Outside of world bounds: %d,%d", closestCX, closestCY);}
                 else
                 {
-                    float groundY = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], don.pos.x, don.pos.z);
+                    float groundY = GetTerrainHeightFromMeshXZ(don.pos.x, don.pos.z);
                     if (groundY < -9000.0f) { groundY = don.pos.y; } // if we error, dont change y
                     if (inWater)
                     {
@@ -2277,8 +2281,8 @@ int main(void) {
                 front = Vector3Add(truckPosition, RotateY(RotateX((Vector3){ 0.0f, 0.0f, truckFrontDim }, truckPitch), -truckAngle));//
                 back  = Vector3Add(truckPosition, RotateY(RotateX((Vector3){ 0.0f, 0.0f, truckBackDim }, truckPitch), -truckAngle));//
 
-                float frontY = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY],front.x, front.z);
-                float backY  = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY],back.x, back.z);
+                float frontY = GetTerrainHeightFromMeshXZ(front.x, front.z);
+                float backY  = GetTerrainHeightFromMeshXZ(back.x, back.z);
                 if(truckAirState!=AIRBORNE && frontY > -9000.0f && backY > -9000.0f)
                 {
                     front.y = frontY;
@@ -2295,7 +2299,7 @@ int main(void) {
                     truckPosition.y += verticalVelocity * truckSpeed * GetFrameTime();
 
                     // Check for landing
-                    float groundY = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], truckPosition.x, truckPosition.z);
+                    float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
                     if(groundY < -9000.0f){groundY=truckPosition.y;} 
                     if (truckPosition.y <= groundY) {
                         truckPosition.y = groundY;
@@ -2307,7 +2311,7 @@ int main(void) {
                     {
                         Vector3 localOffset = RotateY(RotateX(tireOffsets[i], truckPitch), -truckAngle);
                         Vector3 pos = Vector3Add(truckOrigin, localOffset);
-                        float groundYy = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], pos.x, pos.z);
+                        float groundYy = GetTerrainHeightFromMeshXZ(pos.x, pos.z);
                         if(groundYy < -9000.0f){groundYy=pos.y;} // if we error, dont change y
                         if(pos.y < groundYy)//tire hit the ground
                         {
@@ -2329,7 +2333,7 @@ int main(void) {
                     }
                     else
                     {
-                        float groundY = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], truckPosition.x, truckPosition.z);
+                        float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
                         //TraceLog(LOG_INFO, "setting camera y: (%d,%d){%f,%f,%f}[%f]", closestCX, closestCY, camera.position.x, camera.position.y, camera.position.z, groundY);
                         if(groundY < -9000.0f){groundY=truckPosition.y;} // if we error, dont change y
                         if(truckAirState==GROUND && truckPosition.y>groundY)//todo: this might be too aggresive
@@ -2350,7 +2354,7 @@ int main(void) {
                         {
                             Vector3 localOffset = RotateY(tireOffsets[i], -truckAngle);
                             Vector3 pos = Vector3Add(truckOrigin, localOffset);
-                            float groundYy = GetTerrainHeightFromMeshXZ(chunks[closestCX][closestCY], pos.x, pos.z);
+                            float groundYy = GetTerrainHeightFromMeshXZ(pos.x, pos.z);
                             if(groundYy < -9000.0f){groundYy=pos.y;} // if we error, dont change y
                             pos.y = groundYy;
                             tireYPos[i] = pos.y;
