@@ -339,7 +339,7 @@ static Donogan InitDonogan(void)
     d.bbCenter = Vector3Scale(Vector3Add(d.firstBB.min, d.firstBB.max), 0.5f);
     //float height = d.firstBB.max.y - d.firstBB.min.y;
     //d.scale = (height > 0.0001f) ? Clampf(2.0f / height, 0.01f, 100.0f) : 1.0f;
-    d.scale = 1.8;
+    d.scale = 2.8;
     // Pose/orient
     d.modelYawX = 0.0f; // set -90 if needed; we’ll bake it into model.transform below
     d.model.transform = MatrixMultiply(d.model.transform, MatrixRotateX(DEG2RAD * d.modelYawX));

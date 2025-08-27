@@ -198,7 +198,7 @@ Vector3 LightTargetTargetDay = { 1.0f, 0.0f, 0.0f };
 Vector3 LightTargetTargetNight = { 4.0f, 50.0f, 5.0f };
 Vector3 LightTargetDraw = { 4.0f, 0.0f, 5.0f };
 Color lightColorTargetNight = {  20,   30, 140, 202 };
-Color lightColorTargetDay = {  100, 180, 220, 255 };
+Color lightColorTargetDay = { 102, 191, 255, 255 };
 Color lightColorDraw = {  102, 191, 255, 255 };
 Color lightTileColor = {  254, 254, 254, 254 };
 
@@ -1325,7 +1325,7 @@ int main(void) {
     bool havePad = false;
     float moveMag = 0.0f;
     // --- Third-person orbit camera state (around don.pos) ---
-    float yaw = 0.0f, pitch = 0.25f, radius = 8.0f;
+    float yaw = 0.0f, pitch = 0.25f, radius = 14.0f;
     //day-night timer
     Timer nightTimer = CreateTimer(128); //128 seconds, just above 2 minutes
 
