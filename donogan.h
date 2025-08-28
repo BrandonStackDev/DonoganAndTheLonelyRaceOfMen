@@ -90,75 +90,75 @@ typedef enum DonBone {
     DON_BONE_COUNT = 67
 } DonBone;
 
-//static const char* kDonBoneName[DON_BONE_COUNT] = {
-//    "root",
-//    "DEF-hips",
-//    "DEF-spine001",
-//    "DEF-spine002",
-//    "DEF-spine003",
-//    "DEF-neck",
-//    "DEF-neck01",
-//    "DEF-head",
-//    "DEF-headtip",
-//    "DEF-shoulderL",
-//    "DEF-upper_armL",
-//    "DEF-forearmL",
-//    "DEF-handL",
-//    "DEF-f_index01L",
-//    "DEF-f_index02L",
-//    "DEF-f_index03L",
-//    "DEF-f_index04tipL",
-//    "DEF-f_middle01L",
-//    "DEF-f_middle02L",
-//    "DEF-f_middle03L",
-//    "DEF-f_middle04tipL",
-//    "DEF-f_pinky01L",
-//    "DEF-f_pinky02L",
-//    "DEF-f_pinky03L",
-//    "DEF-f_pinky04tipL",
-//    "DEF-f_ring01L",
-//    "DEF-f_ring02L",
-//    "DEF-f_ring03L",
-//    "DEF-f_ring04tipL",
-//    "DEF-thumb01L",
-//    "DEF-thumb02L",
-//    "DEF-thumb03L",
-//    "DEF-thumb04tipL",
-//    "DEF-shoulderR",
-//    "DEF-upper_armR",
-//    "DEF-forearmR",
-//    "DEF-handR",
-//    "DEF-f_index01R",
-//    "DEF-f_index02R",
-//    "DEF-f_index03R",
-//    "DEF-f_index04tipR",
-//    "DEF-f_middle01R",
-//    "DEF-f_middle02R",
-//    "DEF-f_middle03R",
-//    "DEF-f_middle04tipR",
-//    "DEF-f_pinky01R",
-//    "DEF-f_pinky02R",
-//    "DEF-f_pinky03R",
-//    "DEF-f_pinky04tipR",
-//    "DEF-f_ring01R",
-//    "DEF-f_ring02R",
-//    "DEF-f_ring03R",
-//    "DEF-f_ring04tipR",
-//    "DEF-thumb01R",
-//    "DEF-thumb02R",
-//    "DEF-thumb03R",
-//    "DEF-thumb04tipR",
-//    "DEF-thighL",
-//    "DEF-shinL",
-//    "DEF-footL",
-//    "DEF-toeL",
-//    "DEF-toetipL",
-//    "DEF-thighR",
-//    "DEF-shinR",
-//    "DEF-footR",
-//    "DEF-toeR",
-//    "DEF-toetipR"
-//};
+static const char* kDonBoneName[DON_BONE_COUNT] = {
+    "root",
+    "DEF-hips",
+    "DEF-spine001",
+    "DEF-spine002",
+    "DEF-spine003",
+    "DEF-neck",
+    "DEF-neck01",
+    "DEF-head",
+    "DEF-headtip",
+    "DEF-shoulderL",
+    "DEF-upper_armL",
+    "DEF-forearmL",
+    "DEF-handL",
+    "DEF-f_index01L",
+    "DEF-f_index02L",
+    "DEF-f_index03L",
+    "DEF-f_index04tipL",
+    "DEF-f_middle01L",
+    "DEF-f_middle02L",
+    "DEF-f_middle03L",
+    "DEF-f_middle04tipL",
+    "DEF-f_pinky01L",
+    "DEF-f_pinky02L",
+    "DEF-f_pinky03L",
+    "DEF-f_pinky04tipL",
+    "DEF-f_ring01L",
+    "DEF-f_ring02L",
+    "DEF-f_ring03L",
+    "DEF-f_ring04tipL",
+    "DEF-thumb01L",
+    "DEF-thumb02L",
+    "DEF-thumb03L",
+    "DEF-thumb04tipL",
+    "DEF-shoulderR",
+    "DEF-upper_armR",
+    "DEF-forearmR",
+    "DEF-handR",
+    "DEF-f_index01R",
+    "DEF-f_index02R",
+    "DEF-f_index03R",
+    "DEF-f_index04tipR",
+    "DEF-f_middle01R",
+    "DEF-f_middle02R",
+    "DEF-f_middle03R",
+    "DEF-f_middle04tipR",
+    "DEF-f_pinky01R",
+    "DEF-f_pinky02R",
+    "DEF-f_pinky03R",
+    "DEF-f_pinky04tipR",
+    "DEF-f_ring01R",
+    "DEF-f_ring02R",
+    "DEF-f_ring03R",
+    "DEF-f_ring04tipR",
+    "DEF-thumb01R",
+    "DEF-thumb02R",
+    "DEF-thumb03R",
+    "DEF-thumb04tipR",
+    "DEF-thighL",
+    "DEF-shinL",
+    "DEF-footL",
+    "DEF-toeL",
+    "DEF-toetipL",
+    "DEF-thighR",
+    "DEF-shinR",
+    "DEF-footR",
+    "DEF-toeR",
+    "DEF-toetipR"
+};
 
 // ===== Bow (7 bones) ==========================================================
 // (Two roots here: "Bone" and "Bone.004". Names kept literal, dots -> underscores)
@@ -174,15 +174,15 @@ typedef enum BowBone {
     BOW_BONE_COUNT = 7
 } BowBone;
 
-//static const char* kBowBoneName[BOW_BONE_COUNT] = {
-//    "Bone",
-//    "Bone.001",
-//    "Bone.002",
-//    "Bone.003",
-//    "Bone.004",
-//    "Bone.005",
-//    "Bone.006"
-//};
+static const char* kBowBoneName[BOW_BONE_COUNT] = {
+    "Bone",
+    "Bone.001",
+    "Bone.002",
+    "Bone.003",
+    "Bone.004",
+    "Bone.005",
+    "Bone.006"
+};
 
 typedef enum {
     DONOGAN_STATE_IDLE,
@@ -499,11 +499,35 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     default:                          return NULL;
     }
 }
+static void DonApplyPoseLocalDelta(Donogan* d, Transform* out, int boneId, const KeyFrameBone* KB)
+{
+    if (boneId < 0 || boneId >= d->model.boneCount) return;
+    out[boneId].translation = Vector3Add(out[boneId].translation, KB->pos);
+    out[boneId].rotation = QuaternionNormalize(
+        QuaternionMultiply(out[boneId].rotation, KB->rot));
+    // out[boneId].scale stays as-is (from bind)
+}
 
+static void DonApplyPoseIk(int rootBoneId, int boneId, Donogan* d, KeyFrameBone* KB, Transform* out)
+{
+    const BoneInfo* biRoot = &d->model.bones[boneId];
+    TraceLog(LOG_INFO, "%s", biRoot->name);
+    // Delta add translation, delta multiply rotation
+    for (int i = 0; i < d->model.boneCount; ++i)
+    {
+        const BoneInfo* bi = &d->model.bones[i];
+        if (bi->parent == boneId)
+        {
+            DonApplyPoseIk(rootBoneId, i, d, KB, out);
+        }
+    }
+    out[boneId].translation = Vector3Add(out[rootBoneId].translation, KB->pos);
+    out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[rootBoneId].rotation, KB->rot));
+}
 // Apply current group's current key (single key for now) as deltas on top of bind pose
 static void DonApplyProcPoseFromKF(Donogan* d)
 {
-    if (!d || d->model.boneCount <= 0 || !d->model.bindPose) return;
+    if (!d || d->model.boneCount <= 0 || !d->model.bindPose) { return; }
 
     const int bc = d->model.boneCount;
     // Temp frame (1 frame) – simple and clear
@@ -511,20 +535,19 @@ static void DonApplyProcPoseFromKF(Donogan* d)
     if (!out) return;
 
     // Base = bind pose (later, you can switch this to a cached GLB pose to avoid "snap")
-    for (int i = 0; i < bc; ++i) out[i] = d->model.bindPose[i];
+    for (int i = 0; i < bc; ++i) { out[i] = d->model.bindPose[i]; }
 
     KeyFrameGroup* G = DonActiveKfGroup(d);
     if (G && G->maxKey > 0) {
         const KeyFrame* K = &G->keyFrames[G->curKey]; // one key for now
         for (int i = 0; i < K->maxBones; ++i) {
-            const KeyFrameBone* KB = &K->kfBones[i];
+            KeyFrameBone* KB = &K->kfBones[i];
             int b = (int)KB->boneId;
             if (b >= 0 && b < bc) {
                 // Delta add translation, delta multiply rotation
-                out[b].translation = Vector3Add(out[b].translation, KB->pos);
-                out[b].rotation = QuaternionNormalize(
-                    QuaternionMultiply(out[b].rotation, KB->rot));
-                // (scale untouched; add later if you decide to support it)
+                //out[b].translation = Vector3Add(out[b].translation, KB->pos);
+                //out[b].rotation = QuaternionNormalize(QuaternionMultiply(out[b].rotation, KB->rot));
+                DonApplyPoseIk(b, b,d, KB, out);
             }
         }
     }
