@@ -499,28 +499,36 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     default:                          return NULL;
     }
 }
-static void DonApplyPoseLocalDelta(Donogan* d, Transform* out, int boneId, const KeyFrameBone* KB)
+// child_local = inverse(parent_rot) * (child_world - parent_world_pos)
+static inline Vector3 LocalPosFromParentPosRot(Vector3 parentWorldPos, Quaternion parentWorldRot, Vector3 childWorldPos)
 {
-    if (boneId < 0 || boneId >= d->model.boneCount) return;
-    out[boneId].translation = Vector3Add(out[boneId].translation, KB->pos);
-    out[boneId].rotation = QuaternionNormalize(
-        QuaternionMultiply(out[boneId].rotation, KB->rot));
-    // out[boneId].scale stays as-is (from bind)
+    Vector3 relW = Vector3Subtract(childWorldPos, parentWorldPos);
+    Quaternion qInv = QuaternionInvert(parentWorldRot);
+    return Vector3RotateByQuaternion(relW, qInv);
 }
-
-static void DonApplyPoseFk(int boneId, Donogan* d, const KeyFrameBone* KB, Transform* out)
+static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFrameBone* KB, Transform* out)
 {
-    if (boneId < 0 || boneId >= d->model.boneCount) return;
+    if (boneId < 0 || boneId >= d->model.boneCount) { return; }
 
     // Apply delta *on top of the bone's own local pose*, not parent/root
-    out[boneId].translation = Vector3Add(out[boneId].translation, KB->pos);
-    out[boneId].rotation = QuaternionNormalize(
-        QuaternionMultiply(out[boneId].rotation, KB->rot));
+    if (boneId == rootBoneId)
+    {
+        out[boneId].translation = Vector3Add(out[boneId].translation, KB->pos);
+        out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, KB->rot));
+    }
+    else
+    {
+        out[boneId].translation = LocalPosFromParentPosRot(
+            out[d->model.bones[boneId].parent].translation,
+            out[d->model.bones[boneId].parent].rotation,
+            out[boneId].translation);
+        out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, out[d->model.bones[boneId].parent].rotation));
+    }
 
     // Recurse to children, but do NOT re-apply the delta. They just keep their own locals.
     for (int i = 0; i < d->model.boneCount; ++i) {
         if (d->model.bones[i].parent == boneId) {
-            DonApplyPoseFk(i, d, KB, out);
+            DonApplyPoseFk(rootBoneId, i, d, KB, out);
         }
     }
 }
@@ -548,7 +556,7 @@ static void DonApplyProcPoseFromKF(Donogan* d)
                 // Delta add translation, delta multiply rotation
                 //out[b].translation = Vector3Add(out[b].translation, KB->pos);
                 //out[b].rotation = QuaternionNormalize(QuaternionMultiply(out[b].rotation, KB->rot));
-                DonApplyPoseFk(b,d, KB, out);
+                DonApplyPoseFk(b, b,d, KB, out);
             }
         }
     }
