@@ -268,8 +268,9 @@ typedef struct Bubble {
     unsigned char alive;
 } Bubble;
 //proc anim
+#define MAX_KEY_FRAME_BONES 16
 #define MAX_KEY_FRAMES 4
-#define MAX_KEY_FRAMES_GROUPS 3 //keep in sync with BOW_KFG_COUNT
+#define MAX_KEY_FRAME_GROUPS 3 //keep in sync with BOW_KFG_COUNT
 // Indices into Donogan.kfGroups[]
 typedef enum {
     BOW_KFG_ENTER = 0,
@@ -279,11 +280,16 @@ typedef enum {
 } BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
 typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
 typedef struct {
-    float     time;        // seconds
+    DonBone boneId;
     float     rate;        // ? to mutliply by dt in the interpol functions?
     Vector3   pos;
     Quaternion rot;
     InterpolateFunc interpol;
+} KeyFrameBone;
+typedef struct {
+    float     time;        // seconds
+    int maxBones;
+    KeyFrameBone kfBones[MAX_KEY_FRAME_BONES];
 } KeyFrame;
 typedef struct {
     DonoganState state;
@@ -407,7 +413,7 @@ typedef struct {
     float   rollDrag;    // damping (1/sec), higher = stops sooner
 
     //proc anim
-    KeyFrameGroup kfGroups[MAX_KEY_FRAMES_GROUPS];
+    KeyFrameGroup kfGroups[MAX_KEY_FRAME_GROUPS];
 } Donogan;
 
 // Assets (adjust if needed)
@@ -427,39 +433,112 @@ static inline void DonSnapToGround(Donogan* d) {
 }
 //proc anim
 // Helper to fill one KeyFrame with zeros + identity rotation
-static inline void KfSetZero(KeyFrame* k) {
-    k->time = 0.0f;
-    k->rate = 0.0f;
-    k->pos = (Vector3){ 0.0f, 0.0f, 0.0f };
-    k->rot = QuaternionIdentity();   // valid quaternion (0,0,0,1)
-    k->interpol = LerpFloat;              // linear interpolation
+// Fill one KeyFrameBone with zeros + identity rotation + linear interpolator
+static inline void KfBoneZero(KeyFrameBone* kb, DonBone bone) {
+    kb->boneId = bone;
+    kb->rate = 0.0f;                      // not used yet, but kept for future
+    kb->pos = (Vector3){ 0.0f,0.0f,0.0f }; // delta translation (local)
+    kb->rot = QuaternionIdentity();      // delta rotation (local)
+    kb->interpol = LerpFloat;                 // linear
 }
+
+// Write a KeyFrame with N bones, all zeroed, at time t
+static inline void KfMakeZeroKey(KeyFrame* kf, float t,
+    const DonBone* bones, int boneCount) {
+    kf->time = t;
+    kf->maxBones = (boneCount > MAX_KEY_FRAME_BONES) ? MAX_KEY_FRAME_BONES : boneCount;
+    for (int i = 0; i < kf->maxBones; ++i) { KfBoneZero(&kf->kfBones[i], bones[i]); }
+}
+
 
 static void DonInitBowKeyframeGroups(Donogan* d)
 {
-    // ---- ENTER ----
+    // Bones we’ll drive for the bow pose (you can add fingers later):
+    const DonBone BOW_BONES[] = {
+        DON_BONE_DEF_SHOULDER_L,
+        DON_BONE_DEF_UPPER_ARM_L,
+        DON_BONE_DEF_FOREARM_L,
+        DON_BONE_DEF_HAND_L
+    };
+    const int NUM_BOW_BONES = (int)(sizeof(BOW_BONES) / sizeof(BOW_BONES[0]));
+
+    // --- ENTER ---
     KeyFrameGroup* g0 = &d->kfGroups[BOW_KFG_ENTER];
     g0->state = DONOGAN_STATE_BOW_ENTER;
     g0->anim = DONOGAN_ANIM_PROC_BOW_ENTER;
     g0->maxKey = 1;
     g0->curKey = 0;
-    KfSetZero(&g0->keyFrames[0]);
+    KfMakeZeroKey(&g0->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
 
-    // ---- AIM ----
+    // --- AIM ---
     KeyFrameGroup* g1 = &d->kfGroups[BOW_KFG_AIM];
     g1->state = DONOGAN_STATE_BOW_AIM;
     g1->anim = DONOGAN_ANIM_PROC_BOW_AIM;
     g1->maxKey = 1;
     g1->curKey = 0;
-    KfSetZero(&g1->keyFrames[0]);
+    KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+    g1->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, 0, 0);
+    g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
+    g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
 
-    // ---- EXIT ----
+    // --- EXIT ---
     KeyFrameGroup* g2 = &d->kfGroups[BOW_KFG_EXIT];
     g2->state = DONOGAN_STATE_BOW_EXIT;
     g2->anim = DONOGAN_ANIM_PROC_BOW_EXIT;
     g2->maxKey = 1;
     g2->curKey = 0;
-    KfSetZero(&g2->keyFrames[0]);
+    KfMakeZeroKey(&g2->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+}
+
+// Choose the active keyframe group based on current proc anim
+static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
+    switch (d->curAnimId) {
+    case DONOGAN_ANIM_PROC_BOW_ENTER: return &d->kfGroups[BOW_KFG_ENTER];
+    case DONOGAN_ANIM_PROC_BOW_AIM:   return &d->kfGroups[BOW_KFG_AIM];
+    case DONOGAN_ANIM_PROC_BOW_EXIT:  return &d->kfGroups[BOW_KFG_EXIT];
+    default:                          return NULL;
+    }
+}
+
+// Apply current group's current key (single key for now) as deltas on top of bind pose
+static void DonApplyProcPoseFromKF(Donogan* d)
+{
+    if (!d || d->model.boneCount <= 0 || !d->model.bindPose) return;
+
+    const int bc = d->model.boneCount;
+    // Temp frame (1 frame) – simple and clear
+    Transform* out = (Transform*)MemAlloc(sizeof(Transform) * bc);
+    if (!out) return;
+
+    // Base = bind pose (later, you can switch this to a cached GLB pose to avoid "snap")
+    for (int i = 0; i < bc; ++i) out[i] = d->model.bindPose[i];
+
+    KeyFrameGroup* G = DonActiveKfGroup(d);
+    if (G && G->maxKey > 0) {
+        const KeyFrame* K = &G->keyFrames[G->curKey]; // one key for now
+        for (int i = 0; i < K->maxBones; ++i) {
+            const KeyFrameBone* KB = &K->kfBones[i];
+            int b = (int)KB->boneId;
+            if (b >= 0 && b < bc) {
+                // Delta add translation, delta multiply rotation
+                out[b].translation = Vector3Add(out[b].translation, KB->pos);
+                out[b].rotation = QuaternionNormalize(
+                    QuaternionMultiply(out[b].rotation, KB->rot));
+                // (scale untouched; add later if you decide to support it)
+            }
+        }
+    }
+
+    // Build 1-frame "animation" and push it
+    Transform* framesArr[1] = { out };
+    ModelAnimation A1;
+    A1.boneCount = bc;
+    A1.frameCount = 1;
+    A1.bones = d->model.bones;
+    A1.framePoses = framesArr;
+
+    UpdateModelAnimation(d->model, A1, 0);
+    MemFree(out);
 }
 // Tunable durations for the one-shot proc anims
 #ifndef BOW_ENTER_T
@@ -477,25 +556,26 @@ static void DonApplyProcFrame(Donogan* d)
 {
     if (!d) return;
 
+    // 1) Apply current procedural pose from keyframes
+    DonApplyProcPoseFromKF(d);
+
+    // 2) Timing gates for enter/aim/exit
     switch (d->curAnimId) {
     case DONOGAN_ANIM_PROC_BOW_ENTER:
         if (d->animTime >= BOW_ENTER_T) d->animFinished = true;
         break;
-
     case DONOGAN_ANIM_PROC_BOW_AIM:
-        d->animFinished = false; // hold indefinitely
+        d->animFinished = false; // holds indefinitely
         break;
-
     case DONOGAN_ANIM_PROC_BOW_EXIT:
         if (d->animTime >= BOW_EXIT_T) d->animFinished = true;
         break;
-
     default:
-        // any other negative proc id: treat as instant/no-op
-        d->animFinished = true;
+        d->animFinished = true;  // unknown proc id → finish immediately
         break;
     }
 }
+
 
 //bone print
 // Print the full bone list as a tree with bind-pose data
