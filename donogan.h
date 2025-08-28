@@ -202,9 +202,9 @@ typedef enum {
 
 // ---------- Anim IDs present in your GLB ----------
 typedef enum {
-    //DONOGAN_ANIM_PROC_BOW_ENTER = -3,
-    //DONOGAN_ANIM_PROC_BOW_AIM = -2,
-    //DONOGAN_ANIM_PROC_BOW_EXIT = -1,
+    DONOGAN_ANIM_PROC_BOW_ENTER = -3,
+    DONOGAN_ANIM_PROC_BOW_AIM = -2,
+    DONOGAN_ANIM_PROC_BOW_EXIT = -1,
     //animation : Crouch_Fwd_Loop(118 frames, 2.000000s)
     DONOGAN_ANIM_Crouch_Fwd_Loop = 0,
     //animation : Crouch_Idle_Loop(172 frames, 2.916667s)
@@ -267,6 +267,36 @@ typedef struct Bubble {
     float   life, maxLife;
     unsigned char alive;
 } Bubble;
+//proc anim
+#define MAX_KEY_FRAMES 4
+#define MAX_KEY_FRAMES_GROUPS 3 //keep in sync with BOW_KFG_COUNT
+// Indices into Donogan.kfGroups[]
+typedef enum {
+    BOW_KFG_ENTER = 0,
+    BOW_KFG_AIM = 1,
+    BOW_KFG_EXIT = 2,
+    BOW_KFG_COUNT = 3
+} BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
+typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
+typedef struct {
+    float     time;        // seconds
+    float     rate;        // ? to mutliply by dt in the interpol functions?
+    Vector3   pos;
+    Quaternion rot;
+    InterpolateFunc interpol;
+} KeyFrame;
+typedef struct {
+    DonoganState state;
+    DonoganAnim anim;
+    int maxKey, curKey;
+    KeyFrame keyFrames[MAX_KEY_FRAMES];
+} KeyFrameGroup;
+//proc anim inerpol funcs
+// typedef float (*InterpolateFunc)(float*, float*, float*); // to, from, dt
+static float LerpFloat(float* to, float* from, float* dt) {
+    float a = *from, b = *to, t = *dt;
+    return a + (b - a) * t;
+}
 // ---------- Donogan runtime ----------
 typedef struct {
     // Animation & model
@@ -375,6 +405,9 @@ typedef struct {
     Vector3 rollVel;     // carried forward velocity (XZ)
     float   rollBurst;   // initial impulse magnitude (m/s)
     float   rollDrag;    // damping (1/sec), higher = stops sooner
+
+    //proc anim
+    KeyFrameGroup kfGroups[MAX_KEY_FRAMES_GROUPS];
 } Donogan;
 
 // Assets (adjust if needed)
@@ -392,6 +425,78 @@ static inline void DonSnapToGround(Donogan* d) {
     d->velY = 0.0f;
     d->onGround = true;
 }
+//proc anim
+// Helper to fill one KeyFrame with zeros + identity rotation
+static inline void KfSetZero(KeyFrame* k) {
+    k->time = 0.0f;
+    k->rate = 0.0f;
+    k->pos = (Vector3){ 0.0f, 0.0f, 0.0f };
+    k->rot = QuaternionIdentity();   // valid quaternion (0,0,0,1)
+    k->interpol = LerpFloat;              // linear interpolation
+}
+
+static void DonInitBowKeyframeGroups(Donogan* d)
+{
+    // ---- ENTER ----
+    KeyFrameGroup* g0 = &d->kfGroups[BOW_KFG_ENTER];
+    g0->state = DONOGAN_STATE_BOW_ENTER;
+    g0->anim = DONOGAN_ANIM_PROC_BOW_ENTER;
+    g0->maxKey = 1;
+    g0->curKey = 0;
+    KfSetZero(&g0->keyFrames[0]);
+
+    // ---- AIM ----
+    KeyFrameGroup* g1 = &d->kfGroups[BOW_KFG_AIM];
+    g1->state = DONOGAN_STATE_BOW_AIM;
+    g1->anim = DONOGAN_ANIM_PROC_BOW_AIM;
+    g1->maxKey = 1;
+    g1->curKey = 0;
+    KfSetZero(&g1->keyFrames[0]);
+
+    // ---- EXIT ----
+    KeyFrameGroup* g2 = &d->kfGroups[BOW_KFG_EXIT];
+    g2->state = DONOGAN_STATE_BOW_EXIT;
+    g2->anim = DONOGAN_ANIM_PROC_BOW_EXIT;
+    g2->maxKey = 1;
+    g2->curKey = 0;
+    KfSetZero(&g2->keyFrames[0]);
+}
+// Tunable durations for the one-shot proc anims
+#ifndef BOW_ENTER_T
+#define BOW_ENTER_T 0.25f
+#endif
+#ifndef BOW_EXIT_T
+#define BOW_EXIT_T  0.20f
+#endif
+
+// Minimal “procedural anim stepper”:
+// - ENTER/EXIT finish after fixed time
+// - AIM never finishes (loops/holds)
+// No bone posing here; this is only to unblock the state machine.
+static void DonApplyProcFrame(Donogan* d)
+{
+    if (!d) return;
+
+    switch (d->curAnimId) {
+    case DONOGAN_ANIM_PROC_BOW_ENTER:
+        if (d->animTime >= BOW_ENTER_T) d->animFinished = true;
+        break;
+
+    case DONOGAN_ANIM_PROC_BOW_AIM:
+        d->animFinished = false; // hold indefinitely
+        break;
+
+    case DONOGAN_ANIM_PROC_BOW_EXIT:
+        if (d->animTime >= BOW_EXIT_T) d->animFinished = true;
+        break;
+
+    default:
+        // any other negative proc id: treat as instant/no-op
+        d->animFinished = true;
+        break;
+    }
+}
+
 //bone print
 // Print the full bone list as a tree with bind-pose data
 // Forward decl
@@ -696,6 +801,8 @@ static Donogan InitDonogan(void)
 
     PrintModelBones(&d.model);
     PrintModelBones(&d.bowModel);
+    //proc anim setup
+    DonInitBowKeyframeGroups(&d);
 
     DonSnapToGround(&d);
     return d;
@@ -757,9 +864,9 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_AIR_ROLL:    return DONOGAN_ANIM_ROLL;
     case DONOGAN_STATE_SWIM_IDLE:   return DONOGAN_ANIM_Swim_Idle_Loop;
     case DONOGAN_STATE_SWIM_MOVE:   return DONOGAN_ANIM_Swim_Fwd_Loop;
-    case DONOGAN_STATE_BOW_ENTER:   return DONOGAN_ANIM_Spell_Simple_Enter;
-    case DONOGAN_STATE_BOW_AIM:     return DONOGAN_ANIM_Spell_Simple_Idle_Loop;
-    case DONOGAN_STATE_BOW_EXIT:    return DONOGAN_ANIM_Spell_Simple_Exit;
+    case DONOGAN_STATE_BOW_ENTER:   return DONOGAN_ANIM_PROC_BOW_ENTER;
+    case DONOGAN_STATE_BOW_AIM:     return DONOGAN_ANIM_PROC_BOW_AIM;
+    case DONOGAN_STATE_BOW_EXIT:    return DONOGAN_ANIM_PROC_BOW_EXIT;
     default:                        return DONOGAN_ANIM_Idle_Loop;
     }
 }
@@ -1101,24 +1208,31 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     // --- Animation stepping (smooth): advance one frame every (1/fps) seconds ---
     // --- Advance anim time & frame ---
     // locomotion loops; jump start/land clamp at last frame; jump loop loops
-    if (!d->animFinished) d->animTime += dt;
+    if (!d->animFinished) { d->animTime += dt; }
 
-    const ModelAnimation* A = &d->anims[d->curAnimId];
-    int frameCount = (A) ? (int)A->frameCount : 1;
-    if (frameCount < 1) frameCount = 1;
+    if (d->curAnimId >= 0)
+    {
+        const ModelAnimation* A = &d->anims[d->curAnimId];
+        int frameCount = (A) ? (int)A->frameCount : 1;
+        if (frameCount < 1) frameCount = 1;
 
-    if (d->animLoop) {
-        d->curFrame = (d->curFrame + 2) % frameCount;
-    }
-    else {
-        d->curFrame+=(d->curAnimId == DONOGAN_ANIM_Jump_Land ? 11 : 2); //d->curFrame++; //do this twice because it feels slow, 10 for landing
-        if (d->curFrame >= frameCount) {
-            d->curFrame = frameCount - 1;
-            d->animFinished = true;
+        if (d->animLoop) {
+            d->curFrame = (d->curFrame + 2) % frameCount;
         }
+        else {
+            d->curFrame += (d->curAnimId == DONOGAN_ANIM_Jump_Land ? 11 : 2); //d->curFrame++; //do this twice because it feels slow, 10 for landing
+            if (d->curFrame >= frameCount) {
+                d->curFrame = frameCount - 1;
+                d->animFinished = true;
+            }
+        }
+        DonApplyFrame(d);
+    }
+    else
+    {
+        DonApplyProcFrame(d);
     }
 
-    DonApplyFrame(d);
     DonUpdateBubbles(d, dt);
 }
 

@@ -2560,13 +2560,13 @@ int main(void) {
                 {
                     // --- Bow draw snippet ---
                 // Get bone rotation delta (bind → current)
-                    Transform* transform = &don.anims[don.curAnimId].framePoses[don.curFrame][don.bowBoneIndex];
+                    //Transform* transform = &don.anims[don.curAnimId].framePoses[don.curFrame][don.bowBoneIndex];
                     Quaternion inRotation = don.model.bindPose[don.bowBoneIndex].rotation;
-                    Quaternion outRotation = transform->rotation;
-                    Quaternion rotate = QuaternionMultiply(outRotation, QuaternionInvert(inRotation));
+                    //Quaternion outRotation = transform->rotation;
+                    //Quaternion rotate = QuaternionMultiply(outRotation, QuaternionInvert(inRotation));
 
                     // Bone rotation matrix
-                    Matrix Rbone = QuaternionToMatrix(QuaternionNormalize(rotate));
+                    //Matrix Rbone = QuaternionToMatrix(QuaternionNormalize(rotate));
 
                     // Local bow rotation from bowEulerDeg
                     Quaternion qLocal = QuaternionFromEuler(
@@ -2587,8 +2587,11 @@ int main(void) {
 
                     // Compose final: Scale * (CharRot * BoneRot * LocalRot * Offset) * WorldTranslate
                     Matrix finalM = MatrixMultiply(MatrixMultiply(Sbow,Schar),
-                        MatrixMultiply(MatrixMultiply(MatrixMultiply(Rlocal, Toffset), MatrixMultiply(Rchar, Rbone)),
+                        MatrixMultiply(MatrixMultiply(MatrixMultiply(Rlocal, Toffset), Rchar),
                             Tchar));
+                    /*Matrix finalM = MatrixMultiply(MatrixMultiply(Sbow, Schar),
+                        MatrixMultiply(MatrixMultiply(MatrixMultiply(Rlocal, Toffset), MatrixMultiply(Rchar, Rbone)),
+                            Tchar));*/
 
                     // Draw
                     DrawMesh(don.bowModel.meshes[0], don.bowModel.materials[0], finalM);
