@@ -1774,7 +1774,7 @@ int main(void) {
                     if (truckAirState == AIRBORNE) { points += 650; }//points 
                 }
             }
-            if (gpad.btnTriangle > 0 && HasTimerElapsed(&truckInteractTimer))
+            if (gpad.btnTriangle > 0 && HasTimerElapsed(&truckInteractTimer) && truckAirState != AIRBORNE)
             {
                 StartTimer(&truckInteractTimer);
                 vehicleMode = false; donnyMode = true;
