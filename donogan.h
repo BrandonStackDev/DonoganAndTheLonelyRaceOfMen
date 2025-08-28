@@ -478,8 +478,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->curKey = 0;
     KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
     g1->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, 0, 0);
-    g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
-    g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
+    //g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
+    //g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
 
     // --- EXIT ---
     KeyFrameGroup* g2 = &d->kfGroups[BOW_KFG_EXIT];
@@ -500,16 +500,23 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     }
 }
 // Build a matrix from a local Transform (T * R * S)
-static inline Matrix TRS(Transform t) {
-    Matrix T = MatrixTranslate(t.translation.x, t.translation.y, t.translation.z);
-    Matrix R = QuaternionToMatrix(t.rotation);
+//static inline Matrix TRS(Transform t) {
+//    Matrix T = MatrixTranslate(t.translation.x, t.translation.y, t.translation.z);
+//    Matrix R = QuaternionToMatrix(t.rotation);
+//    Matrix S = MatrixScale(t.scale.x, t.scale.y, t.scale.z);
+//    return MatrixMultiply(MatrixMultiply(T, R), S);
+//}
+///actually SRT
+static inline Matrix SRT(Transform t) {
     Matrix S = MatrixScale(t.scale.x, t.scale.y, t.scale.z);
-    return MatrixMultiply(MatrixMultiply(T, R), S);
+    Matrix R = QuaternionToMatrix(t.rotation);
+    Matrix T = MatrixTranslate(t.translation.x, t.translation.y, t.translation.z);
+    return MatrixMultiply(S, MatrixMultiply(R, T)); // S*R*T
 }
 static Matrix BoneWorldFromPose(const Donogan* d, const Transform* pose, int bone) {
     Matrix M = MatrixIdentity();
     for (int b = bone; b != -1; b = d->model.bones[b].parent) {
-        M = MatrixMultiply(TRS(pose[b]), M);
+        M = MatrixMultiply(SRT(pose[b]), M);
     }
     //if your character has its own world transform, left-multiply it here:
     M = MatrixMultiply(d->model.transform, M);
@@ -521,10 +528,10 @@ static inline Matrix LocalToWorldMatrix(const Model* model,
     const Transform* locals, // pose locals per bone
     int boneId)
 {
-    Matrix M = TRS(locals[boneId]);
+    Matrix M = SRT(locals[boneId]);
     int p = model->bones[boneId].parent;
     while (p >= 0) {
-        Matrix Mp = TRS(locals[p]);
+        Matrix Mp = SRT(locals[p]);
         M = MatrixMultiply(Mp, M); // world = parentWorld * local
         p = model->bones[p].parent;
     }
@@ -574,10 +581,20 @@ static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFram
     {
         // Rotate child’s local offset by the parent’s delta rotation.
            // (Do NOT add KB->pos here; only the root receives translation.)
-        out[boneId].translation = Vector3RotateByQuaternion(out[boneId].translation, KB->rot);
+        // - out[boneId].translation = Vector3RotateByQuaternion(out[boneId].translation, KB->rot);
         // Premultiply child’s local rotation by the parent’s delta rotation.
         // Order matters: parentDelta * childLocal
-        out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(KB->rot, out[boneId].rotation));
+        // - out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(KB->rot, out[boneId].rotation));
+        //out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, KB->rot));
+        int parent = d->model.bones[boneId].parent;
+        // Parent's *world* matrix: bind vs current (after you've applied the root delta)
+        Matrix parentWorld_bind = BoneWorldFromPose(d, d->model.bindPose, parent);
+        Matrix parentWorld_cur = BoneWorldFromPose(d, out, parent);
+        Matrix parentDeltaM = MatrixMultiply(parentWorld_cur, MatrixInvert(parentWorld_bind));
+        Quaternion parentDeltaRot = QuaternionFromMatrix(parentDeltaM);
+        // Rotate this child’s *bind* offset by the parent's world-space delta
+        Vector3 bindOff = d->model.bindPose[boneId].translation;
+        out[boneId].translation = Vector3RotateByQuaternion(bindOff, parentDeltaRot);
         //out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, KB->rot));
     }
     TraceLog(LOG_INFO, " - out after translation: %f %f %f", out[boneId].translation.x, out[boneId].translation.y, out[boneId].translation.z);
