@@ -508,22 +508,23 @@ static void DonApplyPoseLocalDelta(Donogan* d, Transform* out, int boneId, const
     // out[boneId].scale stays as-is (from bind)
 }
 
-static void DonApplyPoseIk(int rootBoneId, int boneId, Donogan* d, KeyFrameBone* KB, Transform* out)
+static void DonApplyPoseFk(int boneId, Donogan* d, const KeyFrameBone* KB, Transform* out)
 {
-    const BoneInfo* biRoot = &d->model.bones[boneId];
-    TraceLog(LOG_INFO, "%s", biRoot->name);
-    // Delta add translation, delta multiply rotation
-    for (int i = 0; i < d->model.boneCount; ++i)
-    {
-        const BoneInfo* bi = &d->model.bones[i];
-        if (bi->parent == boneId)
-        {
-            DonApplyPoseIk(rootBoneId, i, d, KB, out);
+    if (boneId < 0 || boneId >= d->model.boneCount) return;
+
+    // Apply delta *on top of the bone's own local pose*, not parent/root
+    out[boneId].translation = Vector3Add(out[boneId].translation, KB->pos);
+    out[boneId].rotation = QuaternionNormalize(
+        QuaternionMultiply(out[boneId].rotation, KB->rot));
+
+    // Recurse to children, but do NOT re-apply the delta. They just keep their own locals.
+    for (int i = 0; i < d->model.boneCount; ++i) {
+        if (d->model.bones[i].parent == boneId) {
+            DonApplyPoseFk(i, d, KB, out);
         }
     }
-    out[boneId].translation = Vector3Add(out[rootBoneId].translation, KB->pos);
-    out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[rootBoneId].rotation, KB->rot));
 }
+
 // Apply current group's current key (single key for now) as deltas on top of bind pose
 static void DonApplyProcPoseFromKF(Donogan* d)
 {
@@ -547,7 +548,7 @@ static void DonApplyProcPoseFromKF(Donogan* d)
                 // Delta add translation, delta multiply rotation
                 //out[b].translation = Vector3Add(out[b].translation, KB->pos);
                 //out[b].rotation = QuaternionNormalize(QuaternionMultiply(out[b].rotation, KB->rot));
-                DonApplyPoseIk(b, b,d, KB, out);
+                DonApplyPoseFk(b,d, KB, out);
             }
         }
     }
