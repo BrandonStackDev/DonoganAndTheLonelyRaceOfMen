@@ -499,17 +499,71 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     default:                          return NULL;
     }
 }
-// child_local = inverse(parent_rot) * (child_world - parent_world_pos)
-static inline Vector3 LocalPosFromParentPosRot(Vector3 parentWorldPos, Quaternion parentWorldRot, Vector3 childWorldPos)
-{
-    Vector3 relW = Vector3Subtract(childWorldPos, parentWorldPos);
-    Quaternion qInv = QuaternionInvert(parentWorldRot);
-    return Vector3RotateByQuaternion(relW, qInv);
+// Build a matrix from a local Transform (T * R * S)
+static inline Matrix TRS(Transform t) {
+    Matrix T = MatrixTranslate(t.translation.x, t.translation.y, t.translation.z);
+    Matrix R = QuaternionToMatrix(t.rotation);
+    Matrix S = MatrixScale(t.scale.x, t.scale.y, t.scale.z);
+    return MatrixMultiply(MatrixMultiply(T, R), S);
 }
+static Matrix BoneWorldFromPose(const Donogan* d, const Transform* pose, int bone) {
+    Matrix M = MatrixIdentity();
+    for (int b = bone; b != -1; b = d->model.bones[b].parent) {
+        M = MatrixMultiply(TRS(pose[b]), M);
+    }
+    //if your character has its own world transform, left-multiply it here:
+    M = MatrixMultiply(d->model.transform, M);
+    return M;
+}
+// --- Local -> World for a single bone ---------------------------------------
+// Computes world(boneId) = world(parent) * TRS(local(boneId))
+static inline Matrix LocalToWorldMatrix(const Model* model,
+    const Transform* locals, // pose locals per bone
+    int boneId)
+{
+    Matrix M = TRS(locals[boneId]);
+    int p = model->bones[boneId].parent;
+    while (p >= 0) {
+        Matrix Mp = TRS(locals[p]);
+        M = MatrixMultiply(Mp, M); // world = parentWorld * local
+        p = model->bones[p].parent;
+    }
+    return M;
+}
+
+// --- World -> Local for a single bone ---------------------------------------
+// Given a desired world matrix for `boneId`, compute the *local* TRS needed,
+// i.e. local = inverse(world(parent)) * world(boneId).
+static inline Transform WorldToLocalTransform(const Model* model,
+    const Transform* locals, // current pose
+    int boneId,
+    Matrix desiredWorld)
+{
+    // 1) Parent world
+    Matrix parentWorld = MatrixIdentity();
+    int parent = model->bones[boneId].parent;
+    if (parent >= 0) parentWorld = LocalToWorldMatrix(model, locals, parent);
+
+    // 2) Local matrix from parent space
+    Matrix parentInv = MatrixInvert(parentWorld);
+    Matrix localM = MatrixMultiply(parentInv, desiredWorld);
+
+    // 3) Decompose localM -> TRS (keep it simple; scale optional)
+    Transform out;
+    out.translation = (Vector3){ localM.m12, localM.m13, localM.m14 };
+    out.rotation = QuaternionFromMatrix(localM);
+
+    // If you don’t animate scales, lock to 1 to avoid “arm stretching”.
+    out.scale = (Vector3){ 1.0f, 1.0f, 1.0f };
+    return out;
+}
+
 static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFrameBone* KB, Transform* out)
 {
     if (boneId < 0 || boneId >= d->model.boneCount) { return; }
-
+    TraceLog(LOG_INFO, "%s", d->model.bones[boneId].name);
+    TraceLog(LOG_INFO, " - rot: %f %f %f", KB->rot.x, KB->rot.y, KB->rot.z);
+    TraceLog(LOG_INFO, " - out before translation: %f %f %f", out[boneId].translation.x, out[boneId].translation.y, out[boneId].translation.z);
     // Apply delta *on top of the bone's own local pose*, not parent/root
     if (boneId == rootBoneId)
     {
@@ -518,13 +572,15 @@ static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFram
     }
     else
     {
-        out[boneId].translation = LocalPosFromParentPosRot(
-            out[d->model.bones[boneId].parent].translation,
-            out[d->model.bones[boneId].parent].rotation,
-            out[boneId].translation);
-        out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, out[d->model.bones[boneId].parent].rotation));
+        // Rotate child’s local offset by the parent’s delta rotation.
+           // (Do NOT add KB->pos here; only the root receives translation.)
+        out[boneId].translation = Vector3RotateByQuaternion(out[boneId].translation, KB->rot);
+        // Premultiply child’s local rotation by the parent’s delta rotation.
+        // Order matters: parentDelta * childLocal
+        out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(KB->rot, out[boneId].rotation));
+        //out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, KB->rot));
     }
-
+    TraceLog(LOG_INFO, " - out after translation: %f %f %f", out[boneId].translation.x, out[boneId].translation.y, out[boneId].translation.z);
     // Recurse to children, but do NOT re-apply the delta. They just keep their own locals.
     for (int i = 0; i < d->model.boneCount; ++i) {
         if (d->model.bones[i].parent == boneId) {
@@ -553,7 +609,7 @@ static void DonApplyProcPoseFromKF(Donogan* d)
             KeyFrameBone* KB = &K->kfBones[i];
             int b = (int)KB->boneId;
             if (b >= 0 && b < bc) {
-                // Delta add translation, delta multiply rotation
+                // Delta add translation, delta multiply rotation //simple version commented out here, no recursive on children
                 //out[b].translation = Vector3Add(out[b].translation, KB->pos);
                 //out[b].rotation = QuaternionNormalize(QuaternionMultiply(out[b].rotation, KB->rot));
                 DonApplyPoseFk(b, b,d, KB, out);
