@@ -3,7 +3,7 @@
 #include "raymath.h"
 #include "rlgl.h"
 
-#define RLIGHTS_IMPLEMENTATION    // <— add this line
+#define RLIGHTS_IMPLEMENTATION    // <— add this line, or dont, it wouldnt change the fact I have to bum rides off of people!
 #include "rlights.h"
 //me
 #include "models.h"
@@ -1347,9 +1347,9 @@ int main(void) {
     //---------------RAYLIB INIT STUFF---------------------------------------
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Map Preview with Trees & Grass");
     InitAudioDevice();
-    //DisableCursor();
+    EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
-    //load the homes models/scenese and stuff like that
+    //load the homes models/scenes and stuff like that
     InitHomes();
     ////whales---------------------------------------------------
     int numWhales = 6; // six whales right now

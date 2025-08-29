@@ -666,12 +666,8 @@ static inline Transform MatrixToTransform(Matrix m)
     return t;
 }
 
-// Assumptions:
-// - d->model.bindPose[*].translation is LOCAL (offset in parent space)
-// - out[*].translation is WORLD
-// - Only the subtree under rootBoneId gets the delta (KB) applied.
-// - No scaling in the rig.
 
+//worst thing ever, do not touch unless you need to...
 static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFrameBone* KB, Transform* out)
 {
     if (boneId < 0 || boneId >= d->model.boneCount) return;
