@@ -565,37 +565,54 @@ static inline Transform WorldToLocalTransform(const Model* model,
     return out;
 }
 
+// World rotation of a bone from a pose (bind or current), no matrices/scales.
+static Quaternion DonWorldRotFromPose(const Donogan* d, const Transform* pose, int bone)
+{
+    Quaternion q = pose[bone].rotation;                  // local
+    int p = d->model.bones[bone].parent;
+    while (p >= 0) {                                     // climb to root
+        q = QuaternionNormalize(QuaternionMultiply(pose[p].rotation, q));
+        p = d->model.bones[p].parent;
+    }
+    return q;                                            // world-space rotation
+}
+
 static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFrameBone* KB, Transform* out)
 {
     if (boneId < 0 || boneId >= d->model.boneCount) { return; }
     TraceLog(LOG_INFO, "%s", d->model.bones[boneId].name);
     TraceLog(LOG_INFO, " - rot: %f %f %f", KB->rot.x, KB->rot.y, KB->rot.z);
     TraceLog(LOG_INFO, " - out before translation: %f %f %f", out[boneId].translation.x, out[boneId].translation.y, out[boneId].translation.z);
+    int parent = d->model.bones[boneId].parent;
     // Apply delta *on top of the bone's own local pose*, not parent/root
     if (boneId == rootBoneId)
     {
         out[boneId].translation = Vector3Add(out[boneId].translation, KB->pos);
         out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, KB->rot));
     }
-    else
+    else if (parent == rootBoneId)   // direct child of the animated bone
     {
-        // Rotate child’s local offset by the parent’s delta rotation.
-           // (Do NOT add KB->pos here; only the root receives translation.)
-        // - out[boneId].translation = Vector3RotateByQuaternion(out[boneId].translation, KB->rot);
-        // Premultiply child’s local rotation by the parent’s delta rotation.
-        // Order matters: parentDelta * childLocal
-        // - out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(KB->rot, out[boneId].rotation));
-        //out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, KB->rot));
-        int parent = d->model.bones[boneId].parent;
-        // Parent's *world* matrix: bind vs current (after you've applied the root delta)
-        Matrix parentWorld_bind = BoneWorldFromPose(d, d->model.bindPose, parent);
-        Matrix parentWorld_cur = BoneWorldFromPose(d, out, parent);
-        Matrix parentDeltaM = MatrixMultiply(parentWorld_cur, MatrixInvert(parentWorld_bind));
-        Quaternion parentDeltaRot = QuaternionFromMatrix(parentDeltaM);
-        // Rotate this child’s *bind* offset by the parent's world-space delta
+        // Parent local rotation delta (current vs bind)
+        Quaternion qBindParent = d->model.bindPose[parent].rotation;
+        Quaternion qCurParent = out[parent].rotation; // already updated above
+        Quaternion qDelta = QuaternionNormalize(QuaternionMultiply(qCurParent,QuaternionInvert(qBindParent)));
+
+        // Rotate THIS bone's bind offset by the parent's delta.
+        // Do NOT add any translation here; root translation already carries the subtree.
         Vector3 bindOff = d->model.bindPose[boneId].translation;
-        out[boneId].translation = Vector3RotateByQuaternion(bindOff, parentDeltaRot);
-        //out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, KB->rot));
+        out[boneId].translation = Vector3RotateByQuaternion(bindOff, qDelta);
+    }
+    else  // any descendant of root
+    {
+        // Parent local rotation delta (current vs bind)
+        Quaternion qBindParent = d->model.bindPose[parent].rotation;
+        Quaternion qCurParent = out[parent].rotation; // already updated above
+        Quaternion qDelta = QuaternionNormalize(QuaternionMultiply(qCurParent, QuaternionInvert(qBindParent)));
+
+        // Rotate THIS bone's bind offset by the parent's delta.
+        // Do NOT add any translation here; root translation already carries the subtree.
+        Vector3 bindOff = d->model.bindPose[boneId].translation;
+        out[boneId].translation = Vector3RotateByQuaternion(bindOff, qDelta);
     }
     TraceLog(LOG_INFO, " - out after translation: %f %f %f", out[boneId].translation.x, out[boneId].translation.y, out[boneId].translation.z);
     // Recurse to children, but do NOT re-apply the delta. They just keep their own locals.
