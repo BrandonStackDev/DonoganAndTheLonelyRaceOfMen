@@ -26,6 +26,8 @@ Not yet even close to ready. Release date will be 1-2 years in the future.
 
 [![TruckDon](readme_assets/truckDon.png)](readme_assets/truckDon.png)
 
+[![WhaleDeservedIt](readme_assets/whaleFarts.png)](readme_assets/whaleFarts.png)
+
 
 
 
