@@ -455,10 +455,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
 {
     // Bones we’ll drive for the bow pose (you can add fingers later):
     const DonBone BOW_BONES[] = {
-        DON_BONE_DEF_SHOULDER_L,
         DON_BONE_DEF_UPPER_ARM_L,
-        DON_BONE_DEF_FOREARM_L,
-        DON_BONE_DEF_HAND_L
     };
     const int NUM_BOW_BONES = (int)(sizeof(BOW_BONES) / sizeof(BOW_BONES[0]));
 
@@ -477,7 +474,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->maxKey = 1;
     g1->curKey = 0;
     KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g1->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 90.0f, 0, 0);
+    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(DEG2RAD * 90.0f, 0, 0);
     //g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
     //g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
 
@@ -591,16 +588,11 @@ static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFram
     else  // any descendant of root
     {
         // Parent local rotation delta: current vs bind
-        //Quaternion qBindP = d->model.bindPose[parent].rotation;
-        //Quaternion qCurP = out[parent].rotation;
-        Quaternion qBindP = d->model.bindPose[rootBoneId].rotation;
-        Quaternion qCurP = out[rootBoneId].rotation;
+        Quaternion qBindP = d->model.bindPose[parent].rotation;
+        Quaternion qCurP = out[parent].rotation;
         Quaternion qDeltaP = QuaternionNormalize(QuaternionMultiply(qCurP, QuaternionInvert(qBindP)));
-        // 1) rotate the child's *current local* offset by the parent's delta (composes correctly)
-        //out[boneId].translation = Vector3RotateByQuaternion(d->model.bindPose[boneId].translation, qDeltaP);
         out[boneId].translation = Vector3RotateByQuaternion(out[boneId].translation, qDeltaP);
-        // 2) propagate orientation: parentDelta * childLocal
-        //out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(qDeltaP, out[boneId].rotation));
+        out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(qDeltaP, out[boneId].rotation));
     }
     const float eps = 1e-6f;
     if (fabsf(save.x - out[boneId].translation.x) > eps ||
