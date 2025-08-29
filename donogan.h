@@ -474,7 +474,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->maxKey = 1;
     g1->curKey = 0;
     KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(DEG2RAD * 90.0f, 0, 0);
+    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(DEG2RAD * 90.0f, 0, DEG2RAD * -90.0f);
     //g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
     //g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
 
@@ -573,44 +573,145 @@ static Quaternion DonWorldRotFromPose(const Donogan* d, const Transform* pose, i
     }
     return q;                                            // world-space rotation
 }
+// Decompose a raylib Matrix into T (m12/m13/m14), R (unit quaternion), S (lengths of basis columns).
+// Handles non-uniform and negative scale. Numerically stable for typical animation use.
+static inline Transform MatrixToTransform(Matrix m)
+{
+    Transform t;
+
+    // 1) Translation (raylib stores it in m12, m13, m14)
+    t.translation = (Vector3){ m.m12, m.m13, m.m14 };
+
+    // 2) Extract column vectors of the upper-left 3x3 (basis * scale)
+    Vector3 c0 = (Vector3){ m.m0,  m.m1,  m.m2 };
+    Vector3 c1 = (Vector3){ m.m4,  m.m5,  m.m6 };
+    Vector3 c2 = (Vector3){ m.m8,  m.m9,  m.m10 };
+
+    // 3) Scales are lengths of those columns
+    float sx = sqrtf(c0.x * c0.x + c0.y * c0.y + c0.z * c0.z);
+    float sy = sqrtf(c1.x * c1.x + c1.y * c1.y + c1.z * c1.z);
+    float sz = sqrtf(c2.x * c2.x + c2.y * c2.y + c2.z * c2.z);
+
+    // Avoid division by zero
+    const float EPS = 1e-8f;
+    if (sx < EPS) sx = EPS;
+    if (sy < EPS) sy = EPS;
+    if (sz < EPS) sz = EPS;
+
+    // 4) Preserve negative scale sign (orientation of the basis)
+    //    If det < 0, flip Z scale (common convention), and flip c2 accordingly.
+    Vector3 cx = (Vector3){ c0.x / sx, c0.y / sx, c0.z / sx };
+    Vector3 cy = (Vector3){ c1.x / sy, c1.y / sy, c1.z / sy };
+    Vector3 cz = (Vector3){ c2.x / sz, c2.y / sz, c2.z / sz };
+
+    float det = (cx.x * (cy.y * cz.z - cy.z * cz.y)
+        - cx.y * (cy.x * cz.z - cy.z * cz.x)
+        + cx.z * (cy.x * cz.y - cy.y * cz.x));
+
+    if (det < 0.0f) {
+        sz = -sz;
+        cz.x = -cz.x; cz.y = -cz.y; cz.z = -cz.z;
+    }
+
+    t.scale = (Vector3){ sx, sy, sz };
+
+    // 5) Build a pure rotation 3x3 from the normalized columns (row-major values for the formula)
+    //    r[row][col] = [cx cy cz] with rows being x/y/z components
+    float r00 = cx.x, r01 = cy.x, r02 = cz.x;
+    float r10 = cx.y, r11 = cy.y, r12 = cz.y;
+    float r20 = cx.z, r21 = cy.z, r22 = cz.z;
+
+    // 6) Convert 3x3 rotation to quaternion (stable branch selection)
+    float trace = r00 + r11 + r22;
+    Quaternion q;
+    if (trace > 0.0f) {
+        float s = sqrtf(trace + 1.0f) * 2.0f; // s = 4*qw
+        q.w = 0.25f * s;
+        q.x = (r21 - r12) / s;
+        q.y = (r02 - r20) / s;
+        q.z = (r10 - r01) / s;
+    }
+    else if (r00 > r11 && r00 > r22) {
+        float s = sqrtf(1.0f + r00 - r11 - r22) * 2.0f; // s = 4*qx
+        q.w = (r21 - r12) / s;
+        q.x = 0.25f * s;
+        q.y = (r01 + r10) / s;
+        q.z = (r02 + r20) / s;
+    }
+    else if (r11 > r22) {
+        float s = sqrtf(1.0f + r11 - r00 - r22) * 2.0f; // s = 4*qy
+        q.w = (r02 - r20) / s;
+        q.x = (r01 + r10) / s;
+        q.y = 0.25f * s;
+        q.z = (r12 + r21) / s;
+    }
+    else {
+        float s = sqrtf(1.0f + r22 - r00 - r11) * 2.0f; // s = 4*qz
+        q.w = (r10 - r01) / s;
+        q.x = (r02 + r20) / s;
+        q.y = (r12 + r21) / s;
+        q.z = 0.25f * s;
+    }
+
+    // 7) Normalize quaternion to be safe
+    float qlen = sqrtf(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+    if (qlen > EPS) {
+        q.x /= qlen; q.y /= qlen; q.z /= qlen; q.w /= qlen;
+    }
+    else {
+        q = (Quaternion){ 0, 0, 0, 1 };
+    }
+
+    t.rotation = q;
+    return t;
+}
+
+// Assumptions:
+// - d->model.bindPose[*].translation is LOCAL (offset in parent space)
+// - out[*].translation is WORLD
+// - Only the subtree under rootBoneId gets the delta (KB) applied.
+// - No scaling in the rig.
 
 static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFrameBone* KB, Transform* out)
 {
-    if (boneId < 0 || boneId >= d->model.boneCount) { return; }
-    Vector3 save = out[boneId].translation;
+    if (boneId < 0 || boneId >= d->model.boneCount) return;
+
     int parent = d->model.bones[boneId].parent;
-    // Apply delta *on top of the bone's own local pose*, not parent/root
+
     if (boneId == rootBoneId)
     {
-        out[boneId].translation = Vector3Add(out[boneId].translation, KB->pos);
-        out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, KB->rot));
+        // Build root from bind + keyframe, not from prior out[]
+        const Transform bindRoot = d->model.bindPose[rootBoneId];
+
+        out[rootBoneId].rotation = QuaternionNormalize(QuaternionMultiply(bindRoot.rotation, KB->rot));
+        out[rootBoneId].translation = Vector3Add(bindRoot.translation, KB->pos);
     }
-    else  // any descendant of root
+    else
     {
-        // Parent local rotation delta: current vs bind
-        Quaternion qBindP = d->model.bindPose[parent].rotation;
-        Quaternion qCurP = out[parent].rotation;
-        Quaternion qDeltaP = QuaternionNormalize(QuaternionMultiply(qCurP, QuaternionInvert(qBindP)));
-        out[boneId].translation = Vector3RotateByQuaternion(out[boneId].translation, qDeltaP);
-        out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(qDeltaP, out[boneId].rotation));
+        // Parent delta: how parent moved vs bind (bind->current in parent space)
+        const Quaternion qBindP = d->model.bindPose[parent].rotation;
+        const Quaternion qCurP = out[parent].rotation;
+        const Quaternion qDeltaP = QuaternionNormalize(QuaternionMultiply(qCurP, QuaternionInvert(qBindP)));
+        // Rebuild CHILD from bind locals using the parent's delta (no stretch):
+        const Quaternion childBindRot = d->model.bindPose[boneId].rotation;
+        // World position: parent world + rotated local bind offset
+        Vector3 childBindWorld = d->model.bindPose[boneId].translation;
+        Vector3 parentBindWorld = d->model.bindPose[parent].translation;
+        Vector3 childRelBindWorld = Vector3Subtract(childBindWorld, parentBindWorld);
+        Vector3 childRel = Vector3RotateByQuaternion(childRelBindWorld, qDeltaP);
+        out[boneId].translation = Vector3Add(out[parent].translation, childRel);
+        // World rotation: parent delta * child's bind local rotation
+        out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(qDeltaP, childBindRot));
     }
-    const float eps = 1e-6f;
-    if (fabsf(save.x - out[boneId].translation.x) > eps ||
-        fabsf(save.y - out[boneId].translation.y) > eps ||
-        fabsf(save.z - out[boneId].translation.z) > eps)
+
+    // Recurse
+    for (int i = 0; i < d->model.boneCount; ++i)
     {
-        TraceLog(LOG_INFO, "%s", d->model.bones[boneId].name);
-        TraceLog(LOG_INFO, " - rot: %f %f %f", KB->rot.x, KB->rot.y, KB->rot.z);
-        TraceLog(LOG_INFO, " - out before translation: %f %f %f", save.x, save.y, save.z);
-        TraceLog(LOG_INFO, " - out after translation: %f %f %f", out[boneId].translation.x, out[boneId].translation.y, out[boneId].translation.z);
-    }
-    // Recurse to children, but do NOT re-apply the delta. They just keep their own locals.
-    for (int i = 0; i < d->model.boneCount; ++i) {
-        if (d->model.bones[i].parent == boneId) {
+        if (d->model.bones[i].parent == boneId)
             DonApplyPoseFk(rootBoneId, i, d, KB, out);
-        }
     }
 }
+
 
 // Apply current group's current key (single key for now) as deltas on top of bind pose
 static void DonApplyProcPoseFromKF(Donogan* d)
