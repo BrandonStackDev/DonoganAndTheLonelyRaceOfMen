@@ -580,9 +580,7 @@ static Quaternion DonWorldRotFromPose(const Donogan* d, const Transform* pose, i
 static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFrameBone* KB, Transform* out)
 {
     if (boneId < 0 || boneId >= d->model.boneCount) { return; }
-    TraceLog(LOG_INFO, "%s", d->model.bones[boneId].name);
-    TraceLog(LOG_INFO, " - rot: %f %f %f", KB->rot.x, KB->rot.y, KB->rot.z);
-    TraceLog(LOG_INFO, " - out before translation: %f %f %f", out[boneId].translation.x, out[boneId].translation.y, out[boneId].translation.z);
+    Vector3 save = out[boneId].translation;
     int parent = d->model.bones[boneId].parent;
     // Apply delta *on top of the bone's own local pose*, not parent/root
     if (boneId == rootBoneId)
@@ -590,31 +588,30 @@ static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFram
         out[boneId].translation = Vector3Add(out[boneId].translation, KB->pos);
         out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(out[boneId].rotation, KB->rot));
     }
-    else if (parent == rootBoneId)   // direct child of the animated bone
-    {
-        // Parent local rotation delta (current vs bind)
-        Quaternion qBindParent = d->model.bindPose[parent].rotation;
-        Quaternion qCurParent = out[parent].rotation; // already updated above
-        Quaternion qDelta = QuaternionNormalize(QuaternionMultiply(qCurParent,QuaternionInvert(qBindParent)));
-
-        // Rotate THIS bone's bind offset by the parent's delta.
-        // Do NOT add any translation here; root translation already carries the subtree.
-        Vector3 bindOff = d->model.bindPose[boneId].translation;
-        out[boneId].translation = Vector3RotateByQuaternion(bindOff, qDelta);
-    }
     else  // any descendant of root
     {
-        // Parent local rotation delta (current vs bind)
-        Quaternion qBindParent = d->model.bindPose[parent].rotation;
-        Quaternion qCurParent = out[parent].rotation; // already updated above
-        Quaternion qDelta = QuaternionNormalize(QuaternionMultiply(qCurParent, QuaternionInvert(qBindParent)));
-
-        // Rotate THIS bone's bind offset by the parent's delta.
-        // Do NOT add any translation here; root translation already carries the subtree.
-        Vector3 bindOff = d->model.bindPose[boneId].translation;
-        out[boneId].translation = Vector3RotateByQuaternion(bindOff, qDelta);
+        // Parent local rotation delta: current vs bind
+        //Quaternion qBindP = d->model.bindPose[parent].rotation;
+        //Quaternion qCurP = out[parent].rotation;
+        Quaternion qBindP = d->model.bindPose[rootBoneId].rotation;
+        Quaternion qCurP = out[rootBoneId].rotation;
+        Quaternion qDeltaP = QuaternionNormalize(QuaternionMultiply(qCurP, QuaternionInvert(qBindP)));
+        // 1) rotate the child's *current local* offset by the parent's delta (composes correctly)
+        //out[boneId].translation = Vector3RotateByQuaternion(d->model.bindPose[boneId].translation, qDeltaP);
+        out[boneId].translation = Vector3RotateByQuaternion(out[boneId].translation, qDeltaP);
+        // 2) propagate orientation: parentDelta * childLocal
+        //out[boneId].rotation = QuaternionNormalize(QuaternionMultiply(qDeltaP, out[boneId].rotation));
     }
-    TraceLog(LOG_INFO, " - out after translation: %f %f %f", out[boneId].translation.x, out[boneId].translation.y, out[boneId].translation.z);
+    const float eps = 1e-6f;
+    if (fabsf(save.x - out[boneId].translation.x) > eps ||
+        fabsf(save.y - out[boneId].translation.y) > eps ||
+        fabsf(save.z - out[boneId].translation.z) > eps)
+    {
+        TraceLog(LOG_INFO, "%s", d->model.bones[boneId].name);
+        TraceLog(LOG_INFO, " - rot: %f %f %f", KB->rot.x, KB->rot.y, KB->rot.z);
+        TraceLog(LOG_INFO, " - out before translation: %f %f %f", save.x, save.y, save.z);
+        TraceLog(LOG_INFO, " - out after translation: %f %f %f", out[boneId].translation.x, out[boneId].translation.y, out[boneId].translation.z);
+    }
     // Recurse to children, but do NOT re-apply the delta. They just keep their own locals.
     for (int i = 0; i < d->model.boneCount; ++i) {
         if (d->model.bones[i].parent == boneId) {
