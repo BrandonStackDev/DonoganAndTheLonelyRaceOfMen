@@ -1118,9 +1118,9 @@ static Donogan InitDonogan(void)
     d.bowAnimsRaw = LoadModelAnimations(BOW_GLB, &d.bowAnimCount);
     d.bowTex = LoadTexture(BOW_PNG);
     SetMaterialTexture(&d.bowModel.materials[0], MATERIAL_MAP_ALBEDO, d.bowTex);
-    d.bowOffset = (Vector3){ 0.8f, 2.6f, 0.1f };  // start at exact Donogan origin
+    d.bowOffset = (Vector3){ 1.8f, 2.6f, 0.1f };  // start at exact Donogan origin
     d.bowEulerDeg = (Vector3){ 0, 180, 0 };
-    d.bowScale = 1.76f;
+    d.bowScale = 0.76f;
     //d.bowBoneIndex = DON_BONE_DEF_SPINE002; //DON_BONE_DEF_HAND_L;
     // attach to LEFT HAND now
     d.bowBoneIndex = DON_BONE_DEF_HAND_L;
