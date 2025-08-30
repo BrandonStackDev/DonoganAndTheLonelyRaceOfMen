@@ -477,9 +477,9 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->maxKey = 1;
     g1->curKey = 0;
     KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(DEG2RAD * 15.0f, DEG2RAD * -88.0f, 0);
+    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, DEG2RAD * 15.0f);
     g1->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -60.0f, DEG2RAD * 60.0f);
-    g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 15.0f,0, 0);
+    g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f,0, 0);
     g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
 
     // --- EXIT ---
