@@ -13,6 +13,7 @@
 #include "control.h"
 #include "util.h"
 #include "timer.h"
+#include "collision.h"
 
 //bubbles
 #define DON_MAX_BUBBLES 128
@@ -414,6 +415,15 @@ typedef struct {
 
     //proc anim
     KeyFrameGroup kfGroups[MAX_KEY_FRAME_GROUPS];
+
+    // Ground contact info
+    Vector3 groundNormal;    // terrain triangle normal under feet
+
+    // Steep-slope handling
+    float   slopeMinUpDot;   // cos(maxSlopeDeg). Example: cos(60°)=0.5 -> too steep if n·up < 0.5
+    float   steepSlideAccel; // how quickly we accelerate along the steep face (1/sec)
+    float   steepSlideMax;   // target planar speed while sliding, in "walk/run speed" units
+    float   steepSlideFriction; // damping when sliding (1/sec)
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1101,6 +1111,15 @@ static Donogan InitDonogan(void)
     d.rollVel = (Vector3){ 0 };
     d.rollBurst = 10.0f;   // ~1.25x your run speed; tweak 12–20
     d.rollDrag = 6.5f;    // 1/sec; 6–10 gives a snappy decel
+
+    d.groundNormal = (Vector3){ 0,1,0 };   // safe default
+
+    // "Mostly vertical" ~= over ~60°. Tweak to taste.
+    float maxSlopeDeg = 60.0f;
+    d.slopeMinUpDot = cosf(maxSlopeDeg * DEG2RAD); // 0.5 at 60°
+    d.steepSlideAccel = 10.0f;   // try 8–18
+    d.steepSlideMax = 1.2f;    // as a multiplier for (walk/run) speed used later
+    d.steepSlideFriction = 6.0f;    // try 4–10
 
     PrintModelBones(&d.model);
     PrintModelBones(&d.bowModel);
