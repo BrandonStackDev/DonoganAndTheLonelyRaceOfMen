@@ -456,6 +456,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     // Bones we’ll drive for the bow pose (you can add fingers later):
     const DonBone BOW_BONES[] = {
         DON_BONE_DEF_UPPER_ARM_L,
+        DON_BONE_DEF_UPPER_ARM_R,
+        DON_BONE_DEF_FOREARM_R,
     };
     const int NUM_BOW_BONES = (int)(sizeof(BOW_BONES) / sizeof(BOW_BONES[0]));
 
@@ -474,8 +476,9 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->maxKey = 1;
     g1->curKey = 0;
     KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(DEG2RAD * 90.0f, 0, DEG2RAD * -90.0f);
-    //g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
+    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(DEG2RAD * 15.0f, DEG2RAD * -88.0f, 0);
+    g1->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -60.0f, DEG2RAD * 60.0f);
+    g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 15.0f,0, 0);
     //g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
 
     // --- EXIT ---
@@ -676,11 +679,22 @@ static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFram
 
     if (boneId == rootBoneId)
     {
-        // Build root from bind + keyframe, not from prior out[]
-        const Transform bindRoot = d->model.bindPose[rootBoneId];
+        // Compose delta ON TOP of the pose already in out[root]
+        // Order: current ∘ delta  (apply delta after current local)
+        Transform prev = out[rootBoneId];         // whatever the base is (bind or current clip)
+        Quaternion prevRot = prev.rotation;
 
-        out[rootBoneId].rotation = QuaternionNormalize(QuaternionMultiply(bindRoot.rotation, KB->rot));
-        out[rootBoneId].translation = Vector3Add(bindRoot.translation, KB->pos);
+        // 1) Accumulate rotation in local space
+        //    Using the same order you’ve been using: prev * delta
+        Quaternion newRot = QuaternionNormalize(QuaternionMultiply(prevRot, KB->rot));
+
+        // 2) Accumulate translation in local space (rotate delta by *previous* rotation)
+        //    This makes KB->pos relative to the root’s local axes.
+        Vector3 deltaLocal = Vector3RotateByQuaternion(KB->pos, prevRot);
+        Vector3 newPos = Vector3Add(prev.translation, deltaLocal);
+
+        out[rootBoneId].rotation = newRot;
+        out[rootBoneId].translation = newPos;
     }
     else
     {
