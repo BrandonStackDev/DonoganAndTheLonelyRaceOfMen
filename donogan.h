@@ -199,14 +199,18 @@ typedef enum {
     DONOGAN_STATE_SWIM_MOVE,
     DONOGAN_STATE_BOW_ENTER,
     DONOGAN_STATE_BOW_AIM,
+    DONOGAN_STATE_BOW_PULL,
+    DONOGAN_STATE_BOW_REL,
     DONOGAN_STATE_BOW_EXIT,
     DONOGAN_STATE_SLIDE,
 } DonoganState;
 
 // ---------- Anim IDs present in your GLB ----------
 typedef enum {
-    DONOGAN_ANIM_PROC_BOW_ENTER = -3,
-    DONOGAN_ANIM_PROC_BOW_AIM = -2,
+    DONOGAN_ANIM_PROC_BOW_ENTER = -5,
+    DONOGAN_ANIM_PROC_BOW_AIM = -4,
+    DONOGAN_ANIM_PROC_BOW_PULL = -3,
+    DONOGAN_ANIM_PROC_BOW_REL = -2,
     DONOGAN_ANIM_PROC_BOW_EXIT = -1,
     //animation : Crouch_Fwd_Loop(118 frames, 2.000000s)
     DONOGAN_ANIM_Crouch_Fwd_Loop = 0,
@@ -272,14 +276,16 @@ typedef struct Bubble {
 } Bubble;
 //proc anim
 #define MAX_KEY_FRAME_BONES 16
-#define MAX_KEY_FRAMES 4
-#define MAX_KEY_FRAME_GROUPS 3 //keep in sync with BOW_KFG_COUNT
+#define MAX_KEY_FRAMES 4 //we should be able to lerp eveything between 4 key frames to get where we are going
+#define MAX_KEY_FRAME_GROUPS BOW_KFG_COUNT
 // Indices into Donogan.kfGroups[]
 typedef enum {
-    BOW_KFG_ENTER = 0,
-    BOW_KFG_AIM = 1,
-    BOW_KFG_EXIT = 2,
-    BOW_KFG_COUNT = 3
+    BOW_KFG_ENTER,
+    BOW_KFG_AIM,
+    BOW_KFG_PULL,
+    BOW_KFG_REL,
+    BOW_KFG_EXIT,
+    BOW_KFG_COUNT
 } BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
 typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
 typedef struct {
@@ -323,6 +329,7 @@ typedef struct {
     bool     prevL2Held;   // edge-detect L2
     float    bowBlend;     // 0..1 simple raise/settle timer if you want later
     bool prevL2;
+    bool prevR2;
 
     // Raw animations from GLB and a remapped copy that matches model->bones order
     unsigned int animCount;
@@ -495,13 +502,37 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f,0, 0);
     g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
 
-    // --- EXIT ---
-    KeyFrameGroup* g2 = &d->kfGroups[BOW_KFG_EXIT];
-    g2->state = DONOGAN_STATE_BOW_EXIT;
-    g2->anim = DONOGAN_ANIM_PROC_BOW_EXIT;
+    // PULL
+    KeyFrameGroup* g2 = &d->kfGroups[BOW_KFG_PULL];
+    g2->state = DONOGAN_STATE_BOW_PULL;
+    g2->anim = DONOGAN_ANIM_PROC_BOW_PULL;
     g2->maxKey = 1;
     g2->curKey = 0;
     KfMakeZeroKey(&g2->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+    g2->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, DEG2RAD * 15.0f);
+    g2->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -30.0f, DEG2RAD * 30.0f);
+    g2->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f, 0, 0);
+    g2->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
+
+    // RELEASE
+    KeyFrameGroup* g3 = &d->kfGroups[BOW_KFG_REL];
+    g3->state = DONOGAN_STATE_BOW_REL;
+    g3->anim = DONOGAN_ANIM_PROC_BOW_REL;
+    g3->maxKey = 1;
+    g3->curKey = 0;
+    KfMakeZeroKey(&g3->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+    g3->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, DEG2RAD * 15.0f);
+    g3->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -45.0f, DEG2RAD * 45.0f);
+    g3->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f, 0, 0);
+    g3->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
+
+    // --- EXIT ---
+    KeyFrameGroup* g4 = &d->kfGroups[BOW_KFG_EXIT];
+    g4->state = DONOGAN_STATE_BOW_EXIT;
+    g4->anim = DONOGAN_ANIM_PROC_BOW_EXIT;
+    g4->maxKey = 1;
+    g4->curKey = 0;
+    KfMakeZeroKey(&g4->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
 }
 
 // Choose the active keyframe group based on current proc anim
@@ -509,6 +540,8 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     switch (d->curAnimId) {
     case DONOGAN_ANIM_PROC_BOW_ENTER: return &d->kfGroups[BOW_KFG_ENTER];
     case DONOGAN_ANIM_PROC_BOW_AIM:   return &d->kfGroups[BOW_KFG_AIM];
+    case DONOGAN_ANIM_PROC_BOW_PULL:  return &d->kfGroups[BOW_KFG_PULL];  // NEW
+    case DONOGAN_ANIM_PROC_BOW_REL:   return &d->kfGroups[BOW_KFG_REL];   // NEW
     case DONOGAN_ANIM_PROC_BOW_EXIT:  return &d->kfGroups[BOW_KFG_EXIT];
     default:                          return NULL;
     }
@@ -1191,6 +1224,8 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_SWIM_MOVE:   return DONOGAN_ANIM_Swim_Fwd_Loop;
     case DONOGAN_STATE_BOW_ENTER:   return DONOGAN_ANIM_PROC_BOW_ENTER;
     case DONOGAN_STATE_BOW_AIM:     return DONOGAN_ANIM_PROC_BOW_AIM;
+    case DONOGAN_STATE_BOW_PULL:    return DONOGAN_ANIM_PROC_BOW_PULL;
+    case DONOGAN_STATE_BOW_REL:     return DONOGAN_ANIM_PROC_BOW_REL;
     case DONOGAN_STATE_BOW_EXIT:    return DONOGAN_ANIM_PROC_BOW_EXIT;
     case DONOGAN_STATE_SLIDE:       return DONOGAN_ANIM_Jump_Loop; // sliding
     default:                        return DONOGAN_ANIM_Idle_Loop;
@@ -1208,7 +1243,7 @@ static void DonSetState(Donogan* d, DonoganState s)
                     || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN 
                     || s == DONOGAN_STATE_JUMPING
                     || s == DONOGAN_STATE_SWIM_IDLE || s == DONOGAN_STATE_SWIM_MOVE 
-                    || s == DONOGAN_STATE_BOW_AIM
+                    || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_ANIM_PROC_BOW_PULL
                     || s == DONOGAN_STATE_SLIDE);
     bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN
                         || s == DONOGAN_STATE_JUMPING || s == DONOGAN_STATE_JUMP_START || s == DONOGAN_STATE_JUMP_LAND
@@ -1258,12 +1293,16 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         bool padPresent = (pad != NULL);
         float lx = padPresent ? pad->normLX : 0.0f;
         float ly = padPresent ? pad->normLY : 0.0f;
-        bool cross = padPresent ? pad->btnCross : IsKeyDown(KEY_SPACE);//todo: remove these key board commands
-        bool circle = padPresent ? pad->btnCircle : IsKeyDown(KEY_O);
-        bool L3 = padPresent ? pad->btnL3 : IsKeyDown(KEY_LEFT_SHIFT);
-        bool L2 = padPresent ? pad->btnL2 : IsKeyDown(KEY_LEFT_SHIFT);
+        bool cross = padPresent ? pad->btnCross : false;
+        bool circle = padPresent ? pad->btnCircle : false;
+        bool L3 = padPresent ? pad->btnL3 : false;
+        bool L2 = padPresent ? pad->btnL2 : false;
         bool L2Pressed = L2 && !d->prevL2;
         bool L2Released = !L2 && d->prevL2;
+        bool R2 = padPresent ? pad->btnR2 : false;
+        bool R2Pressed = (R2 && !d->prevR2);
+        bool R2Released = (!R2 && d->prevR2);
+        d->prevR2 = R2;
         d->prevL2 = L2;
 
         // Edge for X (jump)
@@ -1453,8 +1492,23 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 if (L2Released) {
                     DonSetState(d, DONOGAN_STATE_BOW_EXIT);
                 }
+                if (R2Pressed) { DonSetState(d, DONOGAN_STATE_BOW_PULL); break; } // NEW
                 // (optional) you can also damp movement/turn here if you want tighter aim feel
             } break;
+
+            case DONOGAN_STATE_BOW_PULL:
+                if (L2Released) { DonSetState(d, DONOGAN_STATE_BOW_EXIT); break; } // optional: or go REL then EXIT
+                if (R2Released) { DonSetState(d, DONOGAN_STATE_BOW_REL);  break; } // NEW
+                // keep holding PULL while R2 held
+                break;
+
+            case DONOGAN_STATE_BOW_REL:
+                // optionally allow L2 release here to chain to EXIT after REL finishes
+                if (d->animFinished) {
+                    if (!L2) DonSetState(d, DONOGAN_STATE_BOW_EXIT);
+                    else     DonSetState(d, DONOGAN_STATE_BOW_AIM); // back to aiming
+                }
+                break;
 
             case DONOGAN_STATE_BOW_EXIT: {
                 // when exit finishes, return to locomotion based on stick
