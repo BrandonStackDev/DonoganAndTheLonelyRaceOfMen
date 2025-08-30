@@ -465,7 +465,7 @@ LightningBug* GenerateLightningBugs(Vector3 cameraPos, int count, float maxDista
         float z = cameraPos.z + sinf(angle) * dist;
         bugs[i].angle = 0.0f;
         bugs[i].pos = (Vector3){ x, 0.0f, z }; // you'll set .y later
-        bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z);
+        if (onLoad) { bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z); }
         bugs[i].pos.y = bugs[i].pos.y + GetRandomValue(1, 10);
         if (bugs[i].pos.y < -5000) { bugs[i].pos.y = 500; }
         bugs[i].rate = GetRandomValue(0.1f, 10.01f);
@@ -493,7 +493,7 @@ void RegenerateLightningBugs(LightningBug* bugs, Vector3 cameraPos, int count, f
         float z = cameraPos.z + sinf(angle) * dist;
         bugs[i].angle = 0.0f;
         bugs[i].pos = (Vector3){ x, 0.0f, z }; // you'll set .y later
-        bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z);
+        if (onLoad) { bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z); }
         bugs[i].pos.y = bugs[i].pos.y + GetRandomValue(1, 10);
         if (bugs[i].pos.y < -5000) { bugs[i].pos.y = 500; }
         bugs[i].rate = GetRandomValue(0.1f, 10.01f);

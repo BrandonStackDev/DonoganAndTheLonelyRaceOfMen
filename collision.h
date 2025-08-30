@@ -61,70 +61,73 @@ float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
 
 float GetTerrainHeightFromMeshXZ(float x, float z)
 {
-    int half = CHUNK_COUNT / 2;
-    int cx = (int)floor(x / CHUNK_WORLD_SIZE) + half;
-    int cy = (int)floor(z / CHUNK_WORLD_SIZE) + half;
-
-    Chunk chunk = chunks[cx][cy];
-    Mesh mesh = chunk.model.meshes[0];
-
-    int S = (int)sqrtf(mesh.triangleCount / 2); float cell = (float)CHUNK_WORLD_SIZE / S;
-    int gx = (int)floorf((x - chunk.position.x) / cell), gz = (int)floorf((z - chunk.position.z) / cell);
-    if (gx < 0) gx = 0; else if (gx >= S) gx = S - 1; if (gz < 0) gz = 0; else if (gz >= S) gz = S - 1;
-    int firstTri = (gz * S + gx) * 2, lastTri = firstTri + 2;
-
-    float* verts = (float*)mesh.vertices;
-    unsigned short* tris = (unsigned short*)mesh.indices;
-    //TraceLog(LOG_INFO, "chunk pos (%f, %f, %f)", chunk.position.x, chunk.position.y, chunk.position.z);
-    //TraceLog(LOG_INFO, "chunk cen (%f, %f, %f)", chunk.center.x, chunk.center.y, chunk.center.z);
-    if (!verts || mesh.vertexCount < 3 || mesh.triangleCount < 1)
+    if (onLoad)
     {
-        TraceLog(LOG_WARNING, "Something wrong with collision: (%f x %f)", x, z);
-        if (!verts) { TraceLog(LOG_WARNING, "!verts"); }
-        if (mesh.vertexCount < 3) { TraceLog(LOG_WARNING, "mesh.vertexCount < 3"); }
-        if (mesh.triangleCount < 1) { TraceLog(LOG_WARNING, "mesh.triangleCount < 1"); }
-        return -10000.0f;
-    }
+        int half = CHUNK_COUNT / 2;
+        int cx = (int)floor(x / CHUNK_WORLD_SIZE) + half;
+        int cy = (int)floor(z / CHUNK_WORLD_SIZE) + half;
 
-    Vector3 p = { x, 0.0f, z };
+        Chunk chunk = chunks[cx][cy];
+        Mesh mesh = chunk.model.meshes[0];
 
-    for (int i = firstTri; i < lastTri; i++)
-    {
-        int i0, i1, i2;
+        int S = (int)sqrtf(mesh.triangleCount / 2); float cell = (float)CHUNK_WORLD_SIZE / S;
+        int gx = (int)floorf((x - chunk.position.x) / cell), gz = (int)floorf((z - chunk.position.z) / cell);
+        if (gx < 0) gx = 0; else if (gx >= S) gx = S - 1; if (gz < 0) gz = 0; else if (gz >= S) gz = S - 1;
+        int firstTri = (gz * S + gx) * 2, lastTri = firstTri + 2;
 
-        if (tris) {
-            i0 = tris[i * 3 + 0];
-            i1 = tris[i * 3 + 1];
-            i2 = tris[i * 3 + 2];
-        }
-        else {
-            i0 = i * 3 + 0;
-            i1 = i * 3 + 1;
-            i2 = i * 3 + 2;
+        float* verts = (float*)mesh.vertices;
+        unsigned short* tris = (unsigned short*)mesh.indices;
+        //TraceLog(LOG_INFO, "chunk pos (%f, %f, %f)", chunk.position.x, chunk.position.y, chunk.position.z);
+        //TraceLog(LOG_INFO, "chunk cen (%f, %f, %f)", chunk.center.x, chunk.center.y, chunk.center.z);
+        if (!verts || mesh.vertexCount < 3 || mesh.triangleCount < 1)
+        {
+            TraceLog(LOG_WARNING, "Something wrong with collision: (%f x %f)", x, z);
+            if (!verts) { TraceLog(LOG_WARNING, "!verts"); }
+            if (mesh.vertexCount < 3) { TraceLog(LOG_WARNING, "mesh.vertexCount < 3"); }
+            if (mesh.triangleCount < 1) { TraceLog(LOG_WARNING, "mesh.triangleCount < 1"); }
+            return -10000.0f;
         }
 
-        if (i0 >= mesh.vertexCount || i1 >= mesh.vertexCount || i2 >= mesh.vertexCount) { continue; }
+        Vector3 p = { x, 0.0f, z };
 
-        Vector3 a = {
-            (MAP_SCALE * verts[i0 * 3 + 0] + chunk.position.x),
-            (MAP_SCALE * verts[i0 * 3 + 1] + chunk.position.y),
-            (MAP_SCALE * verts[i0 * 3 + 2] + chunk.position.z)
-        };
-        Vector3 b = {
-            (MAP_SCALE * verts[i1 * 3 + 0] + chunk.position.x),
-            (MAP_SCALE * verts[i1 * 3 + 1] + chunk.position.y),
-            (MAP_SCALE * verts[i1 * 3 + 2] + chunk.position.z)
-        };
-        Vector3 c = {
-            (MAP_SCALE * verts[i2 * 3 + 0] + chunk.position.x),
-            (MAP_SCALE * verts[i2 * 3 + 1] + chunk.position.y),
-            (MAP_SCALE * verts[i2 * 3 + 2] + chunk.position.z)
-        };
-        //TraceLog(LOG_INFO, "Tri %d verts: a=(%.2f,%.2f,%.2f)", i, a.x, a.y, a.z);
-        //TraceLog(LOG_INFO, "Tri %d verts: b=(%.2f,%.2f,%.2f)", i, b.x, b.y, b.z);
-        //TraceLog(LOG_INFO, "Tri %d verts: c=(%.2f,%.2f,%.2f)", i, c.x, c.y, c.z);
-        float y = GetHeightOnTriangle((Vector3) { x, 0, z }, a, b, c);
-        if (y > -9999.0f) return y;
+        for (int i = firstTri; i < lastTri; i++)
+        {
+            int i0, i1, i2;
+
+            if (tris) {
+                i0 = tris[i * 3 + 0];
+                i1 = tris[i * 3 + 1];
+                i2 = tris[i * 3 + 2];
+            }
+            else {
+                i0 = i * 3 + 0;
+                i1 = i * 3 + 1;
+                i2 = i * 3 + 2;
+            }
+
+            if (i0 >= mesh.vertexCount || i1 >= mesh.vertexCount || i2 >= mesh.vertexCount) { continue; }
+
+            Vector3 a = {
+                (MAP_SCALE * verts[i0 * 3 + 0] + chunk.position.x),
+                (MAP_SCALE * verts[i0 * 3 + 1] + chunk.position.y),
+                (MAP_SCALE * verts[i0 * 3 + 2] + chunk.position.z)
+            };
+            Vector3 b = {
+                (MAP_SCALE * verts[i1 * 3 + 0] + chunk.position.x),
+                (MAP_SCALE * verts[i1 * 3 + 1] + chunk.position.y),
+                (MAP_SCALE * verts[i1 * 3 + 2] + chunk.position.z)
+            };
+            Vector3 c = {
+                (MAP_SCALE * verts[i2 * 3 + 0] + chunk.position.x),
+                (MAP_SCALE * verts[i2 * 3 + 1] + chunk.position.y),
+                (MAP_SCALE * verts[i2 * 3 + 2] + chunk.position.z)
+            };
+            //TraceLog(LOG_INFO, "Tri %d verts: a=(%.2f,%.2f,%.2f)", i, a.x, a.y, a.z);
+            //TraceLog(LOG_INFO, "Tri %d verts: b=(%.2f,%.2f,%.2f)", i, b.x, b.y, b.z);
+            //TraceLog(LOG_INFO, "Tri %d verts: c=(%.2f,%.2f,%.2f)", i, c.x, c.y, c.z);
+            float y = GetHeightOnTriangle((Vector3) { x, 0, z }, a, b, c);
+            if (y > -9999.0f) return y;
+        }
     }
 
     TraceLog(LOG_WARNING, "Not found in any triangle: (%f x %f)", x, z);

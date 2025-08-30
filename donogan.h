@@ -538,6 +538,21 @@ static void BowApplyFrame(Donogan* d)
 
     UpdateModelAnimation(d->bowModel, *A, d->bowFrame);
 }
+// Build a quaternion that applies local X then Y then Z rotations (XYZ order)
+static inline Quaternion QuatXYZ(float rx, float ry, float rz) {
+    Quaternion qx = QuaternionFromAxisAngle((Vector3) { 1, 0, 0 }, rx);
+    Quaternion qy = QuaternionFromAxisAngle((Vector3) { 0, 1, 0 }, ry);
+    Quaternion qz = QuaternionFromAxisAngle((Vector3) { 0, 0, 1 }, rz);
+    // Compose so X happens first, then Y, then Z.
+    // With raymath's QuaternionMultiply(a,b) meaning "a followed by b",
+    // the total for XYZ is: q = qx ∘ qy ∘ qz  →  QuaternionMultiply(QuaternionMultiply(qx, qy), qz)
+    return QuaternionMultiply(QuaternionMultiply(qx, qy), qz);
+}
+
+// Convenience: degrees version
+static inline Quaternion QuatXYZDeg(float dx, float dy, float dz) {
+    return QuatXYZ(dx * DEG2RAD, dy * DEG2RAD, dz * DEG2RAD);
+}
 
 //
 static void DonInitBowKeyframeGroups(Donogan* d)
@@ -558,8 +573,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g0->maxKey = 1;
     g0->curKey = 0;
     KfMakeZeroKey(&g0->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g0->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(0, 0, -DEG2RAD * 85.0f);
-    g0->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(0, 0,  DEG2RAD * 85.0f);
+    g0->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, -85.0f);
+    g0->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0,  85.0f);
 
     // --- AIM ---
     KeyFrameGroup* g1 = &d->kfGroups[BOW_KFG_AIM];
@@ -568,10 +583,10 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->maxKey = 1;
     g1->curKey = 0;
     KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, -DEG2RAD * 11.0f);
-    g1->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -60.0f, DEG2RAD * 60.0f);
-    g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f,0, 0);
-    g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
+    g1->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -12.0f);
+    g1->keyFrames[0].kfBones[1].rot = QuatXYZDeg(60.0f, -60.0f, 60.0f);
+    g1->keyFrames[0].kfBones[2].rot = QuatXYZDeg(55.0f,0, 0);
+    g1->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 76.0f, 0);
 
     // PULL
     KeyFrameGroup* g2 = &d->kfGroups[BOW_KFG_PULL];
@@ -580,10 +595,10 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g2->maxKey = 1;
     g2->curKey = 0;
     KfMakeZeroKey(&g2->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g2->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, -DEG2RAD * 10.0f);
-    g2->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -30.0f, DEG2RAD * 30.0f);
-    g2->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f, 0, 0);
-    g2->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
+    g2->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -11.0f);
+    g2->keyFrames[0].kfBones[1].rot = QuatXYZDeg(60.0f, -30.0f, 30.0f);
+    g2->keyFrames[0].kfBones[2].rot = QuatXYZDeg(55.0f, 0, 0);
+    g2->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 76.0f, 0);
 
     // RELEASE
     KeyFrameGroup* g3 = &d->kfGroups[BOW_KFG_REL];
@@ -592,10 +607,10 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g3->maxKey = 1;
     g3->curKey = 0;
     KfMakeZeroKey(&g3->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g3->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, -DEG2RAD * 12.0f);
-    g3->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -45.0f, DEG2RAD * 45.0f);
-    g3->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f, 0, 0);
-    g3->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
+    g3->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -10.0f);
+    g3->keyFrames[0].kfBones[1].rot = QuatXYZDeg(60.0f, -45.0f, 45.0f);
+    g3->keyFrames[0].kfBones[2].rot = QuatXYZDeg(55.0f, 0, 0);
+    g3->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 76.0f, 0);
 
     // --- EXIT ---
     KeyFrameGroup* g4 = &d->kfGroups[BOW_KFG_EXIT];
@@ -604,8 +619,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g4->maxKey = 1;
     g4->curKey = 0;
     KfMakeZeroKey(&g4->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g4->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(0, 0, -DEG2RAD * 85.0f);
-    g4->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(0, 0, DEG2RAD * 85.0f);
+    g4->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, -85.0f);
+    g4->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 85.0f);
 }
 
 // Choose the active keyframe group based on current proc anim
@@ -1122,7 +1137,7 @@ static Donogan InitDonogan(void)
     d.bowAnimsRaw = LoadModelAnimations(BOW_GLB, &d.bowAnimCount);
     d.bowTex = LoadTexture(BOW_PNG);
     SetMaterialTexture(&d.bowModel.materials[0], MATERIAL_MAP_ALBEDO, d.bowTex);
-    d.bowOffset = (Vector3){ 1.8f, 2.6f, 0.1f };  // start at exact Donogan origin
+    d.bowOffset = (Vector3){ 1.8f, 2.92f, 0.1f };  // start at exact Donogan origin
     d.bowEulerDeg = (Vector3){ 0, 180, 0 };
     d.bowScale = 0.76f;
     //d.bowBoneIndex = DON_BONE_DEF_SPINE002; //DON_BONE_DEF_HAND_L;
