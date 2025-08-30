@@ -199,7 +199,8 @@ typedef enum {
     DONOGAN_STATE_SWIM_MOVE,
     DONOGAN_STATE_BOW_ENTER,
     DONOGAN_STATE_BOW_AIM,
-    DONOGAN_STATE_BOW_EXIT
+    DONOGAN_STATE_BOW_EXIT,
+    DONOGAN_STATE_SLIDE,
 } DonoganState;
 
 // ---------- Anim IDs present in your GLB ----------
@@ -1115,12 +1116,11 @@ static Donogan InitDonogan(void)
 
     d.groundNormal = (Vector3){ 0,1,0 };   // safe default
 
-    // "Mostly vertical" ~= over ~60°. Tweak to taste.
-    float maxSlopeDeg = 60.0f;
-    d.slopeMinUpDot = cosf(maxSlopeDeg * DEG2RAD); // 0.5 at 60°
-    d.steepSlideAccel = 10.0f;   // try 8–18
-    d.steepSlideMax = 1.2f;    // as a multiplier for (walk/run) speed used later
-    d.steepSlideFriction = 6.0f;    // try 4–10
+    d.slopeMinUpDot = 0.5f;     // ~75°+ becomes “too steep”
+    d.steepSlideAccel = 8.0f;      // ramp into the slide quickly
+    d.steepSlideMax = d.runSpeed * 1.1f;
+    d.steepSlideFriction = 1.6f;    // decay a bit each frame
+
 
     PrintModelBones(&d.model);
     PrintModelBones(&d.bowModel);
@@ -1190,6 +1190,7 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_BOW_ENTER:   return DONOGAN_ANIM_PROC_BOW_ENTER;
     case DONOGAN_STATE_BOW_AIM:     return DONOGAN_ANIM_PROC_BOW_AIM;
     case DONOGAN_STATE_BOW_EXIT:    return DONOGAN_ANIM_PROC_BOW_EXIT;
+    case DONOGAN_STATE_SLIDE:       return DONOGAN_ANIM_Jump_Loop; // sliding
     default:                        return DONOGAN_ANIM_Idle_Loop;
     }
 }
@@ -1205,11 +1206,13 @@ static void DonSetState(Donogan* d, DonoganState s)
                     || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN 
                     || s == DONOGAN_STATE_JUMPING
                     || s == DONOGAN_STATE_SWIM_IDLE || s == DONOGAN_STATE_SWIM_MOVE 
-                    || s == DONOGAN_STATE_BOW_AIM);
+                    || s == DONOGAN_STATE_BOW_AIM
+                    || s == DONOGAN_STATE_SLIDE);
     bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN
                         || s == DONOGAN_STATE_JUMPING || s == DONOGAN_STATE_JUMP_START || s == DONOGAN_STATE_JUMP_LAND
                         || s == DONOGAN_STATE_ROLL || s == DONOGAN_STATE_AIR_ROLL
-                        || s == DONOGAN_STATE_BOW_ENTER || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_STATE_BOW_EXIT);
+                        || s == DONOGAN_STATE_BOW_ENTER || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_STATE_BOW_EXIT
+                        || s == DONOGAN_STATE_SLIDE);
     if (!locomotion) {
         d->runLock = false;      // auto-break on swimming
         d->runningHeld = false;
@@ -1463,6 +1466,79 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 }
             } break;
 
+            case DONOGAN_STATE_SLIDE: //sliding....slide...
+            {
+                // Treat like airborne
+                d->onGround = false;
+
+                // 5a) Push downhill along the plane (project gravity onto plane)
+                Vector3 g = (Vector3){ 0.0f, d->gravity, 0.0f }; // gravity is negative
+                float gdotn = Vector3DotProduct(g, d->groundNormal);
+                Vector3 aSlide = Vector3Subtract(g, Vector3Scale(d->groundNormal, gdotn)); // parallel to plane
+                Vector3 aXZ = (Vector3){ aSlide.x, 0.0f, aSlide.z };
+
+                // accelerate + friction + clamp
+                d->velXZ = Vector3Add(d->velXZ, Vector3Scale(aXZ, d->steepSlideAccel * dt));
+                float sp = Vector3Length(d->velXZ);
+                if (sp > d->steepSlideMax && sp > 1e-5f) {
+                    d->velXZ = Vector3Scale(d->velXZ, d->steepSlideMax / sp);
+                }
+                d->velXZ = Vector3Scale(d->velXZ, fmaxf(0.0f, 1.0f - d->steepSlideFriction * dt));
+
+                d->pos.x += d->velXZ.x * dt;
+                d->pos.z += d->velXZ.z * dt;
+
+                // 5b) Maintain a tiny gap above the ground so we never "land"
+                float feetOff = -d->firstBB.min.y * d->scale;  // feet offset
+                float hover = fmaxf(0.02f, 0.5f * d->groundEps);
+                float targetY = d->groundY + feetOff + hover;
+                d->pos.y = (d->pos.y < targetY) ? targetY : d->pos.y;
+                d->velY = 0.0f;  // pinned to the face; we’re not accumulating vertical speed
+
+                // (optional) face slide direction if moving
+                if (sp > 0.05f) d->yawY = atan2f(d->velXZ.x, d->velXZ.z);
+
+                // 5c) Exits:
+                // leave if the face becomes walkable
+                float upDot = d->groundNormal.y;
+                if (upDot >= d->slopeMinUpDot - 0.01f) {
+                    DonSnapToGround(d);
+                    DonSetState(d, (fabsf(lx) > 0.1f || fabsf(ly) > 0.1f)
+                        ? (d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK)
+                        : DONOGAN_STATE_IDLE);
+                    break;
+                }
+                // or if we lose ground under us, go to air
+                if (d->groundY < -9000.0f) {
+                    d->velY = 0.0f;
+                    DonSetState(d, DONOGAN_STATE_JUMPING);
+                    break;
+                }
+                // allow a jump off the wall
+                if (crossPressed) {
+                    d->velY = d->runningHeld ? d->runJumpSpeed : d->jumpSpeed;
+                    d->pos.y += d->liftoffBump;
+                    DonSetState(d, DONOGAN_STATE_JUMP_START);
+                    break;
+                }
+                // roll:
+                if (circlePressed) {
+                    // Use current planar move direction (velXZ set from preview.c each frame)
+                    float m = Vector3Length(d->velXZ);
+                    if (m > 0.1f) {
+                        Vector3 dir = Vector3Scale(d->velXZ, 1.0f / m);
+                        d->rollVel = Vector3Scale(dir, d->rollBurst);
+                        // optional: face the roll direction instantly
+                        d->yawY = atan2f(dir.x, dir.z);
+                    }
+                    else {
+                        d->rollVel = (Vector3){ 0 };
+                    }
+                    DonSetState(d, DONOGAN_STATE_ROLL);
+                    break;
+                }
+            } break;
+
             default: { // IDLE / WALK / RUN (grounded locomotion)
                 if (L2Pressed) {
                     DonSetState(d, DONOGAN_STATE_BOW_ENTER);
@@ -1501,34 +1577,31 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 // --- Steep-slope check: swap to falling + start sliding ---
                 if(onLoad)
                 {
-                    // n·up is just n.y since up=(0,1,0)
-                    float upDot = d->groundNormal.y;
+                    // --- Steep-slope check ---
+                    float upDot = d->groundNormal.y;           // n·up
                     bool  tooSteep = (upDot < d->slopeMinUpDot);
 
                     if (tooSteep) {
-                        // Project gravity onto the plane to get "down the face" direction
+                        // downhill direction = gravity projected onto the plane
                         Vector3 g = (Vector3){ 0.0f, -1.0f, 0.0f };
                         Vector3 n = d->groundNormal;
-                        Vector3 along = Vector3Subtract(g, Vector3Scale(n, Vector3DotProduct(g, n))); // gravity component along plane
+                        Vector3 along = Vector3Subtract(g, Vector3Scale(n, Vector3DotProduct(g, n)));
 
-                        // Take only the planar XZ component for velXZ
+                        // planar XZ push
                         Vector3 slideXZ = (Vector3){ along.x, 0.0f, along.z };
                         float m = Vector3Length(slideXZ);
                         if (m > 1e-4f) slideXZ = Vector3Scale(slideXZ, 1.0f / m);
 
-                        // Target slide speed uses your walk/run speeds later; we ramp velXZ toward a goal
                         Vector3 target = Vector3Scale(slideXZ, d->steepSlideMax);
-
-                        // Accelerate toward slide direction and add friction
                         d->velXZ = Vector3Lerp(d->velXZ, target, Clampf(d->steepSlideAccel * dt, 0.0f, 1.0f));
                         d->velXZ = Vector3Scale(d->velXZ, fmaxf(0.0f, 1.0f - d->steepSlideFriction * dt));
 
-                        // Leave ground movement; use your airborne loop (Jumping) for anim + gravity
-                        d->onGround = false;
-                        d->velY = fminf(d->velY, 0.0f); // don’t pop upward
-                        DonSetState(d, DONOGAN_STATE_JUMPING);
-                        break; // process sliding in the airborne branch this frame
+                        d->onGround = false;         // we are not grounded while sliding
+                        d->velY = fminf(d->velY, 0); // never pop upward entering slide
+                        DonSetState(d, DONOGAN_STATE_SLIDE);
+                        break;
                     }
+
                 }
 
                 // --- Ground stick logic ---

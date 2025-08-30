@@ -1062,6 +1062,10 @@ int main(void) {
                     else
                     {
                         don.groundY = groundY;
+                        // right after setting don.groundY
+                        Vector3 nrm = GetTerrainNormalFromMeshXZ(don.pos.x, don.pos.z);
+                        if (nrm.x == 0 && nrm.y == 0 && nrm.z == 0) nrm = (Vector3){ 0,1,0 }; // fallback
+                        don.groundNormal = nrm;
                     }
                 }
             }
@@ -1806,6 +1810,10 @@ int main(void) {
             DrawText(TextFormat("Truck Air State = %d", truckAirState), 10, 250, 16, BLACK);//
             DrawText(TextFormat("F=[%.3f][%.3f]", tireYOffset[0], tireYOffset[1]), 10, 270, 16, GRAY);
             DrawText(TextFormat("B=[%.3f][%.3f]", tireYOffset[2], tireYOffset[3]), 10, 290, 16, GRAY);
+        }
+        if (donnyMode)
+        {
+            DrawText(TextFormat("%d", don.state), 10, 150, 20, BLUE);
         }
         if (showMap) {
             // Map drawing area (scaled by zoom)
