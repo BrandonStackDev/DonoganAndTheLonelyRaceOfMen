@@ -2476,7 +2476,7 @@ int main(void) {
             }
 
             // Apply facing rotation into model.transform (Y) on top of baked X fix
-            Matrix rotY = MatrixRotateY(don.yawY);
+            Matrix rotY = MatrixRotateY(don.bowMode ? don.yawY + -PI/2.0f: don.yawY);
             don.model.transform = MatrixMultiply(MatrixRotateX(DEG2RAD * don.modelYawX), rotY);
         }
         if (don.inWater)

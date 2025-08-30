@@ -458,6 +458,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
         DON_BONE_DEF_UPPER_ARM_L,
         DON_BONE_DEF_UPPER_ARM_R,
         DON_BONE_DEF_FOREARM_R,
+        DON_BONE_DEF_HEAD,
     };
     const int NUM_BOW_BONES = (int)(sizeof(BOW_BONES) / sizeof(BOW_BONES[0]));
 
@@ -479,7 +480,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(DEG2RAD * 15.0f, DEG2RAD * -88.0f, 0);
     g1->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -60.0f, DEG2RAD * 60.0f);
     g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 15.0f,0, 0);
-    //g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(DEG2RAD * -60.0f, 0, 0);
+    g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
 
     // --- EXIT ---
     KeyFrameGroup* g2 = &d->kfGroups[BOW_KFG_EXIT];
