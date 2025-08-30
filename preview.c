@@ -2166,7 +2166,6 @@ int main(void) {
         truckPosition = Vector3Add(truckPosition, tempTruck);
         truckOrigin = Vector3Add(truckPosition, rearAxleOffset);
 
-        skyCam.target = Vector3Add(skyCam.position, vehicleMode ? (Vector3){ forward.x, 0, forward.z} : forward);
         if (!vehicleMode && Vector3Length(move) > 0.01f) {
             move = Vector3Normalize(move);
             move = Vector3Scale(move, goku ? spd : spd * dt);
@@ -2440,6 +2439,14 @@ int main(void) {
         //end collision section -----------------------------------------------------------------------------------------------------------------
 
         //updates before drawing--------------------------------------------------------
+        // Lock sky to the real camera’s yaw, ignore pitch and translation
+        Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+        Vector3 skyDir = (Vector3){ camDir.x, camDir.y, camDir.z };           // yaw-only? maybe not
+        if (Vector3Length(skyDir) < 1e-4f) skyDir = (Vector3){ 0,0,1 };     // fallback
+        skyCam.position = (Vector3){ 0,0,0 };                                // remove translation
+        skyCam.target = Vector3Add(skyCam.position, Vector3Normalize(skyDir));
+        skyCam.up = (Vector3){ 0,1,0 };
+        // BeginMode3D(skyCam) ... draw panels around (0,0,0) as you already do
         UpdateCamera(&camera, vehicleMode?CAMERA_THIRD_PERSON:CAMERA_FIRST_PERSON);
         UpdateCamera(&skyCam, CAMERA_FIRST_PERSON);
         // -------- State + animation update from controller --------
