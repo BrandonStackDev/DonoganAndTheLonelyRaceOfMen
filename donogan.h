@@ -558,6 +558,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g0->maxKey = 1;
     g0->curKey = 0;
     KfMakeZeroKey(&g0->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+    g0->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(0, 0, -DEG2RAD * 85.0f);
+    g0->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(0, 0,  DEG2RAD * 85.0f);
 
     // --- AIM ---
     KeyFrameGroup* g1 = &d->kfGroups[BOW_KFG_AIM];
@@ -566,7 +568,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->maxKey = 1;
     g1->curKey = 0;
     KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, DEG2RAD * 15.0f);
+    g1->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, -DEG2RAD * 11.0f);
     g1->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -60.0f, DEG2RAD * 60.0f);
     g1->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f,0, 0);
     g1->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
@@ -578,7 +580,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g2->maxKey = 1;
     g2->curKey = 0;
     KfMakeZeroKey(&g2->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g2->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, DEG2RAD * 15.0f);
+    g2->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, -DEG2RAD * 10.0f);
     g2->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -30.0f, DEG2RAD * 30.0f);
     g2->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f, 0, 0);
     g2->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
@@ -590,7 +592,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g3->maxKey = 1;
     g3->curKey = 0;
     KfMakeZeroKey(&g3->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g3->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, DEG2RAD * 15.0f);
+    g3->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(-DEG2RAD * 10.0f, DEG2RAD * -88.0f, -DEG2RAD * 12.0f);
     g3->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(DEG2RAD * 60.0f, DEG2RAD * -45.0f, DEG2RAD * 45.0f);
     g3->keyFrames[0].kfBones[2].rot = QuaternionFromEuler(DEG2RAD * 55.0f, 0, 0);
     g3->keyFrames[0].kfBones[3].rot = QuaternionFromEuler(0, DEG2RAD * 76.0f, 0);
@@ -602,6 +604,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g4->maxKey = 1;
     g4->curKey = 0;
     KfMakeZeroKey(&g4->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+    g4->keyFrames[0].kfBones[0].rot = QuaternionFromEuler(0, 0, -DEG2RAD * 85.0f);
+    g4->keyFrames[0].kfBones[1].rot = QuaternionFromEuler(0, 0, DEG2RAD * 85.0f);
 }
 
 // Choose the active keyframe group based on current proc anim
@@ -1833,7 +1837,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
     if (d->bowCur >= 0)
     {
-        if (!d->bowFinished) d->bowTime += dt;
+        if (!d->bowFinished) { d->bowTime += dt; }
 
         const ModelAnimation* A = &d->bowAnimsRaw[d->bowCur];
         int frameCount = A ? (int)A->frameCount : 1;
@@ -1848,7 +1852,6 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         }
         BowApplyFrame(d);
     }
-
 
     DonUpdateBubbles(d, dt);
 }
