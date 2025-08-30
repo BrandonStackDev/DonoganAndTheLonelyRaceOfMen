@@ -1839,9 +1839,11 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         int frameCount = A ? (int)A->frameCount : 1;
         if (frameCount < 1) frameCount = 1;
 
-        if (d->bowLoop)  d->bowFrame = (d->bowFrame + 1) % frameCount;
+        int rate = 1;
+        if (d->bowCur==1) { rate = 5; }//the release animation should play faster
+        if (d->bowLoop)  d->bowFrame = (d->bowFrame + rate) % frameCount;
         else {
-            d->bowFrame += 1;
+            d->bowFrame += rate;
             if (d->bowFrame >= frameCount) { d->bowFrame = frameCount - 1; d->bowFinished = true; }
         }
         BowApplyFrame(d);
