@@ -18,6 +18,8 @@
 //for big report numbers
 #include <stdint.h>
 #include <inttypes.h>
+//me
+#include "util.h"
 
 #ifdef _WIN32
 // Keep only the Win32 pieces we actually need //brandon here, no idea what any of this is...

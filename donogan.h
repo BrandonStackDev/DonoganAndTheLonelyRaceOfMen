@@ -10,6 +10,7 @@
 #include <string.h>   // strcmp
 #include <stdlib.h>   // malloc/free if MemAlloc missing
 //me
+#include "core.h"
 #include "control.h"
 #include "util.h"
 #include "timer.h"
@@ -1267,6 +1268,12 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         bool circlePressed = (circle && !d->prevCircle);
         d->prevCircle = circle;
 
+        if (onLoad)
+        {
+            //for sliding when too steep
+            d->groundNormal = GetTerrainNormalFromMeshXZ(d->pos.x, d->pos.z);
+        }
+
         // --- Water locomotion (no gravity) ---
         if (d->inWater) {
             //1) Read stick as usual 1
@@ -1490,6 +1497,38 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     }
                     DonSetState(d, DONOGAN_STATE_ROLL);
                     break;
+                }
+                // --- Steep-slope check: swap to falling + start sliding ---
+                if(onLoad)
+                {
+                    // n·up is just n.y since up=(0,1,0)
+                    float upDot = d->groundNormal.y;
+                    bool  tooSteep = (upDot < d->slopeMinUpDot);
+
+                    if (tooSteep) {
+                        // Project gravity onto the plane to get "down the face" direction
+                        Vector3 g = (Vector3){ 0.0f, -1.0f, 0.0f };
+                        Vector3 n = d->groundNormal;
+                        Vector3 along = Vector3Subtract(g, Vector3Scale(n, Vector3DotProduct(g, n))); // gravity component along plane
+
+                        // Take only the planar XZ component for velXZ
+                        Vector3 slideXZ = (Vector3){ along.x, 0.0f, along.z };
+                        float m = Vector3Length(slideXZ);
+                        if (m > 1e-4f) slideXZ = Vector3Scale(slideXZ, 1.0f / m);
+
+                        // Target slide speed uses your walk/run speeds later; we ramp velXZ toward a goal
+                        Vector3 target = Vector3Scale(slideXZ, d->steepSlideMax);
+
+                        // Accelerate toward slide direction and add friction
+                        d->velXZ = Vector3Lerp(d->velXZ, target, Clampf(d->steepSlideAccel * dt, 0.0f, 1.0f));
+                        d->velXZ = Vector3Scale(d->velXZ, fmaxf(0.0f, 1.0f - d->steepSlideFriction * dt));
+
+                        // Leave ground movement; use your airborne loop (Jumping) for anim + gravity
+                        d->onGround = false;
+                        d->velY = fminf(d->velY, 0.0f); // don’t pop upward
+                        DonSetState(d, DONOGAN_STATE_JUMPING);
+                        break; // process sliding in the airborne branch this frame
+                    }
                 }
 
                 // --- Ground stick logic ---
