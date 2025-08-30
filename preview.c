@@ -874,7 +874,7 @@ int main(void) {
             if (relativePitch < 5.0f) relativePitch = 5.0f;
             if (relativePitch > 85.0f) relativePitch = 85.0f;
         }
-        else if (donnyMode)
+        else if (donnyMode && don.state != DONOGAN_STATE_SLIDE)
         {
             // -------- Character movement (camera-relative) --------
             float lx = havePad ? gpad.normLX : 0.0f;
@@ -1261,16 +1261,19 @@ int main(void) {
         {
             // Pick speed from Donogan state (will be set by DonUpdate), account for swimming
             float speed = (don.state == DONOGAN_STATE_RUN) ? don.runSpeed :(don.state == DONOGAN_STATE_WALK) ? don.walkSpeed : 0.0f;
-            if (!don.inWater) {
+            if (!don.inWater&& don.state != DONOGAN_STATE_SLIDE) {
                 don.pos = Vector3Add(don.pos, Vector3Scale(donMove, speed * dt));
                 
             }
 
-            // Integrate position
-            don.pos = Vector3Add(don.pos, Vector3Scale(donMove, speed * dt));
+            if (don.state != DONOGAN_STATE_SLIDE)
+            {
+                // Integrate position
+                don.pos = Vector3Add(don.pos, Vector3Scale(donMove, speed * dt));
+            }
 
             // Face movement direction when moving (turn smoothly)
-            if (moveMag > 0.1f) {
+            if (moveMag > 0.1f && don.state != DONOGAN_STATE_SLIDE) {
                 float targetYaw = atan2f(donMove.x, donMove.z);
                 float dy = targetYaw - don.yawY;
                 // wrap shortest path
@@ -1811,9 +1814,11 @@ int main(void) {
             DrawText(TextFormat("F=[%.3f][%.3f]", tireYOffset[0], tireYOffset[1]), 10, 270, 16, GRAY);
             DrawText(TextFormat("B=[%.3f][%.3f]", tireYOffset[2], tireYOffset[3]), 10, 290, 16, GRAY);
         }
-        if (donnyMode)
+        if (donnyMode && onLoad)
         {
             DrawText(TextFormat("%d", don.state), 10, 150, 20, BLUE);
+            DrawText(TextFormat("Normal: %.2f %.2f %.2f", don.groundNormal.x, don.groundNormal.y, don.groundNormal.z), 10, 170, 20, PURPLE);
+            DrawText(TextFormat("GroundY: %.2f", don.groundY), 10, 190, 20, PURPLE);
         }
         if (showMap) {
             // Map drawing area (scaled by zoom)

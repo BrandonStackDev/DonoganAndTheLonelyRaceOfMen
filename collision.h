@@ -1,4 +1,4 @@
-#ifndef COLLISION_H
+﻿#ifndef COLLISION_H
 #define COLLISION_H
 
 // Includes

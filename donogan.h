@@ -426,6 +426,7 @@ typedef struct {
     float   steepSlideAccel; // how quickly we accelerate along the steep face (1/sec)
     float   steepSlideMax;   // target planar speed while sliding, in "walk/run speed" units
     float   steepSlideFriction; // damping when sliding (1/sec)
+    Timer slideDwell;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1116,10 +1117,11 @@ static Donogan InitDonogan(void)
 
     d.groundNormal = (Vector3){ 0,1,0 };   // safe default
 
-    d.slopeMinUpDot = 0.5f;     // ~75°+ becomes “too steep”
+    d.slopeMinUpDot = 0.65f;     // ~75°+ becomes “too steep”
     d.steepSlideAccel = 8.0f;      // ramp into the slide quickly
-    d.steepSlideMax = d.runSpeed * 1.1f;
+    d.steepSlideMax = d.runSpeed * 1.1134f;
     d.steepSlideFriction = 1.6f;    // decay a bit each frame
+    d.slideDwell = CreateTimer(0.25f);
 
 
     PrintModelBones(&d.model);
@@ -1211,8 +1213,7 @@ static void DonSetState(Donogan* d, DonoganState s)
     bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN
                         || s == DONOGAN_STATE_JUMPING || s == DONOGAN_STATE_JUMP_START || s == DONOGAN_STATE_JUMP_LAND
                         || s == DONOGAN_STATE_ROLL || s == DONOGAN_STATE_AIR_ROLL
-                        || s == DONOGAN_STATE_BOW_ENTER || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_STATE_BOW_EXIT
-                        || s == DONOGAN_STATE_SLIDE);
+                        || s == DONOGAN_STATE_BOW_ENTER || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_STATE_BOW_EXIT);
     if (!locomotion) {
         d->runLock = false;      // auto-break on swimming
         d->runningHeld = false;
@@ -1257,7 +1258,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         bool padPresent = (pad != NULL);
         float lx = padPresent ? pad->normLX : 0.0f;
         float ly = padPresent ? pad->normLY : 0.0f;
-        bool cross = padPresent ? pad->btnCross : IsKeyDown(KEY_SPACE);
+        bool cross = padPresent ? pad->btnCross : IsKeyDown(KEY_SPACE);//todo: remove these key board commands
         bool circle = padPresent ? pad->btnCircle : IsKeyDown(KEY_O);
         bool L3 = padPresent ? pad->btnL3 : IsKeyDown(KEY_LEFT_SHIFT);
         bool L2 = padPresent ? pad->btnL2 : IsKeyDown(KEY_LEFT_SHIFT);
@@ -1468,7 +1469,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
             case DONOGAN_STATE_SLIDE: //sliding....slide...
             {
-                // Treat like airborne
+                // Treat like ...
                 d->onGround = false;
 
                 // 5a) Push downhill along the plane (project gravity onto plane)
@@ -1489,11 +1490,26 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 d->pos.z += d->velXZ.z * dt;
 
                 // 5b) Maintain a tiny gap above the ground so we never "land"
-                float feetOff = -d->firstBB.min.y * d->scale;  // feet offset
+                // 3) RE-SAMPLE surface at the NEW XZ and HARD-STICK Y to it
+                float newGroundY = GetTerrainHeightFromMeshXZ(d->pos.x, d->pos.z);
+                Vector3 newN = GetTerrainNormalFromMeshXZ(d->pos.x, d->pos.z);
+
+                // If there's no ground under the new XZ, we truly left the wall: go to air.
+                if (newGroundY <= -9000.0f || Vector3Length(newN) < 1e-6f) {
+                    DonSetState(d, DONOGAN_STATE_JUMPING);
+                    break;
+                }
+
+                d->groundY = newGroundY;
+                d->groundNormal = newN;
+
+                // feet offset and tiny hover so we never trigger "land"
+                float feetOff = -d->firstBB.min.y * d->scale;
                 float hover = fmaxf(0.02f, 0.5f * d->groundEps);
-                float targetY = d->groundY + feetOff + hover;
-                d->pos.y = (d->pos.y < targetY) ? targetY : d->pos.y;
-                d->velY = 0.0f;  // pinned to the face; we’re not accumulating vertical speed
+
+                // HARD set Y to follow the face (this is the key change)
+                d->pos.y = d->groundY + feetOff + hover;
+                d->velY = 0.0f;
 
                 // (optional) face slide direction if moving
                 if (sp > 0.05f) d->yawY = atan2f(d->velXZ.x, d->velXZ.z);
@@ -1501,7 +1517,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 // 5c) Exits:
                 // leave if the face becomes walkable
                 float upDot = d->groundNormal.y;
-                if (upDot >= d->slopeMinUpDot - 0.01f) {
+                if (upDot >= d->slopeMinUpDot - 0.01f && HasTimerElapsed(&d->slideDwell)) {
                     DonSnapToGround(d);
                     DonSetState(d, (fabsf(lx) > 0.1f || fabsf(ly) > 0.1f)
                         ? (d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK)
@@ -1509,7 +1525,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     break;
                 }
                 // or if we lose ground under us, go to air
-                if (d->groundY < -9000.0f) {
+                if (d->groundY < -9000.0f && HasTimerElapsed(&d->slideDwell)) {
                     d->velY = 0.0f;
                     DonSetState(d, DONOGAN_STATE_JUMPING);
                     break;
@@ -1578,7 +1594,13 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 if(onLoad)
                 {
                     // --- Steep-slope check ---
-                    float upDot = d->groundNormal.y;           // n·up
+                    Vector3 n = d->groundNormal;
+                    float len = Vector3Length(n);
+                    if (len < 1e-6f) n = (Vector3){ 0,1,0 };  // fallback if degenerate
+                    else            n = Vector3Scale(n, 1.0f / len);
+
+                    const Vector3 UP = { 0,1,0 };
+                    float upDot = Vector3DotProduct(n, UP);   // -1..+1
                     bool  tooSteep = (upDot < d->slopeMinUpDot);
 
                     if (tooSteep) {
@@ -1596,8 +1618,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         d->velXZ = Vector3Lerp(d->velXZ, target, Clampf(d->steepSlideAccel * dt, 0.0f, 1.0f));
                         d->velXZ = Vector3Scale(d->velXZ, fmaxf(0.0f, 1.0f - d->steepSlideFriction * dt));
 
-                        d->onGround = false;         // we are not grounded while sliding
-                        d->velY = fminf(d->velY, 0); // never pop upward entering slide
+                        ResetTimer(&d->slideDwell);
+                        StartTimer(&d->slideDwell);
+                        d->onGround = false;        // very important: we are not “grounded” while sliding
+                        d->velY = 0.0f;         // pinned to face (we don’t accumulate airborne vertical)
                         DonSetState(d, DONOGAN_STATE_SLIDE);
                         break;
                     }
