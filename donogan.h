@@ -588,8 +588,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->curKey = 0;
     KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
     g1->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -12.0f);
-    g1->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 90);
-    g1->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0,0, 0);
+    g1->keyFrames[0].kfBones[1].rot = QuatXYZDeg(45, 85, 120);
+    g1->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0,0,0);
     g1->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 76.0f, 0);
     g1->keyFrames[0].kfBones[4].rot = QuatXYZDeg(75.0f, 0, 0);
     g1->keyFrames[0].kfBones[5].rot = QuatXYZDeg(75.0f, 0, 0);
@@ -604,8 +604,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g2->curKey = 0;
     KfMakeZeroKey(&g2->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
     g2->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -11.0f);
-    g2->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 90);
-    g2->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
+    g2->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 100);
+    g2->keyFrames[0].kfBones[2].rot = QuatXYZDeg(135, 0, 0);
     g2->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 76.0f, 0);
     g2->keyFrames[0].kfBones[4].rot = QuatXYZDeg(76.0f, 0, 0);
     g2->keyFrames[0].kfBones[5].rot = QuatXYZDeg(76.0f, 0, 0);
@@ -620,8 +620,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g3->curKey = 0;
     KfMakeZeroKey(&g3->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
     g3->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -10.0f);
-    g3->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 90);
-    g3->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
+    g3->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 100);
+    g3->keyFrames[0].kfBones[2].rot = QuatXYZDeg(135, 0, -10);
     g3->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 76.0f, 0);
     g3->keyFrames[0].kfBones[4].rot = QuatXYZDeg(74.0f, 0, 0);
     g3->keyFrames[0].kfBones[5].rot = QuatXYZDeg(74.0f, 0, 0);

@@ -66,7 +66,7 @@ float GetTerrainHeightFromMeshXZ(float x, float z)
         int half = CHUNK_COUNT / 2;
         int cx = (int)floor(x / CHUNK_WORLD_SIZE) + half;
         int cy = (int)floor(z / CHUNK_WORLD_SIZE) + half;
-
+        //todo: check cx and cy range
         Chunk chunk = chunks[cx][cy];
         Mesh mesh = chunk.model.meshes[0];
 
