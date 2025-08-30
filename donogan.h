@@ -335,6 +335,17 @@ typedef struct {
     unsigned int animCount;
     ModelAnimation* animsRaw;
     ModelAnimation* anims; // remapped to model bone order once at load
+    unsigned int bowAnimCount;
+    ModelAnimation* bowAnimsRaw;
+
+    // bow playback
+    int   bowCur;         // -1 = none, otherwise [0..bowAnimCount-1]
+    int   bowFrame;
+    bool  bowLoop;
+    bool  bowFinished;
+    float bowTime;        // seconds
+    float bowFps;         // default 24
+
 
     // Playback
     DonoganAnim curAnimId;
@@ -470,7 +481,65 @@ static inline void KfMakeZeroKey(KeyFrame* kf, float t,
     for (int i = 0; i < kf->maxBones; ++i) { KfBoneZero(&kf->kfBones[i], bones[i]); }
 }
 
+//bow anim stuff
+// Remove per-bone scales (set to 1) and zero any root translations so our hand attach controls placement.
+static void BowStripScaleAndRootOffset(Donogan* d)
+{
+    if (!d || !d->bowAnimsRaw || d->bowAnimCount == 0) return;
 
+    for (unsigned k = 0; k < d->bowAnimCount; ++k) {
+        ModelAnimation* A = &d->bowAnimsRaw[k];
+        if (!A || !A->framePoses) continue;
+
+        for (int f = 0; f < (int)A->frameCount; ++f) {
+            Transform* F = A->framePoses[f];
+
+            bool firstRootDone = false;
+            for (int b = 0; b < (int)A->boneCount; ++b) {
+                // 1) kill per-bone scale
+                F[b].scale = (Vector3){ 1,1,1 };
+
+                // 2) zero translation on the *first* root only
+                if (d->bowModel.bones[b].parent == -1) {
+                    if (!firstRootDone) { F[b].translation = (Vector3){ 0,0,0 }; firstRootDone = true; }
+                }
+            }
+        }
+    }
+}
+
+static void BowPlay(Donogan* d, int clip, bool loop, bool reset)
+{
+    if (!d || !d->bowAnimsRaw || d->bowAnimCount == 0) return;
+    if (clip < 0 || clip >= (int)d->bowAnimCount) return;
+
+    if (reset || d->bowCur != clip) {
+        d->bowCur = clip;
+        d->bowLoop = loop;
+        d->bowFinished = false;
+        d->bowTime = 0.0f;
+        d->bowFrame = 0;
+    }
+}
+
+static void BowApplyFrame(Donogan* d)
+{
+    if (!d || d->bowCur < 0 || !d->bowAnimsRaw) return;
+    const ModelAnimation* A = &d->bowAnimsRaw[d->bowCur];
+    int fc = (int)A->frameCount; if (fc < 1) fc = 1;
+
+    // Clamp/finish behavior like body
+    if (!d->bowLoop) {
+        if (d->bowFrame >= fc - 1) { d->bowFrame = fc - 1; d->bowFinished = true; }
+    }
+    else {
+        d->bowFrame = d->bowFrame % fc;
+    }
+
+    UpdateModelAnimation(d->bowModel, *A, d->bowFrame);
+}
+
+//
 static void DonInitBowKeyframeGroups(Donogan* d)
 {
     // Bones we’ll drive for the bow pose (you can add fingers later):
@@ -1046,6 +1115,7 @@ static Donogan InitDonogan(void)
 
     //bow
     d.bowModel = LoadModel(BOW_GLB);
+    d.bowAnimsRaw = LoadModelAnimations(BOW_GLB, &d.bowAnimCount);
     d.bowTex = LoadTexture(BOW_PNG);
     SetMaterialTexture(&d.bowModel.materials[0], MATERIAL_MAP_ALBEDO, d.bowTex);
     d.bowOffset = (Vector3){ 0.8f, 2.6f, 0.1f };  // start at exact Donogan origin
@@ -1087,6 +1157,14 @@ static Donogan InitDonogan(void)
     d.animTime = 0.0f;
     d.curFrame = 0;
     d.animFps = 24.0f; // nominal
+
+    //bow stuff for animation
+    d.bowCur      = -1;
+    d.bowFrame = 0;
+    d.bowLoop = false;
+    d.bowFinished = true;
+    d.bowTime = 0.0f;
+    d.bowFps = 24.0f;
 
     // Movement tunables
     d.walkSpeed = 6.2f;
@@ -1160,6 +1238,7 @@ static Donogan InitDonogan(void)
     PrintModelBones(&d.model);
     PrintModelBones(&d.bowModel);
     //proc anim setup
+    BowStripScaleAndRootOffset(&d);
     DonInitBowKeyframeGroups(&d);
 
     DonSnapToGround(&d);
@@ -1174,6 +1253,7 @@ static void FreeDonogan(Donogan* d)
         MemFree(d->anims);
     }
     if (d->animsRaw && d->animCount > 0) UnloadModelAnimations(d->animsRaw, d->animCount);
+    if (d->bowAnimsRaw && d->bowAnimCount > 0) UnloadModelAnimations(d->bowAnimsRaw, d->bowAnimCount);
     if (d->tex.id) UnloadTexture(d->tex);
     if (d->model.meshCount) UnloadModel(d->model);
 }
@@ -1304,7 +1384,13 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         bool R2Released = (!R2 && d->prevR2);
         d->prevR2 = R2;
         d->prevL2 = L2;
-
+        //get bow ready
+        if (R2Pressed && d->bowAnimCount >= 1) {
+            BowPlay(d, 0, false, true);   // 0 = PULL, one-shot
+        }
+        if (R2Released && d->bowAnimCount >= 2) {
+            BowPlay(d, 1, false, true);   // 1 = RELEASE, one-shot
+        }
         // Edge for X (jump)
         bool crossPressed = (cross && !d->prevCross);
         d->prevCross = cross;
@@ -1744,6 +1830,23 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     {
         DonApplyProcFrame(d);
     }
+
+    if (d->bowCur >= 0)
+    {
+        if (!d->bowFinished) d->bowTime += dt;
+
+        const ModelAnimation* A = &d->bowAnimsRaw[d->bowCur];
+        int frameCount = A ? (int)A->frameCount : 1;
+        if (frameCount < 1) frameCount = 1;
+
+        if (d->bowLoop)  d->bowFrame = (d->bowFrame + 1) % frameCount;
+        else {
+            d->bowFrame += 1;
+            if (d->bowFrame >= frameCount) { d->bowFrame = frameCount - 1; d->bowFinished = true; }
+        }
+        BowApplyFrame(d);
+    }
+
 
     DonUpdateBubbles(d, dt);
 }

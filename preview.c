@@ -1376,15 +1376,9 @@ int main(void) {
                 if (don.bowMode)
                 {
                     // --- Bow draw snippet ---
-                // Get bone rotation delta (bind → current)
+                    // Get bone rotation delta (bind current)
                     //Transform* transform = &don.anims[don.curAnimId].framePoses[don.curFrame][don.bowBoneIndex];
                     Quaternion inRotation = don.model.bindPose[don.bowBoneIndex].rotation;
-                    //Quaternion outRotation = transform->rotation;
-                    //Quaternion rotate = QuaternionMultiply(outRotation, QuaternionInvert(inRotation));
-
-                    // Bone rotation matrix
-                    //Matrix Rbone = QuaternionToMatrix(QuaternionNormalize(rotate));
-
                     // Local bow rotation from bowEulerDeg
                     Quaternion qLocal = QuaternionFromEuler(
                         DEG2RAD * don.bowEulerDeg.x,
@@ -1392,26 +1386,22 @@ int main(void) {
                         DEG2RAD * don.bowEulerDeg.z
                     );
                     Matrix Rlocal = QuaternionToMatrix(QuaternionNormalize(qLocal));
-
                     // Local bow offset
                     Matrix Toffset = MatrixTranslate(don.bowOffset.x, don.bowOffset.y, don.bowOffset.z);
-
                     // Character transform pieces
                     Matrix Rchar = don.model.transform;                               // yaw + baked X-fix
                     Matrix Schar = MatrixScale(don.scale, don.scale, don.scale);
                     Matrix Sbow = MatrixScale(don.bowScale, don.bowScale, don.bowScale);
                     Matrix Tchar = MatrixTranslate(don.pos.x, don.pos.y, don.pos.z);
-
                     // Compose final: Scale * (CharRot * BoneRot * LocalRot * Offset) * WorldTranslate
-                    Matrix finalM = MatrixMultiply(MatrixMultiply(Sbow,Schar),
-                        MatrixMultiply(MatrixMultiply(MatrixMultiply(Rlocal, Toffset), Rchar),
-                            Tchar));
+                    Matrix finalM = MatrixMultiply(MatrixMultiply(Sbow,Schar),MatrixMultiply(MatrixMultiply(MatrixMultiply(Rlocal, Toffset), Rchar),Tchar));
                     /*Matrix finalM = MatrixMultiply(MatrixMultiply(Sbow, Schar),
                         MatrixMultiply(MatrixMultiply(MatrixMultiply(Rlocal, Toffset), MatrixMultiply(Rchar, Rbone)),
                             Tchar));*/
-
                     // Draw
                     DrawMesh(don.bowModel.meshes[0], don.bowModel.materials[0], finalM);
+                    /*don.bowModel.transform = finalM;
+                    DrawModel(don.bowModel, (Vector3) { 0 }, 1.0f, WHITE);*/
                 }
 
                 //bubbles
