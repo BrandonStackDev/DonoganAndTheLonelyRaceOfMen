@@ -145,6 +145,7 @@ typedef struct Arrow {
     float   life;     // seconds left
     unsigned char alive;
     unsigned char stuck;
+    Vector3 dir;       // NEW: last flight/impact direction, tip-forward (unit)
 } Arrow;
 //////////////////////IMPORTANT GLOBAL VARIABLES///////////////////////////////
 //very very important

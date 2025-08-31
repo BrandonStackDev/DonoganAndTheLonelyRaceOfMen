@@ -579,6 +579,7 @@ static void DonFireArrow(Donogan* d, Vector3 spawn, Vector3 dir, float speed) {
     a->pos = spawn;                     // tip starts at spawn
     a->vel = Vector3Scale(Vector3Normalize(dir), speed);
     a->life = d->arrowMaxLife;
+    a->dir = Vector3Normalize(dir);
 }
 
 static void DonUpdateArrows(Donogan* d, float dt) {
@@ -587,32 +588,29 @@ static void DonUpdateArrows(Donogan* d, float dt) {
         if (!a->alive) continue;
 
         if (!a->stuck) {
-            // gravity + drag
-            // gravity tuned for arrows
-            a->vel.y += d->arrowGravity * dt;
-
-            // anisotropic drag: keep forward speed, damp off-axis
-            Vector3 n = Vector3Normalize(a->vel);
-            float   s = Vector3Length(a->vel);
-            Vector3 vpar = Vector3Scale(n, s);                 // along flight
-            Vector3 vperp = Vector3Subtract(a->vel, vpar);      // everything else
-
-            float dPar = 1.0f / (1.0f + d->arrowDragForward * dt);
-            float dPerp = 1.0f / (1.0f + d->arrowDragPerp * dt);
-
-            vpar = Vector3Scale(vpar, dPar);
-            vperp = Vector3Scale(vperp, dPerp);
-
-            a->vel = Vector3Add(vpar, vperp);
-
-
+            // ... your gravity + anisotropic drag ...
             // move tip
             a->pos = Vector3Add(a->pos, Vector3Scale(a->vel, dt));
 
-            // very simple ground hit: stick when tip goes below terrain
+            // ground hit?
             float gy = GetTerrainHeightFromMeshXZ(a->pos.x, a->pos.z);
             if (a->pos.y <= gy + 0.01f) {
-                a->pos.y = gy + 0.01f;
+                // 1) lock the facing at the moment of impact
+                Vector3 hitDir = Vector3Normalize(a->vel);
+                if (Vector3Length(hitDir) < 1e-5f) hitDir = a->dir; // fallback
+                a->dir = hitDir;
+
+                // (optional) ensure it doesn’t lie perfectly flat:
+                float minUpDot = 0.12f; // ~7° up minimum; tweak if needed
+                float upDot = Vector3DotProduct(a->dir, (Vector3) { 0, 1, 0 });
+                if (upDot < minUpDot) {
+                    // blend a bit toward up just to “stick out”
+                    float t = (minUpDot - upDot) * 0.6f;
+                    a->dir = Vector3Normalize(Vector3Lerp(a->dir, (Vector3) { 0, 1, 0 }, t));
+                }
+
+                // 2) pin the tip just at/above the surface and stop
+                a->pos.y = gy + 0.01f;                // tiny hover to avoid z-fight
                 a->stuck = 1;
                 a->vel = (Vector3){ 0 };
             }
@@ -622,6 +620,7 @@ static void DonUpdateArrows(Donogan* d, float dt) {
         if (a->life <= 0.0f) a->alive = 0;
     }
 }
+
 
 // Remove per-bone scales (set to 1) and zero any root translations so our hand attach controls placement.
 static void BowStripScaleAndRootOffset(Donogan* d)
@@ -2100,12 +2099,8 @@ static void DonDrawArrows(const Donogan* d) {
     for (int i = 0; i < MAX_ARROWS; i++) {
         const Arrow* a = &d->arrows[i];
         if (!a->alive) continue;
-
         // Direction from velocity if flying; fall back to facing
-        Vector3 dir = a->stuck
-            ? (Vector3) { 0, 0, 1 }
-        : Vector3Normalize(a->vel);
-
+        Vector3 dir = a->stuck ? a->dir : Vector3Normalize(a->vel);
         DrawArrow3D(
             a->pos, dir,
             d->arrowLen,
