@@ -1595,10 +1595,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         d->prevR2 = R2;
         d->prevL2 = L2;
         //get bow ready
-        if (R2Pressed && d->bowAnimCount >= 1) {
+        if (d-> bowMode && R2Pressed && d->bowAnimCount >= 1) {
             BowPlay(d, 0, false, true);   // 0 = PULL, one-shot
         }
-        if (R2Released && d->bowAnimCount >= 2) {
+        if (d->bowMode && R2Released && d->bowAnimCount >= 2) {
             d->bowReleaseCamHold = 0.25f;
             BowPlay(d, 1, false, true);   // 1 = RELEASE, one-shot
             // --- spawn an arrow ---
