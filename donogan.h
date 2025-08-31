@@ -480,6 +480,13 @@ static inline void DonSnapToGround(Donogan* d) {
     d->onGround = true;
 }
 //proc anim
+static inline float StepBlend01(float cur, float target, float rate, float dt, InterpolateFunc f)
+{
+    float t = rate * dt;
+    if (t > 1.0f) t = 1.0f;
+    return f ? f(&target, &cur, &t) : (cur + (target - cur) * t);
+}
+
 // Helper to fill one KeyFrame with zeros + identity rotation
 // Fill one KeyFrameBone with zeros + identity rotation + linear interpolator
 static inline void KfBoneZero(KeyFrameBone* kb, DonBone bone) {
@@ -648,6 +655,7 @@ static void BowStripScaleAndRootOffset(Donogan* d)
     }
 }
 
+
 static void BowPlay(Donogan* d, int clip, bool loop, bool reset)
 {
     if (!d || !d->bowAnimsRaw || d->bowAnimCount == 0) return;
@@ -797,6 +805,23 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
 //    Matrix S = MatrixScale(t.scale.x, t.scale.y, t.scale.z);
 //    return MatrixMultiply(MatrixMultiply(T, R), S);
 //}
+static inline void DonUpdateBowBlend(Donogan* d, float dt)
+{
+    // Decide the target for the blend
+    float target = (d->state == DONOGAN_STATE_BOW_EXIT) ? 0.0f : 1.0f;
+
+    // Use the active keyframe group's first bone to pick a rate + interpol
+    float rate = 8.0f;                      // sensible default
+    InterpolateFunc f = LerpFloat;          // you already have this
+    KeyFrameGroup* G = DonActiveKfGroup(d); // picks the BOW_* group from curAnimId
+    if (G && G->maxKey > 0 && G->keyFrames[G->curKey].maxBones > 0) {
+        const KeyFrameBone* k0 = &G->keyFrames[G->curKey].kfBones[0];
+        if (k0->rate > 0.0f) rate = k0->rate;
+        if (k0->interpol)    f = k0->interpol;
+    }
+
+    d->bowBlend = StepBlend01(d->bowBlend, target, rate, dt, f);
+}
 ///actually SRT
 static inline Matrix SRT(Transform t) {
     Matrix S = MatrixScale(t.scale.x, t.scale.y, t.scale.z);
@@ -1026,7 +1051,7 @@ static void DonApplyProcPoseFromKF(Donogan* d)
 
     // Base = bind pose (later, you can switch this to a cached GLB pose to avoid "snap")
     for (int i = 0; i < bc; ++i) { out[i] = d->model.bindPose[i]; }
-
+    const float alpha = d->bowBlend;
     KeyFrameGroup* G = DonActiveKfGroup(d);
     if (G && G->maxKey > 0) {
         const KeyFrame* K = &G->keyFrames[G->curKey]; // one key for now
@@ -1034,10 +1059,13 @@ static void DonApplyProcPoseFromKF(Donogan* d)
             KeyFrameBone* KB = &K->kfBones[i];
             int b = (int)KB->boneId;
             if (b >= 0 && b < bc) {
-                // Delta add translation, delta multiply rotation //simple version commented out here, no recursive on children
-                //out[b].translation = Vector3Add(out[b].translation, KB->pos);
-                //out[b].rotation = QuaternionNormalize(QuaternionMultiply(out[b].rotation, KB->rot));
-                DonApplyPoseFk(b, b,d, KB, out);
+                // Scale the keyframe’s delta by alpha
+                KeyFrameBone tmp = *KB;
+                tmp.pos = Vector3Scale(KB->pos, alpha);
+                tmp.rot = QuaternionSlerp(QuaternionIdentity(), KB->rot, alpha);
+
+                // Apply as usual
+                DonApplyPoseFk(b, b, d, &tmp, out);
             }
         }
     }
@@ -2031,6 +2059,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     }
     else
     {
+        DonUpdateBowBlend(d,dt);
         DonApplyProcFrame(d);
     }
 
