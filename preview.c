@@ -473,6 +473,13 @@ int main(void) {
             pitch += rsy * invert * camStickSens * dt;
             pitch = Clampf(pitch, -1.2f, 1.2f);
 
+            // after you compute yaw/pitch for the camera:
+            don.camPitch = pitch;
+
+            // While aiming, lock the shot direction to the camera yaw
+            //if (don.bowMode) {don.yawY = -yaw;}
+
+
             // Update camera position from yaw/pitch/radius
             // Defaults
             float baseRadius = 14.0f;
@@ -509,7 +516,7 @@ int main(void) {
                 Vector3 camUp = (Vector3){ 0.0f, 1.0f,  0.0f };
 
                 const float compMetersX = 3.0f;   // push view right ⇒ Donny appears left
-                const float compMetersY = -2.0f;  // push view down  ⇒ Donny appears lower
+                const float compMetersY = 1.2f;  // push view down  ⇒ Donny appears lower
                 desiredTarget = Vector3Add(desiredTarget,
                     Vector3Add(Vector3Scale(camRight, +compMetersX),
                         Vector3Scale(camUp, +compMetersY)));
@@ -1844,7 +1851,7 @@ int main(void) {
             DrawText(TextFormat("%d", don.state), 10, 150, 20, BLUE);
             DrawText(TextFormat("Normal: %.2f %.2f %.2f", don.groundNormal.x, don.groundNormal.y, don.groundNormal.z), 10, 170, 20, PURPLE);
             DrawText(TextFormat("GroundY: %.2f", don.groundY), 10, 190, 20, PURPLE);
-            if (don.bowMode && don.state == DONOGAN_STATE_BOW_PULL)
+            if (don.bowMode && (don.state == DONOGAN_STATE_BOW_PULL || don.state == DONOGAN_STATE_BOW_AIM || don.state == DONOGAN_STATE_BOW_REL))
             {
                 Vector2 center = { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
                 DrawCircleLines((int)center.x, (int)center.y, 10, WHITE);

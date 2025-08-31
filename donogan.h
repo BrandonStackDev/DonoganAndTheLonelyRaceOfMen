@@ -502,7 +502,7 @@ static inline Vector3 DonAimForward(const Donogan* d, float upBiasDeg)
 {
     float cy = cosf(d->yawY), sy = sinf(d->yawY);
     float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
-    Vector3 dir = (Vector3){ sy * cp, +sp, cy * cp };
+    Vector3 dir = (Vector3){ sy * cp, -sp, cy * cp };
     if (upBiasDeg != 0.0f) dir.y += tanf(DEG2RAD * upBiasDeg);
     return Vector3Normalize(dir);
 }
@@ -1568,7 +1568,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             // camera-derived forward (you already compute this for swimming)
             float cy = cosf(d->yawY), sy = sinf(d->yawY);
             float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
-            Vector3 fwd = Vector3Normalize((Vector3) { sy* cp, sp, cy* cp });
+            Vector3 fwd = DonAimForward(d, 0.0f);
             Vector3 right = (Vector3){ cy, 0.0f, -sy };
             Vector3 up = (Vector3){ 0,1,0 };
 
