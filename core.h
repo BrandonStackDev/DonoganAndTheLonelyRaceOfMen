@@ -138,6 +138,14 @@ Color starColors[4] = {
     {255, 255, 255, 255}, // white
     {200, 100, 255, 255}  // purple-ish
 };
+#define MAX_ARROWS 64
+typedef struct Arrow {
+    Vector3 pos;      // tip position (world)
+    Vector3 vel;      // m/s, points from tail -> tip
+    float   life;     // seconds left
+    unsigned char alive;
+    unsigned char stuck;
+} Arrow;
 //////////////////////IMPORTANT GLOBAL VARIABLES///////////////////////////////
 //very very important
 float scaleNightTransition = 0.0989f;

@@ -1403,7 +1403,7 @@ int main(void) {
                     /*don.bowModel.transform = finalM;
                     DrawModel(don.bowModel, (Vector3) { 0 }, 1.0f, WHITE);*/
                 }
-
+                DonDrawArrows(&don);
                 //bubbles
                 if (don.inWater) { DonDrawBubbles(&don); }
             }

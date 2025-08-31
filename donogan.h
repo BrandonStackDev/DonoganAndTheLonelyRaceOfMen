@@ -445,6 +445,15 @@ typedef struct {
     float   steepSlideMax;   // target planar speed while sliding, in "walk/run speed" units
     float   steepSlideFriction; // damping when sliding (1/sec)
     Timer slideDwell;
+
+    Arrow arrows[MAX_ARROWS];
+    int   arrowHead;          // ring buffer cursor
+    float arrowLen;           // meters, total arrow length
+    float arrowShaftR;        // radius of shaft
+    float arrowHeadLen;       // cone length
+    float arrowHeadR;         // cone base radius
+    float arrowDrag;          // 1/sec, aerodynamic damping
+    float arrowMaxLife;       // seconds until auto-despawn
 } Donogan;
 
 // Assets (adjust if needed)
@@ -482,6 +491,53 @@ static inline void KfMakeZeroKey(KeyFrame* kf, float t,
 }
 
 //bow anim stuff
+static void DonInitArrows(Donogan* d) {
+    d->arrowHead = 0;
+    d->arrowLen = 0.9f;
+    d->arrowShaftR = 0.01f;
+    d->arrowHeadLen = 0.18f;
+    d->arrowHeadR = 0.035f;
+    d->arrowDrag = 0.15f;
+    d->arrowMaxLife = 12.0f;
+    for (int i = 0; i < MAX_ARROWS; i++) { d->arrows[i].alive = 0; }
+}
+
+static void DonFireArrow(Donogan* d, Vector3 spawn, Vector3 dir, float speed) {
+    Arrow* a = &d->arrows[d->arrowHead++ % MAX_ARROWS];
+    a->alive = 1; a->stuck = 0;
+    a->pos = spawn;                     // tip starts at spawn
+    a->vel = Vector3Scale(Vector3Normalize(dir), speed);
+    a->life = d->arrowMaxLife;
+}
+
+static void DonUpdateArrows(Donogan* d, float dt) {
+    for (int i = 0; i < MAX_ARROWS; i++) {
+        Arrow* a = &d->arrows[i];
+        if (!a->alive) continue;
+
+        if (!a->stuck) {
+            // gravity + drag
+            a->vel.y += d->gravity * dt;
+            float drag = 1.0f / (1.0f + d->arrowDrag * dt);
+            a->vel = Vector3Scale(a->vel, drag);
+
+            // move tip
+            a->pos = Vector3Add(a->pos, Vector3Scale(a->vel, dt));
+
+            // very simple ground hit: stick when tip goes below terrain
+            float gy = GetTerrainHeightFromMeshXZ(a->pos.x, a->pos.z);
+            if (a->pos.y <= gy + 0.01f) {
+                a->pos.y = gy + 0.01f;
+                a->stuck = 1;
+                a->vel = (Vector3){ 0 };
+            }
+        }
+
+        a->life -= dt;
+        if (a->life <= 0.0f) a->alive = 0;
+    }
+}
+
 // Remove per-bone scales (set to 1) and zero any root translations so our hand attach controls placement.
 static void BowStripScaleAndRootOffset(Donogan* d)
 {
@@ -1275,6 +1331,7 @@ static Donogan InitDonogan(void)
     //proc anim setup
     BowStripScaleAndRootOffset(&d);
     DonInitBowKeyframeGroups(&d);
+    DonInitArrows(&d);
 
     DonSnapToGround(&d);
     return d;
@@ -1425,6 +1482,25 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         }
         if (R2Released && d->bowAnimCount >= 2) {
             BowPlay(d, 1, false, true);   // 1 = RELEASE, one-shot
+            // --- spawn an arrow ---
+            // camera-derived forward (you already compute this for swimming)
+            float cy = cosf(d->yawY), sy = sinf(d->yawY);
+            float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
+            Vector3 fwd = Vector3Normalize((Vector3) { sy* cp, -sp, cy* cp });
+            Vector3 right = (Vector3){ cy, 0.0f, -sy };
+            Vector3 up = (Vector3){ 0,1,0 };
+
+            // spawn near right face / bow notch
+            Vector3 spawn = Vector3Add(d->pos,
+                Vector3Add(Vector3Scale(up, 1.35f),
+                    Vector3Add(Vector3Scale(fwd, 0.55f),
+                        Vector3Scale(right, 0.18f))));
+
+            // draw strength -> speed: simple “held time” mapping (tweak)
+            float drawT = Clamp(d->bowTime * 2.0f, 0.0f, 1.0f); // ~0.5s to full
+            float speed = Lerp(28.0f, 55.0f, drawT);
+
+            DonFireArrow(d, spawn, fwd, speed);
         }
         // Edge for X (jump)
         bool crossPressed = (cross && !d->prevCross);
@@ -1885,6 +1961,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     }
 
     DonUpdateBubbles(d, dt);
+    DonUpdateArrows(d, dt);
 }
 
 #include "rlgl.h"  // at top of preview.c
@@ -1903,4 +1980,52 @@ void DonDrawBubbles(const Donogan* d) {
     }
     rlEnableDepthMask();
 }
+
+static inline void DrawArrow3D(Vector3 tip, Vector3 dir, float totalLen,
+    float shaftR, float headLen, float headR,
+    Color shaftCol, Color headCol)
+{
+    if (totalLen <= 0.0f) return;
+    Vector3 f = Vector3Normalize(dir);
+    if (Vector3Length(f) < 1e-6f) f = (Vector3){ 0,0,1 };
+
+    float Ls = fmaxf(0.0f, totalLen - headLen);      // shaft length
+    Vector3 tail = Vector3Add(tip, Vector3Scale(f, -totalLen));
+    Vector3 headBase = Vector3Add(tip, Vector3Scale(f, -headLen));
+    Vector3 shaftEnd = headBase;
+
+    // shaft: cylinder
+    DrawCylinderEx(tail, shaftEnd, shaftR, shaftR, 10, shaftCol);
+    // head: cone (radius -> 0 at tip)
+    DrawCylinderEx(headBase, tip, headR, 0.0f, 16, headCol);
+    // optional little tip bead
+    DrawSphere(tip, headR * 0.22f, headCol);
+}
+
+static void DonDrawArrows(const Donogan* d) {
+    for (int i = 0; i < MAX_ARROWS; i++) {
+        const Arrow* a = &d->arrows[i];
+        if (!a->alive) continue;
+
+        // Direction from velocity if flying; fall back to facing
+        Vector3 dir = a->stuck
+            ? (Vector3) { 0, 0, 1 }
+        : Vector3Normalize(a->vel);
+
+        DrawArrow3D(
+            a->pos, dir,
+            d->arrowLen,
+            d->arrowShaftR,
+            d->arrowHeadLen,
+            d->arrowHeadR,
+            (Color) {
+            180, 140, 90, 255
+        },   // shaft
+            (Color) {
+            60, 60, 60, 255
+        }      // head
+        );
+    }
+}
+
 #endif // DONOGAN_H
