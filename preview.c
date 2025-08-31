@@ -1422,9 +1422,6 @@ int main(void) {
                 if (don.bowMode)
                 {
                     // --- Bow draw snippet ---
-                    // Get bone rotation delta (bind current)
-                    //Transform* transform = &don.anims[don.curAnimId].framePoses[don.curFrame][don.bowBoneIndex];
-                    Quaternion inRotation = don.model.bindPose[don.bowBoneIndex].rotation;
                     // Local bow rotation from bowEulerDeg
                     Quaternion qLocal = QuaternionFromEuler(
                         DEG2RAD * don.bowEulerDeg.x,
