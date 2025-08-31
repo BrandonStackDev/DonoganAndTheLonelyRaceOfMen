@@ -462,6 +462,7 @@ int main(void) {
         havePad = ReadControllerWindows(0, &gpad);
         if (!vehicleMode && donnyMode)
         {
+            bool inBowCam = don.bowMode || (don.bowReleaseCamHold > 0.0f);
             float dt = GetFrameTime();
             // Right stick controls camera orbit (mouse RMB fallback also works)
             float rsx = havePad ? gpad.normRX : 0.0f;
@@ -475,7 +476,6 @@ int main(void) {
 
             // after you compute yaw/pitch for the camera:
             don.camPitch = pitch;
-
             // While aiming, lock the shot direction to the camera yaw
             //if (don.bowMode) {don.yawY = -yaw;}
 
@@ -496,7 +496,7 @@ int main(void) {
             // Base target = torso
             Vector3 desiredTarget = (Vector3){ don.pos.x, don.pos.y + 1.0f, don.pos.z };
 
-            if (don.bowMode) {
+            if (inBowCam) {
                 // 1) compute spawn + aim
                 Vector3 spawn = Vector3Add(don.pos, RotYawOffset(don.arrowOffset, don.yawY, 1, false));
                 float gySpawn = GetTerrainHeightFromMeshXZ(spawn.x, spawn.z);
@@ -525,8 +525,12 @@ int main(void) {
             // Smooth settle
             camera.target = Vector3Lerp(camera.target, desiredTarget, 1.0f - expf(-followRate * dt));
 
-            float desiredRadius = don.bowMode ? zoomRadius : baseRadius;
-            float desiredFov = don.bowMode ? zoomFov : baseFov;
+            don.camPitch = pitch;
+            // While aiming, lock the shot direction to the camera yaw
+            if (inBowCam) { don.yawY = yaw; } // remove the '-' if you see it
+
+            float desiredRadius = inBowCam ? zoomRadius : baseRadius;
+            float desiredFov = inBowCam ? zoomFov : baseFov;
 
             radius = Lerp(radius, desiredRadius, 1.0f - expf(-zoomRate * dt));
             camera.fovy = Lerp(camera.fovy, desiredFov, 1.0f - expf(-fovRate * dt));
@@ -1328,7 +1332,7 @@ int main(void) {
             }
 
             // Apply facing rotation into model.transform (Y) on top of baked X fix
-            Matrix rotY = MatrixRotateY(don.bowMode ? don.yawY + -PI/2.0f: don.yawY);
+            Matrix rotY = MatrixRotateY(don.bowMode ? don.yawY + PI/2.0f: don.yawY);
             don.model.transform = MatrixMultiply(MatrixRotateX(DEG2RAD * don.modelYawX), rotY);
         }
         if (don.inWater)
@@ -1859,9 +1863,8 @@ int main(void) {
                 DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
 
                 Vector3 spawn = Vector3Add(don.pos, RotYawOffset(don.arrowOffset, don.yawY, 1, false));
-                Vector3 dir = DonAimForward(&don, 1.0f);
-                float   drawT = Clamp(don.bowTime * 2.0f, 0.0f, 1.0f);
-                float   speed = Lerp(42.0f, 85.0f, drawT);
+                Vector3 dir = DonAimForward(&don, 0.0f);   // match actual shot direction
+                float   speed = 72.0f;//same speed always
                 Vector3 hit = PredictArrowImpact(&don, spawn, dir, speed, 3.0f);
 
                 Vector2 hitSS = GetWorldToScreen(hit, camera);

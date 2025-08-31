@@ -460,6 +460,8 @@ typedef struct {
     float arrowDragPerp;       // 1/sec, drag perpendicular to flight (bigger)
     float arrowNoCollideTime;  // seconds to ignore ground right after launch
     float bowTurnSpeed;
+    float bowDrawTLatch;        // last pull amount [0..1]
+    float bowReleaseCamHold;    // seconds to keep aim camera active after release
 } Donogan;
 
 // Assets (adjust if needed)
@@ -498,14 +500,19 @@ static inline void KfMakeZeroKey(KeyFrame* kf, float t,
 
 //bow anim stuff
 // Forward from yaw+pitch (positive pitch looks UP)
+// Forward from yaw+pitch (positive pitch looks UP)
 static inline Vector3 DonAimForward(const Donogan* d, float upBiasDeg)
 {
     float cy = cosf(d->yawY), sy = sinf(d->yawY);
     float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
-    Vector3 dir = (Vector3){ sy * cp, -sp, cy * cp };
+
+    // camera → world forward (opposite of target→camera):
+    Vector3 dir = (Vector3){ -sy * cp, -sp, -cy * cp };
+
     if (upBiasDeg != 0.0f) dir.y += tanf(DEG2RAD * upBiasDeg);
     return Vector3Normalize(dir);
 }
+
 // Rotate a local offset (x=right, y=up, z=forward) by yaw and return world offset
 static inline Vector3 RotYawOffset(Vector3 localOff, float yaw, float scale, bool useScale)
 {
@@ -1405,6 +1412,8 @@ static Donogan InitDonogan(void)
 
     //bow speed turn
     d.bowTurnSpeed = DEG2RAD * 90; // turn quickly to face motion
+    d.bowDrawTLatch = 0.0f;
+    d.bowReleaseCamHold = 0.0f;
 
 
     PrintModelBones(&d.model);
@@ -1563,6 +1572,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             BowPlay(d, 0, false, true);   // 0 = PULL, one-shot
         }
         if (R2Released && d->bowAnimCount >= 2) {
+            d->bowReleaseCamHold = 0.25f;
             BowPlay(d, 1, false, true);   // 1 = RELEASE, one-shot
             // --- spawn an arrow ---
             // camera-derived forward (you already compute this for swimming)
@@ -1774,19 +1784,21 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 // (optional) you can also damp movement/turn here if you want tighter aim feel
             } break;
 
-            case DONOGAN_STATE_BOW_PULL:
+            case DONOGAN_STATE_BOW_PULL: {
+                float curT = Clamp(d->bowTime * 2.0f, 0.0f, 1.0f);  // same mapping you use elsewhere
+                d->bowDrawTLatch = curT;
                 if (L2Released) { DonSetState(d, DONOGAN_STATE_BOW_EXIT); break; } // optional: or go REL then EXIT
                 if (R2Released) { DonSetState(d, DONOGAN_STATE_BOW_REL);  break; } // NEW
                 // keep holding PULL while R2 held
-                break;
+            }    break;
 
-            case DONOGAN_STATE_BOW_REL:
+            case DONOGAN_STATE_BOW_REL: {
                 // optionally allow L2 release here to chain to EXIT after REL finishes
                 if (d->animFinished) {
                     if (!L2) DonSetState(d, DONOGAN_STATE_BOW_EXIT);
                     else     DonSetState(d, DONOGAN_STATE_BOW_AIM); // back to aiming
                 }
-                break;
+            }   break;
 
             case DONOGAN_STATE_BOW_EXIT: {
                 // when exit finishes, return to locomotion based on stick
@@ -2042,6 +2054,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     }
 
     DonUpdateBubbles(d, dt);
+    if (d->bowReleaseCamHold > 0.0f) d->bowReleaseCamHold -= dt;
     DonUpdateArrows(d, dt);
 }
 
