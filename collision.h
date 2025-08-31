@@ -61,12 +61,11 @@ float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
 
 float GetTerrainHeightFromMeshXZ(float x, float z)
 {
-    if (onLoad)
+    int half = CHUNK_COUNT / 2;
+    int cx = (int)floor(x / CHUNK_WORLD_SIZE) + half;
+    int cy = (int)floor(z / CHUNK_WORLD_SIZE) + half;
+    if (onLoad && cx > -1 && cy > -1 && cx < CHUNK_COUNT && cy < CHUNK_COUNT)
     {
-        int half = CHUNK_COUNT / 2;
-        int cx = (int)floor(x / CHUNK_WORLD_SIZE) + half;
-        int cy = (int)floor(z / CHUNK_WORLD_SIZE) + half;
-        //todo: check cx and cy range
         Chunk chunk = chunks[cx][cy];
         Mesh mesh = chunk.model.meshes[0];
 

@@ -454,6 +454,7 @@ typedef struct {
     float arrowHeadR;         // cone base radius
     float arrowDrag;          // 1/sec, aerodynamic damping
     float arrowMaxLife;       // seconds until auto-despawn
+    Vector3 arrowOffset;       // local offset from Donogan origin
 } Donogan;
 
 // Assets (adjust if needed)
@@ -493,12 +494,13 @@ static inline void KfMakeZeroKey(KeyFrame* kf, float t,
 //bow anim stuff
 static void DonInitArrows(Donogan* d) {
     d->arrowHead = 0;
-    d->arrowLen = 0.9f;
+    d->arrowLen = 1.989f;
     d->arrowShaftR = 0.01f;
     d->arrowHeadLen = 0.18f;
     d->arrowHeadR = 0.035f;
     d->arrowDrag = 0.15f;
     d->arrowMaxLife = 12.0f;
+    d->arrowOffset = (Vector3){-0.4f,1.46f,1.2f};
     for (int i = 0; i < MAX_ARROWS; i++) { d->arrows[i].alive = 0; }
 }
 
@@ -1491,14 +1493,14 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             Vector3 up = (Vector3){ 0,1,0 };
 
             // spawn near right face / bow notch
-            Vector3 spawn = Vector3Add(d->pos,
+            Vector3 spawn = Vector3Add(Vector3Add(d->pos,d->arrowOffset),
                 Vector3Add(Vector3Scale(up, 1.35f),
                     Vector3Add(Vector3Scale(fwd, 0.55f),
                         Vector3Scale(right, 0.18f))));
 
             // draw strength -> speed: simple “held time” mapping (tweak)
             float drawT = Clamp(d->bowTime * 2.0f, 0.0f, 1.0f); // ~0.5s to full
-            float speed = Lerp(28.0f, 55.0f, drawT);
+            float speed = Lerp(28.0f, 200.0f, drawT);
 
             DonFireArrow(d, spawn, fwd, speed);
         }
@@ -2018,12 +2020,8 @@ static void DonDrawArrows(const Donogan* d) {
             d->arrowShaftR,
             d->arrowHeadLen,
             d->arrowHeadR,
-            (Color) {
-            180, 140, 90, 255
-        },   // shaft
-            (Color) {
-            60, 60, 60, 255
-        }      // head
+            (Color) {180, 140, 90, 255},   // shaft
+            (Color) {60, 60, 60, 255}      // head
         );
     }
 }
