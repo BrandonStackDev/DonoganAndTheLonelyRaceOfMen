@@ -466,23 +466,12 @@ int main(void) {
             // Right stick controls camera orbit (mouse RMB fallback also works)
             float rsx = havePad ? gpad.normRX : 0.0f;
             float rsy = havePad ? gpad.normRY : 0.0f;
-            const float camStickSens = 1.6f; // tweak as desired
+            const float camStickSens = don.bowMode? 0.76f : 1.6f; // tweak as desired
 
             yaw += rsx * camStickSens * dt;
             float invert = contInvertY ? 1.0f : -1.0f;
             pitch += rsy * invert * camStickSens * dt;
             pitch = Clampf(pitch, -1.2f, 1.2f);
-
-            // Mouse RMB can also orbit
-            if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-                Vector2 dm = GetMouseDelta();
-                yaw += dm.x * 0.005f;
-                pitch += dm.y * 0.005f;
-                pitch = Clampf(pitch, -1.2f, 1.2f);
-            }
-
-            float wheel = GetMouseWheelMove();
-            radius = Clampf(radius - wheel * 0.75f, 2.0f, 30.0f);
 
             // Update camera position from yaw/pitch/radius
             camera.position.x = camera.target.x + radius * cosf(pitch) * sinf(yaw);
@@ -1279,7 +1268,7 @@ int main(void) {
                 // wrap shortest path
                 while (dy > PI) dy -= 2.0f * PI;
                 while (dy < -PI) dy += 2.0f * PI;
-                float maxTurn = don.turnSpeed * dt;
+                float maxTurn = (don.bowMode? don.bowTurnSpeed : don.turnSpeed) * dt;
                 if (dy > maxTurn) dy = maxTurn;
                 else if (dy < -maxTurn) dy = -maxTurn;
                 don.yawY += dy;

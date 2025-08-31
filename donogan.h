@@ -459,6 +459,7 @@ typedef struct {
     float arrowDragForward;    // 1/sec, drag along flight direction (small)
     float arrowDragPerp;       // 1/sec, drag perpendicular to flight (bigger)
     float arrowNoCollideTime;  // seconds to ignore ground right after launch
+    float bowTurnSpeed;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1349,6 +1350,9 @@ static Donogan InitDonogan(void)
     d.steepSlideFriction = 1.6f;    // decay a bit each frame
     d.slideDwell = CreateTimer(0.25f);
 
+    //bow speed turn
+    d.bowTurnSpeed = DEG2RAD * 90; // turn quickly to face motion
+
 
     PrintModelBones(&d.model);
     PrintModelBones(&d.bowModel);
@@ -1478,6 +1482,24 @@ static inline void DonExitWater(Donogan* d, float moveMag, bool runningHeld) {
     else                DonSetState(d, DONOGAN_STATE_IDLE);
 }
 // --------------------------------------------------------------------------------------------------------
+// Rotate a local offset (x=right, y=up, z=forward) by yaw and return world offset
+static inline Vector3 RotYawOffset(Vector3 localOff, float yaw, float scale, bool useScale)
+{
+    float cy = cosf(yaw), sy = sinf(yaw);
+    Vector3 right = (Vector3){ cy, 0.0f, -sy };
+    Vector3 fwd = (Vector3){ sy, 0.0f,  cy };
+    Vector3 up = (Vector3){ 0.0f, 1.0f, 0.0f };
+
+    if (useScale) localOff = (Vector3){ localOff.x * scale, localOff.y * scale, localOff.z * scale };
+
+    // world-space offset that rotates with yaw
+    Vector3 offW = Vector3Add(
+        Vector3Add(Vector3Scale(right, localOff.x),
+            Vector3Scale(up, localOff.y)),
+        Vector3Scale(fwd, localOff.z));
+
+    return offW;
+}
 
 // ---------- Per-frame update (controller → state → anim/frame) ----------
 static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool freeze)
@@ -1515,10 +1537,9 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             Vector3 up = (Vector3){ 0,1,0 };
 
             // spawn near right face / bow notch
-            Vector3 spawn = Vector3Add(Vector3Add(d->pos,d->arrowOffset),
-                Vector3Add(Vector3Scale(up, 1.35f),
-                    Vector3Add(Vector3Scale(fwd, 0.55f),
-                        Vector3Scale(right, 0.18f))));
+            // 1) rotate offset by Donny's yaw so the spawn rides with his facing
+            Vector3 offW = RotYawOffset(d->arrowOffset, d->yawY, d->scale, /*useScale=*/false);
+            Vector3 spawn = Vector3Add(d->pos, offW);
 
             // draw strength -> speed: simple “held time” mapping (tweak)
             float drawT = Clamp(d->bowTime * 2.0f, 0.0f, 1.0f); // ~0.5s to full
