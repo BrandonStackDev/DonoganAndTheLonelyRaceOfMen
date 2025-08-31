@@ -172,13 +172,13 @@ void UpdateLightningBugs(LightningBug* bugs, int count, float deltaTime)
     {
         // === XZ movement ===
         float speed = 0.26f; // units per second
-        float randDelt = (float)((float)GetRandomValue(0, 10)) / 18788.0f;
-        float randDeltZ = (float)((float)GetRandomValue(0, 10)) / 18888.0f;
-        bugs[i].pos.x += cosf(bugs[i].angle) * speed * deltaTime + randDelt;
-        bugs[i].pos.z += sinf(bugs[i].angle) * speed * deltaTime + randDeltZ;
+        float randDelt = (float)((float)GetRandomValue(0, 10)) / 187.0f;
+        float randDeltZ = (float)((float)GetRandomValue(0, 10)) / 188.0f;
+        bugs[i].pos.x += cosf(bugs[i].angle) * speed * (deltaTime + randDelt);
+        bugs[i].pos.z += sinf(bugs[i].angle) * speed * (deltaTime + randDeltZ);
 
         // Drift the angle slightly (wander)
-        float angleWander = ((float)GetRandomValue(-50, 50) / 10000.0f) * PI; // small random
+        float angleWander = ((float)GetRandomValue(-50, 50) / 360.0f) * PI; // small random
         bugs[i].angle += angleWander;
 
         // === Y movement ===
