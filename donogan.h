@@ -455,6 +455,10 @@ typedef struct {
     float arrowDrag;          // 1/sec, aerodynamic damping
     float arrowMaxLife;       // seconds until auto-despawn
     Vector3 arrowOffset;       // local offset from Donogan origin
+    float arrowGravity;        // m/s^2, negative; e.g. -12 (not -40)
+    float arrowDragForward;    // 1/sec, drag along flight direction (small)
+    float arrowDragPerp;       // 1/sec, drag perpendicular to flight (bigger)
+    float arrowNoCollideTime;  // seconds to ignore ground right after launch
 } Donogan;
 
 // Assets (adjust if needed)
@@ -501,6 +505,10 @@ static void DonInitArrows(Donogan* d) {
     d->arrowDrag = 0.15f;
     d->arrowMaxLife = 12.0f;
     d->arrowOffset = (Vector3){-0.4f,1.46f,1.2f};
+    d->arrowGravity = -12.0f;   // MUCH lighter than character gravity
+    d->arrowDragForward = 0.03f;    // keep forward speed
+    d->arrowDragPerp = 3.0f;     // damp side/vertical wobble
+    d->arrowNoCollideTime = 0.06f;  // avoid self-grounding at spawn
     for (int i = 0; i < MAX_ARROWS; i++) { d->arrows[i].alive = 0; }
 }
 
@@ -519,9 +527,23 @@ static void DonUpdateArrows(Donogan* d, float dt) {
 
         if (!a->stuck) {
             // gravity + drag
-            a->vel.y += d->gravity * dt;
-            float drag = 1.0f / (1.0f + d->arrowDrag * dt);
-            a->vel = Vector3Scale(a->vel, drag);
+            // gravity tuned for arrows
+            a->vel.y += d->arrowGravity * dt;
+
+            // anisotropic drag: keep forward speed, damp off-axis
+            Vector3 n = Vector3Normalize(a->vel);
+            float   s = Vector3Length(a->vel);
+            Vector3 vpar = Vector3Scale(n, s);                 // along flight
+            Vector3 vperp = Vector3Subtract(a->vel, vpar);      // everything else
+
+            float dPar = 1.0f / (1.0f + d->arrowDragForward * dt);
+            float dPerp = 1.0f / (1.0f + d->arrowDragPerp * dt);
+
+            vpar = Vector3Scale(vpar, dPar);
+            vperp = Vector3Scale(vperp, dPerp);
+
+            a->vel = Vector3Add(vpar, vperp);
+
 
             // move tip
             a->pos = Vector3Add(a->pos, Vector3Scale(a->vel, dt));
@@ -1488,7 +1510,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             // camera-derived forward (you already compute this for swimming)
             float cy = cosf(d->yawY), sy = sinf(d->yawY);
             float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
-            Vector3 fwd = Vector3Normalize((Vector3) { sy* cp, -sp, cy* cp });
+            Vector3 fwd = Vector3Normalize((Vector3) { sy* cp, sp, cy* cp });
             Vector3 right = (Vector3){ cy, 0.0f, -sy };
             Vector3 up = (Vector3){ 0,1,0 };
 
@@ -1500,7 +1522,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
             // draw strength -> speed: simple “held time” mapping (tweak)
             float drawT = Clamp(d->bowTime * 2.0f, 0.0f, 1.0f); // ~0.5s to full
-            float speed = Lerp(28.0f, 200.0f, drawT);
+            float speed = Lerp(100.0f, 200.0f, drawT);
 
             DonFireArrow(d, spawn, fwd, speed);
         }
