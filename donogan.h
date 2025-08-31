@@ -610,8 +610,8 @@ static void DonUpdateArrows(Donogan* d, float dt) {
                 }
 
                 // 2) pin the tip just at/above the surface and stop
-                a->pos.y = gy + 0.01f;                // tiny hover to avoid z-fight
-                a->stuck = 1;
+                a->pos.y = gy - 0.4f;                // tiny hover to avoid z-fight
+                a->stuck = true;
                 a->vel = (Vector3){ 0 };
             }
         }
