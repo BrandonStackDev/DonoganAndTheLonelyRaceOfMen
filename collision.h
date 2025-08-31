@@ -10,6 +10,7 @@
 //me
 #include "core.h"
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // Barycentric interpolation to get Y at point (x, z) on triangle
 float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
@@ -62,8 +63,9 @@ float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
 float GetTerrainHeightFromMeshXZ(float x, float z)
 {
     int half = CHUNK_COUNT / 2;
-    int cx = (int)floor(x / CHUNK_WORLD_SIZE) + half;
-    int cy = (int)floor(z / CHUNK_WORLD_SIZE) + half;
+    int cx = (int)floorf(x / CHUNK_WORLD_SIZE) + half;
+    int cy = (int)floorf(z / CHUNK_WORLD_SIZE) + half;
+    
     if (onLoad && cx > -1 && cy > -1 && cx < CHUNK_COUNT && cy < CHUNK_COUNT)
     {
         Chunk chunk = chunks[cx][cy];
@@ -129,7 +131,8 @@ float GetTerrainHeightFromMeshXZ(float x, float z)
         }
     }
 
-    TraceLog(LOG_WARNING, "Not found in any triangle: (%f x %f)", x, z);
+    //TraceLog(LOG_WARNING, "Not found in any triangle: (%f , %f)", x, z);
+    TraceLog(LOG_WARNING, "Not found in any triangle: (%.3f , %.3f) (%d %d)", (double)x, (double)z, cx, cy);
     return -10000.0f; // Not found in any triangle
 }
 

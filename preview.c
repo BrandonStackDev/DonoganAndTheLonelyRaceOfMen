@@ -110,6 +110,107 @@ bool IsBoxInFrustum(BoundingBox box, Frustum frustum)
     return true;
 }
 
+bool bugGenHappened = false;
+LightningBug* GenerateLightningBugs(Vector3 cameraPos, int count, float maxDistance)
+{
+    LightningBug* bugs = (LightningBug*)malloc(sizeof(LightningBug) * count);
+    if (!bugs) return NULL;
+    BoundingBox box = {
+        .min = (Vector3){ -0.25f, -0.25f, -0.25f },
+        .max = (Vector3){  0.25f,  0.25f,  0.25f }
+    };
+    lastLBSpawnPosition = cameraPos;
+    for (int i = 0; i < count; i++)
+    {
+        float angle = (float)GetRandomValue(0, 359) * DEG2RAD;
+        float dist = ((float)GetRandomValue(10, 1000) * 0.001f) * maxDistance;
+        float x = cameraPos.x + (cosf(angle) * dist);
+        float z = cameraPos.z + (sinf(angle) * dist);
+        bugs[i].angle = 0.0f;
+        bugs[i].pos = (Vector3){ x, 0.0f, z }; // you'll set .y later
+        bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z);
+        bugs[i].pos.y = bugs[i].pos.y + GetRandomValue(1, 10);
+        if (bugs[i].pos.y < -5000) { bugs[i].pos.y = 500; }
+        bugs[i].rate = GetRandomValue(0.1f, 10.01f);
+        bugs[i].origBox = box;
+        bugs[i].box = UpdateBoundingBox(box, bugs[i].pos);
+    }
+
+    return bugs;
+}
+
+void RegenerateLightningBugs(LightningBug* bugs, Vector3 cameraPos, int count, float maxDistance)
+{
+    BoundingBox box = {
+        .min = (Vector3){ -0.25f, -0.25f, -0.25f },
+        .max = (Vector3){  0.25f,  0.25f,  0.25f }
+    };
+    lastLBSpawnPosition = cameraPos;
+    //if (!bugs) return NULL;
+    for (int i = 0; i < count; i++)
+    {
+        float angle = (float)GetRandomValue(0, 359) * DEG2RAD;
+        float dist = ((float)GetRandomValue(10, 1000) * 0.001f) * maxDistance;
+
+        float x = cameraPos.x + cosf(angle) * dist;
+        float z = cameraPos.z + sinf(angle) * dist;
+        bugs[i].angle = 0.0f;
+        bugs[i].pos = (Vector3){ x, 0.0f, z }; // you'll set .y later
+        bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z);
+        bugs[i].pos.y = bugs[i].pos.y + GetRandomValue(1, 10);
+        if (bugs[i].pos.y < -5000) { bugs[i].pos.y = 500; }
+        bugs[i].rate = GetRandomValue(0.1f, 10.01f);
+        bugs[i].origBox = box;
+        bugs[i].box = UpdateBoundingBox(box, bugs[i].pos);
+    }
+    // return bugs;
+}
+
+void UpdateLightningBugs(LightningBug* bugs, int count, float deltaTime)
+{
+    for (int i = 0; i < count; i++)
+    {
+        // === XZ movement ===
+        float speed = 0.26f; // units per second
+        float randDelt = (float)((float)GetRandomValue(0, 10)) / 18788.0f;
+        float randDeltZ = (float)((float)GetRandomValue(0, 10)) / 18888.0f;
+        bugs[i].pos.x += cosf(bugs[i].angle) * speed * deltaTime + randDelt;
+        bugs[i].pos.z += sinf(bugs[i].angle) * speed * deltaTime + randDeltZ;
+
+        // Drift the angle slightly (wander)
+        float angleWander = ((float)GetRandomValue(-50, 50) / 10000.0f) * PI; // small random
+        bugs[i].angle += angleWander;
+
+        // === Y movement ===
+        float verticalSpeed = bugs[i].rate * deltaTime;
+        bugs[i].pos.y += verticalSpeed;
+
+        // Optional: bounce up/down within limits (simple floating)
+        if (bugs[i].pos.y > 2.5f || bugs[i].pos.y < 0.5f) {
+            bugs[i].rate *= -1.0f; // invert direction
+        }
+        bugs[i].box = UpdateBoundingBox(bugs[i].origBox, bugs[i].pos);
+
+        //new stuff
+        bugs[i].timer -= deltaTime;
+        if (bugs[i].timer <= 0.0f)
+        {
+            // 25% chance this bug blinks
+            if (GetRandomValue(0, 99) < 23)
+            {
+                bugs[i].alpha = 1.0f;
+            }
+            bugs[i].timer = 1.0f + (GetRandomValue(0, 100) / 100.0f); // reset 1–2 sec
+        }
+        // fade out
+        if (bugs[i].alpha > 0.0f)
+        {
+            bugs[i].alpha -= deltaTime * 2.0f; // fade fast
+            if (bugs[i].alpha < 0.0f) bugs[i].alpha = 0.0f;
+        }
+    }
+}
+
 /// @brief main!
 /// @param  
 /// @return 
@@ -196,7 +297,7 @@ int main(void) {
         fish[s].schoolRadius = 25.8f;
     }
 
-    // A target the school will “want” to wander toward (you’ll update it every frame)
+    // A target the school will “want” to wander toward
     fish[0].center = (Vector3){ 1513, 235, 4951 };
     fish[1].center = (Vector3){ -4498, 145, 6150 };
     fish[2].center = (Vector3){ 6000, 150, 6000 };
@@ -250,13 +351,6 @@ int main(void) {
     // Get shader locations
     instancingLightShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(instancingLightShader, "mvp");
     instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(instancingLightShader, "viewPos");
-    // Set shader value: ambient light level
-    // int ambientLoc = GetShaderLocation(instancingLightShader, "ambient");
-    // SetShaderValue(instancingLightShader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
-    // int lightPositionLoc = GetShaderLocation(instancingLightShader, "?");
-    // SetShaderValue(instancingLightShader, lightPositionLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
-    // int lightColorLoc = GetShaderLocation(instancingLightShader, "?");
-    // SetShaderValue(instancingLightShader, lightColorLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
     // Create one light
     Light instanceLight = CreateLight(LIGHT_DIRECTIONAL, LightPosDraw, LightTargetDraw, lightColorDraw, instancingLightShader);
     //init the static game props stuff
@@ -1052,11 +1146,13 @@ int main(void) {
             lightTileColor = LerpColor(lightTileColor, (Color){50,50,112,180}, 0.005f * scaleNightTransition);
             if(onLoad && !bugGenHappened)
             {
+                TraceLog(LOG_INFO, "bug gen");
                 bugs = GenerateLightningBugs(camera.position, BUG_COUNT, 256.0256f);
                 bugGenHappened=true;
             }
             else if (bugGenHappened && Vector3Distance(camera.position,lastLBSpawnPosition)>360.12f)
             {
+                TraceLog(LOG_INFO, "bug re-gen");
                 RegenerateLightningBugs(bugs, camera.position, BUG_COUNT, 256.0256f);
             }
             if(onLoad && !starGenHappened)
@@ -1571,6 +1667,7 @@ int main(void) {
             {
                 if(onLoad) //fire flies
                 {
+                    UpdateLightningBugs(bugs, BUG_COUNT, dt * 0.0073f);//I think this is wrong, but it works out better this way
                     int bugsAdded = 0;
                     int starsAdded = 0;
                     //- loop through all of the static props that are int he active active tile zone
@@ -1579,7 +1676,6 @@ int main(void) {
                     for (int i = 0; i < BUG_COUNT; i++)
                     {
                         if(!IsBoxInFrustum(bugs[i].box , frustumChunk8)){continue;}
-                        UpdateLightningBugs(bugs,BUG_COUNT,dt*0.0073f);//I think this is wrong, but it works out better this way
                         //first update the bugs positions
                         blinkValues[bugsAdded] = bugs[i].alpha;
                         //get ready to draw
