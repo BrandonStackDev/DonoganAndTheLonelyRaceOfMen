@@ -10,9 +10,7 @@ Not yet even close to ready. Release date will be 1-2 years in the future.
 
 [![Home](readme_assets/home1.png)](readme_assets/home1.png)
 
-[![JimmyCarter](readme_assets/home2.png)](readme_assets/home2.png)
-
-[![House](readme_assets/home3.png)](readme_assets/home3.png)
+[![Bow](readme_assets/bowMode.png)](readme_assets/bowMode.png)
 
 [![Eclectic](readme_assets/truck_whale_fish.png)](readme_assets/truck_whale_fish.png)
 
