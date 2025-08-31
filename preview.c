@@ -474,14 +474,60 @@ int main(void) {
             pitch = Clampf(pitch, -1.2f, 1.2f);
 
             // Update camera position from yaw/pitch/radius
+            // Defaults
+            float baseRadius = 14.0f;
+            float baseFov = 80.0f;
+
+            // -- much smaller zoom while aiming --
+            float zoomRadius = 13.2f;   // was 10.0f
+            float zoomFov = 74.0f;   // was 62.0f
+
+            float followRate = don.bowMode ? 10.0f : 6.0f;
+            float zoomRate = 6.0f;
+            float fovRate = 6.0f;
+
+            // Base target = torso
+            Vector3 desiredTarget = (Vector3){ don.pos.x, don.pos.y + 1.0f, don.pos.z };
+
+            if (don.bowMode) {
+                // 1) compute spawn + aim
+                Vector3 spawn = Vector3Add(don.pos, RotYawOffset(don.arrowOffset, don.yawY, 1, false));
+                float gySpawn = GetTerrainHeightFromMeshXZ(spawn.x, spawn.z);
+                if (spawn.y < gySpawn + 0.05f) spawn.y = gySpawn + 0.05f;
+
+                Vector3 aimDir = DonAimForward(&don, 1.0f);
+
+                // 2) focus near along aim (NOT the far hit)
+                const float bowFocusMeters = 5.0f; // ~how far in front to focus
+                const float bowAimInfluence = 0.30f; // how much to bias toward that focus
+                Vector3 aimPointNear = Vector3Add(spawn, Vector3Scale(aimDir, bowFocusMeters));
+                desiredTarget = Vector3Lerp(desiredTarget, aimPointNear, bowAimInfluence);
+
+                // 3) composition: fixed meters in camera-space (not scaled by radius)
+                float cy = cosf(yaw), sy = sinf(yaw);
+                Vector3 camRight = (Vector3){ cy, 0.0f, -sy };
+                Vector3 camUp = (Vector3){ 0.0f, 1.0f,  0.0f };
+
+                const float compMetersX = 3.0f;   // push view right ⇒ Donny appears left
+                const float compMetersY = -2.0f;  // push view down  ⇒ Donny appears lower
+                desiredTarget = Vector3Add(desiredTarget,
+                    Vector3Add(Vector3Scale(camRight, +compMetersX),
+                        Vector3Scale(camUp, +compMetersY)));
+            }
+
+            // Smooth settle
+            camera.target = Vector3Lerp(camera.target, desiredTarget, 1.0f - expf(-followRate * dt));
+
+            float desiredRadius = don.bowMode ? zoomRadius : baseRadius;
+            float desiredFov = don.bowMode ? zoomFov : baseFov;
+
+            radius = Lerp(radius, desiredRadius, 1.0f - expf(-zoomRate * dt));
+            camera.fovy = Lerp(camera.fovy, desiredFov, 1.0f - expf(-fovRate * dt));
+
+            // orbit from target (unchanged)
             camera.position.x = camera.target.x + radius * cosf(pitch) * sinf(yaw);
             camera.position.y = camera.target.y + radius * sinf(pitch);
             camera.position.z = camera.target.z + radius * cosf(pitch) * cosf(yaw);
-
-            // Keep camera target around Donogan’s torso height so jumps stay framed
-            camera.target.x = don.pos.x;
-            camera.target.y = don.pos.y + 1.0f;
-            camera.target.z = don.pos.z;
 
             if (gpad.btnTriangle > 0 
                 && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
@@ -1798,6 +1844,22 @@ int main(void) {
             DrawText(TextFormat("%d", don.state), 10, 150, 20, BLUE);
             DrawText(TextFormat("Normal: %.2f %.2f %.2f", don.groundNormal.x, don.groundNormal.y, don.groundNormal.z), 10, 170, 20, PURPLE);
             DrawText(TextFormat("GroundY: %.2f", don.groundY), 10, 190, 20, PURPLE);
+            if (don.bowMode && don.state == DONOGAN_STATE_BOW_PULL)
+            {
+                Vector2 center = { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
+                DrawCircleLines((int)center.x, (int)center.y, 10, WHITE);
+                DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
+                DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
+
+                Vector3 spawn = Vector3Add(don.pos, RotYawOffset(don.arrowOffset, don.yawY, 1, false));
+                Vector3 dir = DonAimForward(&don, 1.0f);
+                float   drawT = Clamp(don.bowTime * 2.0f, 0.0f, 1.0f);
+                float   speed = Lerp(42.0f, 85.0f, drawT);
+                Vector3 hit = PredictArrowImpact(&don, spawn, dir, speed, 3.0f);
+
+                Vector2 hitSS = GetWorldToScreen(hit, camera);
+                DrawCircle((int)hitSS.x, (int)hitSS.y, 4, RED);
+            }
         }
         if (showMap) {
             // Map drawing area (scaled by zoom)

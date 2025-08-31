@@ -497,6 +497,59 @@ static inline void KfMakeZeroKey(KeyFrame* kf, float t,
 }
 
 //bow anim stuff
+// Forward from yaw+pitch (positive pitch looks UP)
+static inline Vector3 DonAimForward(const Donogan* d, float upBiasDeg)
+{
+    float cy = cosf(d->yawY), sy = sinf(d->yawY);
+    float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
+    Vector3 dir = (Vector3){ sy * cp, +sp, cy * cp };
+    if (upBiasDeg != 0.0f) dir.y += tanf(DEG2RAD * upBiasDeg);
+    return Vector3Normalize(dir);
+}
+// Rotate a local offset (x=right, y=up, z=forward) by yaw and return world offset
+static inline Vector3 RotYawOffset(Vector3 localOff, float yaw, float scale, bool useScale)
+{
+    float cy = cosf(yaw), sy = sinf(yaw);
+    Vector3 right = (Vector3){ cy, 0.0f, -sy };
+    Vector3 fwd = (Vector3){ sy, 0.0f,  cy };
+    Vector3 up = (Vector3){ 0.0f, 1.0f, 0.0f };
+
+    if (useScale) localOff = (Vector3){ localOff.x * scale, localOff.y * scale, localOff.z * scale };
+
+    // world-space offset that rotates with yaw
+    Vector3 offW = Vector3Add(
+        Vector3Add(Vector3Scale(right, localOff.x),
+            Vector3Scale(up, localOff.y)),
+        Vector3Scale(fwd, localOff.z));
+
+    return offW;
+}
+// Cheap ballistic predict to first ground hit (uses arrowGravity)
+static Vector3 PredictArrowImpact(const Donogan* d,
+    Vector3 origin, Vector3 dir,
+    float speed, float tMax)
+{
+    Vector3 pos = origin;
+    Vector3 vel = Vector3Scale(dir, speed);
+    const float g = d->arrowGravity;     // negative
+    const float dt = 1.0f / 120.0f;        // fine-grained but cheap
+
+    for (float t = 0; t < tMax; t += dt) {
+        // integrate
+        pos = Vector3Add(pos, Vector3Scale(vel, dt));
+        vel.y += g * dt;
+
+        // ground test
+        float gy = GetTerrainHeightFromMeshXZ(pos.x, pos.z);
+        if (pos.y <= gy + 0.01f) {
+            pos.y = gy + 0.01f;
+            return pos;
+        }
+    }
+    // Fallback: far point along current vel
+    return Vector3Add(origin, Vector3Scale(dir, speed * tMax));
+}
+
 static void DonInitArrows(Donogan* d) {
     d->arrowHead = 0;
     d->arrowLen = 1.989f;
@@ -1482,24 +1535,7 @@ static inline void DonExitWater(Donogan* d, float moveMag, bool runningHeld) {
     else                DonSetState(d, DONOGAN_STATE_IDLE);
 }
 // --------------------------------------------------------------------------------------------------------
-// Rotate a local offset (x=right, y=up, z=forward) by yaw and return world offset
-static inline Vector3 RotYawOffset(Vector3 localOff, float yaw, float scale, bool useScale)
-{
-    float cy = cosf(yaw), sy = sinf(yaw);
-    Vector3 right = (Vector3){ cy, 0.0f, -sy };
-    Vector3 fwd = (Vector3){ sy, 0.0f,  cy };
-    Vector3 up = (Vector3){ 0.0f, 1.0f, 0.0f };
 
-    if (useScale) localOff = (Vector3){ localOff.x * scale, localOff.y * scale, localOff.z * scale };
-
-    // world-space offset that rotates with yaw
-    Vector3 offW = Vector3Add(
-        Vector3Add(Vector3Scale(right, localOff.x),
-            Vector3Scale(up, localOff.y)),
-        Vector3Scale(fwd, localOff.z));
-
-    return offW;
-}
 
 // ---------- Per-frame update (controller → state → anim/frame) ----------
 static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool freeze)
