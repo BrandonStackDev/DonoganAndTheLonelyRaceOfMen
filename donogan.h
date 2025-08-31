@@ -560,12 +560,12 @@ static Vector3 PredictArrowImpact(const Donogan* d,
 static void DonInitArrows(Donogan* d) {
     d->arrowHead = 0;
     d->arrowLen = 1.989f;
-    d->arrowShaftR = 0.01f;
+    d->arrowShaftR = 0.028f;
     d->arrowHeadLen = 0.18f;
     d->arrowHeadR = 0.035f;
     d->arrowDrag = 0.15f;
     d->arrowMaxLife = 12.0f;
-    d->arrowOffset = (Vector3){-0.4f,1.46f,1.2f};
+    d->arrowOffset = (Vector3){2,3.12,0};
     d->arrowGravity = -12.0f;   // MUCH lighter than character gravity
     d->arrowDragForward = 0.03f;    // keep forward speed
     d->arrowDragPerp = 3.0f;     // damp side/vertical wobble
@@ -2089,7 +2089,7 @@ static inline void DrawArrow3D(Vector3 tip, Vector3 dir, float totalLen,
     Vector3 shaftEnd = headBase;
 
     // shaft: cylinder
-    DrawCylinderEx(tail, shaftEnd, shaftR, shaftR, 10, shaftCol);
+    DrawCylinderEx(tail, shaftEnd, shaftR, shaftR, 8, shaftCol);
     // head: cone (radius -> 0 at tip)
     DrawCylinderEx(headBase, tip, headR, 0.0f, 16, headCol);
     // optional little tip bead

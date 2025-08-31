@@ -1864,7 +1864,7 @@ int main(void) {
 
                 Vector3 spawn = Vector3Add(don.pos, RotYawOffset(don.arrowOffset, don.yawY, 1, false));
                 Vector3 dir = DonAimForward(&don, 0.0f);   // match actual shot direction
-                float   speed = 72.0f;//same speed always
+                float   speed = 46.2;//72.0f;//same speed always
                 Vector3 hit = PredictArrowImpact(&don, spawn, dir, speed, 3.0f);
 
                 Vector2 hitSS = GetWorldToScreen(hit, camera);
