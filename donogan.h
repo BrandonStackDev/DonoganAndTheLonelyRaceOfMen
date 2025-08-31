@@ -565,7 +565,7 @@ static void DonInitArrows(Donogan* d) {
     d->arrowHeadR = 0.035f;
     d->arrowDrag = 0.15f;
     d->arrowMaxLife = 12.0f;
-    d->arrowOffset = (Vector3){2,3.12,0};
+    d->arrowOffset = (Vector3){3,3.12,0};
     d->arrowGravity = -12.0f;   // MUCH lighter than character gravity
     d->arrowDragForward = 0.03f;    // keep forward speed
     d->arrowDragPerp = 3.0f;     // damp side/vertical wobble
