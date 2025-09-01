@@ -1907,6 +1907,29 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     if (L1Pressed) { DonSetState(d, DONOGAN_STATE_PUNCH_JAB); }
                     else if (R1Pressed) { DonSetState(d, DONOGAN_STATE_PUNCH_CROSS); }
                     else if (moveMag > 0.1f) { DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK); }
+                    else if (L2Pressed) {
+                        DonSetState(d, DONOGAN_STATE_BOW_ENTER);
+                        d->bowMode = true;
+                    }
+                    else if (crossPressed) {
+                        d->velY = d->runningHeld ? d->runJumpSpeed : d->jumpSpeed;
+                        d->pos.y += d->liftoffBump;
+                        DonSetState(d, DONOGAN_STATE_JUMP_START);
+                    }
+                    else if (circlePressed) {
+                        // Use current planar move direction (velXZ set from preview.c each frame)
+                        float m = Vector3Length(d->velXZ);
+                        if (m > 0.1f) {
+                            Vector3 dir = Vector3Scale(d->velXZ, 1.0f / m);
+                            d->rollVel = Vector3Scale(dir, d->rollBurst);
+                            // optional: face the roll direction instantly
+                            d->yawY = atan2f(dir.x, dir.z);
+                        }
+                        else {
+                            d->rollVel = (Vector3){ 0 };
+                        }
+                        DonSetState(d, DONOGAN_STATE_ROLL);
+                    }
                 }
             } break;
 
