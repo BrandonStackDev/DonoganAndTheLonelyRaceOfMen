@@ -27,6 +27,8 @@
 //for big report numbers
 #include <stdint.h>
 #include <inttypes.h>
+//debugging
+//#include <vld.h>
 
 //structs
 typedef struct Plane {
@@ -236,7 +238,6 @@ int main(void) {
     int pad_axis = 0;
     bool mouse = false;
     int gamepad = 0; // which gamepad to display
-    
     //chase camera
     Vector3 cameraTargetPos = { 0 };
     Vector3 cameraOffset = { 0.0f, 6.0f, -14.0f };
