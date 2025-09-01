@@ -207,6 +207,7 @@ typedef enum {
     DONOGAN_STATE_PUNCH_JAB,
     DONOGAN_STATE_PUNCH_CROSS_ENTER,
     DONOGAN_STATE_PUNCH_CROSS,
+    DONOGAN_STATE_PUNCH_IDLE,
 } DonoganState;
 
 // ---------- Anim IDs present in your GLB ----------
@@ -1527,6 +1528,7 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_PUNCH_JAB:               return DONOGAN_ANIM_Punch_Jab;
     case DONOGAN_STATE_PUNCH_CROSS_ENTER:       return DONOGAN_ANIM_Punch_Enter;
     case DONOGAN_STATE_PUNCH_CROSS:             return DONOGAN_ANIM_Punch_Cross;
+    case DONOGAN_STATE_PUNCH_IDLE:              return DONOGAN_ANIM_Punch_Enter;
     default:                        return DONOGAN_ANIM_Idle_Loop;
     }
 }
@@ -1547,7 +1549,8 @@ static void DonSetState(Donogan* d, DonoganState s)
     bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN
                         || s == DONOGAN_STATE_JUMPING || s == DONOGAN_STATE_JUMP_START || s == DONOGAN_STATE_JUMP_LAND
                         || s == DONOGAN_STATE_ROLL || s == DONOGAN_STATE_AIR_ROLL
-                        || s == DONOGAN_STATE_BOW_ENTER || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_STATE_BOW_EXIT);
+                        || s == DONOGAN_STATE_BOW_ENTER || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_STATE_BOW_EXIT
+                        || s == DONOGAN_STATE_BOW_PULL || s == DONOGAN_STATE_BOW_REL);
     if (!locomotion) {
         d->runLock = false;      // auto-break on swimming
         d->runningHeld = false;
@@ -1868,7 +1871,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     if (moveMag > 0.1f)
                         DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
                     else
-                        DonSetState(d, DONOGAN_STATE_IDLE);
+                        DonSetState(d, DONOGAN_STATE_PUNCH_IDLE);
                 }
             } break;
 
@@ -1884,10 +1887,18 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     if (moveMag > 0.1f)
                         DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
                     else
-                        DonSetState(d, DONOGAN_STATE_IDLE);
+                        DonSetState(d, DONOGAN_STATE_PUNCH_IDLE);
                 }
             } break;
 
+            case DONOGAN_STATE_PUNCH_IDLE: {
+                if (d->animFinished) {
+                    float moveMag = sqrtf(lx * lx + ly * ly);
+                    if (L1Pressed) { DonSetState(d, DONOGAN_STATE_PUNCH_JAB); }
+                    else if (R1Pressed) { DonSetState(d, DONOGAN_STATE_PUNCH_CROSS); }
+                    else if (moveMag > 0.1f) { DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK); }
+                }
+            } break;
 
             case DONOGAN_STATE_SLIDE: //sliding....slide...
             {
