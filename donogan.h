@@ -1550,7 +1550,9 @@ static void DonSetState(Donogan* d, DonoganState s)
                         || s == DONOGAN_STATE_JUMPING || s == DONOGAN_STATE_JUMP_START || s == DONOGAN_STATE_JUMP_LAND
                         || s == DONOGAN_STATE_ROLL || s == DONOGAN_STATE_AIR_ROLL
                         || s == DONOGAN_STATE_BOW_ENTER || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_STATE_BOW_EXIT
-                        || s == DONOGAN_STATE_BOW_PULL || s == DONOGAN_STATE_BOW_REL);
+                        || s == DONOGAN_STATE_BOW_PULL || s == DONOGAN_STATE_BOW_REL
+                        || s==DONOGAN_STATE_PUNCH_IDLE || s == DONOGAN_STATE_PUNCH_JAB || s == DONOGAN_STATE_PUNCH_CROSS 
+                        || s == DONOGAN_STATE_PUNCH_JAB_ENTER || s == DONOGAN_STATE_PUNCH_CROSS_ENTER);
     if (!locomotion) {
         d->runLock = false;      // auto-break on swimming
         d->runningHeld = false;
@@ -1585,6 +1587,14 @@ static inline void DonExitWater(Donogan* d, float moveMag, bool runningHeld) {
 }
 // --------------------------------------------------------------------------------------------------------
 
+float GetAnimationRate(DonoganAnim anim)
+{
+    if(anim == DONOGAN_ANIM_Jump_Land) { return 11; }
+    else if (DONOGAN_ANIM_Punch_Enter) { return 5; }
+    else if (DONOGAN_ANIM_Punch_Jab) { return 6; }
+    else if (DONOGAN_ANIM_Punch_Cross) { return 4; }
+    else { return 2; }
+}
 
 // ---------- Per-frame update (controller → state → anim/frame) ----------
 static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool freeze)
@@ -2118,7 +2128,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             d->curFrame = (d->curFrame + 2) % frameCount;
         }
         else {
-            d->curFrame += (d->curAnimId == DONOGAN_ANIM_Jump_Land ? 11 : 2); //d->curFrame++; //do this twice because it feels slow, 10 for landing
+            d->curFrame += (GetAnimationRate(d->curAnimId)); //d->curFrame++; //do this twice because it feels slow, 10 for landing
             if (d->curFrame >= frameCount) {
                 d->curFrame = frameCount - 1;
                 d->animFinished = true;
