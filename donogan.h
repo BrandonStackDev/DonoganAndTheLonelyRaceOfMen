@@ -203,6 +203,10 @@ typedef enum {
     DONOGAN_STATE_BOW_REL,
     DONOGAN_STATE_BOW_EXIT,
     DONOGAN_STATE_SLIDE,
+    DONOGAN_STATE_PUNCH_JAB_ENTER,
+    DONOGAN_STATE_PUNCH_JAB,
+    DONOGAN_STATE_PUNCH_CROSS_ENTER,
+    DONOGAN_STATE_PUNCH_CROSS,
 } DonoganState;
 
 // ---------- Anim IDs present in your GLB ----------
@@ -413,6 +417,8 @@ typedef struct {
 
     bool runLock;   // true = run is locked on
     bool prevL3;    // previous frame’s L3, for edge detection
+    bool prevL1;
+    bool prevR1;
 
     // Camera (set from preview each frame)
     float camPitch;
@@ -1516,7 +1522,11 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_BOW_PULL:    return DONOGAN_ANIM_PROC_BOW_PULL;
     case DONOGAN_STATE_BOW_REL:     return DONOGAN_ANIM_PROC_BOW_REL;
     case DONOGAN_STATE_BOW_EXIT:    return DONOGAN_ANIM_PROC_BOW_EXIT;
-    case DONOGAN_STATE_SLIDE:       return DONOGAN_ANIM_Jump_Loop; // sliding
+    case DONOGAN_STATE_SLIDE:       return DONOGAN_ANIM_Jump_Loop; // sliding //
+    case DONOGAN_STATE_PUNCH_JAB_ENTER:         return DONOGAN_ANIM_Punch_Enter;
+    case DONOGAN_STATE_PUNCH_JAB:               return DONOGAN_ANIM_Punch_Jab;
+    case DONOGAN_STATE_PUNCH_CROSS_ENTER:       return DONOGAN_ANIM_Punch_Enter;
+    case DONOGAN_STATE_PUNCH_CROSS:             return DONOGAN_ANIM_Punch_Cross;
     default:                        return DONOGAN_ANIM_Idle_Loop;
     }
 }
@@ -1592,8 +1602,14 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         bool R2 = padPresent ? pad->btnR2 : false;
         bool R2Pressed = (R2 && !d->prevR2);
         bool R2Released = (!R2 && d->prevR2);
+        bool L1 = padPresent ? pad->btnL1 : false;
+        bool R1 = padPresent ? pad->btnR1 : false;
+        bool L1Pressed = (L1 && !d->prevL1);
+        bool R1Pressed = (R1 && !d->prevR1);
         d->prevR2 = R2;
         d->prevL2 = L2;
+        d->prevR1 = R1;
+        d->prevL1 = L1;
         //get bow ready
         if (d-> bowMode && R2Pressed && d->bowAnimCount >= 1) {
             BowPlay(d, 0, false, true);   // 0 = PULL, one-shot
@@ -1838,6 +1854,41 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 }
             } break;
 
+            case DONOGAN_STATE_PUNCH_JAB_ENTER: {
+                // wait until the enter animation finishes, then throw the jab
+                if (d->animFinished) {
+                    DonSetState(d, DONOGAN_STATE_PUNCH_JAB);
+                }
+            } break;
+
+            case DONOGAN_STATE_PUNCH_JAB: {
+                // when the jab clip ends, return to locomotion
+                if (d->animFinished) {
+                    float moveMag = sqrtf(lx * lx + ly * ly);
+                    if (moveMag > 0.1f)
+                        DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    else
+                        DonSetState(d, DONOGAN_STATE_IDLE);
+                }
+            } break;
+
+            case DONOGAN_STATE_PUNCH_CROSS_ENTER: {
+                if (d->animFinished) {
+                    DonSetState(d, DONOGAN_STATE_PUNCH_CROSS);
+                }
+            } break;
+
+            case DONOGAN_STATE_PUNCH_CROSS: {
+                if (d->animFinished) {
+                    float moveMag = sqrtf(lx * lx + ly * ly);
+                    if (moveMag > 0.1f)
+                        DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    else
+                        DonSetState(d, DONOGAN_STATE_IDLE);
+                }
+            } break;
+
+
             case DONOGAN_STATE_SLIDE: //sliding....slide...
             {
                 // Treat like ...
@@ -2025,7 +2076,14 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         break;
                     }
                 }
-
+                if (!d->bowMode && d->onGround && L1Pressed) {
+                    DonSetState(d, DONOGAN_STATE_PUNCH_JAB_ENTER);
+                    break;
+                }
+                if (!d->bowMode && d->onGround && R1Pressed) {
+                    DonSetState(d, DONOGAN_STATE_PUNCH_CROSS_ENTER);
+                    break;
+                }
                 // Decide locomotion from stick (your existing code)
                 float moveMag = sqrtf(lx * lx + ly * ly);
                 DonSetState(d, (moveMag > 0.1f) ? (d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK)

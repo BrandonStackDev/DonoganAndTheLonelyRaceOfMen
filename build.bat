@@ -7,7 +7,7 @@ setlocal
 set RL=C:\raylib
 
 if exist build rmdir /s /q build
-cmake -S . -B build -G "Ninja" -DCMAKE_PREFIX_PATH=%RL% -DCMAKE_BUILD_TYPE=Release -DENABLE_VLD=OFF
+cmake -S . -B build -G "Ninja" -DCMAKE_PREFIX_PATH=%RL% -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 
 @REM echo.
