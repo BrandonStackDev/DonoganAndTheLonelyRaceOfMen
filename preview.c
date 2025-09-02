@@ -28,7 +28,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 //debugging
-#include <vld.h>
+//#include <vld.h>
 
 //structs
 typedef struct Plane {
@@ -2056,7 +2056,7 @@ int main(void) {
         EndDrawing();
     }
     quitFileManager = true;
-    VLDReportLeaks();
+    //VLDReportLeaks();
     UnloadModel(truck);
     UnloadModel(tire);
     //unload skybox
