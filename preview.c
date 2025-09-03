@@ -774,8 +774,8 @@ int main(void) {
                 else if(foundTiles[te].isLoaded && !maybeNeeded)
                 {
                     MUTEX_LOCK(mutex);
-                    UnloadMeshGPU(&foundTiles[te].model.meshes[0]);
                     foundTiles[te].isLoaded = false;
+                    UnloadMeshGPU(&foundTiles[te].model.meshes[0]);
                     MUTEX_UNLOCK(mutex);
                 }
             }

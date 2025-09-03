@@ -332,18 +332,16 @@ void GridTileReport()
 ////////////////////////////////////////////////////////////////////////////////
 // Strip GPU buffers but keep CPU data
 void UnloadMeshGPU(Mesh* mesh) {
-    //MUTEX_LOCK(mutex);
     rlUnloadVertexArray(mesh->vaoId);
-    /*for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) { //this always fails so just removing it
+    for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) { //this always fails so just removing it
         if ((mesh->vboId[i]) != 0)
         {
             rlUnloadVertexBuffer(mesh->vboId[i]);
         }
         mesh->vboId[i] = 0;
-    }*/
+    }
     mesh->vaoId = 0;
     //mesh->vboId[0] = 0;
-    //MUTEX_UNLOCK(mutex);
 }
 
 int loadTileCnt = 0; //-- need this counter to be global, counted in these functions
