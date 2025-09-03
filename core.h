@@ -961,8 +961,8 @@ static unsigned __stdcall FileManagerThread(void* arg)
                     chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_8))
             {
                 //MUTEX_LOCK(mutex); //this will make the program freeze!
-                UnloadModel(foundTiles[te].model);
                 foundTiles[te].isReady = false;
+                UnloadModel(foundTiles[te].model);
                 //MUTEX_UNLOCK(mutex);
             }
         }
