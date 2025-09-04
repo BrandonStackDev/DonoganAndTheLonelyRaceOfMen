@@ -333,7 +333,7 @@ void GridTileReport()
 // Strip GPU buffers but keep CPU data
 void UnloadMeshGPU(Mesh* mesh) {
     rlUnloadVertexArray(mesh->vaoId);
-    for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) { //this always fails so just removing it
+    for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) {
         if ((mesh->vboId[i]) != 0)
         {
             rlUnloadVertexBuffer(mesh->vboId[i]);
