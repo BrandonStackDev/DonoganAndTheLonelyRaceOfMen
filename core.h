@@ -44,11 +44,6 @@ Mutex mutex;
 #define MUTEX_UNLOCK(m)  LeaveCriticalSection(&(m))
 #define MUTEX_DESTROY(m) DeleteCriticalSection(&(m))
 
-typedef struct {
-    int startLine; // inclusive
-    int endLine;   // exclusive
-} FileRange;
-
 typedef unsigned(__stdcall* thread_func)(void*);
 static int thread_start_detached(thread_func fn, void* arg) {
     uintptr_t th = _beginthreadex(NULL, 0, fn, arg, 0, NULL);
@@ -943,13 +938,11 @@ void LoadChunk(int cx, int cy)
 bool quitFileManager = false;
 static unsigned __stdcall FileManagerThread(void* arg)
 {
-    FileRange fr = *(FileRange*)arg;
-    MemFree(arg);
     while (!quitFileManager)
     {
         sleep_s(1);
         int localCount;
-        for (int te = fr.startLine; te < fr.endLine && te < foundTileCount; te++)
+        for (int te = 0; te < foundTileCount; te++)
         {
             if (!wasTilesDocumented) { continue; }
             if (!foundTiles[te].isReady && chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64)
@@ -1017,25 +1010,7 @@ static unsigned __stdcall ChunkLoaderThread(void* arg)
 }
 
 void StartChunkLoader() { thread_start_detached(ChunkLoaderThread, NULL); }
-//void StartFileManger() { thread_start_detached(FileManagerThread, NULL); }
-void StartFileManger(void) {
-    const int workers = 4;
-    const int total = manifestTileCount;                  // however you computed this
-    const int slice = (total + workers - 1) / workers;    // ceiling division
-
-    for (int i = 0; i < workers; ++i) {
-        int start = i * slice;
-        int end = start + slice;
-        if (end > total) end = total;
-
-        FileRange* fr = MemAlloc(sizeof * fr);
-        fr->startLine = start;
-        fr->endLine = end;
-
-        thread_start_detached(FileManagerThread, fr);
-    }
-}
-
+void StartFileManger() { thread_start_detached(FileManagerThread, NULL); }
 
 
 #endif // CORE_H
