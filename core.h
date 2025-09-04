@@ -332,16 +332,15 @@ void GridTileReport()
 ////////////////////////////////////////////////////////////////////////////////
 // Strip GPU buffers but keep CPU data
 void UnloadMeshGPU(Mesh* mesh) {
-    rlUnloadVertexArray(mesh->vaoId);
+    if (mesh != NULL) { rlUnloadVertexArray(mesh->vaoId); }
     for (int i = 0; i < MAX_MESH_VERTEX_BUFFERS; i++) {
-        if ((mesh->vboId[i]) != 0)
+        if ((mesh != NULL && mesh->vboId[i]) != 0)
         {
             rlUnloadVertexBuffer(mesh->vboId[i]);
         }
-        mesh->vboId[i] = 0;
+        if (mesh != NULL) { mesh->vboId[i] = 0; }
     }
-    mesh->vaoId = 0;
-    //mesh->vboId[0] = 0;
+    if (mesh != NULL) { mesh->vaoId = 0; }
 }
 
 int loadTileCnt = 0; //-- need this counter to be global, counted in these functions
@@ -947,21 +946,18 @@ static unsigned __stdcall FileManagerThread(void* arg)
             if (!wasTilesDocumented) { continue; }
             if (!foundTiles[te].isReady && chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64)
             {
-                //MUTEX_LOCK(mutex); //this will make the program freeze!
                 foundTiles[te].model = LoadModel(foundTiles[te].path);
                 foundTiles[te].mesh = foundTiles[te].model.meshes[0];
                 foundTiles[te].isReady = true;
-                //MUTEX_UNLOCK(mutex);
             }
             else if (foundTiles[te].isReady &&
                 (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_32 ||
                     chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_16 ||
                     chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_8))
             {
-                //MUTEX_LOCK(mutex); //this will make the program freeze!
                 foundTiles[te].isReady = false;
-                UnloadModel(foundTiles[te].model);
-                //MUTEX_UNLOCK(mutex);
+                //UnloadModel(foundTiles[te].model);
+                //foundTiles[te].model.meshes[0] = (Mesh){ 0 };
             }
         }
     }

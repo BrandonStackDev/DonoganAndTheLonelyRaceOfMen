@@ -775,7 +775,9 @@ int main(void) {
                 {
                     MUTEX_LOCK(mutex);
                     foundTiles[te].isLoaded = false;
-                    UnloadMeshGPU(&foundTiles[te].model.meshes[0]);
+                    UnloadModel(foundTiles[te].model);
+                    //foundTiles[te].model.meshes[0] = (Mesh){ 0 };
+                    //UnloadMeshGPU(&foundTiles[te].model.meshes[0]);
                     MUTEX_UNLOCK(mutex);
                 }
             }
