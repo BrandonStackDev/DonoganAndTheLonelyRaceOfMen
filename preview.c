@@ -754,13 +754,12 @@ int main(void) {
             for (int te = 0; te < foundTileCount; te++)
             {
                 bool maybeNeeded = (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64); //todo: testing this to see if it is my issue
+                MUTEX_LOCK(mutex);
                 if(foundTiles[te].isReady && !foundTiles[te].isLoaded && maybeNeeded)
                 {
                     TraceLog(LOG_INFO, "loading tiles: %d", te);
-                    MUTEX_LOCK(mutex);
                     // Upload meshes to GPU
                     UploadMesh(&foundTiles[te].model.meshes[0], false);
-                    
                     // Load GPU models
                     //foundTiles[te].model = LoadModelFromMesh(foundTiles[te].model.meshes[0]);
                     foundTiles[te].box = GetModelBoundingBox(foundTiles[te].model);
@@ -769,17 +768,14 @@ int main(void) {
                     //mark work done
                     foundTiles[te].isLoaded = true;
                     //and now its safe to unlock
-                    MUTEX_UNLOCK(mutex);
                 }
                 else if(foundTiles[te].isLoaded && !maybeNeeded)
                 {
-                    MUTEX_LOCK(mutex);
                     foundTiles[te].isLoaded = false;
+                    foundTiles[te].isReady = false;
                     UnloadModel(foundTiles[te].model);
-                    //foundTiles[te].model.meshes[0] = (Mesh){ 0 };
-                    //UnloadMeshGPU(&foundTiles[te].model.meshes[0]);
-                    MUTEX_UNLOCK(mutex);
                 }
+                MUTEX_UNLOCK(mutex);
             }
         }
         for (int cy = 0; cy < CHUNK_COUNT; cy++) {
@@ -1743,6 +1739,7 @@ int main(void) {
                 //         //IsBoxInFrustum(foundTiles[te].box , frustumChunk8)
                 //     );
                 // }
+                if (!wasTilesDocumented) { break; }
                 if(!foundTiles[te].isReady){continue;}
                 if(!foundTiles[te].isLoaded){continue;}
                 //TraceLog(LOG_INFO, "TEST - Maybe - Drawing tile model: chunk %02d_%02d, tile %02d_%02d", foundTiles[te].cx, foundTiles[te].cy, foundTiles[te].tx, foundTiles[te].ty);

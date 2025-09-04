@@ -943,11 +943,15 @@ static unsigned __stdcall FileManagerThread(void* arg)
         int localCount;
         for (int te = 0; te < foundTileCount; te++)
         {
+            if (quitFileManager) { break; }
             if (!wasTilesDocumented) { continue; }
             if (!foundTiles[te].isReady && chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64)
             {
+                if (quitFileManager) { break; }
                 foundTiles[te].model = LoadModel(foundTiles[te].path);
+                if (quitFileManager) { break; }
                 foundTiles[te].mesh = foundTiles[te].model.meshes[0];
+                if (quitFileManager) { break; }
                 foundTiles[te].isReady = true;
             }
             else if (foundTiles[te].isReady &&
@@ -955,9 +959,8 @@ static unsigned __stdcall FileManagerThread(void* arg)
                     chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_16 ||
                     chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_8))
             {
+                if (quitFileManager) { break; }
                 foundTiles[te].isReady = false;
-                //UnloadModel(foundTiles[te].model);
-                //foundTiles[te].model.meshes[0] = (Mesh){ 0 };
             }
         }
     }
@@ -977,11 +980,6 @@ static unsigned __stdcall ChunkLoaderThread(void* arg)
         }
         manifestTileCount = lines;
         fclose(f);
-
-        // reserve at least that many, plus some headroom
-        MUTEX_LOCK(mutex);
-        EnsureFoundTilesCapacity(manifestTileCount + 1024);
-        MUTEX_UNLOCK(mutex);
     }
     for (int cy = 0; cy < CHUNK_COUNT; cy++) {
         for (int cx = 0; cx < CHUNK_COUNT; cx++) {
