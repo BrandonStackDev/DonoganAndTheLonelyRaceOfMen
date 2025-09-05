@@ -372,6 +372,7 @@ typedef struct {
 
     // Bounds/info
     BoundingBox firstBB;
+    BoundingBox origBB, box;
     Vector3 bbCenter;
 
     // Tunables
@@ -1348,8 +1349,6 @@ static Donogan InitDonogan(void)
     }
 
     // Bounds + autoscale to ~2m tall
-    d.firstBB = GetMeshBoundingBox(d.model.meshes[0]);
-    d.bbCenter = Vector3Scale(Vector3Add(d.firstBB.min, d.firstBB.max), 0.5f);
     //float height = d.firstBB.max.y - d.firstBB.min.y;
     //d.scale = (height > 0.0001f) ? Clampf(2.0f / height, 0.01f, 100.0f) : 1.0f;
     d.scale = 2.8;
@@ -1358,6 +1357,9 @@ static Donogan InitDonogan(void)
     d.model.transform = MatrixMultiply(d.model.transform, MatrixRotateX(DEG2RAD * d.modelYawX));
     d.pos = (Vector3){ 0 };
     d.yawY = 0.0f;
+    d.firstBB = GetMeshBoundingBox(d.model.meshes[0]);
+    d.bbCenter = Vector3Scale(Vector3Add(d.firstBB.min, d.firstBB.max), 0.5f);
+    d.origBB = ScaleBoundingBox(d.firstBB, d.scale);
 
     // State/anim defaults
     d.state = DONOGAN_STATE_IDLE;
@@ -2186,6 +2188,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     DonUpdateBubbles(d, dt);
     if (d->bowReleaseCamHold > 0.0f) d->bowReleaseCamHold -= dt;
     DonUpdateArrows(d, dt);
+    d->box = UpdateBoundingBox(d->origBB, (Vector3) {d->pos.x, d->pos.y + 2.22f, d->pos.z});
 }
 
 #include "rlgl.h"  // at top of preview.c

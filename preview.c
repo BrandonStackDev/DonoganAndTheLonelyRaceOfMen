@@ -838,7 +838,7 @@ int main(void) {
                     chunks[cx][cy].model8.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = chunks[cx][cy].texture;
 
                     // Setup bounding box
-                    chunks[cx][cy].origBox = ScaleBoundingBox(GetModelBoundingBox(chunks[cx][cy].model), (Vector3){MAP_SCALE, MAP_SCALE, MAP_SCALE});
+                    chunks[cx][cy].origBox = ScaleBoundingBox(GetModelBoundingBox(chunks[cx][cy].model), MAP_SCALE);
                     chunks[cx][cy].box = UpdateBoundingBox(chunks[cx][cy].origBox, chunks[cx][cy].center);
 
                     chunks[cx][cy].isLoaded = true;
@@ -1505,6 +1505,7 @@ int main(void) {
             {
                 // Draw Donogan
                 DrawModel(don.model, don.pos, don.scale, WHITE); // uses model.transform for rotation
+                if (displayBoxes) { DrawBoundingBox(don.box, RED); }
 
                 //bow stuff
                 if (don.bowMode)

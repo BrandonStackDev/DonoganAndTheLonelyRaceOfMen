@@ -233,6 +233,41 @@ BoundingBox UpdateBoundingBox(BoundingBox box, Vector3 pos)
 
     return movedBox;
 }
+
+// -----------------------------------------------------------------------------
+// Scale a bounding box around its center
+// -----------------------------------------------------------------------------
+static inline BoundingBox ScaleBoundingBox(BoundingBox box, float scale)
+{
+    Vector3 center = {
+        0.5f * (box.min.x + box.max.x),
+        0.5f * (box.min.y + box.max.y),
+        0.5f * (box.min.z + box.max.z)
+    };
+
+    Vector3 half = {
+        0.5f * (box.max.x - box.min.x),
+        0.5f * (box.max.y - box.min.y),
+        0.5f * (box.max.z - box.min.z)
+    };
+
+    // apply scale to half-size
+    half.x *= scale;
+    half.y *= scale;
+    half.z *= scale;
+
+    BoundingBox out;
+    out.min.x = center.x - half.x;
+    out.min.y = center.y - half.y;
+    out.min.z = center.z - half.z;
+
+    out.max.x = center.x + half.x;
+    out.max.y = center.y + half.y;
+    out.max.z = center.z + half.z;
+
+    return out;
+}
+
 /////////////////////////////////////REPORT FUNCTIONS///////////////////////////////////////////
 void MemoryReport()
 {
@@ -602,44 +637,6 @@ void TakeScreenshotWithTimestamp(void) {
     // Save the screenshot
     TakeScreenshot(filename);
     TraceLog(LOG_INFO, "Saved screenshot: %s", filename);
-}
-
-BoundingBox ScaleBoundingBox(BoundingBox box, Vector3 scale)
-{
-    // Compute the center of the box
-    Vector3 center = {
-        (box.min.x + box.max.x) / 2.0f,
-        (box.min.y + box.max.y) / 2.0f,
-        (box.min.z + box.max.z) / 2.0f
-    };
-
-    // Compute half-size (extent) of the box
-    Vector3 halfSize = {
-        (box.max.x - box.min.x) / 2.0f,
-        (box.max.y - box.min.y) / 2.0f,
-        (box.max.z - box.min.z) / 2.0f
-    };
-
-    // Apply scaling to the half-size
-    halfSize.x *= scale.x;
-    halfSize.y *= scale.y;
-    halfSize.z *= scale.z;
-
-    // Create new box
-    BoundingBox scaledBox = {
-        .min = {
-            center.x - halfSize.x,
-            center.y - halfSize.y,
-            center.z - halfSize.z
-        },
-        .max = {
-            center.x + halfSize.x,
-            center.y + halfSize.y,
-            center.z + halfSize.z
-        }
-    };
-
-    return scaledBox;
 }
 
 Color skyboxTint = { 255,255,255,100 };
