@@ -1377,6 +1377,26 @@ int main(void) {
                 camera.target = Vector3Lerp(camera.target, desiredTarget, followSpeed);
             }
         }
+        //home collision
+        for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
+        {
+            if (CheckCollisionBoxes(don.box, Scenes[i].box))
+            {
+                // classify slope: anything flatter than ~50° treated as ground
+                const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
+
+                MeshBoxHit hit = CollideAABBWithMeshTriangles(don.box, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
+                DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
+                if (hit.hitGround) {
+                    // snap to ground and re-make AABB
+                    don.pos.y = hit.groundY;
+                }
+                else if (hit.hit) {
+                    // wall: gently nudge away
+                    don.pos = Vector3Add(don.pos, hit.push);
+                }
+            }
+        }
         //end collision section -----------------------------------------------------------------------------------------------------------------
 
         //updates before drawing--------------------------------------------------------
@@ -1554,6 +1574,7 @@ int main(void) {
                         (Vector3) { 0, 1, 0 }, Scenes[i].yaw * RAD2DEG,
                         (Vector3) { Scenes[i].scale , Scenes[i].scale, Scenes[i].scale}, 
                         WHITE);
+                    if (displayBoxes) { DrawBoundingBox(Scenes[i].box, PURPLE); }
                 }
                 rlEnableBackfaceCulling();
             }

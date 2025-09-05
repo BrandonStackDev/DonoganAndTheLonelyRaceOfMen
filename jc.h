@@ -8,6 +8,9 @@
 #include <stdio.h> 
 #include <stdbool.h>
 
+//me
+#include "core.h"
+
 typedef enum {
     MODEL_HOME_NONE = -1,
     MODEL_HOME_CABIN,
@@ -66,12 +69,17 @@ void InitHomes() {
     Scenes[SCENE_HOME_BRICK_01] = (Scene){ //where donogan starts
         .type = SCENE_HOME_BRICK_01,
         .modelType = MODEL_HOME_BRICK,
-        .pos = (Vector3){ 2689.00f, 334.00f, 4555.00f },
+        .pos = (Vector3){ 2689.00f, 337.00f, 4555.00f },
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 64.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
+    for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
+    {
+        Scenes[i].origBox = ScaleBoundingBox(GetModelBoundingBox(HomeModels[Scenes[i].modelType]), Scenes[i].scale);
+        Scenes[i].box = UpdateBoundingBox(Scenes[i].origBox, Scenes[i].pos);
+    }
 }
 
 
