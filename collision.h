@@ -292,6 +292,7 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
     };
 
     float bestGroundY = -10000.0f;
+    Vector3 bestGroundN = (Vector3){ 0,1,0 };
     Vector3 wallPushAccum = (Vector3){ 0 };
 
     int triCount = mesh->triangleCount;
@@ -309,11 +310,59 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
         b = Vector3Add(b, meshWorldOffset);
         c3 = Vector3Add(c3, meshWorldOffset);
 
-        // --- the rest is identical to your existing routine ---
-        // build tri AABB, quick reject vs box; compute normal n = normalize(cross(b-a, c-a));
-        // if (!wallsOnly && n.y >= groundSlopeCos) evaluate ground plane at (boxCenter.xz) and keep highest <= feet+eps;
-        // else accumulate gentle horizontal wall push using your AxisOverlap/horizontal normal approach.
-        // (Reuse your existing ground + wall code paths here to keep behavior consistent.)
+        // quick tri-AABB coarse test via triangle’s AABB
+        BoundingBox triBox;
+        triBox.min = (Vector3){ fminf(a.x, fminf(b.x, c3.x)),
+                                fminf(a.y, fminf(b.y, c3.y)),
+                                fminf(a.z, fminf(b.z, c3.z)) };
+        triBox.max = (Vector3){ fmaxf(a.x, fmaxf(b.x, c3.x)),
+                                fmaxf(a.y, fmaxf(b.y, c3.y)),
+                                fmaxf(a.z, fmaxf(b.z, c3.z)) };
+        if (!AabbOverlap(box, triBox)) continue;
+
+        // --- the rest of your existing normal/ground/wall logic stays the same ---
+        Vector3 e1 = Vector3Subtract(b, a);
+        Vector3 e2 = Vector3Subtract(c3, a);
+        Vector3 n = Vector3Normalize(Vector3CrossProduct(e1, e2));
+        if (n.y < 0.0f) n = Vector3Negate(n);
+
+        if (n.y >= groundSlopeCos) {
+            float y = GetHeightOnTriangle((Vector3) { boxCenter.x, 0, boxCenter.z }, a, b, c3);
+            if (y > -9999.0f) {
+                float feetY = box.min.y;
+                float deltaUp = y - feetY;
+                if (deltaUp >= -GROUND_EPS_BELOW && deltaUp <= GROUND_MAX_STEP) {
+                    if (y > bestGroundY) { bestGroundY = y; bestGroundN = n; }
+                    out.hit = true;
+                }
+            }
+        }
+        else {
+            if ((box.min.y <= triBox.max.y) && (box.max.y >= triBox.min.y)) {
+                float ox = AxisOverlap(box.min.x, box.max.x, triBox.min.x, triBox.max.x);
+                float oz = AxisOverlap(box.min.z, box.max.z, triBox.min.z, triBox.max.z);
+                if (ox > 0.0f && oz > 0.0f) {
+                    Vector3 push = (Vector3){ 0 };
+                    if (ox < oz) {
+                        float sign = (boxCenter.x < 0.5f * (triBox.min.x + triBox.max.x)) ? -1.0f : +1.0f;
+                        push.x = sign * ox * WALL_PUSH_SCALE;
+                    }
+                    else {
+                        float sign = (boxCenter.z < 0.5f * (triBox.min.z + triBox.max.z)) ? -1.0f : +1.0f;
+                        push.z = sign * oz * WALL_PUSH_SCALE;
+                    }
+                    Vector3 hn = (Vector3){ n.x, 0.0f, n.z };
+                    float hlen = Vector3Length(hn);
+                    if (hlen > HORIZ_EPS) {
+                        hn = Vector3Scale(hn, (ox < oz ? ox : oz) * (WALL_PUSH_SCALE * 0.5f) / hlen);
+                        push = Vector3Add(push, hn);
+                    }
+                    wallPushAccum = Vector3Add(wallPushAccum, push);
+                    out.hit = true;
+                    out.normal = n;
+                }
+            }
+        }
     }
 
     if (bestGroundY > -1000.0f && !wallsOnly) { out.hitGround = true; out.groundY = bestGroundY; }

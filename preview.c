@@ -1386,7 +1386,7 @@ int main(void) {
                 const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
 
                 MeshBoxHit hit = CollideAABBWithMeshTriangles(don.box, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
-                DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
+                //DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
                 if (hit.hitGround) {
                     // snap to ground and re-make AABB
                     don.pos.y = hit.groundY;
