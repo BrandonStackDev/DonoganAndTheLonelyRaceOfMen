@@ -1693,7 +1693,7 @@ int main(void) {
                             sphereMaterial, 
                             transforms, 
                             bugsAdded
-                    );//rpi5
+                    );//windows
                     //stars ** ** ** ** ** **** ** ** ** ** **** ** ** ** ** **** ** ** ** ** **** ** ** ** ** **
                     Matrix starTransforms[STAR_COUNT] = {0};
                     float starBlinkValues[STAR_COUNT] = {0};
@@ -1723,7 +1723,7 @@ int main(void) {
                             sphereStarMaterial, 
                             starTransforms, 
                             starsAdded
-                    );//rpi5
+                    );//windows
                     //** ** ** ** ** **** ** ** ** ** **** ** ** ** ** **** ** ** ** ** **** ** ** ** ** **
                 }
             }
@@ -1847,7 +1847,7 @@ int main(void) {
                                             HighFiStaticObjectMaterials[mt], 
                                             HighFiTransforms[mt], 
                                             counter[mt]
-                                        );//rpi5
+                                        );//windows
                                         EndShaderMode();
                                     }
                                 }
