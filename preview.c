@@ -553,6 +553,10 @@ int main(void) {
                 ResetTimer(&nightTimer);
             }
         }
+        if (onLoad && donnyMode)
+        {
+            don.oldPos = don.pos;
+        }
         //controller and truck stuff
         havePad = ReadControllerWindows(0, &gpad);
         if (!vehicleMode && donnyMode)
@@ -1384,16 +1388,18 @@ int main(void) {
             {
                 // classify slope: anything flatter than ~50° treated as ground
                 const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
-
-                MeshBoxHit hit = CollideAABBWithMeshTriangles(don.box, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
-                //DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
-                if (hit.hitGround) {
-                    // snap to ground and re-make AABB
-                    don.pos.y = hit.groundY;
-                }
-                else if (hit.hit) {
-                    // wall: gently nudge away
-                    don.pos = Vector3Add(don.pos, hit.push);
+                for (int it = 0; it < 3; ++it)
+                {
+                    MeshBoxHit hit = CollideAABBWithMeshTriangles(don.box, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
+                    if (hit.hitGround) {
+                        // snap to ground and re-make AABB
+                        don.pos.y = hit.groundY;
+                    }
+                    else if (hit.hit) {
+                        DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
+                        // wall: gently nudge away
+                        don.pos = Vector3Add(don.oldPos, hit.push);
+                    }
                 }
             }
         }
@@ -1521,7 +1527,12 @@ int main(void) {
             {
                 // Draw Donogan
                 DrawModel(don.model, don.pos, don.scale, WHITE); // uses model.transform for rotation
-                if (displayBoxes) { DrawBoundingBox(don.box, RED); }
+                if (displayBoxes) 
+                { 
+                    DrawBoundingBox(don.box, RED); 
+                    DrawBoundingBox(don.outerBox, GREEN);
+                    DrawBoundingBox(don.innerBox, YELLOW);
+                }
 
                 //bow stuff
                 if (don.bowMode)

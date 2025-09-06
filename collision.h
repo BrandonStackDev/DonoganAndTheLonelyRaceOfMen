@@ -311,6 +311,7 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
         c3 = Vector3Add(c3, meshWorldOffset);
 
         // quick tri-AABB coarse test via triangle’s AABB
+        const float SKIN = 0.05f; // 5 cm
         BoundingBox triBox;
         triBox.min = (Vector3){ fminf(a.x, fminf(b.x, c3.x)),
                                 fminf(a.y, fminf(b.y, c3.y)),
@@ -318,6 +319,8 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
         triBox.max = (Vector3){ fmaxf(a.x, fmaxf(b.x, c3.x)),
                                 fmaxf(a.y, fmaxf(b.y, c3.y)),
                                 fmaxf(a.z, fmaxf(b.z, c3.z)) };
+        triBox.min.x -= SKIN; triBox.max.x += SKIN;
+        triBox.min.z -= SKIN; triBox.max.z += SKIN;
         if (!AabbOverlap(box, triBox)) continue;
 
         // --- the rest of your existing normal/ground/wall logic stays the same ---
@@ -351,11 +354,25 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
                         float sign = (boxCenter.z < 0.5f * (triBox.min.z + triBox.max.z)) ? -1.0f : +1.0f;
                         push.z = sign * oz * WALL_PUSH_SCALE;
                     }
+                    // dir from triangle to the player box center
+                    Vector3 triCenter = (Vector3){
+                        (a.x + b.x + c3.x) * (1.0f / 3.0f),
+                        (a.y + b.y + c3.y) * (1.0f / 3.0f),
+                        (a.z + b.z + c3.z) * (1.0f / 3.0f)
+                    };
+                    Vector3 toBox = Vector3Subtract(boxCenter, triCenter);
+
+                    // 1) ensure our axis MTV "push" points away from the tri
+                    if (Vector3DotProduct(push, toBox) < 0.0f) { push = Vector3Negate(push); }
+
+                    // 2) add a bit of horizontal normal, also guaranteed to face the box
                     Vector3 hn = (Vector3){ n.x, 0.0f, n.z };
                     float hlen = Vector3Length(hn);
                     if (hlen > HORIZ_EPS) {
-                        hn = Vector3Scale(hn, (ox < oz ? ox : oz) * (WALL_PUSH_SCALE * 0.5f) / hlen);
-                        push = Vector3Add(push, hn);
+                        hn = Vector3Scale(hn, 1.0f / hlen);
+                        if (Vector3DotProduct(hn, toBox) < 0.0f) hn = Vector3Negate(hn);
+                        float amt = (ox < oz ? ox : oz) * (WALL_PUSH_SCALE * 0.5f);
+                        push = Vector3Add(push, Vector3Scale(hn, amt));
                     }
                     wallPushAccum = Vector3Add(wallPushAccum, push);
                     out.hit = true;
@@ -365,8 +382,33 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
         }
     }
 
-    if (bestGroundY > -1000.0f && !wallsOnly) { out.hitGround = true; out.groundY = bestGroundY; }
-    if (Vector3Length(wallPushAccum) > 0.0f) { out.hit = true; out.push = Vector3Scale(Vector3Normalize(wallPushAccum), WALL_PUSH_SCALE); }
+    out.hitGround = false;
+    out.groundY = -10000.0f;
+    out.normal = (Vector3){ 0,0,0 };
+    out.push = (Vector3){ 0,0,0 };
+
+    const bool hasGround = (bestGroundY > -9999.0f);
+    const bool hasWall = (Vector3LengthSqr(wallPushAccum) > 0.0f);
+
+    if (hasGround) {
+        out.hitGround = true;
+        out.groundY = bestGroundY;
+        // keep a sensible normal if we don’t have a wall
+        if (!hasWall) out.normal = bestGroundN;
+    }
+
+    // keep wall push EVEN WHEN GROUNDED
+    if (out.hit) {
+        // only horizontal resolution for walls
+        wallPushAccum.y = 0.0f;
+        out.push = Vector3Scale(wallPushAccum, WALL_PUSH_SCALE); // your gentle push
+        out.normal = bestGroundN; //todo: if we ever use this for real, needs to be correct
+        if (!hasWall)
+        {
+            //out.push = //todo:? what can we do easily to get a value here?
+        }
+    }
+
     return out;
 }
 

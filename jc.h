@@ -69,7 +69,7 @@ void InitHomes() {
     Scenes[SCENE_HOME_BRICK_01] = (Scene){ //where donogan starts
         .type = SCENE_HOME_BRICK_01,
         .modelType = MODEL_HOME_BRICK,
-        .pos = (Vector3){ 2689.00f, 337.00f, 4555.00f },
+        .pos = (Vector3){ 2689.00f, 342.00f, 4555.00f },
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 64.0f,
         .origBox = (BoundingBox){0},

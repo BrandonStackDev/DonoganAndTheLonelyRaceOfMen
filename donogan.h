@@ -365,7 +365,7 @@ typedef struct {
     bool runningHeld;   // L3 held
     
     // Placement / movement
-    Vector3 pos;
+    Vector3 pos, oldPos;
     float   yawY;       // face direction (radians, Y axis)
     float   scale;
     float   modelYawX;  // axis fix if needed, baked into model.transform
@@ -373,6 +373,8 @@ typedef struct {
     // Bounds/info
     BoundingBox firstBB;
     BoundingBox origBB, box;
+    BoundingBox origInnerBB, innerBox;
+    BoundingBox origOuterBB, outerBox;
     Vector3 bbCenter;
 
     // Tunables
@@ -1360,6 +1362,12 @@ static Donogan InitDonogan(void)
     d.firstBB = GetMeshBoundingBox(d.model.meshes[0]);
     d.bbCenter = Vector3Scale(Vector3Add(d.firstBB.min, d.firstBB.max), 0.5f);
     d.origBB = ScaleBoundingBox(d.firstBB, d.scale);
+    d.origInnerBB = d.origBB;
+    d.origOuterBB = d.origBB;
+    d.origInnerBB.max.x = d.origInnerBB.max.z;
+    d.origInnerBB.min.x = d.origInnerBB.min.z;
+    d.origOuterBB.max.z = d.origOuterBB.max.x;
+    d.origOuterBB.min.z = d.origOuterBB.min.x;
 
     // State/anim defaults
     d.state = DONOGAN_STATE_IDLE;
@@ -1435,7 +1443,7 @@ static Donogan InitDonogan(void)
     
     // roll burst
     d.rollVel = (Vector3){ 0 };
-    d.rollBurst = 10.0f;   // ~1.25x your run speed; tweak 12–20
+    d.rollBurst = 4.0f;   // ~1.25x your run speed; tweak 12–20
     d.rollDrag = 6.5f;    // 1/sec; 6–10 gives a snappy decel
 
     d.groundNormal = (Vector3){ 0,1,0 };   // safe default
@@ -2189,6 +2197,8 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     if (d->bowReleaseCamHold > 0.0f) d->bowReleaseCamHold -= dt;
     DonUpdateArrows(d, dt);
     d->box = UpdateBoundingBox(d->origBB, (Vector3) {d->pos.x, d->pos.y + 2.22f, d->pos.z});
+    d->innerBox = UpdateBoundingBox(d->origInnerBB, (Vector3) { d->pos.x, d->pos.y + 2.22f, d->pos.z });
+    d->outerBox = UpdateBoundingBox(d->origOuterBB, (Vector3) { d->pos.x, d->pos.y + 2.22f, d->pos.z });
 }
 
 #include "rlgl.h"  // at top of preview.c
