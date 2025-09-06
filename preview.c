@@ -1390,7 +1390,7 @@ int main(void) {
                 const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
                 for (int it = 0; it < 3; ++it)
                 {
-                    MeshBoxHit hit = CollideAABBWithMeshTriangles(don.box, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
+                    MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
                     if (hit.hitGround) {
                         // snap to ground and re-make AABB
                         don.pos.y = hit.groundY;
