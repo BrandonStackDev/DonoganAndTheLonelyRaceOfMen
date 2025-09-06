@@ -1381,24 +1381,112 @@ int main(void) {
                 camera.target = Vector3Lerp(camera.target, desiredTarget, followSpeed);
             }
         }
-        //home collision
-        for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
+        if (onLoad && donnyMode)
         {
-            if (CheckCollisionBoxes(don.box, Scenes[i].box))
+            //home collision
+            for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
             {
-                // classify slope: anything flatter than ~50° treated as ground
-                const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
-                for (int it = 0; it < 3; ++it)
+                if (CheckCollisionBoxes(don.box, Scenes[i].box))
                 {
-                    MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
-                    if (hit.hitGround) {
-                        // snap to ground and re-make AABB
-                        don.pos.y = hit.groundY;
+                    // classify slope: anything flatter than ~50° treated as ground
+                    const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
+                    for (int it = 0; it < 3; ++it)
+                    {
+                        MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
+                        if (hit.hitGround) {
+                            // snap to ground and re-make AABB
+                            don.pos.y = hit.groundY;
+                        }
+                        else if (hit.hit) {
+                            DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
+                            // wall: gently nudge away
+                            don.pos = Vector3Add(don.oldPos, hit.push);
+                        }
                     }
-                    else if (hit.hit) {
-                        DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
-                        // wall: gently nudge away
-                        don.pos = Vector3Add(don.oldPos, hit.push);
+                }
+            }
+            // tune these a bit for your game feel
+            const float STEP_HEIGHT = 0.45f;   // how high he can "step up" onto props
+            const float SKIN_EPS = 0.001f;  // tiny bias to avoid re-penetration
+            const float MIN_PUSH_EPS = 0.00001f;
+
+            // previous-frame delta and box, used to know "from above" vs "from side"
+            Vector3 deltaFrame = (Vector3){ don.pos.x - don.oldPos.x, don.pos.y - don.oldPos.y, don.pos.z - don.oldPos.z };
+            BoundingBox prevBox = don.outerBox;
+            prevBox.min.x -= deltaFrame.x; prevBox.max.x -= deltaFrame.x;
+            prevBox.min.y -= deltaFrame.y; prevBox.max.y -= deltaFrame.y;
+            prevBox.min.z -= deltaFrame.z; prevBox.max.z -= deltaFrame.z;
+
+            // --- static prop collision ---
+            for (int cy = 0; cy < CHUNK_COUNT; cy++) {
+                for (int cx = 0; cx < CHUNK_COUNT; cx++) {
+                    if (!chunks[cx][cy].isLoaded || chunks[cx][cy].lod != LOD_64) continue;
+
+                    for (int i = 0; i < chunks[cx][cy].treeCount; i++) {
+                        StaticGameObject tree = chunks[cx][cy].props[i];
+                        // broad-phase: ignore grass + outerBox cull
+                        if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) continue;
+                        if (!CheckCollisionBoxes(don.outerBox, tree.outerBox)) continue;
+
+                        // narrow-phase: collide with the actual prop box
+                        if (!CheckCollisionBoxes(don.outerBox, tree.box)) continue;
+
+                        // compute per-axis overlaps (positive means penetration depth)
+                        float left = tree.box.max.x - don.outerBox.min.x; // push +X
+                        float right = don.outerBox.max.x - tree.box.min.x; // push -X
+                        float bottom = tree.box.max.y - don.outerBox.min.y; // push +Y (landing on top)
+                        float top = don.outerBox.max.y - tree.box.min.y; // push -Y (hitting underside)
+                        float back = tree.box.max.z - don.outerBox.min.z; // push +Z
+                        float front = don.outerBox.max.z - tree.box.min.z; // push -Z
+
+                        float ox = (left < right) ? left : -right;   float absOx = fabsf(ox);
+                        float oy = (bottom < top) ? bottom : -top;   float absOy = fabsf(oy);
+                        float oz = (back < front) ? back : -front;   float absOz = fabsf(oz);
+
+                        // Are we coming down from above and close enough to stand?
+                        bool descending = (deltaFrame.y <= 0.0f);
+                        bool wasAbove = (prevBox.min.y >= tree.box.max.y - 0.01f);
+                        bool canStep = ((don.outerBox.min.y - tree.box.max.y) <= STEP_HEIGHT + SKIN_EPS);
+
+                        // Prefer resolving vertically onto the top when appropriate
+                        if (descending && wasAbove && canStep && (absOy <= absOx) && (absOy <= absOz) && oy > MIN_PUSH_EPS) {
+                            // snap feet onto the prop top
+                            float snapUp = bottom + SKIN_EPS; // bottom is positive penetration to push +Y
+                            don.pos.y += snapUp;
+                            don.outerBox.min.y += snapUp;
+                            don.outerBox.max.y += snapUp;
+
+                            // optional: if you track vertical velocity, zero it here
+                            // don.vel.y = 0.0f;
+
+                            // you may also want to mark grounded: don.onGround = true;
+                        }
+                        else {
+                            // side hit: push along the smallest horizontal penetration
+                            if (absOx < absOz) {
+                                // push in X
+                                float pushX = (fabsf(ox) > MIN_PUSH_EPS) ? ox + ((ox > 0) ? SKIN_EPS : -SKIN_EPS) : 0.0f;
+                                don.pos.x += pushX;
+                                don.outerBox.min.x += pushX;
+                                don.outerBox.max.x += pushX;
+
+                                // optional: kill x-velocity into the wall if you track velocity
+                                // if ((pushX > 0 && don.vel.x < 0) || (pushX < 0 && don.vel.x > 0)) don.vel.x = 0.0f;
+                            }
+                            else {
+                                // push in Z
+                                float pushZ = (fabsf(oz) > MIN_PUSH_EPS) ? oz + ((oz > 0) ? SKIN_EPS : -SKIN_EPS) : 0.0f;
+                                don.pos.z += pushZ;
+                                don.outerBox.min.z += pushZ;
+                                don.outerBox.max.z += pushZ;
+
+                                // optional: kill z-velocity into the wall if you track velocity
+                                // if ((pushZ > 0 && don.vel.z < 0) || (pushZ < 0 && don.vel.z > 0)) don.vel.z = 0.0f;
+                            }
+
+                            // If we penetrated deeply on Y but *not* from above (e.g., climbing into the side),
+                            // prefer horizontal resolution and leave Y as-is so he doesn't pop on top.
+                        }
                     }
                 }
             }
@@ -1848,9 +1936,8 @@ int main(void) {
                                     for(int pInd = 0; pInd<chunks[cx][cy].treeCount; pInd++)
                                     {
                                         //culling
-                                        BoundingBox tob = UpdateBoundingBox(treeOrigBox,chunks[cx][cy].props[pInd].pos);
                                         if((!IsTreeInActiveTile(chunks[cx][cy].props[pInd].pos, gx, gy) || USE_TILES_ONLY)
-                                            || !IsBoxInFrustum(tob, frustum)){continue;}
+                                            || !IsBoxInFrustum(chunks[cx][cy].props[pInd].outerBox, frustum)){continue;}
                                         //get ready to draw
                                         StaticGameObject *obj = &chunks[cx][cy].props[pInd];
                                         Matrix scaleMatrix = MatrixScale(obj->scale, obj->scale, obj->scale);
@@ -1860,9 +1947,13 @@ int main(void) {
                                         Matrix rotationMatrix = MatrixMultiply(MatrixMultiply(pitchMatrix, yawMatrix), rollMatrix);
                                         Matrix transform = MatrixMultiply(scaleMatrix, rotationMatrix);
                                         transform = MatrixMultiply(transform, MatrixTranslate(obj->pos.x, obj->pos.y, obj->pos.z));
-                                        HighFiTransforms[chunks[cx][cy].props[pInd].type][counter[chunks[cx][cy].props[pInd].type]] = transform;//well this is kindof insane
+                                        HighFiTransforms[chunks[cx][cy].props[pInd].type][counter[chunks[cx][cy].props[pInd].type]] = transform;//well this is kind of insane
                                         counter[chunks[cx][cy].props[pInd].type]++;
-                                        if(displayBoxes){DrawBoundingBox(tob,BLUE);}
+                                        if(displayBoxes)
+                                        {
+                                            DrawBoundingBox(chunks[cx][cy].props[pInd].outerBox,BLUE);
+                                            DrawBoundingBox(chunks[cx][cy].props[pInd].box, PINK);
+                                        }
                                         if(reportOn){treeTriCount+=HighFiStaticObjectModels[chunks[cx][cy].props[pInd].type].meshes[0].triangleCount;}
                                     }
                                     //draw

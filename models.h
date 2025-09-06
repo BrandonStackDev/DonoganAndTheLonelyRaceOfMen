@@ -48,6 +48,7 @@ typedef struct {
     float yaw, pitch, roll, scale;
     //below this line, only use in preview.c
     BoundingBox origBox, box;
+    BoundingBox origOuterBox, outerBox;
 } StaticGameObject;
 
 // Optional: Array of model names, useful for debugging or file loading

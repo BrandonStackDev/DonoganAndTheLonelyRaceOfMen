@@ -854,13 +854,37 @@ void LoadTreePositions(int cx, int cy)
     }
 
     //Vector3 *treePositions = (Vector3 *)malloc(sizeof(Vector3) * (treeCount + 1));
-    StaticGameObject* treePositions = malloc(sizeof(StaticGameObject) * (MAX_PROPS_UPPER_BOUND));//some buffer for these, should never be above 512
+    StaticGameObject* treePositions = malloc(sizeof(StaticGameObject) * (MAX_PROPS_UPPER_BOUND));//some buffer for these
     for (int i = 0; i < treeCount; i++) {
         float x, y, z;
         int type;
         float yaw, pitch, roll, scale;
         fscanf(fp, "%f %f %f %d %f %f %f %f\n", &x, &y, &z, &type, &yaw, &pitch, &roll, &scale);
-        treePositions[i] = (StaticGameObject){ type, (Vector3) { x, y, z }, yaw, pitch, roll, scale };
+        treePositions[i] = (StaticGameObject){ type, (Vector3) { x, y, z }, yaw, pitch, roll, scale};
+        treePositions[i].origOuterBox = ScaleBoundingBox(GetModelBoundingBox(HighFiStaticObjectModels[type]), scale);
+        treePositions[i].outerBox = UpdateBoundingBox(treePositions[i].origOuterBox,(Vector3) { x, y, z });
+        treePositions[i].origBox = ScaleBoundingBox(GetModelBoundingBox(HighFiStaticObjectModels[type]), scale);
+        if (type == MODEL_TREE)
+        {
+            // ~40 cm diameter trunk at scale=1, ~3.5 m tall (adjust to taste)
+            const float TRUNK_RADIUS = 0.60f;  // half-width in X/Z
+            const float TRUNK_HEIGHT = 16.50f;  // how high you want collision
+
+            // If your tree origin is at the base (y=0), this is good:
+            treePositions[i].origBox.min = (Vector3){ -TRUNK_RADIUS, 0.0f, -TRUNK_RADIUS };
+            treePositions[i].origBox.max = (Vector3){ TRUNK_RADIUS, TRUNK_HEIGHT,  TRUNK_RADIUS };
+        }
+        else if (type == MODEL_TREE_2 || type == MODEL_TREE_3 || type == MODEL_TREE_4 || type == MODEL_TREE_DEAD_01 || type == MODEL_TREE_DEAD_02 || type == MODEL_TREE_DEAD_03)
+        {
+            // ~40 cm diameter trunk at scale=1, ~3.5 m tall (adjust to taste)
+            const float TRUNK_RADIUS = 0.60f;  // half-width in X/Z
+            const float TRUNK_HEIGHT = 12.50f;  // how high you want collision
+
+            // If your tree origin is at the base (y=0), this is good:
+            treePositions[i].origBox.min = (Vector3){ -TRUNK_RADIUS, 0.0f, -TRUNK_RADIUS };
+            treePositions[i].origBox.max = (Vector3){ TRUNK_RADIUS, TRUNK_HEIGHT,  TRUNK_RADIUS };
+        }
+        treePositions[i].box = UpdateBoundingBox(treePositions[i].origBox, (Vector3) { x, y, z });
     }
 
     fclose(fp);
