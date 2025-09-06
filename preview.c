@@ -1415,10 +1415,6 @@ int main(void) {
         {
             // Pick speed from Donogan state (will be set by DonUpdate), account for swimming
             float speed = (don.state == DONOGAN_STATE_RUN) ? don.runSpeed :(don.state == DONOGAN_STATE_WALK) ? don.walkSpeed : 0.0f;
-            if (!don.inWater&& don.state != DONOGAN_STATE_SLIDE) {
-                don.pos = Vector3Add(don.pos, Vector3Scale(donMove, speed * dt));
-                
-            }
 
             if (don.state != DONOGAN_STATE_SLIDE)
             {

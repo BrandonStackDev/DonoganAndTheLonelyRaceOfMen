@@ -1379,8 +1379,8 @@ static Donogan InitDonogan(void)
     d.bowFps = 24.0f;
 
     // Movement tunables
-    d.walkSpeed = 6.2f;
-    d.runSpeed = 12.8f;
+    d.walkSpeed = 12.2f;
+    d.runSpeed = 24.8f;
     d.turnSpeed = DEG2RAD * 540.0f; // turn quickly to face motion
     d.runningHeld = false;
 
