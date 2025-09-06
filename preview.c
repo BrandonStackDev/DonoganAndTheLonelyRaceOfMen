@@ -216,6 +216,7 @@ void UpdateLightningBugs(LightningBug* bugs, int count, float deltaTime)
 
 static GameMusic gMusic;
 static GameState gAudio;
+static float gSongPrevPlayed = 0.0f;
 
 // Edge detection for D-pad (so we act on "press", not "hold")
 static int prevDpadUp = 0, prevDpadDown = 0, prevDpadLeft = 0, prevDpadRight = 0;
@@ -229,7 +230,10 @@ static void Audio_SelectAlbumRelative(int delta)
 
     // Reset to first track on album change
     GM_Select(&gAudio, &gMusic, a, 0);
-    if (GM_LoadCurrent(&gAudio, &gMusic)) PlayMusicStream(gAudio.currentMusic);
+    if (GM_LoadCurrent(&gAudio, &gMusic)) {
+        PlayMusicStream(gAudio.currentMusic);
+        gSongPrevPlayed = 0.0f;  // <-- add
+    }
 }
 
 static void Audio_SelectSongRelative(int delta)
@@ -241,8 +245,12 @@ static void Audio_SelectSongRelative(int delta)
     s = (s + delta + alb->songCount) % alb->songCount;
 
     GM_Select(&gAudio, &gMusic, gAudio.currentAlbumIndex, s);
-    if (GM_LoadCurrent(&gAudio, &gMusic)) PlayMusicStream(gAudio.currentMusic);
+    if (GM_LoadCurrent(&gAudio, &gMusic)) {
+        PlayMusicStream(gAudio.currentMusic);
+        gSongPrevPlayed = 0.0f;  // <-- add
+    }
 }
+
 
 
 /// @brief main!
@@ -286,7 +294,7 @@ int main(void) {
     InitAudioDevice();
     GameMusic_Init(&gMusic);
     GameState_InitAudio(&gAudio);
-    GM_Select(&gAudio, &gMusic, 0, 0);         // default: first album, first track
+    GM_Select(&gAudio, &gMusic, 1, 0);         // default: Second album, first track, (Garden -> Arketized)
     if (GM_LoadCurrent(&gAudio, &gMusic)) {
         SetMusicVolume(gAudio.currentMusic, gAudio.musicVol);
         PlayMusicStream(gAudio.currentMusic);
@@ -1598,7 +1606,29 @@ int main(void) {
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
-        if (onLoad && gAudio.currentMusicLoaded) { UpdateMusicStream(gAudio.currentMusic); }
+        if (onLoad && gAudio.currentMusicLoaded) 
+        {
+            // Keep music stream ticking
+            UpdateMusicStream(gAudio.currentMusic);
+            // End-of-track detection
+            const float len = GetMusicTimeLength(gAudio.currentMusic);
+            const float played = GetMusicTimePlayed(gAudio.currentMusic);
+            const float EPS = 0.02f; // seconds threshold near the end
+            // 3 ways we consider a song "finished":
+            // 1) Crossed into the last EPS window this frame
+            bool crossedEnd = (len > 0.0f) && (gSongPrevPlayed < (len - EPS)) && (played >= (len - EPS));
+            // 2) Stream wrapped back to small time (in case driver/codec loops internally)
+            bool wrapped = (len > 0.0f) && (gSongPrevPlayed > 1.0f) && (played < 0.05f);
+            // 3) Stream reports stopped (extra guard)
+            bool stopped = !IsMusicStreamPlaying(gAudio.currentMusic) && (gSongPrevPlayed > 0.1f);
+            if (crossedEnd || wrapped || stopped) {
+                Audio_SelectSongRelative(+1);   // next song; modulo wrap keeps album looping
+                // gSongPrevPlayed reset happens inside Audio_SelectSongRelative()
+            }
+            else {
+                gSongPrevPlayed = played;
+            }
+        }
         //-------------------------------------------------------------------------------
 
         BeginDrawing();
@@ -2195,7 +2225,7 @@ int main(void) {
         {
             const Album* a = GM_GetAlbum(&gMusic, gAudio.currentAlbumIndex);
             const Song* s = GM_GetSong(a, gAudio.currentSongIndex);
-            if (a && s) {DrawText(TextFormat("%s — %s  [%s]", a->artist, a->display, s->display), SCREEN_WIDTH - 400, SCREEN_HEIGHT - 100, 20, RAYWHITE);}
+            if (a && s) {DrawText(TextFormat("%s - %s  [%s]", a->artist, a->display, s->display), SCREEN_WIDTH - 400, SCREEN_HEIGHT - 50, 20, RAYWHITE);}
         }
         if(!loadedEem || !wasTilesDocumented)
         {
