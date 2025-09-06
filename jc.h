@@ -79,6 +79,10 @@ void InitHomes() {
     {
         Scenes[i].origBox = ScaleBoundingBox(GetModelBoundingBox(HomeModels[Scenes[i].modelType]), Scenes[i].scale);
         Scenes[i].box = UpdateBoundingBox(Scenes[i].origBox, Scenes[i].pos);
+        Scenes[i].box.max.x += 3.5f;
+        Scenes[i].box.max.z += 3.5f;
+        Scenes[i].box.min.x -= 3.5f;
+        Scenes[i].box.min.z -= 3.5f;
     }
 }
 

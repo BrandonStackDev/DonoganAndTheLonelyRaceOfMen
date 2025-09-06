@@ -1462,10 +1462,42 @@ int main(void) {
                             // snap to ground and re-make AABB
                             don.pos.y = hit.groundY;
                         }
-                        else if (hit.hit) {
+                        else if (hit.hit)
+                        {
+                            const float EPS = 1e-6f;
+                            const float ALIGN_THRESH = 0.35f; //
+
                             DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
-                            // wall: gently nudge away
-                            don.pos = Vector3Add(don.oldPos, hit.push);
+
+                            // Candidate "MTD" from your collider:
+                            Vector3 p = hit.push;
+                            float   pLen = Vector3Length(p);
+
+                            // Movement this frame: new vs old (new is your attempted pos BEFORE resolve)
+                            Vector3 newPos = don.pos;
+                            Vector3 oldPos = don.oldPos;
+                            Vector3 move = Vector3Subtract(newPos, oldPos);
+                            float   moveLen = Vector3Length(move);
+                            // Unit directions (guard zero-length)
+                            Vector3 pDir = (pLen > EPS) ? Vector3Scale(p, 1.0f / pLen) : (Vector3) { 0 };
+                            Vector3 backDir = Vector3Normalize(Vector3Scale(move, -1.0f / moveLen)); // from new→old
+
+                            // If the collider's push isn't mostly opposite our travel, override to push straight back.
+                            // "Mostly" = cosine threshold; tune 0.7..0.9 as you like.
+                            
+                            float align = Vector3DotProduct(pDir, backDir); // 1 = same, 0 = orthogonal
+                            TraceLog(LOG_INFO, "align: %f ", align);
+                            TraceLog(LOG_INFO, "pDir: %f %f %f", pDir.x, pDir.y, pDir.z);
+                            TraceLog(LOG_INFO, "backDir: %f %f %f", backDir.x, backDir.y, backDir.z);
+                            if (align < ALIGN_THRESH || pLen <= EPS) {
+                                // keep the same separation magnitude, change direction to straight-back
+                                //p = Vector3Scale(backDir, dt);
+                                p = Vector3Scale(backDir, 1.0f);
+                                TraceLog(LOG_INFO, "changing p: %f %f %f", p.x, p.y, p.z);
+                            }
+                            // Apply the (possibly adjusted) push from the *old* position
+                            TraceLog(LOG_INFO, "applying p: %f %f %f", p.x, p.y, p.z);
+                            don.pos = Vector3Add(oldPos, p);
                         }
                     }
                 }

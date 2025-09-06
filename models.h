@@ -207,23 +207,6 @@ Model_Type GetModelTypeFromColor(Color c, float heightEst) {
     return GetRandomModelForBiome(biome);
 }
 
-// void InitStaticGameProps(Shader shader)
-// {
-//     for(int i =0; i < MODEL_TOTAL_COUNT; i++)
-//     {
-//         StaticObjectModels[i] = LoadModel(ModelPaths[i]);
-//         HighFiStaticObjectModels[i] = LoadModel(ModelPathsFull[i]);
-//         HighFiStaticObjectModelTextures[i] = LoadTexture(ModelPathsFullTextures[i]);
-//         HighFiStaticObjectMaterials[i] = LoadMaterialDefault();
-//         HighFiStaticObjectMaterials[i].shader = shader;
-//         HighFiStaticObjectMaterials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-//         HighFiStaticObjectMaterials[i].maps[MATERIAL_MAP_DIFFUSE].texture = HighFiStaticObjectModelTextures[i];
-//         //see if this hack is needed for that tree and rock model, these glb files might put the material at index 1
-//         // HighFiStaticObjectModels[i].materials[1]=LoadMaterialDefault();
-//         // HighFiStaticObjectModels[i].materials[0]=HighFiStaticObjectMaterials[i];
-//         // HighFiStaticObjectModels[i].materialCount = 1;
-//     }
-// }
 
 void InitStaticGameProps(Shader shader) {
     for (int i = 0; i < MODEL_TOTAL_COUNT; i++) {
