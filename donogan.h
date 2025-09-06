@@ -587,7 +587,12 @@ static void DonInitArrows(Donogan* d) {
     d->arrowDragForward = 0.03f;    // keep forward speed
     d->arrowDragPerp = 3.0f;     // damp side/vertical wobble
     d->arrowNoCollideTime = 0.06f;  // avoid self-grounding at spawn
-    for (int i = 0; i < MAX_ARROWS; i++) { d->arrows[i].alive = 0; }
+    for (int i = 0; i < MAX_ARROWS; i++) 
+    { 
+        d->arrows[i].alive = 0;
+        d->arrows[i].origBox.max = (Vector3){ 0.2f , 0.2f , 0.2f };
+        d->arrows[i].origBox.min = (Vector3){ -0.2f , -0.2f , -0.2f };
+    }
 }
 
 static void DonFireArrow(Donogan* d, Vector3 spawn, Vector3 dir, float speed) {
@@ -605,6 +610,7 @@ static void DonUpdateArrows(Donogan* d, float dt) {
         if (!a->alive) continue;
 
         if (!a->stuck) {
+            a->box = UpdateBoundingBox(a->origBox, a->pos);//update the arrow bounding box
             // ... your gravity + anisotropic drag ...
             // move tip
             a->pos = Vector3Add(a->pos, Vector3Scale(a->vel, dt));

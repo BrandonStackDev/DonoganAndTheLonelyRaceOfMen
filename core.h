@@ -148,6 +148,7 @@ typedef struct Arrow {
     unsigned char alive;
     unsigned char stuck;
     Vector3 dir;       // NEW: last flight/impact direction, tip-forward (unit)
+    BoundingBox origBox, box;
 } Arrow;
 //////////////////////IMPORTANT GLOBAL VARIABLES///////////////////////////////
 //very very important

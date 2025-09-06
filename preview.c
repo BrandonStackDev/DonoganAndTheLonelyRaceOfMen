@@ -1451,6 +1451,24 @@ int main(void) {
             //home collision
             for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
             {
+                for (int a = 0; a < MAX_ARROWS; a++)
+                {
+                    if (!don.arrows[a].alive || don.arrows[a].stuck) { continue; }
+                    if (!CheckCollisionBoxes(don.box, Scenes[i].box)) //if we are outside the building
+                    {
+                        if (CheckCollisionBoxes(don.arrows[a].box, Scenes[i].box))//stuck once in the box
+                        {
+                            don.arrows[a].stuck = true;
+                        }
+                    }
+                    else // if we are inside the building
+                    {
+                        if (!CheckCollisionBoxes(don.arrows[a].box, Scenes[i].box))//stuck when out of the box
+                        {
+                            don.arrows[a].stuck = true;
+                        }
+                    }
+                }
                 if (CheckCollisionBoxes(don.box, Scenes[i].box))
                 {
                     // classify slope: anything flatter than ~50° treated as ground
@@ -1523,6 +1541,14 @@ int main(void) {
                         StaticGameObject tree = chunks[cx][cy].props[i];
                         // broad-phase: ignore grass + outerBox cull
                         if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) continue;
+                        for (int a = 0; a < MAX_ARROWS; a++)
+                        {
+                            if (!don.arrows[a].alive || don.arrows[a].stuck) { continue; }
+                            if (CheckCollisionBoxes(don.arrows[a].box, tree.box))
+                            {
+                                don.arrows[a].stuck = true;
+                            }
+                        }
                         if (!CheckCollisionBoxes(don.outerBox, tree.outerBox)) continue;
 
                         // narrow-phase: collide with the actual prop box
