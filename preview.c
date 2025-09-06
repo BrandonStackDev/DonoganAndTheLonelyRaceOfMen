@@ -18,6 +18,7 @@
 #include "interact.h"
 #include "collision.h"
 #include "core.h"
+#include "music.h"   // song/album structs + helpers
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -213,6 +214,37 @@ void UpdateLightningBugs(LightningBug* bugs, int count, float deltaTime)
     }
 }
 
+static GameMusic gMusic;
+static GameState gAudio;
+
+// Edge detection for D-pad (so we act on "press", not "hold")
+static int prevDpadUp = 0, prevDpadDown = 0, prevDpadLeft = 0, prevDpadRight = 0;
+
+static void Audio_SelectAlbumRelative(int delta)
+{
+    if (gMusic.albumCount <= 0) return;
+
+    int a = (gAudio.currentAlbumIndex < 0) ? 0 : gAudio.currentAlbumIndex;
+    a = (a + delta + gMusic.albumCount) % gMusic.albumCount;
+
+    // Reset to first track on album change
+    GM_Select(&gAudio, &gMusic, a, 0);
+    if (GM_LoadCurrent(&gAudio, &gMusic)) PlayMusicStream(gAudio.currentMusic);
+}
+
+static void Audio_SelectSongRelative(int delta)
+{
+    const Album* alb = GM_GetAlbum(&gMusic, gAudio.currentAlbumIndex);
+    if (!alb || alb->songCount <= 0) return;
+
+    int s = (gAudio.currentSongIndex < 0) ? 0 : gAudio.currentSongIndex;
+    s = (s + delta + alb->songCount) % alb->songCount;
+
+    GM_Select(&gAudio, &gMusic, gAudio.currentAlbumIndex, s);
+    if (GM_LoadCurrent(&gAudio, &gMusic)) PlayMusicStream(gAudio.currentMusic);
+}
+
+
 /// @brief main!
 /// @param  
 /// @return 
@@ -252,6 +284,13 @@ int main(void) {
     //---------------RAYLIB INIT STUFF---------------------------------------
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Map Preview with Trees & Grass");
     InitAudioDevice();
+    GameMusic_Init(&gMusic);
+    GameState_InitAudio(&gAudio);
+    GM_Select(&gAudio, &gMusic, 0, 0);         // default: first album, first track
+    if (GM_LoadCurrent(&gAudio, &gMusic)) {
+        SetMusicVolume(gAudio.currentMusic, gAudio.musicVol);
+        PlayMusicStream(gAudio.currentMusic);
+    }
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
     //load the homes models/scenes and stuff like that
@@ -559,6 +598,24 @@ int main(void) {
         }
         //controller and truck stuff
         havePad = ReadControllerWindows(0, &gpad);
+        //music selection
+        if (onLoad)
+        {
+            // --- D-pad album/song navigation (edge-triggered) ---
+            int dUp = gpad.dpad_up > 0;     // adapt names if your ControllerData differs
+            int dDown = gpad.dpad_down > 0;
+            int dLeft = gpad.dpad_left > 0;
+            int dRight = gpad.dpad_right > 0;
+
+            // Rising edges = single press
+            if (dUp && !prevDpadUp)    Audio_SelectAlbumRelative(-1); // previous album
+            if (dDown && !prevDpadDown)  Audio_SelectAlbumRelative(+1); // next album
+            if (dLeft && !prevDpadLeft)  Audio_SelectSongRelative(-1);  // previous track
+            if (dRight && !prevDpadRight) Audio_SelectSongRelative(+1);  // next track
+
+            prevDpadUp = dUp; prevDpadDown = dDown; prevDpadLeft = dLeft; prevDpadRight = dRight;
+
+        }
         if (!vehicleMode && donnyMode)
         {
             bool inBowCam = don.bowMode || (don.bowReleaseCamHold > 0.0f);
@@ -1541,6 +1598,7 @@ int main(void) {
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
+        if (onLoad && gAudio.currentMusicLoaded) { UpdateMusicStream(gAudio.currentMusic); }
         //-------------------------------------------------------------------------------
 
         BeginDrawing();
@@ -2045,7 +2103,7 @@ int main(void) {
         DrawText(TextFormat("Current Chunk: (%d,%d), Tile: (%d,%d), Global Tile: (%d,%d)", closestCX, closestCY, playerTileX, playerTileY, gx, gy), 10, 70, 20, BLACK);
         DrawText(TextFormat("X: %.2f  Y: %.2f Z: %.2f", camera.position.x, camera.position.y, camera.position.z), 10, 90, 20, BLACK);
         DrawText(TextFormat("Search Type: %s (%d) [t=toggle,r=search]", GetModelName(modelSearchType), modelSearchType), 10, 110, 20, BLACK);
-        if(vehicleMode)
+        if(vehicleMode && onLoad)
         {
             DrawText(TextFormat("Tuck Speed (MPH): %.2f", truckSpeed * 60), 10, 150, 20, BLUE);
             DrawText(TextFormat("Tuck Angle (Rad): %.2f", truckAngle), 10, 170, 20, PURPLE);
@@ -2132,6 +2190,12 @@ int main(void) {
             // Optional crisp outline
             // DrawTriangleLines(left, right, tip, BLACK);
 
+        }
+        if (onLoad) 
+        {
+            const Album* a = GM_GetAlbum(&gMusic, gAudio.currentAlbumIndex);
+            const Song* s = GM_GetSong(a, gAudio.currentSongIndex);
+            if (a && s) {DrawText(TextFormat("%s — %s  [%s]", a->artist, a->display, s->display), SCREEN_WIDTH - 400, SCREEN_HEIGHT - 100, 20, RAYWHITE);}
         }
         if(!loadedEem || !wasTilesDocumented)
         {

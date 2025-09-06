@@ -63,7 +63,6 @@ static void sleep_s(unsigned s) { Sleep(s * 1000u); }
 #endif
 
 /////end windows section
-
 typedef enum {
     LOD_64,
     LOD_32,
