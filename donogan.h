@@ -610,7 +610,7 @@ static void DonUpdateArrows(Donogan* d, float dt) {
         if (!a->alive) continue;
 
         if (!a->stuck) {
-            a->box = UpdateBoundingBox(a->origBox, a->pos);//update the arrow bounding box
+            a->box = UpdateBoundingBox(a->origBox, Vector3Add(a->pos, Vector3Scale(Vector3Normalize(a->dir),d->arrowLen)));//update the arrow bounding box
             // ... your gravity + anisotropic drag ...
             // move tip
             a->pos = Vector3Add(a->pos, Vector3Scale(a->vel, dt));
