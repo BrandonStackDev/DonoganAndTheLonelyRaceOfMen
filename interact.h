@@ -105,6 +105,7 @@ bool IsAnyKeyPressed()
 static inline void Conv_Clear(void) {
     g_convLen = 0;
     g_convBuf[0] = '\0';
+    g_ollamaResponse[0] = '\0';
 }
 
 void InitTalkingInteractions()

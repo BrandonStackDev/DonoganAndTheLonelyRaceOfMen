@@ -734,6 +734,7 @@ int main(void) {
                 }
                 else if (don.isTalking && HasTimerElapsed(&don.talkStartTimer))
                 {
+                    Conv_Clear();
                     don.isTalking = false;
                     StartTimer(&don.talkStartTimer);
                 }
