@@ -8,8 +8,40 @@
 #include <stdio.h> 
 #include <stdbool.h>
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <winhttp.h>
+#pragma comment(lib, "winhttp.lib")
+#endif
+
+
 #define MAX_INPUT_CHARS 2048
 #define MAX_INPUT_CHARS_ARRAY_LEN 2049 //+1
+
+// --- Ollama config (can later be loaded from a file) ---
+#define OLLAMA_MAX_REQ   16384
+#define OLLAMA_MAX_RESP 262144
+
+static char g_ollamaHost[64] = "127.0.0.1";
+static int  g_ollamaPort = 11434;
+static char g_ollamaModel[32] = "llama3";
+
+// Response buffer (null-terminated text to display)
+static char g_ollamaResponse[OLLAMA_MAX_RESP];
+
+// Simple state flags
+#ifdef _WIN32
+static volatile LONG g_ollamaBusy = 0;  // 0 = idle, 1 = in-flight
+static volatile LONG g_ollamaDone = 0;  // 1 = a fresh reply is available
+static HANDLE g_ollamaThread = NULL;
+#endif
+
 
 typedef enum {
     TALK_TYPE_TOL
@@ -49,34 +81,6 @@ bool IsAnyKeyPressed()
 
     return keyPressed;
 }
-
-void GetKeyBoardInput()
-{
-    // Get char pressed (unicode character) on the queue
-    int key = GetCharPressed();
-
-    // Check if more characters have been pressed on the same frame
-    while (key > 0)
-    {
-        // NOTE: Only allow keys in range [32..125]
-        if ((key >= 32) && (key <= 125) && (LetterCount < MAX_INPUT_CHARS))
-        {
-            TalkInput[LetterCount] = (char)key;
-            TalkInput[LetterCount + 1] = '\0'; // Add null terminator at the end of the string
-            LetterCount++;
-        }
-
-        key = GetCharPressed();  // Check next character in the queue
-    }
-
-    if (IsKeyPressed(KEY_BACKSPACE))
-    {
-        LetterCount--;
-        if (LetterCount < 0) { LetterCount = 0; }
-        TalkInput[LetterCount] = '\0';
-    }
-}
-
 
 // Draw text using font inside rectangle limits with support for text selection
 static void DrawTextBoxedSelectable(Font font, const char* text, Rectangle rec, float fontSize, float spacing, bool wordWrap, Color tint, int selectStart, int selectLength, Color selectTint, Color selectBackTint)
@@ -214,5 +218,207 @@ static void DrawTextBoxed(Font font, const char* text, Rectangle rec, float font
     DrawTextBoxedSelectable(font, text, rec, fontSize, spacing, wordWrap, tint, 0, 0, WHITE, WHITE);
 }
 
+// Minimal JSON escaper for prompt -> JSON string value
+static size_t JsonEscape(const char* in, char* out, size_t cap) {
+    size_t i = 0;
+    for (const unsigned char* p = (const unsigned char*)in; *p && i < cap - 1; ++p) {
+        unsigned char c = *p;
+        if (c == '\"' || c == '\\') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = (char)c; }
+        else if (c == '\n') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 'n'; }
+        else if (c == '\r') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 'r'; }
+        else if (c == '\t') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 't'; }
+        else if (c < 0x20) { // control -> \u00XX
+            if (i + 6 >= cap) break;
+            i += (size_t)snprintf(out + i, cap - i, "\\u%04x", c);
+        }
+        else out[i++] = (char)c;
+    }
+    out[i] = 0;
+    return i;
+}
+
+// Pull "response": "..." out of Ollama's JSON (stream:false)
+static void ExtractResponseText(const char* json, char* out, size_t cap) {
+    const char* p = strstr(json, "\"response\"");
+    if (!p) { // fallback: dump raw json (truncated) if format surprises us
+        strncpy(out, json, cap - 1); out[cap - 1] = 0; return;
+    }
+    p = strchr(p, ':'); if (!p) { out[0] = 0; return; }
+    p++;
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == '\"') p++;
+
+    size_t i = 0;
+    int esc = 0;
+    for (; *p && i < cap - 1; ++p) {
+        char c = *p;
+        if (esc) {
+            switch (c) {
+            case 'n': out[i++] = '\n'; break;
+            case 'r': out[i++] = '\r'; break;
+            case 't': out[i++] = '\t'; break;
+            case '\\': out[i++] = '\\'; break;
+            case '"': out[i++] = '"'; break;
+            case 'u': /* naive: skip \uXXXX */ p += 4; break;
+            default: out[i++] = c; break;
+            }
+            esc = 0;
+        }
+        else if (c == '\\') esc = 1;
+        else if (c == '\"') break;
+        else out[i++] = c;
+    }
+    out[i] = 0;
+}
+
+#ifdef _WIN32
+static DWORD WINAPI OllamaThreadProc(LPVOID lp) {
+    char* heapPrompt = (char*)lp;
+    InterlockedExchange(&g_ollamaDone, 0);
+    g_ollamaResponse[0] = '\0';
+
+    // Wide host
+    wchar_t whost[64];
+    MultiByteToWideChar(CP_UTF8, 0, g_ollamaHost, -1, whost, (int)(sizeof(whost) / sizeof(wchar_t)));
+
+    // Session / connect / request
+    HINTERNET hSession = WinHttpOpen(L"Donogan/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, NULL, NULL, 0);
+    if (!hSession) goto cleanup;
+
+    HINTERNET hConnect = WinHttpConnect(hSession, whost, (INTERNET_PORT)g_ollamaPort, 0);
+    if (!hConnect) goto cleanup;
+
+    HINTERNET hRequest = WinHttpOpenRequest(
+        hConnect, L"POST", L"/api/generate", NULL, WINHTTP_NO_REFERER,
+        WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
+    if (!hRequest) goto cleanup;
+
+    // Header
+    const wchar_t* hdr = L"Content-Type: application/json\r\n";
+    WinHttpAddRequestHeaders(hRequest, hdr, (ULONG)-1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+
+    // Body
+    char esc[OLLAMA_MAX_REQ / 2];
+    JsonEscape(heapPrompt ? heapPrompt : "", esc, sizeof(esc));
+
+    char body[OLLAMA_MAX_REQ];
+    int bodyLen = snprintf(body, sizeof(body),
+        "{"
+        "\"model\":\"%s\","
+        "\"prompt\":\"%s\","
+        "\"stream\":false"
+        "}",
+        g_ollamaModel, esc);
+
+    BOOL ok = WinHttpSendRequest(
+        hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+        (LPVOID)body, (DWORD)bodyLen, (DWORD)bodyLen, 0);
+    if (!ok) goto cleanup;
+
+    ok = WinHttpReceiveResponse(hRequest, NULL);
+    if (!ok) goto cleanup;
+
+    // Read response
+    DWORD avail = 0, read = 0;
+    size_t wr = 0;
+    g_ollamaResponse[0] = '\0';
+    do {
+        if (!WinHttpQueryDataAvailable(hRequest, &avail)) break;
+        if (avail == 0) break;
+        char tmp[4096];
+        DWORD toRead = (avail > sizeof(tmp)) ? (DWORD)sizeof(tmp) : avail;
+        if (!WinHttpReadData(hRequest, tmp, toRead, &read)) break;
+        if (read == 0) break;
+        size_t left = (OLLAMA_MAX_RESP - 1) - wr;
+        size_t copy = (read < left) ? read : left;
+        if (copy > 0) { memcpy(g_ollamaResponse + wr, tmp, copy); wr += copy; g_ollamaResponse[wr] = 0; }
+    } while (read > 0);
+
+    // Extract just the "response" text into the same buffer
+    {
+        char extracted[OLLAMA_MAX_RESP];
+        ExtractResponseText(g_ollamaResponse, extracted, sizeof(extracted));
+        strncpy(g_ollamaResponse, extracted, sizeof(g_ollamaResponse) - 1);
+        g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
+    }
+
+cleanup:
+    if (hRequest)  WinHttpCloseHandle(hRequest);
+    if (hConnect)  WinHttpCloseHandle(hConnect);
+    if (hSession)  WinHttpCloseHandle(hSession);
+    if (heapPrompt) free(heapPrompt);
+
+    InterlockedExchange(&g_ollamaBusy, 0);
+    InterlockedExchange(&g_ollamaDone, 1);
+    return 0;
+}
+#endif
+
+// API you call from game code:
+static bool StartOllamaGenerate(const char* prompt) {
+#ifdef _WIN32
+    if (InterlockedCompareExchange(&g_ollamaBusy, 1, 0) != 0) return false; // already running
+    g_ollamaResponse[0] = '\0';
+    InterlockedExchange(&g_ollamaDone, 0);
+    char* copy = _strdup(prompt ? prompt : "");
+    g_ollamaThread = CreateThread(NULL, 0, OllamaThreadProc, copy, 0, NULL);
+    if (!g_ollamaThread) { InterlockedExchange(&g_ollamaBusy, 0); if (copy) free(copy); return false; }
+    return true;
+#else
+    (void)prompt; return false;
+#endif
+}
+
+static bool OllamaIsBusy(void) {
+#ifdef _WIN32
+    return InterlockedCompareExchange(&g_ollamaBusy, 0, 0) != 0;
+#else
+    return false;
+#endif
+}
+
+static bool OllamaHasReply(void) {
+#ifdef _WIN32
+    return InterlockedCompareExchange(&g_ollamaDone, 0, 0) != 0;
+#else
+    return false;
+#endif
+}
+
+void GetKeyBoardInput()
+{
+    // Get char pressed (unicode character) on the queue
+    int key = GetCharPressed();
+
+    // Check if more characters have been pressed on the same frame
+    while (key > 0)
+    {
+        // NOTE: Only allow keys in range [32..125]
+        if ((key >= 32) && (key <= 125) && (LetterCount < MAX_INPUT_CHARS))
+        {
+            TalkInput[LetterCount] = (char)key;
+            TalkInput[LetterCount + 1] = '\0'; // Add null terminator at the end of the string
+            LetterCount++;
+        }
+
+        key = GetCharPressed();  // Check next character in the queue
+    }
+
+    if (IsKeyPressed(KEY_BACKSPACE))
+    {
+        LetterCount--;
+        if (LetterCount < 0) { LetterCount = 0; }
+        TalkInput[LetterCount] = '\0';
+    }
+    // Kick off the call when Enter is pressed and we’re not busy
+    if (IsKeyPressed(KEY_ENTER) && LetterCount > 0 && !OllamaIsBusy()) {
+        StartOllamaGenerate(TalkInput);
+        // optional: clear the input for next message
+        TalkInput[0] = '\0';
+        LetterCount = 0;
+    }
+}
+
+static const char* OllamaGetReply(void) { return g_ollamaResponse; }
 
 #endif // INTERACT_H

@@ -2319,6 +2319,12 @@ int main(void) {
             DrawRectangle(talk_contain.x, talk_contain.y, talk_contain.width, talk_contain.height, RAYWHITE);
             DrawTextBoxed(default_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 20.0f, 2.0f, true, DARKPURPLE);
             DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
+            if (OllamaIsBusy()) {
+                DrawTextBoxed(default_font, "...", (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 20.0f, 2.0f, true, DARKPURPLE);
+            }
+            else if (OllamaHasReply()) {
+                DrawTextBoxed(default_font, OllamaGetReply(), (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 20.0f, 2.0f, true, DARKPURPLE);
+            }
         }
         if (onLoad) 
         {
