@@ -725,7 +725,7 @@ int main(void) {
                     vehicleMode = true; donnyMode = false;
                 }
                 else if (!don.isTalking 
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos, don.pos) < 6.82f
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos, don.pos) < 12.82f
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
