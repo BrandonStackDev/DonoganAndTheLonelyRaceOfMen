@@ -6,7 +6,15 @@ set(CMAKE_C_STANDARD 99)
 list(APPEND CMAKE_PREFIX_PATH "C:/raylib")
 find_package(raylib CONFIG REQUIRED)
 
-add_executable(play preview.c)
+set(SRC preview.c)
+
+# Add the resource file on Windows:
+if (WIN32)
+  set(APP_RC "${CMAKE_CURRENT_SOURCE_DIR}/res/app.rc")
+  list(APPEND SRC "${APP_RC}")
+endif()
+
+add_executable(play ${SRC})
 
 # ---- Visual Leak Detector (VLD) wiring (MSVC only) ----
 #if (MSVC)
@@ -35,3 +43,9 @@ foreach(tgt IN ITEMS play)
   target_include_directories(${tgt} PRIVATE "C:/raylib/include")
   # Set stack size to 16 MB (default is ~1 MB)
 endforeach()
+
+add_custom_command(TARGET play POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${CMAKE_CURRENT_SOURCE_DIR}/res"
+          "$<TARGET_FILE_DIR:play>/res")
+

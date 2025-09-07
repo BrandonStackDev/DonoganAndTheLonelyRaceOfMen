@@ -302,7 +302,7 @@ int main(void) {
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
     //icon
-    Image icon = LoadImage("icon.png");
+    Image icon = LoadImage("res/icon.png");
     SetWindowIcon(icon);
     UnloadImage(icon);
     //load the homes models/scenes and stuff like that
