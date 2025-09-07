@@ -1451,7 +1451,7 @@ int main(void) {
             //home collision
             for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
             {
-                for (int a = 0; a < MAX_ARROWS; a++)
+                for (int a = 0; a < MAX_ARROWS; a++)//arrows
                 {
                     if (!don.arrows[a].alive || don.arrows[a].stuck) { continue; }
                     if (!CheckCollisionBoxes(don.box, Scenes[i].box)) //if we are outside the building
@@ -1469,7 +1469,7 @@ int main(void) {
                         }
                     }
                 }
-                if (CheckCollisionBoxes(don.box, Scenes[i].box))
+                if (CheckCollisionBoxes(don.box, Scenes[i].box))//donny
                 {
                     // classify slope: anything flatter than ~50° treated as ground
                     const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
@@ -1478,7 +1478,7 @@ int main(void) {
                         MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
                         if (hit.hitGround) {
                             // snap to ground and re-make AABB
-                            don.pos.y = hit.groundY;
+                            don.groundY = hit.groundY; //overwrites ground collision (seems to work pretty well!)
                         }
                         else if (hit.hit)
                         {
