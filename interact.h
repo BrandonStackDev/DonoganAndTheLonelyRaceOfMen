@@ -7,6 +7,7 @@
 #include "rlgl.h"
 #include <stdio.h> 
 #include <stdbool.h>
+#include <string.h>   // for strlen, memmove, strncpy
 
 //api calls
 #ifdef _WIN32
@@ -22,12 +23,19 @@
 #endif
 
 
-#define MAX_INPUT_CHARS 2048
-#define MAX_INPUT_CHARS_ARRAY_LEN 2049 //+1
+// ===== Conversation history (rolling buffer) ================================
+#define CONV_MAX 8000  //
+
+static char  g_convBuf[CONV_MAX];
+static size_t g_convLen = 0;
+static int   g_replyConsumed = 1; // set to 0 when a request starts; back to 1 after we add the reply
+
+#define MAX_INPUT_CHARS 1024
+#define MAX_INPUT_CHARS_ARRAY_LEN 1025 //+1
 
 // --- Ollama config (can later be loaded from a file) ---
 #define OLLAMA_MAX_REQ   16384
-#define OLLAMA_MAX_REQ_SHEET   10000
+#define OLLAMA_MAX_REQ_SHEET   13256
 #define OLLAMA_MAX_RESP 262144
 
 static char g_ollamaHost[64] = "127.0.0.1";
@@ -80,12 +88,7 @@ POI InteractivePoints[POI_TYPE_TOTAL_COUNT];
 char *TalkInput;      // NOTE: One extra space required for null terminator char '\0'
 int LetterCount;
 
-void InitTalkingInteractions()
-{
-    TalkInput = (char*)malloc(sizeof(char) * MAX_INPUT_CHARS_ARRAY_LEN);
-    TalkInput[0] = '\0';
-    LetterCount = 0;
-}
+
 // Check if any key is pressed
 // NOTE: We limit keys check to keys between 32 (KEY_SPACE) and 126
 bool IsAnyKeyPressed()
@@ -96,6 +99,20 @@ bool IsAnyKeyPressed()
     if ((key >= 32) && (key <= 126)) keyPressed = true;
 
     return keyPressed;
+}
+//conversation history stuff
+// 
+static inline void Conv_Clear(void) {
+    g_convLen = 0;
+    g_convBuf[0] = '\0';
+}
+
+void InitTalkingInteractions()
+{
+    TalkInput = (char*)malloc(sizeof(char) * MAX_INPUT_CHARS_ARRAY_LEN);
+    TalkInput[0] = '\0';
+    LetterCount = 0;
+    Conv_Clear();
 }
 
 // Draw text using font inside rectangle limits with support for text selection
@@ -401,8 +418,75 @@ static bool OllamaHasReply(void) {
 #endif
 }
 
+static const char* OllamaGetReply(void) { return g_ollamaResponse; }
+
+// Drop from the beginning up to and including the first '\n'
+static inline void Conv_DropOldestLine(void) {
+    if (g_convLen == 0) return;
+    char* nl = memchr(g_convBuf, '\n', g_convLen);
+    if (!nl) { g_convLen = 0; g_convBuf[0] = '\0'; return; }
+    size_t remove = (size_t)((nl - g_convBuf) + 1);
+    memmove(g_convBuf, g_convBuf + remove, g_convLen - remove);
+    g_convLen -= remove;
+    g_convBuf[g_convLen] = '\0';
+}
+
+// Ensure enough room; if not, drop oldest lines until it fits
+static inline void Conv_EnsureRoom(size_t need) {
+    if (need >= CONV_MAX) { // pathological: line bigger than buffer, keep last tail
+        g_convLen = 0; g_convBuf[0] = '\0'; return;
+    }
+    while (g_convLen + need >= (CONV_MAX - 1)) {
+        Conv_DropOldestLine();
+        if (g_convLen == 0) break;
+    }
+}
+
+// Append "Prefix: text\n" (no JSON escaping here; that’s handled later)
+static inline void Conv_AppendLine(const char* prefix, const char* text) {
+    if (!prefix) prefix = "";
+    if (!text) text = "";
+    size_t lp = strlen(prefix);
+    size_t lt = strlen(text);
+    size_t need = lp + 2 /*": "*/ + lt + 1 /*\n*/;
+
+    Conv_EnsureRoom(need);
+    int n = snprintf(g_convBuf + g_convLen, (size_t)(CONV_MAX - g_convLen),
+        "%s: %s\n", prefix, text);
+    if (n > 0) {
+        size_t wrote = (size_t)n;
+        g_convLen += (wrote < (CONV_MAX - g_convLen)) ? wrote : (CONV_MAX - 1 - g_convLen);
+    }
+}
+
+// Build the full prompt (sheet + history + "Response:" cue) into dst
+static inline void BuildPromptWithHistory(TALK_TYPE who, const char* userText,
+    char* dst, size_t dstCap) {
+    const char* sheet = GetCharacterSheet(who);
+    char header[64] = "Donogan";  // speaker label (change if you expose a player name)
+
+    // 1) ensure the user's line is the newest in the history
+    Conv_AppendLine(header, userText ? userText : "");
+
+    // 2) prompt: <sheet>\n\n<history>Response:
+    // keep it concise without extra instructions so model continues after "Response:"
+    snprintf(dst, dstCap, "%s\n\n%sResponse:",
+        sheet ? sheet : "", g_convBuf);
+}
+
+// Call this every frame during talk mode; once reply arrives, append to history
+static inline void Conv_PollAndAppendReply(void) {
+    if (!g_replyConsumed && OllamaHasReply()) {
+        const char* r = OllamaGetReply();
+        Conv_AppendLine("Response", r ? r : "");
+        g_replyConsumed = 1;
+    }
+}
+
 void GetKeyBoardInput(TALK_TYPE who)
 {
+    //handle response concat to history here
+    Conv_PollAndAppendReply();
     // Get char pressed (unicode character) on the queue
     int key = GetCharPressed();
 
@@ -426,24 +510,20 @@ void GetKeyBoardInput(TALK_TYPE who)
         if (LetterCount < 0) { LetterCount = 0; }
         TalkInput[LetterCount] = '\0';
     }
-    // Kick off the call when Enter is pressed and we’re not busy
+    // Kick off the call when Enter is pressed and were not busy
     if (IsKeyPressed(KEY_ENTER) && LetterCount > 0 && !OllamaIsBusy()) {
-        const char* sheet = GetCharacterSheet(who);
-        // Make the prompt. If you expect very large sheets, bump this size up.
         char prompt[OLLAMA_MAX_REQ_SHEET];
-        int n = snprintf(
-            prompt, sizeof(prompt),
-            "%s\n\nI say: \"%s\",, what is your response? (please keep the response on the shorter side!)",
-            sheet ? sheet : "",
-            TalkInput ? TalkInput : ""
-        );
+
+        // Build prompt: <sheet>\n\n<Donogan/Response rolling history>\nResponse:
+        BuildPromptWithHistory(who, TalkInput, prompt, sizeof(prompt));
+
+        // Start request
+        g_replyConsumed = 0;                    // we expect a new reply
         StartOllamaGenerate(prompt);
-        // optional: clear the input for next message
+
+        // clear input for next user line
         TalkInput[0] = '\0';
         LetterCount = 0;
     }
 }
-
-static const char* OllamaGetReply(void) { return g_ollamaResponse; }
-
 #endif // INTERACT_H
