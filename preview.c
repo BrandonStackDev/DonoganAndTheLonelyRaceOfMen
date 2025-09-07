@@ -310,8 +310,8 @@ int main(void) {
     InitHomes();
     //talking
     InitTalkingInteractions();
-    Rectangle talk_contain = { 25.0f, 100.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
-    Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 100.0f, (SCREEN_WIDTH / 2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
+    Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
+    Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 160.0f, (SCREEN_WIDTH / 2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
     Font default_font = GetFontDefault();
     ////whales---------------------------------------------------
     int numWhales = 6; // six whales right now
@@ -2220,7 +2220,7 @@ int main(void) {
             }
             //DrawGrid(256, 1.0f);
         EndMode3D();
-        DrawText("WASD to move, mouse to look", 10, 10, 20, BLACK);
+        //DrawText("WASD to move, mouse to look", 10, 10, 20, BLACK);
         DrawText(TextFormat("Pitch: %.2f  Yaw: %.2f", pitch, yaw), 10, 30, 20, BLACK);
         DrawText(TextFormat("Next Chunk: (%d,%d)", chosenX, chosenY), 10, 50, 20, BLACK);
         DrawText(TextFormat("Current Chunk: (%d,%d), Tile: (%d,%d), Global Tile: (%d,%d)", closestCX, closestCY, playerTileX, playerTileY, gx, gy), 10, 70, 20, BLACK);
@@ -2257,12 +2257,6 @@ int main(void) {
                 Vector2 hitSS = GetWorldToScreen(hit, camera);
                 DrawCircle((int)hitSS.x, (int)hitSS.y, 4, RED);
             }
-        }
-        if (donnyMode && don.isTalking)
-        {
-            DrawRectangle(talk_contain.x, talk_contain.y, talk_contain.width, talk_contain.height, RAYWHITE);
-            DrawTextBoxed(default_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 20.0f, 2.0f, true, DARKPURPLE);
-            DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
         }
         if (showMap) {
             // Map drawing area (scaled by zoom)
@@ -2320,6 +2314,12 @@ int main(void) {
             // DrawTriangleLines(left, right, tip, BLACK);
 
         }
+        if (donnyMode && don.isTalking)
+        {
+            DrawRectangle(talk_contain.x, talk_contain.y, talk_contain.width, talk_contain.height, RAYWHITE);
+            DrawTextBoxed(default_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 20.0f, 2.0f, true, DARKPURPLE);
+            DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
+        }
         if (onLoad) 
         {
             const Album* a = GM_GetAlbum(&gMusic, gAudio.currentAlbumIndex);
@@ -2357,7 +2357,7 @@ int main(void) {
             }
             camera.position = Scenes[SCENE_HOME_CABIN_02].pos; //start at home cabin
         }
-        DrawFPS(10,130);
+        DrawFPS(10,10);
         EndDrawing();
     }
     quitFileManager = true;
