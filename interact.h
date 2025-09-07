@@ -8,6 +8,7 @@
 #include <stdio.h> 
 #include <stdbool.h>
 
+//api calls
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -26,6 +27,7 @@
 
 // --- Ollama config (can later be loaded from a file) ---
 #define OLLAMA_MAX_REQ   16384
+#define OLLAMA_MAX_REQ_SHEET   10000
 #define OLLAMA_MAX_RESP 262144
 
 static char g_ollamaHost[64] = "127.0.0.1";
@@ -42,10 +44,24 @@ static volatile LONG g_ollamaDone = 0;  // 1 = a fresh reply is available
 static HANDLE g_ollamaThread = NULL;
 #endif
 
+static const char* SHEET_TOL =
+"You are the Tree of Life (TOL), an ancient, gentle, mystical entity rooted in wisdom.\n"
+"You speak briefly, in simple sentences.\n"
+"Tone: kind, serene, a little playful. Avoid long paragraphs.\n"
+"Knowledge: the forest, Donogan (the player), magic arrows, rivers, winds, and hidden groves.\n"
+"Stay in character. Do not mention being an AI or models.\n";
 
 typedef enum {
     TALK_TYPE_TOL
 } TALK_TYPE;
+
+static inline const char* GetCharacterSheet(TALK_TYPE who)
+{
+    switch (who) {
+    case TALK_TYPE_TOL:         return SHEET_TOL;
+    default:              return "?";
+    }
+}
 
 typedef enum {
     POI_TYPE_NONE = -1,
@@ -385,7 +401,7 @@ static bool OllamaHasReply(void) {
 #endif
 }
 
-void GetKeyBoardInput()
+void GetKeyBoardInput(TALK_TYPE who)
 {
     // Get char pressed (unicode character) on the queue
     int key = GetCharPressed();
@@ -412,7 +428,16 @@ void GetKeyBoardInput()
     }
     // Kick off the call when Enter is pressed and we’re not busy
     if (IsKeyPressed(KEY_ENTER) && LetterCount > 0 && !OllamaIsBusy()) {
-        StartOllamaGenerate(TalkInput);
+        const char* sheet = GetCharacterSheet(who);
+        // Make the prompt. If you expect very large sheets, bump this size up.
+        char prompt[OLLAMA_MAX_REQ_SHEET];
+        int n = snprintf(
+            prompt, sizeof(prompt),
+            "%s\n\nI say: \"%s\",, what is your response? (please keep the response on the shorter side!)",
+            sheet ? sheet : "",
+            TalkInput ? TalkInput : ""
+        );
+        StartOllamaGenerate(prompt);
         // optional: clear the input for next message
         TalkInput[0] = '\0';
         LetterCount = 0;

@@ -1008,7 +1008,7 @@ int main(void) {
         }
         else if (don.isTalking)
         {
-            GetKeyBoardInput();
+            GetKeyBoardInput(don.who);
         }
         
         //handle controller input
