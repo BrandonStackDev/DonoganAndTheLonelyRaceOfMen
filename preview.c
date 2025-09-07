@@ -310,8 +310,8 @@ int main(void) {
     InitHomes();
     //talking
     InitTalkingInteractions();
-    Rectangle talk_contain = { 25.0f, 25.0f, (SCREEN_WIDTH/2.0f) - 25.0f, (SCREEN_HEIGHT) - 250.0f};
-    Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 25.0f, SCREEN_WIDTH - 25.0f, (SCREEN_HEIGHT) - 250.0f};
+    Rectangle talk_contain = { 25.0f, 100.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
+    Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 100.0f, (SCREEN_WIDTH / 2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
     Font default_font = GetFontDefault();
     ////whales---------------------------------------------------
     int numWhales = 6; // six whales right now
