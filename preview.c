@@ -31,6 +31,7 @@
 //debugging
 //#include <vld.h>
 
+
 //structs
 typedef struct Plane {
     Vector3 normal;
