@@ -290,7 +290,7 @@ int main(void) {
     //int for model type to search for when pressing R
     int modelSearchType = 0;
     //---------------RAYLIB INIT STUFF---------------------------------------
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Map Preview with Trees & Grass");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Donogan And The Lonely Race Of Men");
     InitAudioDevice();
     GameMusic_Init(&gMusic);
     GameState_InitAudio(&gAudio);
@@ -301,6 +301,10 @@ int main(void) {
     }
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
+    //icon
+    Image icon = LoadImage("icon.png");
+    SetWindowIcon(icon);
+    UnloadImage(icon);
     //load the homes models/scenes and stuff like that
     InitHomes();
     ////whales---------------------------------------------------
