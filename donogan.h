@@ -15,7 +15,7 @@
 #include "util.h"
 #include "timer.h"
 #include "collision.h"
-
+#include "interact.h"
 //bubbles
 #define DON_MAX_BUBBLES 128
 
@@ -472,6 +472,11 @@ typedef struct {
     float bowTurnSpeed;
     float bowDrawTLatch;        // last pull amount [0..1]
     float bowReleaseCamHold;    // seconds to keep aim camera active after release
+
+    //for conversation
+    bool isTalking;
+    Timer talkStartTimer;
+    TALK_TYPE who;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1459,6 +1464,7 @@ static Donogan InitDonogan(void)
     d.steepSlideMax = d.runSpeed * 1.1134f;
     d.steepSlideFriction = 1.6f;    // decay a bit each frame
     d.slideDwell = CreateTimer(0.25f);
+    d.talkStartTimer = CreateTimer(0.2222f);
 
     //bow speed turn
     d.bowTurnSpeed = DEG2RAD * 90; // turn quickly to face motion

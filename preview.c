@@ -308,6 +308,11 @@ int main(void) {
     UnloadImage(icon);
     //load the homes models/scenes and stuff like that
     InitHomes();
+    //talking
+    InitTalkingInteractions();
+    Rectangle talk_contain = { 25.0f, 25.0f, (SCREEN_WIDTH/2.0f) - 25.0f, (SCREEN_HEIGHT) - 250.0f};
+    Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 25.0f, SCREEN_WIDTH - 25.0f, (SCREEN_HEIGHT) - 250.0f};
+    Font default_font = GetFontDefault();
     ////whales---------------------------------------------------
     int numWhales = 6; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
@@ -436,6 +441,7 @@ int main(void) {
     Donogan don = InitDonogan();
     don.pos = Scenes[SCENE_HOME_CABIN_02].pos;
     don.pos.y = 533.333f;
+    StartTimer(&don.talkStartTimer); //so we can talk right away;
     //tree of Life
     Model tol = LoadModel("models/tree_of_life.obj");
     tol.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/tree_of_life.png");
@@ -528,6 +534,7 @@ int main(void) {
     // }
     // INIT INTERACTIVE POINTS OF INTEREST
     InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
+    InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
     //init the stuff before launching thread launcher
     //INIT
     //----------------------init chunks---------------------
@@ -709,13 +716,29 @@ int main(void) {
             camera.position.y = camera.target.y + radius * sinf(pitch);
             camera.position.z = camera.target.z + radius * cosf(pitch) * cosf(yaw);
 
-            if (gpad.btnTriangle > 0 
-                && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
-                && HasTimerElapsed(&truckInteractTimer))
+            if (gpad.btnTriangle > 0)//handle triangle interactions here
             {
-                StartTimer(&truckInteractTimer);
-                vehicleMode = true; donnyMode = false;
+                if (Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
+                    && HasTimerElapsed(&truckInteractTimer))
+                {
+                    StartTimer(&truckInteractTimer);
+                    vehicleMode = true; donnyMode = false;
+                }
+                else if (!don.isTalking 
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos, don.pos) < 6.82f
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_TOL;
+                    StartTimer(&don.talkStartTimer);
+                }
+                else if (don.isTalking && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = false;
+                    StartTimer(&don.talkStartTimer);
+                }
             }
+            
         }
         else if (vehicleMode)
         {
@@ -938,49 +961,56 @@ int main(void) {
         Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
 
         Vector3 move = { 0 };
-        if (IsKeyPressed(KEY_T)) {modelSearchType++; modelSearchType=modelSearchType%MODEL_TOTAL_COUNT;}
-        if (IsKeyDown(KEY_R)) 
-        {
-            if (onLoad && !FindNextTreeInChunk(&camera, closestCX, closestCY, 15.0f, modelSearchType)) {
-                TraceLog(LOG_INFO, "No suitable prop found in current chunk.");
-                if(!FindAnyTreeInWorld(&camera, 15.0f, modelSearchType))
-                {
-                    TraceLog(LOG_INFO, "Prop error, we didnt find any on the map this try...");
-                }
-            }
-        }
-        //map input
         float goku = false;
         float spd = MOVE_SPEED;
-        if (IsKeyPressed(KEY_C)) {DisableCursor();}
-        if (IsKeyPressed(KEY_X)) {EnableCursor();}
-        if (IsKeyPressed(KEY_Y)) {contInvertY=!contInvertY;}
-        if (IsKeyPressed(KEY_M)) showMap = !showMap; // Toggle map
-        if (IsKeyDown(KEY_EQUAL)) mapZoom += 0.01f;  // Zoom in (+ key)
-        if (IsKeyDown(KEY_MINUS)) mapZoom -= 0.01f;  // Zoom out (- key)
-        mapZoom = Clamp(mapZoom, 0.5f, 4.0f);
-        //end map input
-        if (onLoad && IsKeyPressed(KEY_V)) { vehicleMode = !vehicleMode; donnyMode = false; EnableCursor(); }
-        if (IsKeyPressed(KEY_B)) {displayBoxes = !displayBoxes;}
-        if (IsKeyPressed(KEY_L)) {displayLod = !displayLod;}
-        if (IsKeyPressed(KEY_F12)) {TakeScreenshotWithTimestamp();}
-        if (IsKeyPressed(KEY_F11)) {reportOn = true;}
-        if (IsKeyPressed(KEY_F10)) {MemoryReport();}
-        if (IsKeyPressed(KEY_F9)) {GridChunkReport();}
-        if (IsKeyPressed(KEY_F8)) {GridTileReport();}
-        if (IsKeyPressed(KEY_PAGE_UP)) {chosenX = (chosenX+1)%CHUNK_COUNT;}
-        if (IsKeyPressed(KEY_PAGE_DOWN)) {chosenY = (chosenY+1)%CHUNK_COUNT;}
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {goku=true;move = Vector3Add(move, forward);spd = GOKU_DASH_DIST;TraceLog(LOG_INFO, " --> Instant Transmission -->");}
-        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {goku=true;move = Vector3Add(move, forward);spd = GOKU_DASH_DIST_SHORT;TraceLog(LOG_INFO, " --> Steady does it -->");}
-        if (IsKeyDown(KEY_W)) move = Vector3Add(move, forward);
-        if (IsKeyDown(KEY_S)) move = Vector3Subtract(move, forward);
-        if (IsKeyDown(KEY_D)) move = Vector3Add(move, right);
-        if (IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
-        if (IsKeyDown(KEY_Z)) { dayTime=!dayTime;}
-        if (IsKeyDown(KEY_LEFT_SHIFT)) move.y -= (1.0f * MAP_SCALE);
-        if (IsKeyPressed(KEY_LEFT_CONTROL)) { donnyMode = !donnyMode; vehicleMode = false; }
-        if (IsKeyDown(KEY_SPACE)) move.y += (1.0f * MAP_SCALE);
-        if (IsKeyDown(KEY_ENTER)) {chunks[chosenX][chosenY].curTreeIdx=0;closestCX=chosenX;closestCY=chosenY;camera.position.x=chunks[closestCX][closestCY].center.x;camera.position.z=chunks[closestCX][closestCY].center.z;}
+        if (!donnyMode || !don.isTalking)
+        {
+            if (IsKeyPressed(KEY_T)) { modelSearchType++; modelSearchType = modelSearchType % MODEL_TOTAL_COUNT; }
+            if (IsKeyDown(KEY_R))
+            {
+                if (onLoad && !FindNextTreeInChunk(&camera, closestCX, closestCY, 15.0f, modelSearchType)) {
+                    TraceLog(LOG_INFO, "No suitable prop found in current chunk.");
+                    if (!FindAnyTreeInWorld(&camera, 15.0f, modelSearchType))
+                    {
+                        TraceLog(LOG_INFO, "Prop error, we didnt find any on the map this try...");
+                    }
+                }
+            }
+            if (IsKeyPressed(KEY_C)) { DisableCursor(); }
+            if (IsKeyPressed(KEY_X)) { EnableCursor(); }
+            if (IsKeyPressed(KEY_Y)) { contInvertY = !contInvertY; }
+            if (IsKeyPressed(KEY_M)) showMap = !showMap; // Toggle map
+            if (IsKeyDown(KEY_EQUAL)) mapZoom += 0.01f;  // Zoom in (+ key)
+            if (IsKeyDown(KEY_MINUS)) mapZoom -= 0.01f;  // Zoom out (- key)
+            mapZoom = Clamp(mapZoom, 0.5f, 4.0f);
+            //end map input
+            if (onLoad && IsKeyPressed(KEY_V)) { vehicleMode = !vehicleMode; donnyMode = false; EnableCursor(); }
+            if (IsKeyPressed(KEY_B)) { displayBoxes = !displayBoxes; }
+            if (IsKeyPressed(KEY_L)) { displayLod = !displayLod; }
+            if (IsKeyPressed(KEY_F12)) { TakeScreenshotWithTimestamp(); }
+            if (IsKeyPressed(KEY_F11)) { reportOn = true; }
+            if (IsKeyPressed(KEY_F10)) { MemoryReport(); }
+            if (IsKeyPressed(KEY_F9)) { GridChunkReport(); }
+            if (IsKeyPressed(KEY_F8)) { GridTileReport(); }
+            if (IsKeyPressed(KEY_PAGE_UP)) { chosenX = (chosenX + 1) % CHUNK_COUNT; }
+            if (IsKeyPressed(KEY_PAGE_DOWN)) { chosenY = (chosenY + 1) % CHUNK_COUNT; }
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) { goku = true; move = Vector3Add(move, forward); spd = GOKU_DASH_DIST; TraceLog(LOG_INFO, " --> Instant Transmission -->"); }
+            if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) { goku = true; move = Vector3Add(move, forward); spd = GOKU_DASH_DIST_SHORT; TraceLog(LOG_INFO, " --> Steady does it -->"); }
+            if (IsKeyDown(KEY_W)) move = Vector3Add(move, forward);
+            if (IsKeyDown(KEY_S)) move = Vector3Subtract(move, forward);
+            if (IsKeyDown(KEY_D)) move = Vector3Add(move, right);
+            if (IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
+            if (IsKeyDown(KEY_Z)) { dayTime = !dayTime; }
+            if (IsKeyDown(KEY_LEFT_SHIFT)) move.y -= (1.0f * MAP_SCALE);
+            if (IsKeyPressed(KEY_LEFT_CONTROL)) { donnyMode = !donnyMode; vehicleMode = false; }
+            if (IsKeyDown(KEY_SPACE)) move.y += (1.0f * MAP_SCALE);
+            if (IsKeyDown(KEY_ENTER)) { chunks[chosenX][chosenY].curTreeIdx = 0; closestCX = chosenX; closestCY = chosenY; camera.position.x = chunks[closestCX][closestCY].center.x; camera.position.z = chunks[closestCX][closestCY].center.z; }
+        }
+        else if (don.isTalking)
+        {
+            GetKeyBoardInput();
+        }
+        
         //handle controller input
         if (vehicleMode)
         {
@@ -2227,6 +2257,12 @@ int main(void) {
                 Vector2 hitSS = GetWorldToScreen(hit, camera);
                 DrawCircle((int)hitSS.x, (int)hitSS.y, 4, RED);
             }
+        }
+        if (donnyMode && don.isTalking)
+        {
+            DrawRectangle(talk_contain.x, talk_contain.y, talk_contain.width, talk_contain.height, RAYWHITE);
+            DrawTextBoxed(default_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 20.0f, 2.0f, true, DARKPURPLE);
+            DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
         }
         if (showMap) {
             // Map drawing area (scaled by zoom)
