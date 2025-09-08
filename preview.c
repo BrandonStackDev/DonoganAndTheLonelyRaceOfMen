@@ -313,6 +313,8 @@ int main(void) {
     Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
     Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 160.0f, (SCREEN_WIDTH / 2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
     Font default_font = GetFontDefault();
+    Font req_font = LoadFontEx("res/Tangerine/Tangerine-Bold.ttf", 32, 0, 250);
+    Font res_font = LoadFontEx("res/Lexend/static/Lexend-SemiBold.ttf", 15, 0, 250);
     ////whales---------------------------------------------------
     int numWhales = 6; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
@@ -2322,14 +2324,14 @@ int main(void) {
             DrawRectangle(res_contain.x - 4, res_contain.y - 4, res_contain.width + 8, res_contain.height + 8, BLACK);
             //draw the inner rectangles and the prompt
             DrawRectangle(talk_contain.x, talk_contain.y, talk_contain.width, talk_contain.height, RAYWHITE);
-            DrawTextBoxed(default_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 20.0f, 2.0f, true, DARKGRAY);
+            DrawTextBoxed(req_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 32.0f, 2.0f, true, BLACK);
             DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
             //draw the response
             if (OllamaIsBusy()) {
-                DrawTextBoxed(default_font, "...", (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 20.0f, 2.0f, true, GRAY);
+                DrawTextBoxed(res_font, "...", (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 15.0f, 2.0f, true, BLACK);
             }
             else if (OllamaHasReply()) {
-                DrawTextBoxed(default_font, OllamaGetReply(), (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 15.0f, 2.0f, true, BLACK);
+                DrawTextBoxed(res_font, OllamaGetReply(), (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 15.0f, 2.0f, true, BLACK);
             }
         }
         if (onLoad) 
