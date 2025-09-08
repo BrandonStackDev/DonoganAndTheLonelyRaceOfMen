@@ -4,9 +4,11 @@ An open world raylib game!
 
 Not yet even close to ready. Release date will be 1-2 years in the future.
 
+[![Map](readme_assets/treasure_map.png)](readme_assets/treasure_map.png)
+
 [![HellsYeah](readme_assets/hellsYeah.png)](readme_assets/hellsYeah.png)
 
-[![Map](readme_assets/treasure_map.png)](readme_assets/treasure_map.png)
+[![Castle](readme_assets/castle.png)](readme_assets/castle.png)
 
 [![Home](readme_assets/home1.png)](readme_assets/home1.png)
 
