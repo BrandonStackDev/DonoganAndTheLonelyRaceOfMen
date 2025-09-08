@@ -59,14 +59,23 @@ static const char* SHEET_TOL =
 "Knowledge: the forest, Donogan (the player), magic arrows, rivers, winds, and hidden groves.\n"
 "Stay in character. Do not mention being an AI or models.\n";
 
+static const char* SHEET_ATREYU =
+"You are the Indian Warrior Atreyu, the last of the Lenape.\n"
+"You speak briefly, in simple sentences. You are trying to meditating on a high peak.\n"
+"Tone: Wise, but a bit rude because you are trying to meditate, but open after continued questioning.\n"
+"Knowledge: Kashic records for the Lenape.\n"
+"Stay in character. Do not mention being an AI or models.\n";
+
 typedef enum {
-    TALK_TYPE_TOL
+    TALK_TYPE_TOL,
+    TALK_TYPE_ATREYU
 } TALK_TYPE;
 
 static inline const char* GetCharacterSheet(TALK_TYPE who)
 {
     switch (who) {
     case TALK_TYPE_TOL:         return SHEET_TOL;
+    case TALK_TYPE_ATREYU:         return SHEET_ATREYU;
     default:              return "?";
     }
 }
@@ -75,6 +84,7 @@ typedef enum {
     POI_TYPE_NONE = -1,
     POI_TYPE_TRUCK,
     POI_TYPE_TREE_OF_LIFE,
+    POI_TYPE_ATREYU,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 

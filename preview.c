@@ -461,6 +461,10 @@ int main(void) {
     Model tol = LoadModel("models/tree_of_life.obj");
     tol.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/tree_of_life.png");
     Vector3 tolPos = {-334.0f, 564.0f, -497.35f};
+    //atreyu
+    Model atreyu = LoadModel("models/atreyu.obj");
+    atreyu.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/atreyu.png");
+    Vector3 atreyuPos = { -2167.0f, 816.0f, 1416.00f };
     // Load  //todo: move this and most of the truck stuff into truck.h
     Model truck = LoadModel("models/truck.obj");
     truck.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
@@ -550,6 +554,7 @@ int main(void) {
     // INIT INTERACTIVE POINTS OF INTEREST
     InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
     InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
+    InteractivePoints[POI_TYPE_ATREYU] = (POI){ POI_TYPE_ATREYU , &atreyuPos };
     //init the stuff before launching thread launcher
     //INIT
     //----------------------init chunks---------------------
@@ -746,6 +751,14 @@ int main(void) {
                 {
                     don.isTalking = true;
                     don.who = TALK_TYPE_TOL;
+                    StartTimer(&don.talkStartTimer);
+                }
+                else if (!don.isTalking
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.02f
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_ATREYU;
                     StartTimer(&don.talkStartTimer);
                 }
                 else if (don.isTalking && HasTimerElapsed(&don.talkStartTimer))
@@ -1859,6 +1872,11 @@ int main(void) {
             if (IsPointInFrustum(tolPos, frustumChunk8))
             {
                 DrawModel(tol, tolPos, 8.0f, WHITE); //(Color) {160,100,220,255}//purple lol!
+            }
+            //atreyu
+            if (IsPointInFrustum(atreyuPos, frustumChunk8))
+            {
+                DrawModel(atreyu, atreyuPos, 2.8f, WHITE);
             }
             //homes
             if (onLoad)
