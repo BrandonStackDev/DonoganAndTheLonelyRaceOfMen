@@ -114,6 +114,19 @@ bool IsBoxInFrustum(BoundingBox box, Frustum frustum)
     return true;
 }
 
+// Returns true if point p lies inside (or on) all 6 frustum planes.
+// Assumes the same plane convention as your AABB test: n·x + d >= 0 is inside.
+static inline bool IsPointInFrustum(Vector3 p, Frustum frustum)
+{
+    for (int i = 0; i < 6; ++i)
+    {
+        Plane plane = frustum.planes[i];
+        float distance = Vector3DotProduct(plane.normal, p) + plane.d;
+        if (distance < 0.0f) return false; // outside this plane -> outside frustum
+    }
+    return true;
+}
+
 bool bugGenHappened = false;
 LightningBug* GenerateLightningBugs(Vector3 cameraPos, int count, float maxDistance)
 {
@@ -1733,7 +1746,6 @@ int main(void) {
         BeginMode3D(skyCam);
             //skybox stuff
             rlDisableDepthMask();
-            /*rlDisableBackfaceCulling();*/
             Vector3 cam = skyCam.position;
             float dist = 60.0f;
             float size = dist * 2.0f; //has to be double to line up
@@ -1747,7 +1759,6 @@ int main(void) {
             DrawSkyboxPanelFixed(skyboxPanelRightModel, (Vector3) { cam.x + dist, cam.y, cam.z }, -90.0f, (Vector3) { 0, 1, 0 }, size);
             // UP (+Y)
             DrawSkyboxPanelFixed(skyboxPanelUpModel, (Vector3) { cam.x, cam.y + dist, cam.z }, 90.0f, (Vector3) { 1, 0, 0 }, size);
-            /*rlEnableBackfaceCulling();*/
             rlEnableDepthMask();
         EndMode3D();
         //regular scene of the map
@@ -1839,7 +1850,7 @@ int main(void) {
                 if (don.inWater) { DonDrawBubbles(&don); }
             }
             //tree of life
-            if (true)
+            if (IsPointInFrustum(tolPos, frustumChunk8))
             {
                 DrawModel(tol, tolPos, 8.0f, WHITE); //(Color) {160,100,220,255}//purple lol!
             }
@@ -1849,6 +1860,7 @@ int main(void) {
                 rlDisableBackfaceCulling();
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
                 {
+                    if (!IsBoxInFrustum(Scenes[i].box, frustumChunk8)) { continue; }
                     DrawModelEx(HomeModels[Scenes[i].modelType], Scenes[i].pos, 
                         (Vector3) { 0, 1, 0 }, Scenes[i].yaw * RAD2DEG,
                         (Vector3) { Scenes[i].scale , Scenes[i].scale, Scenes[i].scale}, 
@@ -1863,6 +1875,7 @@ int main(void) {
                 //whales
                 for (int i = 0; i < numWhales; i++)
                 {
+                    if (!IsPointInFrustum(whales[i].pos, frustumChunk8)) { continue; }
                     FSM_Tick(&whales[i], (float)GetTime(), GetFrameTime());
                     Quaternion qFinal = BuildWorldQuat(&whales[i]);
                     Matrix R = QuaternionToMatrix(qFinal);
@@ -1877,6 +1890,7 @@ int main(void) {
                 // === FISH UPDATE + DRAW ======================================================
                 for (int s = 0; s < numSchools; s++)
                 {
+                    if (Vector3Distance(don.pos, fish[s].fishTarget) > 4000) { continue; }
                     // 1) steer the school target a bit each frame (orbit + optional player nudge)
                     static float schoolTheta = 0.0f;
                     float dt = GetFrameTime();
@@ -1895,12 +1909,15 @@ int main(void) {
                         schoolMatrices = MemAlloc(sizeof(Matrix) * schoolCount);
                         maxSchoolCount = schoolCount;
                     }
+                    int localSchoolCount = 0;
                     for (int i = 0; i < schoolCount; i++) {
                         Fish* f = &fish[s].fish[i];
+                        if (!IsPointInFrustum(f->pos, frustumChunk8)) { continue; }
                         Matrix rot = MatrixRotateY(DEG2RAD * f->yawDeg);
                         Matrix sca = MatrixScale(f->scale, f->scale, f->scale);
                         Matrix tra = MatrixTranslate(f->pos.x, f->pos.y, f->pos.z);
                         schoolMatrices[i] = MatrixMultiply(MatrixMultiply(sca, rot), tra);
+                        localSchoolCount++;
                     }
 
                     // 4) draw entire school in one GPU instancing call
@@ -1908,7 +1925,7 @@ int main(void) {
                         fishModel.meshes[0],
                         fishModel.materials[0],
                         schoolMatrices,
-                        schoolCount
+                        localSchoolCount
                     );
                     //if (schoolMatrices) { MemFree(schoolMatrices); } //this fails for me, not sure what to do with it...
                 }
