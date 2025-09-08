@@ -2268,7 +2268,8 @@ int main(void) {
         DrawText(TextFormat("Pitch: %.2f  Yaw: %.2f", pitch, yaw), 10, 30, 20, BLACK);
         DrawText(TextFormat("Next Chunk: (%d,%d)", chosenX, chosenY), 10, 50, 20, BLACK);
         DrawText(TextFormat("Current Chunk: (%d,%d), Tile: (%d,%d), Global Tile: (%d,%d)", closestCX, closestCY, playerTileX, playerTileY, gx, gy), 10, 70, 20, BLACK);
-        DrawText(TextFormat("X: %.2f  Y: %.2f Z: %.2f", camera.position.x, camera.position.y, camera.position.z), 10, 90, 20, BLACK);
+        Vector3 disPositionRightHere = donnyMode?don.pos:camera.position;
+        DrawText(TextFormat("X: %.2f  Y: %.2f Z: %.2f", disPositionRightHere.x, disPositionRightHere.y, disPositionRightHere.z), 10, 90, 20, BLACK);
         DrawText(TextFormat("Search Type: %s (%d) [t=toggle,r=search]", GetModelName(modelSearchType), modelSearchType), 10, 110, 20, BLACK);
         if(vehicleMode && onLoad)
         {
@@ -2293,13 +2294,13 @@ int main(void) {
                 DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
                 DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
 
-                Vector3 spawn = Vector3Add(don.pos, RotYawOffset(don.arrowOffset, don.yawY, 1, false));
-                Vector3 dir = DonAimForward(&don, 0.0f);   // match actual shot direction
-                float   speed = 46.2;//72.0f;//same speed always
-                Vector3 hit = PredictArrowImpact(&don, spawn, dir, speed, 3.0f);
+                //Vector3 spawn = Vector3Add(don.pos, RotYawOffset(don.arrowOffset, don.yawY, 1, false));
+                //Vector3 dir = DonAimForward(&don, 0.0f);   // match actual shot direction
+                //float   speed = 46.2;//72.0f;//same speed always
+                //Vector3 hit = PredictArrowImpact(&don, spawn, dir, speed, 3.0f);
 
-                Vector2 hitSS = GetWorldToScreen(hit, camera);
-                DrawCircle((int)hitSS.x, (int)hitSS.y, 4, RED);
+                //Vector2 hitSS = GetWorldToScreen(hit, camera);
+                //DrawCircle((int)hitSS.x, (int)hitSS.y, 4, RED);
             }
         }
         if (showMap) {
