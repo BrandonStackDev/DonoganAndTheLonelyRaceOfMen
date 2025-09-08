@@ -2317,14 +2317,19 @@ int main(void) {
         }
         if (donnyMode && don.isTalking)
         {
+            //draw the outer containers, border...
+            DrawRectangle(talk_contain.x - 4, talk_contain.y - 4, talk_contain.width + 8, talk_contain.height + 8, BLACK);
+            DrawRectangle(res_contain.x - 4, res_contain.y - 4, res_contain.width + 8, res_contain.height + 8, BLACK);
+            //draw the inner rectangles and the prompt
             DrawRectangle(talk_contain.x, talk_contain.y, talk_contain.width, talk_contain.height, RAYWHITE);
-            DrawTextBoxed(default_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 20.0f, 2.0f, true, DARKPURPLE);
+            DrawTextBoxed(default_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 20.0f, 2.0f, true, DARKGRAY);
             DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
+            //draw the response
             if (OllamaIsBusy()) {
-                DrawTextBoxed(default_font, "...", (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 20.0f, 2.0f, true, DARKPURPLE);
+                DrawTextBoxed(default_font, "...", (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 20.0f, 2.0f, true, GRAY);
             }
             else if (OllamaHasReply()) {
-                DrawTextBoxed(default_font, OllamaGetReply(), (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 20.0f, 2.0f, true, DARKPURPLE);
+                DrawTextBoxed(default_font, OllamaGetReply(), (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 15.0f, 2.0f, true, BLACK);
             }
         }
         if (onLoad) 
