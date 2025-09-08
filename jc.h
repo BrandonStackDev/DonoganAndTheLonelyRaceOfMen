@@ -17,7 +17,8 @@ typedef enum {
     MODEL_HOME_BRICK, //002
     MODEL_HOME_NICE, //003
     MODEL_HOME_TENT, //teepee, 004
-    MODEL_HOME_TEMPLE,
+    MODEL_HOME_TEMPLE, //temple
+    MODEL_HOME_CASTLE, //castle, cool texture!
     MODEL_HOME_TOTAL_COUNT
 } Model_Home_Type;
 
@@ -33,6 +34,7 @@ typedef enum {
     SCENE_HOME_TENT_03,
     SCENE_HOME_TENT_04,
     SCENE_HOME_TEMPLE_01,
+    SCENE_HOME_CASTLE_01,
     SCENE_TOTAL_COUNT
 } Scene_Type;
 
@@ -65,6 +67,9 @@ void InitHomes() {
     Model home005 = LoadModel("models/home_005.obj");
     home005.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_005.png");
     HomeModels[MODEL_HOME_TEMPLE] = home005;
+    Model home006 = LoadModel("models/home_006.obj");
+    home006.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_006.png");
+    HomeModels[MODEL_HOME_CASTLE] = home006;
 
     // Populate the scene list (the important part)
     Scenes[SCENE_HOME_CABIN_01] = (Scene){ //where the truck is
@@ -154,6 +159,15 @@ void InitHomes() {
         .pos = (Vector3){ -2214.00f, 350.00f, 3463.00f },
         .yaw = PI/2.0f,          // adjust if you want a different facing
         .scale = 128.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_CASTLE_01] = (Scene){ ////castle!
+        .type = SCENE_HOME_CASTLE_01,
+        .modelType = MODEL_HOME_CASTLE,
+        .pos = (Vector3){ 2360.00f, 572.00f, 750.00f },
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 256.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
