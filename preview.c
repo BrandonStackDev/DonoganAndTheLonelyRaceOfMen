@@ -733,7 +733,8 @@ int main(void) {
 
             if (gpad.btnTriangle > 0)//handle triangle interactions here
             {
-                if (Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
+                if (!don.isTalking 
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
                     && HasTimerElapsed(&truckInteractTimer))
                 {
                     StartTimer(&truckInteractTimer);
