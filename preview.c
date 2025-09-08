@@ -1275,6 +1275,7 @@ int main(void) {
             }
         }
         //collision section----------------------------------------------------------------
+        bool alreadyHandledY = false;
         if(!vehicleMode && !donnyMode)
         {
             camera.target = Vector3Add(camera.position, forward);
@@ -1317,6 +1318,7 @@ int main(void) {
                     else
                     {
                         don.groundY = groundY;
+                        alreadyHandledY = true;
                         // right after setting don.groundY
                         Vector3 nrm = GetTerrainNormalFromMeshXZ(don.pos.x, don.pos.z);
                         if (nrm.x == 0 && nrm.y == 0 && nrm.z == 0) nrm = (Vector3){ 0,1,0 }; // fallback
@@ -1530,7 +1532,10 @@ int main(void) {
                         MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
                         if (hit.hitGround) {
                             // snap to ground and re-make AABB
-                            don.groundY = hit.groundY; //overwrites ground collision (seems to work pretty well!)
+                            if (!alreadyHandledY || don.groundY < hit.groundY)
+                            {
+                                don.groundY = hit.groundY; //overwrites ground collision (seems to work pretty well!)
+                            }
                         }
                         else if (hit.hit)
                         {
