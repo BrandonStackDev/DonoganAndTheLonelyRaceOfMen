@@ -8,6 +8,8 @@
 #include <stdio.h> 
 #include <stdbool.h>
 #include <string.h>   // for strlen, memmove, strncpy
+#include <ctype.h>   // tolower
+
 
 //api calls
 #ifdef _WIN32
@@ -117,9 +119,98 @@ static inline void Conv_Clear(void) {
     g_convBuf[0] = '\0';
     g_ollamaResponse[0] = '\0';
 }
+// --- Simple helpers for config parsing ---
+static char* str_trim(char* s) {
+    if (!s) return s;
+    // leading
+    while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n') s++;
+    // trailing
+    char* e = s + strlen(s);
+    while (e > s && (e[-1] == ' ' || e[-1] == '\t' || e[-1] == '\r' || e[-1] == '\n')) --e;
+    *e = 0;
+    return s;
+}
+
+static void unquote_inplace(char** pval) {
+    if (!pval || !*pval) return;
+    char* v = *pval;
+    size_t n = strlen(v);
+    if (n >= 2) {
+        if ((v[0] == '"' && v[n - 1] == '"') ||
+            (v[0] == '\'' && v[n - 1] == '\'')) {
+            v[n - 1] = 0;
+            *pval = v + 1;
+        }
+    }
+}
+// Load ollama.config.txt; keep compiled defaults on any problem
+static void LoadOllamaConfig(void) {
+    FILE* f = fopen("ollama.config.txt", "rb");
+    if (!f) {
+        TraceLog(LOG_INFO, "Ollama config not found; using defaults %s:%d model=%s",
+            g_ollamaHost, g_ollamaPort, g_ollamaModel);
+        return;
+    }
+
+    char line[512];
+    int lineno = 0;
+    while (fgets(line, sizeof(line), f)) {
+        lineno++;
+
+        // Strip BOM if present on first line
+        if (lineno == 1 && (unsigned char)line[0] == 0xEF &&
+            (unsigned char)line[1] == 0xBB &&
+            (unsigned char)line[2] == 0xBF) {
+            memmove(line, line + 3, strlen(line) - 2);
+        }
+
+        // Trim and skip comments/blank
+        char* p = str_trim(line);
+        if (!*p) continue;
+        if (*p == '#' || *p == ';') continue;             // #... or ;...
+        if (p[0] == '/' && p[1] == '/') continue;         // //...
+
+        // key = value
+        char* eq = strchr(p, '=');
+        if (!eq) continue; // ignore malformed lines
+        *eq = 0;
+        char* key = str_trim(p);
+        char* val = str_trim(eq + 1);
+        unquote_inplace(&val);
+
+        // lowercase key
+        for (char* t = key; *t; ++t) *t = (char)tolower((unsigned char)*t);
+
+        if (strcmp(key, "host") == 0) {
+            if (*val) {
+                strncpy(g_ollamaHost, val, sizeof(g_ollamaHost) - 1);
+                g_ollamaHost[sizeof(g_ollamaHost) - 1] = 0;
+            }
+        }
+        else if (strcmp(key, "port") == 0) {
+            char* end = NULL;
+            long port = strtol(val, &end, 10);
+            if (end != val && port > 0 && port < 65536) {
+                g_ollamaPort = (int)port;
+            }
+        }
+        else if (strcmp(key, "model") == 0) {
+            if (*val) {
+                strncpy(g_ollamaModel, val, sizeof(g_ollamaModel) - 1);
+                g_ollamaModel[sizeof(g_ollamaModel) - 1] = 0;
+            }
+        }
+        // Unknown keys are ignored (future-proof)
+    }
+
+    fclose(f);
+    TraceLog(LOG_INFO, "Ollama config loaded: %s:%d model=%s",
+        g_ollamaHost, g_ollamaPort, g_ollamaModel);
+}
 
 void InitTalkingInteractions()
 {
+    LoadOllamaConfig();
     TalkInput = (char*)malloc(sizeof(char) * MAX_INPUT_CHARS_ARRAY_LEN);
     TalkInput[0] = '\0';
     LetterCount = 0;

@@ -1,0 +1,4 @@
+# ollama.config.txt
+host = 127.0.0.1
+port = 11434
+model = gemma3
