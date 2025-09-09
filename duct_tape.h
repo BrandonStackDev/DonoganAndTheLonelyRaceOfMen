@@ -23,7 +23,7 @@ typedef struct
 
 
 
-#define gEnvBoundingBoxCount 9
+#define gEnvBoundingBoxCount 11
 
 EnvBoundingBox gEnvBoundingBoxes[gEnvBoundingBoxCount] = { 0 };
 
@@ -38,6 +38,8 @@ void GoGoGadgetDuctTape()
     gEnvBoundingBoxes[6] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1259.0f, 327.0f, 1240.0f },(Vector3) { 1288.0f, 340.0f, 1244.0f } } };//truck back wall
     gEnvBoundingBoxes[7] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { -2331.0f, 312, 3378.0f },(Vector3) { -2198.0f, 330, 3550.0f } } };//temple wall
     gEnvBoundingBoxes[8] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { -2331.0f, 330, 3378.0f },(Vector3) { -2198.0f, 333, 3550.0f } } };//temple ground
+    gEnvBoundingBoxes[9] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1900.0f, 360, 4119.0f },(Vector3) { 1909.0f, 370, 4181.0f } } };//nice 01 wall 1
+    gEnvBoundingBoxes[10] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1823.0f, 360, 4176.0f },(Vector3) { 1842.0f, 368.6f, 4183.0f } } };//nice 01 wall 2
 }
 
 #endif // DUCT_TAPE_H
