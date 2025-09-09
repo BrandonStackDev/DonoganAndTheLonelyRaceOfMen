@@ -1029,5 +1029,6 @@ static unsigned __stdcall ChunkLoaderThread(void* arg)
 void StartChunkLoader() { thread_start_detached(ChunkLoaderThread, NULL); }
 void StartFileManger() { thread_start_detached(FileManagerThread, NULL); }
 
+Sound carHorn;
 
 #endif // CORE_H

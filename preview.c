@@ -314,6 +314,8 @@ int main(void) {
         SetMusicVolume(gAudio.currentMusic, gAudio.musicVol);
         PlayMusicStream(gAudio.currentMusic);
     }
+    //get sound clips
+    carHorn = LoadSound("sounds/horn.mp3");
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
     //icon
@@ -1098,7 +1100,11 @@ int main(void) {
                     if(isTruckSliding){truckSlidePeek=true;}
                 }
             }
-            if(gpad.btnCircle > 0){displayTruckPoints = !displayTruckPoints;}
+            if(gpad.btnCircle > 0)
+            {
+                //displayTruckPoints = !displayTruckPoints;
+                if (!IsSoundPlaying(carHorn)) { PlaySound(carHorn); }
+            }
             //some extra stuff for the truck - steering
             steerInput = gpad.normLX * GetFrameTime();
             float turnMax = 0.8f;
