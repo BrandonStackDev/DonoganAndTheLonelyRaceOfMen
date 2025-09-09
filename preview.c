@@ -1530,6 +1530,7 @@ int main(void) {
                     if (gEnvBoundingBoxes[i].type == EBBT_GROUND)
                     {
                         don.groundY = gEnvBoundingBoxes[i].box.max.y;
+                        alreadyHandledY = true;
                     }
                     else if (gEnvBoundingBoxes[i].type == EBBT_WALL)
                     {
