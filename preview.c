@@ -465,6 +465,10 @@ int main(void) {
     Model atreyu = LoadModel("models/atreyu.obj");
     atreyu.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/atreyu.png");
     Vector3 atreyuPos = { -2167.0f, 816.0f, 1416.00f };
+    //heads
+    Texture don_head = LoadTexture("textures/don_head.png");
+    Texture tol_head = LoadTexture("textures/tol_head.png");
+    Texture atreyu_head = LoadTexture("textures/atreyu_head.png");
     // Load  //todo: move this and most of the truck stuff into truck.h
     Model truck = LoadModel("models/truck.obj");
     truck.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
@@ -2366,8 +2370,17 @@ int main(void) {
             DrawRectangle(res_contain.x - 4, res_contain.y - 4, res_contain.width + 8, res_contain.height + 8, BLACK);
             //draw the inner rectangles and the prompt
             DrawRectangle(talk_contain.x, talk_contain.y, talk_contain.width, talk_contain.height, RAYWHITE);
+            Rectangle src = { 0, 0, don_head.width, don_head.height };
+            Rectangle dest = { (talk_contain.x + talk_contain.width) - 66, (talk_contain.y + talk_contain.height) - 66, 64, 64 }; //64x64
+            DrawTexturePro(don_head, src, dest, (Vector2) { 0, 0 }, 0.0f, WHITE);
             DrawTextBoxed(req_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 32.0f, 2.0f, true, BLACK);
+            
             DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
+            Texture2D talkee = tol_head;
+            if (don.who == TALK_TYPE_ATREYU) { talkee = atreyu_head; }
+            src = (Rectangle){ 0, 0, talkee.width, talkee.height };
+            dest = (Rectangle){ (res_contain.x + res_contain.width) - 66, (res_contain.y + res_contain.height) - 66, 64, 64 }; //64x64
+            DrawTexturePro(talkee, src, dest, (Vector2) { 0, 0 }, 0.0f, WHITE);
             //draw the response
             if (OllamaIsBusy()) {
                 DrawTextBoxed(res_font, "...", (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 15.0f, 2.0f, true, BLACK);
