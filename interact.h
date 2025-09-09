@@ -55,11 +55,12 @@ static HANDLE g_ollamaThread = NULL;
 #endif
 
 static const char* SHEET_TOL =
-"You are the Tree of Life (TOL), an ancient, gentle, mystical entity rooted in wisdom.\n"
+"You are the Tree of Life, an ancient, gentle, mystical entity rooted in wisdom.\n"
 "You speak briefly, in simple sentences.\n"
 "Tone: kind, serene, a little playful. Avoid long paragraphs.\n"
 "Knowledge: the forest, Donogan (the player), magic arrows, rivers, winds, and hidden groves.\n"
 "Stay in character. Do not mention being an AI or models.\n";
+static const char* SHEET_TOL_DEFAULT = "I am the Tree of Life, old and wise.\n";
 
 static const char* SHEET_ATREYU =
 "You are the Indian Warrior Atreyu, the last of the Lenape.\n"
@@ -67,11 +68,13 @@ static const char* SHEET_ATREYU =
 "Tone: Wise, but a bit rude because you are trying to meditate, but open after continued questioning.\n"
 "Knowledge: Kashic records for the Lenape.\n"
 "Stay in character. Do not mention being an AI or models.\n";
+static const char* SHEET_ATREYU_DEFAULT = "(uhg!) Hello, I am Atreyu. Please be quiet, I am trying to meditate...\n";
 
 typedef enum {
     TALK_TYPE_TOL,
     TALK_TYPE_ATREYU
 } TALK_TYPE;
+static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
 
 static inline const char* GetCharacterSheet(TALK_TYPE who)
 {
@@ -82,6 +85,16 @@ static inline const char* GetCharacterSheet(TALK_TYPE who)
     }
 }
 
+static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
+{
+    switch (who) {
+    case TALK_TYPE_TOL:         return SHEET_TOL_DEFAULT;
+    case TALK_TYPE_ATREYU:         return SHEET_ATREYU_DEFAULT;
+    default:              return "?";
+    }
+}
+
+//points of interest, for tri interact
 typedef enum {
     POI_TYPE_NONE = -1,
     POI_TYPE_TRUCK,
@@ -406,6 +419,13 @@ static void ExtractResponseText(const char* json, char* out, size_t cap) {
     out[i] = 0;
 }
 
+static inline bool IsBlankStr(const char* s) {
+    if (!s) return true;
+    while (*s) { if (*s > ' ') return false; ++s; }
+    return true;
+}
+
+BOOL hadError = FALSE;
 #ifdef _WIN32
 static DWORD WINAPI OllamaThreadProc(LPVOID lp) {
     char* heapPrompt = (char*)lp;
@@ -418,15 +438,15 @@ static DWORD WINAPI OllamaThreadProc(LPVOID lp) {
 
     // Session / connect / request
     HINTERNET hSession = WinHttpOpen(L"Donogan/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, NULL, NULL, 0);
-    if (!hSession) goto cleanup;
+    if (!hSession) { hadError = TRUE;  goto cleanup; }
 
     HINTERNET hConnect = WinHttpConnect(hSession, whost, (INTERNET_PORT)g_ollamaPort, 0);
-    if (!hConnect) goto cleanup;
+    if (!hConnect) { hadError = TRUE;  goto cleanup; }
 
     HINTERNET hRequest = WinHttpOpenRequest(
         hConnect, L"POST", L"/api/generate", NULL, WINHTTP_NO_REFERER,
         WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
-    if (!hRequest) goto cleanup;
+    if (!hRequest) { hadError = TRUE;  goto cleanup; }
 
     // Header
     const wchar_t* hdr = L"Content-Type: application/json\r\n";
@@ -448,10 +468,10 @@ static DWORD WINAPI OllamaThreadProc(LPVOID lp) {
     BOOL ok = WinHttpSendRequest(
         hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
         (LPVOID)body, (DWORD)bodyLen, (DWORD)bodyLen, 0);
-    if (!ok) goto cleanup;
+    if (!ok) { hadError = TRUE;  goto cleanup; }
 
     ok = WinHttpReceiveResponse(hRequest, NULL);
-    if (!ok) goto cleanup;
+    if (!ok) { hadError = TRUE;  goto cleanup; }
 
     // Read response
     DWORD avail = 0, read = 0;
@@ -478,6 +498,14 @@ static DWORD WINAPI OllamaThreadProc(LPVOID lp) {
     }
 
 cleanup:
+    if (IsBlankStr(g_ollamaResponse) || hadError) {
+        // if you wired the 'who' we discussed earlier, use that:
+        const char* def = GetCharacterDefaultSheet(g_currentTalkWho);
+        if (!def) def = "?";
+
+        strncpy(g_ollamaResponse, def, sizeof(g_ollamaResponse) - 1);
+        g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
+    }
     if (hRequest)  WinHttpCloseHandle(hRequest);
     if (hConnect)  WinHttpCloseHandle(hConnect);
     if (hSession)  WinHttpCloseHandle(hSession);
@@ -614,6 +642,7 @@ void GetKeyBoardInput(TALK_TYPE who)
     }
     // Kick off the call when Enter is pressed and were not busy
     if (IsKeyPressed(KEY_ENTER) && LetterCount > 0 && !OllamaIsBusy()) {
+        g_currentTalkWho = who;  // <-- remember who for defaults
         char prompt[OLLAMA_MAX_REQ_SHEET];
 
         // Build prompt: <sheet>\n\n<Donogan/Response rolling history>\nResponse:
