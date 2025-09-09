@@ -2236,12 +2236,12 @@ int main(void) {
                                 glDisable(GL_POLYGON_OFFSET_FILL);
                             }
                         }
-                        else if(chunks[cx][cy].lod == LOD_16 && IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8)) {
+                        else if(chunks[cx][cy].lod == LOD_16 && IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8) && cx!=0 && cx!=15 && cy!=0 && cy!=15) {
                             chunkBcCount++;
                             chunkTriCount+=chunks[cx][cy].model16.meshes[0].triangleCount;
                             DrawModel(chunks[cx][cy].model16, chunks[cx][cy].position, MAP_SCALE, displayLod?PURPLE:chunk_16_color);
                         }
-                        else if(IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8)||!onLoad) {
+                        else if((IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8) || !onLoad) && cx != 0 && cx != 15 && cy != 0 && cy != 15) {
                             chunkBcCount++;
                             chunkTriCount+=chunks[cx][cy].model8.meshes[0].triangleCount;
                             DrawModel(chunks[cx][cy].model8, chunks[cx][cy].position, MAP_SCALE, displayLod?RED:chunk_08_color);
