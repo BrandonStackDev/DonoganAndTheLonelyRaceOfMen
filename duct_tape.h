@@ -23,7 +23,7 @@ typedef struct
 
 
 
-#define gEnvBoundingBoxCount 18
+#define gEnvBoundingBoxCount 22
 
 EnvBoundingBox gEnvBoundingBoxes[gEnvBoundingBoxCount] = { 0 };
 
@@ -47,6 +47,10 @@ void GoGoGadgetDuctTape()
     gEnvBoundingBoxes[15] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2627, 320, 4614 },(Vector3) { 2670, 350, 4620.5f } } };//brick book temple wall small 02
     gEnvBoundingBoxes[16] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2389, 520, 551 },(Vector3) { 2404, 540, 922 } } };//castle wall 1
     gEnvBoundingBoxes[17] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2140, 520, 540 },(Vector3) { 2390, 540, 552 } } };//castle wall 2
+    gEnvBoundingBoxes[18] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1826.0f, 364, 4154.0f },(Vector3) { 1839.0f, 366.0f, 4182.0f } } };//nice 01 wall 3
+    gEnvBoundingBoxes[19] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1839.4f, 360, 4119.7f },(Vector3) { 1844.2f, 372.0f, 4182.0f } } };//nice 01 wall 4
+    gEnvBoundingBoxes[20] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1830.0f, 360, 4136.0f },(Vector3) { 1845.0f, 364.4f, 4140.0f } } };//nice 01 wall 5
+    gEnvBoundingBoxes[21] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { 1841.0f, 372, 4119.7f },(Vector3) { 1844.2f, 374.4f, 4182.0f } } };//nice 01 ground 1
 }
 
 #endif // DUCT_TAPE_H

@@ -1563,10 +1563,10 @@ int main(void) {
 
                         // Apply correction to position and boxes (so subsequent walls see updated box)
                         don.pos.x += push.x;  don.pos.z += push.z;
-                        don.box = UpdateBoundingBox(don.origBB, don.pos);
                     }
                 }
             }
+            don.box = UpdateBoundingBox(don.origBB, don.pos);
             //home collision
             for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
             {

@@ -144,78 +144,80 @@ Vector3 GetTerrainNormalFromMeshXZ(float x, float z)
     int cx = (int)floorf(x / CHUNK_WORLD_SIZE) + half;
     int cy = (int)floorf(z / CHUNK_WORLD_SIZE) + half;
 
-    Chunk chunk = chunks[cx][cy];
-    Mesh mesh = chunk.model.meshes[0];
-
-    int S = (int)sqrtf(mesh.triangleCount / 2);
-    float cell = (float)CHUNK_WORLD_SIZE / S;
-
-    int gx = (int)floorf((x - chunk.position.x) / cell);
-    int gz = (int)floorf((z - chunk.position.z) / cell);
-    if (gx < 0) gx = 0; else if (gx >= S) gx = S - 1;
-    if (gz < 0) gz = 0; else if (gz >= S) gz = S - 1;
-
-    int firstTri = (gz * S + gx) * 2;
-    int lastTri = firstTri + 2;
-
-    float* verts = (float*)mesh.vertices;
-    unsigned short* tris = (unsigned short*)mesh.indices;
-
-    if (!verts || mesh.vertexCount < 3 || mesh.triangleCount < 1)
+    if (onLoad && cx > -1 && cy > -1 && cx < CHUNK_COUNT && cy < CHUNK_COUNT)
     {
-        TraceLog(LOG_WARNING, "Normal query bad mesh at (%f, %f)", x, z);
-        if (!verts) { TraceLog(LOG_WARNING, "!verts"); }
-        if (mesh.vertexCount < 3) { TraceLog(LOG_WARNING, "mesh.vertexCount < 3"); }
-        if (mesh.triangleCount < 1) { TraceLog(LOG_WARNING, "mesh.triangleCount < 1"); }
-        return (Vector3) { 0, 1, 0 };
-    }
+        Chunk chunk = chunks[cx][cy];
+        Mesh mesh = chunk.model.meshes[0];
 
-    Vector3 p = (Vector3){ x, 0.0f, z };
+        int S = (int)sqrtf(mesh.triangleCount / 2);
+        float cell = (float)CHUNK_WORLD_SIZE / S;
 
-    for (int i = firstTri; i < lastTri; i++)
-    {
-        int i0, i1, i2;
-        if (tris) {
-            i0 = tris[i * 3 + 0];
-            i1 = tris[i * 3 + 1];
-            i2 = tris[i * 3 + 2];
-        }
-        else {
-            i0 = i * 3 + 0;
-            i1 = i * 3 + 1;
-            i2 = i * 3 + 2;
-        }
+        int gx = (int)floorf((x - chunk.position.x) / cell);
+        int gz = (int)floorf((z - chunk.position.z) / cell);
+        if (gx < 0) gx = 0; else if (gx >= S) gx = S - 1;
+        if (gz < 0) gz = 0; else if (gz >= S) gz = S - 1;
 
-        if (i0 >= mesh.vertexCount || i1 >= mesh.vertexCount || i2 >= mesh.vertexCount) continue;
+        int firstTri = (gz * S + gx) * 2;
+        int lastTri = firstTri + 2;
 
-        Vector3 a = {
-            (MAP_SCALE * verts[i0 * 3 + 0] + chunk.position.x),
-            (MAP_SCALE * verts[i0 * 3 + 1] + chunk.position.y),
-            (MAP_SCALE * verts[i0 * 3 + 2] + chunk.position.z)
-        };
-        Vector3 b = {
-            (MAP_SCALE * verts[i1 * 3 + 0] + chunk.position.x),
-            (MAP_SCALE * verts[i1 * 3 + 1] + chunk.position.y),
-            (MAP_SCALE * verts[i1 * 3 + 2] + chunk.position.z)
-        };
-        Vector3 c = {
-            (MAP_SCALE * verts[i2 * 3 + 0] + chunk.position.x),
-            (MAP_SCALE * verts[i2 * 3 + 1] + chunk.position.y),
-            (MAP_SCALE * verts[i2 * 3 + 2] + chunk.position.z)
-        };
+        float* verts = (float*)mesh.vertices;
+        unsigned short* tris = (unsigned short*)mesh.indices;
 
-        // Use your existing point-in-triangle/height test to choose the correct tri
-        float y = GetHeightOnTriangle(p, a, b, c);
-        if (y > -9999.0f)
+        if (!verts || mesh.vertexCount < 3 || mesh.triangleCount < 1)
         {
-            Vector3 e1 = Vector3Subtract(b, a);
-            Vector3 e2 = Vector3Subtract(c, a);
-            Vector3 n = Vector3Normalize(Vector3CrossProduct(e1, e2));
-            if (n.y < 0.0f) n = Vector3Negate(n); // ensure "up"
-            return n;
+            TraceLog(LOG_WARNING, "Normal query bad mesh at (%f, %f)", x, z);
+            if (!verts) { TraceLog(LOG_WARNING, "!verts"); }
+            if (mesh.vertexCount < 3) { TraceLog(LOG_WARNING, "mesh.vertexCount < 3"); }
+            if (mesh.triangleCount < 1) { TraceLog(LOG_WARNING, "mesh.triangleCount < 1"); }
+            return (Vector3) { 0, 1, 0 };
+        }
+
+        Vector3 p = (Vector3){ x, 0.0f, z };
+
+        for (int i = firstTri; i < lastTri; i++)
+        {
+            int i0, i1, i2;
+            if (tris) {
+                i0 = tris[i * 3 + 0];
+                i1 = tris[i * 3 + 1];
+                i2 = tris[i * 3 + 2];
+            }
+            else {
+                i0 = i * 3 + 0;
+                i1 = i * 3 + 1;
+                i2 = i * 3 + 2;
+            }
+
+            if (i0 >= mesh.vertexCount || i1 >= mesh.vertexCount || i2 >= mesh.vertexCount) continue;
+
+            Vector3 a = {
+                (MAP_SCALE * verts[i0 * 3 + 0] + chunk.position.x),
+                (MAP_SCALE * verts[i0 * 3 + 1] + chunk.position.y),
+                (MAP_SCALE * verts[i0 * 3 + 2] + chunk.position.z)
+            };
+            Vector3 b = {
+                (MAP_SCALE * verts[i1 * 3 + 0] + chunk.position.x),
+                (MAP_SCALE * verts[i1 * 3 + 1] + chunk.position.y),
+                (MAP_SCALE * verts[i1 * 3 + 2] + chunk.position.z)
+            };
+            Vector3 c = {
+                (MAP_SCALE * verts[i2 * 3 + 0] + chunk.position.x),
+                (MAP_SCALE * verts[i2 * 3 + 1] + chunk.position.y),
+                (MAP_SCALE * verts[i2 * 3 + 2] + chunk.position.z)
+            };
+
+            // Use your existing point-in-triangle/height test to choose the correct tri
+            float y = GetHeightOnTriangle(p, a, b, c);
+            if (y > -9999.0f)
+            {
+                Vector3 e1 = Vector3Subtract(b, a);
+                Vector3 e2 = Vector3Subtract(c, a);
+                Vector3 n = Vector3Normalize(Vector3CrossProduct(e1, e2));
+                if (n.y < 0.0f) n = Vector3Negate(n); // ensure "up"
+                return n;
+            }
         }
     }
-
     TraceLog(LOG_WARNING, "Normal not found in any triangle: (%f x %f)", x, z);
     return (Vector3) { 0, 1, 0 }; // safe default
 }
