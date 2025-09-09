@@ -23,13 +23,14 @@ typedef struct
 
 
 
-#define gEnvBoundingBoxCount 1
+#define gEnvBoundingBoxCount 2
 
 EnvBoundingBox gEnvBoundingBoxes[gEnvBoundingBoxCount] = { 0 };
 
 void GoGoGadgetDuctTape()
 {
     gEnvBoundingBoxes[0] = (EnvBoundingBox){EBBT_WALL,(BoundingBox) {(Vector3) {2960.0f, 320.0f, 4026.0f},(Vector3) {2987.0f, 330.0f, 4027.0f}}};
+    gEnvBoundingBoxes[1] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2960.0f, 320.0f, 4058.0f },(Vector3) { 2987.0f, 330.0f, 4059.0f } } };
 }
 
 #endif // DUCT_TAPE_H
