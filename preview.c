@@ -19,6 +19,7 @@
 #include "collision.h"
 #include "core.h"
 #include "music.h"   // song/album structs + helpers
+#include "duct_tape.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -323,6 +324,8 @@ int main(void) {
     InitHomes();
     //talking
     InitTalkingInteractions();
+    //env bounding boxes, duct tape
+    GoGoGadgetDuctTape();
     Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
     Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 160.0f, (SCREEN_WIDTH / 2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
     Font default_font = GetFontDefault();
@@ -1519,6 +1522,50 @@ int main(void) {
         }
         if (onLoad && donnyMode)
         {
+            //env boxes (aka duct tape)
+            for (int i = 0; i < gEnvBoundingBoxCount; i++)//todo: if this list ever gets big add culling
+            {
+                if (CheckCollisionBoxes(don.box, gEnvBoundingBoxes[i].box))
+                {
+                    if (gEnvBoundingBoxes[i].type == EBBT_GROUND)
+                    {
+                        don.groundY = gEnvBoundingBoxes[i].box.max.y;
+                    }
+                    else if (gEnvBoundingBoxes[i].type == EBBT_WALL)
+                    {
+                        // Push Donogan out of WALL along min horizontal penetration (X/Z)
+                        BoundingBox a = don.box;                         // player box
+                        BoundingBox b = gEnvBoundingBoxes[i].box;        // wall box
+
+                        // Centers and half-sizes
+                        Vector3 ac = { (a.min.x + a.max.x) * 0.5f, (a.min.y + a.max.y) * 0.5f, (a.min.z + a.max.z) * 0.5f };
+                        Vector3 bc = { (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f, (b.min.z + b.max.z) * 0.5f };
+                        Vector3 ah = { (a.max.x - a.min.x) * 0.5f, (a.max.y - a.min.y) * 0.5f, (a.max.z - a.min.z) * 0.5f };
+                        Vector3 bh = { (b.max.x - b.min.x) * 0.5f, (b.max.y - b.min.y) * 0.5f, (b.max.z - b.min.z) * 0.5f };
+
+                        // Overlap depths
+                        Vector3 d = { ac.x - bc.x, ac.y - bc.y, ac.z - bc.z };
+                        float penX = (ah.x + bh.x) - fabsf(d.x);
+                        float penY = (ah.y + bh.y) - fabsf(d.y);  // computed but ignored for WALLs
+                        float penZ = (ah.z + bh.z) - fabsf(d.z);
+
+                        // Choose X or Z (horizontal) axis with smaller penetration
+                        Vector3 push = { 0 };
+                        if (penX < penZ) {
+                            push.x = (d.x > 0.0f) ? penX : -penX;   // push out along +X or -X
+                            // if you track velocity, you can zero X here: // don.vel.x = 0;
+                        }
+                        else {
+                            push.z = (d.z > 0.0f) ? penZ : -penZ;   // push out along +Z or -Z
+                            // if you track velocity, you can zero Z here: // don.vel.z = 0;
+                        }
+
+                        // Apply correction to position and boxes (so subsequent walls see updated box)
+                        don.pos.x += push.x;  don.pos.z += push.z;
+                        don.box = UpdateBoundingBox(don.origBB, don.pos);
+                    }
+                }
+            }
             //home collision
             for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
             {
@@ -1676,13 +1723,7 @@ int main(void) {
                                 don.pos.z += pushZ;
                                 don.outerBox.min.z += pushZ;
                                 don.outerBox.max.z += pushZ;
-
-                                // optional: kill z-velocity into the wall if you track velocity
-                                // if ((pushZ > 0 && don.vel.z < 0) || (pushZ < 0 && don.vel.z > 0)) don.vel.z = 0.0f;
                             }
-
-                            // If we penetrated deeply on Y but *not* from above (e.g., climbing into the side),
-                            // prefer horizontal resolution and leave Y as-is so he doesn't pop on top.
                         }
                     }
                 }
@@ -1838,6 +1879,10 @@ int main(void) {
                     DrawBoundingBox(don.box, RED); 
                     DrawBoundingBox(don.outerBox, GREEN);
                     DrawBoundingBox(don.innerBox, YELLOW);
+                    for (int i = 0; i < gEnvBoundingBoxCount; i++)//env boxes, duct tape
+                    {
+                        DrawBoundingBox(gEnvBoundingBoxes[i].box, MAGENTA);
+                    }
                 }
 
                 //bow stuff
