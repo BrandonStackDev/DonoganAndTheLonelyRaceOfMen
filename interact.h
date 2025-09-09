@@ -40,7 +40,7 @@ static int   g_replyConsumed = 1; // set to 0 when a request starts; back to 1 a
 
 static char g_ollamaHost[64] = "127.0.0.1";
 static int  g_ollamaPort = 11434;
-static char g_ollamaModel[32] = "llama3";
+static char g_ollamaModel[32] = "gemma3";//"llama3"
 
 // Response buffer (null-terminated text to display)
 static char g_ollamaResponse[OLLAMA_MAX_RESP];
