@@ -208,9 +208,12 @@ typedef enum {
     DONOGAN_STATE_PUNCH_CROSS_ENTER,
     DONOGAN_STATE_PUNCH_CROSS,
     DONOGAN_STATE_PUNCH_IDLE,
+    DONOGAN_STATE_SPELL_ENTER,
+    DONOGAN_STATE_SPELL_IDLE,
+    DONOGAN_STATE_SPELL_EXIT
 } DonoganState;
 
-// ---------- Anim IDs present in your GLB ----------
+// ---------- Anim IDs present in your GLB (+procedural negatives)----------
 typedef enum {
     DONOGAN_ANIM_PROC_BOW_ENTER = -5,
     DONOGAN_ANIM_PROC_BOW_AIM = -4,
@@ -385,6 +388,7 @@ typedef struct {
     // Jump timing
     bool prevCross;     // for edge detection (X/Jump)
     bool prevCircle;     //
+    bool prevSquare;
     float jumpTimer;    // simple air timer for JUMPING
     float minAirTime;   // seconds to stay in JUMPING before landing allowed
 
@@ -1551,6 +1555,9 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_PUNCH_CROSS_ENTER:       return DONOGAN_ANIM_Punch_Enter;
     case DONOGAN_STATE_PUNCH_CROSS:             return DONOGAN_ANIM_Punch_Cross;
     case DONOGAN_STATE_PUNCH_IDLE:              return DONOGAN_ANIM_Punch_Enter;
+    case DONOGAN_STATE_SPELL_ENTER:              return DONOGAN_ANIM_Spell_Simple_Enter;
+    case DONOGAN_STATE_SPELL_IDLE:              return DONOGAN_ANIM_Spell_Simple_Idle_Loop;
+    case DONOGAN_STATE_SPELL_EXIT:              return DONOGAN_ANIM_Spell_Simple_Exit;
     default:                        return DONOGAN_ANIM_Idle_Loop;
     }
 }
@@ -1567,7 +1574,8 @@ static void DonSetState(Donogan* d, DonoganState s)
                     || s == DONOGAN_STATE_JUMPING
                     || s == DONOGAN_STATE_SWIM_IDLE || s == DONOGAN_STATE_SWIM_MOVE 
                     || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_ANIM_PROC_BOW_PULL
-                    || s == DONOGAN_STATE_SLIDE);
+                    || s == DONOGAN_STATE_SLIDE
+                    || s == DONOGAN_STATE_SPELL_IDLE);
     bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN
                         || s == DONOGAN_STATE_JUMPING || s == DONOGAN_STATE_JUMP_START || s == DONOGAN_STATE_JUMP_LAND
                         || s == DONOGAN_STATE_ROLL || s == DONOGAN_STATE_AIR_ROLL
@@ -1645,6 +1653,11 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         d->prevL2 = L2;
         d->prevR1 = R1;
         d->prevL1 = L1;
+        bool square = padPresent ? pad->btnSquare : false;
+        bool squarePressed = square && !d->prevSquare;
+        bool squareReleased = !square && d->prevSquare;
+        d->prevSquare = square;
+
         //get bow ready
         if (d-> bowMode && R2Pressed && d->bowAnimCount >= 1) {
             BowPlay(d, 0, false, true);   // 0 = PULL, one-shot
@@ -1952,6 +1965,9 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         }
                         DonSetState(d, DONOGAN_STATE_ROLL);
                     }
+                    else if (squarePressed) {
+                        DonSetState(d, DONOGAN_STATE_SPELL_ENTER);
+                    }
                 }
             } break;
 
@@ -2043,6 +2059,35 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 }
             } break;
 
+            case DONOGAN_STATE_SPELL_ENTER: {
+                // Enter is non-loop; when it finishes, go to loop if still holding,
+                // otherwise immediately play Exit.
+                if (d->animFinished) {
+                    if (square) DonSetState(d, DONOGAN_STATE_SPELL_IDLE);
+                    else        DonSetState(d, DONOGAN_STATE_SPELL_EXIT);
+                }
+            } break;
+
+            case DONOGAN_STATE_SPELL_IDLE: {
+                // Hold to stay; release to exit
+                if (squareReleased) {
+                    DonSetState(d, DONOGAN_STATE_SPELL_EXIT);
+                    break;
+                }
+                // (Optional) you can freeze/slow locomotion here if desired.
+            } break;
+
+            case DONOGAN_STATE_SPELL_EXIT: {
+                // Exit is non-loop; when done, return to locomotion like other one-shots
+                if (d->animFinished) {
+                    float moveMag = sqrtf(lx * lx + ly * ly);
+                    if (moveMag > 0.1f)
+                        DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    else
+                        DonSetState(d, DONOGAN_STATE_IDLE);
+                }
+            } break;
+
             default: { // IDLE / WALK / RUN (grounded locomotion)
                 if (L2Pressed) {
                     DonSetState(d, DONOGAN_STATE_BOW_ENTER);
@@ -2115,7 +2160,12 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     }
 
                 }
-
+                if (squarePressed) {
+                    // If you have other modes like bow active, clear them here if needed
+                    // d->bowMode = false;
+                    DonSetState(d, DONOGAN_STATE_SPELL_ENTER);
+                    break;
+                }
                 // --- Ground stick logic ---
                 float targetY = d->groundY - d->firstBB.min.y * d->scale;
                 float dy = targetY - d->pos.y;
