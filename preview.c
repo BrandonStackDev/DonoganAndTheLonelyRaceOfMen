@@ -293,6 +293,7 @@ int main(void) {
     int pad_axis = 0;
     bool mouse = false;
     int gamepad = 0; // which gamepad to display
+    
     //chase camera
     Vector3 cameraTargetPos = { 0 };
     Vector3 cameraOffset = { 0.0f, 6.0f, -14.0f };
@@ -646,6 +647,8 @@ int main(void) {
     skyCam.projection = CAMERA_PERSPECTIVE;
 
     while (!WindowShouldClose()) {
+        // init disable roll (if we touch a wall, do not allow roll)
+        bool disableRoll = false;
         //auto flip day and night
         if (onLoad)
         {
@@ -1474,13 +1477,6 @@ int main(void) {
                             tireYOffset[i] -= (groundY - groundYy) * GetFrameTime();
                             if(tireYOffset[i]>0.2f){tireYOffset[i]=0.2f;}
                             if(tireYOffset[i]<-0.12f){tireYOffset[i]=-0.12f;}
-                            // float swtch = (groundYy - groundY) > 0 ? 1.0f : -1.0f;
-                            // if(i<2){truckPitch-=GetFrameTime()*swtch;}//front
-                            // else{truckPitch+=GetFrameTime()*swtch;}//back
-                            // if(i%2==0){truckRoll+=GetFrameTime()*swtch;}//left
-                            // else{truckRoll-=GetFrameTime()*swtch;}//right
-                            // if(truckRoll>PI/16.0f){truckRoll=PI/16.0f;}
-                            // if(truckRoll<-PI/16.0f){truckRoll=-PI/16.0f;}
                         }
                         rebuildFromTires = true;
                     }
@@ -1544,6 +1540,7 @@ int main(void) {
         }
         if (onLoad && donnyMode)
         {
+            bool hitEnvWall = false; //todo: do I actually want hitEnvWall, if not, just delete this and clean up.
             //env boxes (aka duct tape)
             for (int i = 0; i < gEnvBoundingBoxCount; i++)//todo: if this list ever gets big add culling
             {
@@ -1556,6 +1553,8 @@ int main(void) {
                     }
                     else if (gEnvBoundingBoxes[i].type == EBBT_WALL)
                     {
+                        disableRoll = true;
+                        hitEnvWall = true;
                         // Push Donogan out of WALL along min horizontal penetration (X/Z)
                         BoundingBox a = don.box;                         // player box
                         BoundingBox b = gEnvBoundingBoxes[i].box;        // wall box
@@ -1624,8 +1623,9 @@ int main(void) {
                                 don.groundY = hit.groundY; //overwrites ground collision (seems to work pretty well!)
                             }
                         }
-                        else if (hit.hit)
+                        else if (hit.hit && !hitEnvWall)//if we already hit env bounding box, use that instead
                         {
+                            disableRoll = true;
                             const float EPS = 1e-6f;
                             const float ALIGN_THRESH = 0.35f; //
 
@@ -1798,7 +1798,7 @@ int main(void) {
         {
             don.camPitch = pitch;    // your orbit pitch
         }
-        DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode);
+        DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);

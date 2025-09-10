@@ -1692,7 +1692,7 @@ void UpdateBalls(float dt) {
 }
 
 // ---------- Per-frame update (controller → state → anim/frame) ----------
-static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool freeze)
+static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool freeze, bool disableRoll)
 {
     if (!d) return;
     if (!freeze)
@@ -1844,7 +1844,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 }
                 d->pos = Vector3Add(d->pos, Vector3Scale(d->velXZ, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
 
-                if (circlePressed && !d->onGround)
+                if (circlePressed && !d->onGround && !disableRoll)
                 {
                     // Use current planar move direction (velXZ set from preview.c each frame)
                     float m = Vector3Length(d->velXZ);
@@ -2016,7 +2016,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         d->pos.y += d->liftoffBump;
                         DonSetState(d, DONOGAN_STATE_JUMP_START);
                     }
-                    else if (circlePressed) {
+                    else if (circlePressed && !disableRoll) {
                         // Use current planar move direction (velXZ set from preview.c each frame)
                         float m = Vector3Length(d->velXZ);
                         if (m > 0.1f) {
@@ -2118,7 +2118,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     break;
                 }
                 // roll:
-                if (circlePressed) {
+                if (circlePressed && !disableRoll) {
                     // Use current planar move direction (velXZ set from preview.c each frame)
                     float m = Vector3Length(d->velXZ);
                     if (m > 0.1f) {
@@ -2194,7 +2194,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 }
 
                 // roll:
-                if (circlePressed && d->onGround) {
+                if (circlePressed && d->onGround && !disableRoll) {
                     // Use current planar move direction (velXZ set from preview.c each frame)
                     float m = Vector3Length(d->velXZ);
                     if (m > 0.1f) {
