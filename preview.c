@@ -682,7 +682,7 @@ int main(void) {
         }
         if (!vehicleMode && donnyMode)
         {
-            bool inBowCam = don.bowMode || (don.bowReleaseCamHold > 0.0f);
+            bool inBowCam = (don.bowMode || (don.bowReleaseCamHold > 0.0f)) && don.state != DONOGAN_STATE_BOW_EXIT;
             float dt = GetFrameTime();
             // Right stick controls camera orbit (mouse RMB fallback also works)
             float rsx = havePad ? gpad.normRX : 0.0f;
@@ -747,7 +747,8 @@ int main(void) {
 
             don.camPitch = pitch;
             // While aiming, lock the shot direction to the camera yaw
-            if (inBowCam) { don.yawY = yaw; } // remove the '-' if you see it
+            if (inBowCam) { don.yawY = yaw; }
+            else if (don.state == DONOGAN_STATE_BOW_EXIT) { don.yawY = yaw + PI; don.bowMode = false; }
 
             float desiredRadius = inBowCam ? zoomRadius : baseRadius;
             float desiredFov = inBowCam ? zoomFov : baseFov;
