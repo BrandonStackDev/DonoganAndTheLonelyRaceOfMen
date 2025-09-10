@@ -1042,10 +1042,10 @@ int main(void) {
             if (IsKeyPressed(KEY_C)) { DisableCursor(); }
             if (IsKeyPressed(KEY_X)) { EnableCursor(); }
             if (IsKeyPressed(KEY_Y)) { contInvertY = !contInvertY; }
-            if (IsKeyPressed(KEY_M)) showMap = !showMap; // Toggle map
-            if (IsKeyDown(KEY_EQUAL)) mapZoom += 0.01f;  // Zoom in (+ key)
-            if (IsKeyDown(KEY_MINUS)) mapZoom -= 0.01f;  // Zoom out (- key)
-            mapZoom = Clamp(mapZoom, 0.5f, 4.0f);
+            if (IsKeyPressed(KEY_M)) { showMap = !showMap; } // Toggle map
+            //if (IsKeyDown(KEY_EQUAL)) mapZoom += 0.01f;  // Zoom in (+ key)
+            //if (IsKeyDown(KEY_MINUS)) mapZoom -= 0.01f;  // Zoom out (- key)
+            //mapZoom = Clamp(mapZoom, 0.5f, 4.0f);
             //end map input
             if (onLoad && IsKeyPressed(KEY_V)) { vehicleMode = !vehicleMode; donnyMode = false; EnableCursor(); }
             if (IsKeyPressed(KEY_B)) { displayBoxes = !displayBoxes; }
@@ -1063,10 +1063,8 @@ int main(void) {
             if (IsKeyDown(KEY_S)) move = Vector3Subtract(move, forward);
             if (IsKeyDown(KEY_D)) move = Vector3Add(move, right);
             if (IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
-            if (IsKeyDown(KEY_Z)) { dayTime = !dayTime; }
-            if (IsKeyDown(KEY_LEFT_SHIFT)) move.y -= (1.0f * MAP_SCALE);
+            if (IsKeyPressed(KEY_Z)) { dayTime = !dayTime; }
             if (IsKeyPressed(KEY_LEFT_CONTROL)) { donnyMode = !donnyMode; vehicleMode = false; }
-            if (IsKeyDown(KEY_SPACE)) move.y += (1.0f * MAP_SCALE);
             if (IsKeyDown(KEY_ENTER)) { chunks[chosenX][chosenY].curTreeIdx = 0; closestCX = chosenX; closestCY = chosenY; camera.position.x = chunks[closestCX][closestCY].center.x; camera.position.z = chunks[closestCX][closestCY].center.z; }
         }
         else if (don.isTalking)
@@ -1295,7 +1293,7 @@ int main(void) {
             lightTileColor = LerpColor(lightTileColor, (Color){160,180,200,254}, 0.02f * scaleNightTransition);
         }
         else { //night time
-            skyboxTint = LerpColor(skyboxTint, skyboxNight, 0.02f); //dont scale this one
+            skyboxTint = LerpColor(skyboxTint, skyboxNight, 0.002f); //dont scale this one
             backGroundColor = LerpColor(backGroundColor, backgroundNight, 0.002f * scaleNightTransition);
             LightPosDraw = LerpVector3(LightPosDraw, LightPosTargetNight, 0.04f * scaleNightTransition);
             LightTargetDraw = LerpVector3(LightTargetDraw, LightTargetTargetNight, 0.04f * scaleNightTransition);
