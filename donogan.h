@@ -1678,7 +1678,7 @@ static void SpawnBall(const Donogan* d, SpellBall* b) {
     b->vel = Vector3Scale(dir, 28.0f); // speed
     b->radius = 0.35f;
     b->growRate = 3.5f; // m/s growth
-    b->life = 1.25f;
+    b->life = 3.12f;
     b->alive = 1;
 }
 
