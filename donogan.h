@@ -1659,6 +1659,39 @@ float GetAnimationRate(DonoganAnim anim)
     else { return 2; }
 }
 
+typedef struct SpellBall {
+    Vector3 pos, vel;
+    float   radius, growRate;
+    float   life;      // seconds
+    int     alive;
+} SpellBall;
+
+#define MAX_BALLS 32
+SpellBall balls[MAX_BALLS] = { 0 };
+
+static void SpawnBall(const Donogan* d, SpellBall* b) {
+    Vector3 spawnOff = (Vector3){ 0.25f, 3.1f, 0.6f }; // tweak: right, up, forward from Donny
+    Vector3 spawn = Vector3Add(d->pos, RotYawOffset(spawnOff, d->yawY, d->scale, false));
+    Vector3 dir = Vector3Negate(DonAimForward(d, 0.0f));
+    dir.y = -dir.y;
+    b->pos = spawn;
+    b->vel = Vector3Scale(dir, 28.0f); // speed
+    b->radius = 0.35f;
+    b->growRate = 3.5f; // m/s growth
+    b->life = 1.25f;
+    b->alive = 1;
+}
+
+void UpdateBalls(float dt) {
+    for (int i = 0; i < MAX_BALLS; i++) {
+        if (!balls[i].alive) continue;
+        balls[i].pos = Vector3Add(balls[i].pos, Vector3Scale(balls[i].vel, dt));
+        balls[i].radius += balls[i].growRate * dt;
+        balls[i].life -= dt;
+        if (balls[i].life <= 0) balls[i].alive = 0;
+    }
+}
+
 // ---------- Per-frame update (controller → state → anim/frame) ----------
 static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool freeze)
 {
@@ -2003,6 +2036,13 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     }
                     else if (!d->bowMode && R2Pressed)
                     {
+                        // Find a free slot and spawn
+                        for (int i = 0; i < MAX_BALLS; ++i) {
+                            if (!balls[i].alive) {
+                                SpawnBall(d, &balls[i]);  // uses Donogan pos/yaw & aim
+                                break;
+                            }
+                        }
                         DonSetState(d, DONOGAN_STATE_SPELL_SHOOT);
                     }
                 }
@@ -2215,6 +2255,13 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 }
                 else if (!d->bowMode && R2Pressed)
                 {
+                    // Find a free slot and spawn
+                    for (int i = 0; i < MAX_BALLS; ++i) {
+                        if (!balls[i].alive) {
+                            SpawnBall(d, &balls[i]);  // uses Donogan pos/yaw & aim
+                            break;
+                        }
+                    }
                     DonSetState(d, DONOGAN_STATE_SPELL_SHOOT);
                     break;
                 }
@@ -2310,6 +2357,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     DonUpdateBubbles(d, dt);
     if (d->bowReleaseCamHold > 0.0f) d->bowReleaseCamHold -= dt;
     DonUpdateArrows(d, dt);
+    UpdateBalls(dt);
     d->box = UpdateBoundingBox(d->origBB, (Vector3) {d->pos.x, d->pos.y + 2.22f, d->pos.z});
     d->innerBox = UpdateBoundingBox(d->origInnerBB, (Vector3) { d->pos.x, d->pos.y + 2.22f, d->pos.z });
     d->outerBox = UpdateBoundingBox(d->origOuterBB, (Vector3) { d->pos.x, d->pos.y + 2.22f, d->pos.z });
@@ -2369,6 +2417,30 @@ static void DonDrawArrows(const Donogan* d) {
             (Color) {60, 60, 60, 255}      // head
         );
     }
+}
+
+void DrawBalls(Camera3D cam, Model ball, Shader lightningBall) {
+    // uniforms shared by all balls this frame
+    float time = GetTime();
+    SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uTime"), &time, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uViewPos"), &cam.position, SHADER_UNIFORM_VEC3);
+    Vector3 color = { 0.45f, 0.75f, 1.0f }; // icy blue
+    SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uColor"), &color, SHADER_UNIFORM_VEC3);
+    float intensity = 1.8f, dispAmp = 0.08f, nscale = 3.0f;
+    SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uIntensity"), &intensity, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uDispAmp"), &dispAmp, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uNoiseScale"), &nscale, SHADER_UNIFORM_FLOAT);
+
+    BeginBlendMode(BLEND_ADDITIVE); // make it bloom with itself
+    for (int i = 0; i < MAX_BALLS; i++) {
+        if (!balls[i].alive) continue;
+        Matrix m = MatrixMultiply(
+            MatrixScale(balls[i].radius, balls[i].radius, balls[i].radius),
+            MatrixTranslate(balls[i].pos.x, balls[i].pos.y, balls[i].pos.z)
+        );
+        DrawMesh(ball.meshes[0], ball.materials[0], m);
+    }
+    EndBlendMode();
 }
 
 #endif // DONOGAN_H

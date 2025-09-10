@@ -442,6 +442,19 @@ int main(void) {
     //--stars
     Shader starShader = LoadShader("shaders/120/lighting_star.vs","shaders/120/lighting_star.fs");
     starShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(starShader, "mvp");
+    //START LIGHTNING BALL SHADERS
+    Shader lightningBall = LoadShader("shaders/120/lightning_ball.vs", "shaders/120/lightning_ball.fs");
+    lightningBall.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(lightningBall, "mvp");
+    lightningBall.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(lightningBall, "model");
+    int lbTimeLoc = GetShaderLocation(lightningBall, "uTime");
+    int lbViewLoc = GetShaderLocation(lightningBall, "uViewPos");
+    int lbColorLoc = GetShaderLocation(lightningBall, "uColor");
+    int lbIntLoc = GetShaderLocation(lightningBall, "uIntensity");
+    int lbDispLoc = GetShaderLocation(lightningBall, "uDispAmp");
+    int lbNoiseLoc = GetShaderLocation(lightningBall, "uNoiseScale");
+    Mesh ballMesh = GenMeshSphere(0.5f, 24, 24);
+    Model ball = LoadModelFromMesh(ballMesh);
+    ball.materials[0].shader = lightningBall;
     // end all shaders
 
     //tree model //todo: replace with bounding boxes for reals in the models.h stuff
@@ -1921,6 +1934,7 @@ int main(void) {
                     DrawModel(don.bowModel, (Vector3) { 0 }, 1.0f, WHITE);*/
                 }
                 DonDrawArrows(&don);
+                DrawBalls(camera, ball, lightningBall);
                 //bubbles
                 if (don.inWater) { DonDrawBubbles(&don); }
             }
