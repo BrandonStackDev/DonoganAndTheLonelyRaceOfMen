@@ -210,11 +210,13 @@ typedef enum {
     DONOGAN_STATE_PUNCH_IDLE,
     DONOGAN_STATE_SPELL_ENTER,
     DONOGAN_STATE_SPELL_IDLE,
-    DONOGAN_STATE_SPELL_EXIT
+    DONOGAN_STATE_SPELL_EXIT,
+    DONOGAN_STATE_SPELL_SHOOT
 } DonoganState;
 
 // ---------- Anim IDs present in your GLB (+procedural negatives)----------
 typedef enum {
+    DONOGAN_ANIM_PROC_SPELL_SHOOT = -6,
     DONOGAN_ANIM_PROC_BOW_ENTER = -5,
     DONOGAN_ANIM_PROC_BOW_AIM = -4,
     DONOGAN_ANIM_PROC_BOW_PULL = -3,
@@ -293,6 +295,7 @@ typedef enum {
     BOW_KFG_PULL,
     BOW_KFG_REL,
     BOW_KFG_EXIT,
+    SPELL_KFG_SHOOT,
     BOW_KFG_COUNT
 } BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
 typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
@@ -812,6 +815,30 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g4->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 85.0f);
 }
 
+static void DonInitSpellShootKeyframeGroups(Donogan* d)
+{
+    // Bones we’ll drive for the bow pose (you can add fingers later):
+    const DonBone BONES[] = {
+        DON_BONE_DEF_UPPER_ARM_R,
+        DON_BONE_DEF_UPPER_ARM_L,
+        DON_BONE_DEF_HAND_R,
+        DON_BONE_DEF_HAND_L,
+    };
+    const int NUM_BONES = (int)(sizeof(BONES) / sizeof(BONES[0]));
+
+    // --- ENTER ---
+    KeyFrameGroup* g0 = &d->kfGroups[SPELL_KFG_SHOOT];
+    g0->state = DONOGAN_STATE_SPELL_SHOOT;
+    g0->anim = DONOGAN_ANIM_PROC_SPELL_SHOOT;
+    g0->maxKey = 1;
+    g0->curKey = 0;
+    KfMakeZeroKey(&g0->keyFrames[0], 1.0f, BONES, NUM_BONES);
+    g0->keyFrames[0].kfBones[0].rot = QuatXYZDeg(95, 0, -15);
+    g0->keyFrames[0].kfBones[1].rot = QuatXYZDeg(100, -120, 10);
+    g0->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0, 0, -70);
+    g0->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 0, 60);
+}
+
 // Choose the active keyframe group based on current proc anim
 static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     switch (d->curAnimId) {
@@ -820,6 +847,7 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     case DONOGAN_ANIM_PROC_BOW_PULL:  return &d->kfGroups[BOW_KFG_PULL];  // NEW
     case DONOGAN_ANIM_PROC_BOW_REL:   return &d->kfGroups[BOW_KFG_REL];   // NEW
     case DONOGAN_ANIM_PROC_BOW_EXIT:  return &d->kfGroups[BOW_KFG_EXIT];
+    case DONOGAN_ANIM_PROC_SPELL_SHOOT:  return &d->kfGroups[SPELL_KFG_SHOOT];
     default:                          return NULL;
     }
 }
@@ -1135,6 +1163,9 @@ static void DonApplyProcFrame(Donogan* d)
         break;
     case DONOGAN_ANIM_PROC_BOW_EXIT:
         if (d->animTime >= BOW_EXIT_T) d->animFinished = true;
+        break;
+    case DONOGAN_ANIM_PROC_SPELL_SHOOT:
+        if (d->animTime >= 0.4f) d->animFinished = true;
         break;
     default:
         d->animFinished = true;  // unknown proc id → finish immediately
@@ -1481,6 +1512,7 @@ static Donogan InitDonogan(void)
     //proc anim setup
     BowStripScaleAndRootOffset(&d);
     DonInitBowKeyframeGroups(&d);
+    DonInitSpellShootKeyframeGroups(&d);
     DonInitArrows(&d);
 
     DonSnapToGround(&d);
@@ -1558,6 +1590,7 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_SPELL_ENTER:              return DONOGAN_ANIM_Spell_Simple_Enter;
     case DONOGAN_STATE_SPELL_IDLE:              return DONOGAN_ANIM_Spell_Simple_Idle_Loop;
     case DONOGAN_STATE_SPELL_EXIT:              return DONOGAN_ANIM_Spell_Simple_Exit;
+    case DONOGAN_STATE_SPELL_SHOOT:     return DONOGAN_ANIM_PROC_SPELL_SHOOT;
     default:                        return DONOGAN_ANIM_Idle_Loop;
     }
 }
@@ -1968,6 +2001,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     else if (squarePressed) {
                         DonSetState(d, DONOGAN_STATE_SPELL_ENTER);
                     }
+                    else if (!d->bowMode && R2Pressed)
+                    {
+                        DonSetState(d, DONOGAN_STATE_SPELL_SHOOT);
+                    }
                 }
             } break;
 
@@ -2082,9 +2119,19 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 if (d->animFinished) {
                     float moveMag = sqrtf(lx * lx + ly * ly);
                     if (moveMag > 0.1f)
+                    {
                         DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    }
                     else
+                    {
                         DonSetState(d, DONOGAN_STATE_IDLE);
+                    }
+                }
+            } break;
+
+            case DONOGAN_STATE_SPELL_SHOOT: {
+                if (d->animFinished) {
+                    DonSetState(d, DONOGAN_STATE_IDLE);
                 }
             } break;
 
@@ -2164,6 +2211,11 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     // If you have other modes like bow active, clear them here if needed
                     // d->bowMode = false;
                     DonSetState(d, DONOGAN_STATE_SPELL_ENTER);
+                    break;
+                }
+                else if (!d->bowMode && R2Pressed)
+                {
+                    DonSetState(d, DONOGAN_STATE_SPELL_SHOOT);
                     break;
                 }
                 // --- Ground stick logic ---
