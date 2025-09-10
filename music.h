@@ -45,7 +45,6 @@ struct GameMusic {
 };
 
 // Your global game state: add indices & a single active Music object.
-// We keep only one Music loaded at a time, per your plan.
 typedef struct {
     bool invY, invX;
     float musicVol, soundVol;
@@ -141,6 +140,7 @@ static inline void GM_Select(GameState* gs, const GameMusic* lib, int albumIndex
 // Example loader that (un)loads the single current Music stream.
 // Call this when you change selection (GM_Select), or when starting playback.
 // NOTE: Requires audio device initialized (InitAudioDevice).
+// music.h
 static inline bool GM_LoadCurrent(GameState* gs, const GameMusic* lib) {
     const Album* a = GM_GetAlbum(lib, gs->currentAlbumIndex);
     const Song* s = GM_GetSong(a, gs->currentSongIndex);
@@ -150,14 +150,33 @@ static inline bool GM_LoadCurrent(GameState* gs, const GameMusic* lib) {
         UnloadMusicStream(gs->currentMusic);
         gs->currentMusicLoaded = false;
     }
-    gs->currentMusic = LoadMusicStream(s->file);
-    if (gs->currentMusic.frameCount > 0) {
-        SetMusicVolume(gs->currentMusic, gs->musicVol);
-        gs->currentMusicLoaded = true;
-        return true;
+
+    // Helpful: verify the file is there for better logs
+    bool exists = FileExists(s->file);
+    if (!exists) {
+        TraceLog(LOG_ERROR, "GM_LoadCurrent: file missing: %s", s->file);
+        return false;
     }
+
+    const int maxAttempts = 7;
+    for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+        gs->currentMusic = LoadMusicStream(s->file);
+        if (gs->currentMusic.frameCount > 0) {
+            SetMusicVolume(gs->currentMusic, gs->musicVol);
+            gs->currentMusicLoaded = true;
+            return true;
+        }
+
+        TraceLog(LOG_WARNING, "GM_LoadCurrent: open failed (attempt %d/%d) for %s",
+            attempt + 1, maxAttempts, s->file);
+        // Yield briefly to let the file manager/decoder catch up
+        WaitTime(0.05); // 50 ms
+    }
+
+    TraceLog(LOG_ERROR, "GM_LoadCurrent: giving up on %s", s->file);
     return false;
 }
+
 
 
 #endif // MUSIC_H

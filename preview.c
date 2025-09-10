@@ -306,6 +306,8 @@ int main(void) {
     int modelSearchType = 0;
     //---------------RAYLIB INIT STUFF---------------------------------------
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Donogan And The Lonely Race Of Men");
+    //audio
+    SetAudioStreamBufferSizeDefault(4096);
     InitAudioDevice();
     GameMusic_Init(&gMusic);
     GameState_InitAudio(&gAudio);
