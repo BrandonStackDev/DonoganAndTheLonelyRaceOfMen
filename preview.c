@@ -901,12 +901,14 @@ int main(void) {
         if(wasTilesDocumented)
         {
             int gx, gy;
+            int processed = 0;
+            int MAX_TO_PROCESS = 20;
             float time = GetTime(); // or your own time tracker
             SetShaderValue(starShader, GetShaderLocation(starShader, "u_time"), &time, SHADER_UNIFORM_FLOAT);
             GetGlobalTileCoords(camera.position, &gx, &gy);
             int playerTileX  = gx % TILE_GRID_SIZE;
             int playerTileY  = gy % TILE_GRID_SIZE;
-            for (int te = 0; te < foundTileCount; te++)
+            for (int te = 0; te < foundTileCount && processed < MAX_TO_PROCESS; te++)
             {
                 bool maybeNeeded = (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64); //todo: testing this to see if it is my issue
                 MUTEX_LOCK(mutex);
@@ -923,15 +925,18 @@ int main(void) {
                     //mark work done
                     foundTiles[te].isLoaded = true;
                     //and now its safe to unlock
+                    processed++;
                 }
                 else if(foundTiles[te].isLoaded && !maybeNeeded)
                 {
                     foundTiles[te].isLoaded = false;
                     foundTiles[te].isReady = false;
                     UnloadModel(foundTiles[te].model);
+                    processed++;
                 }
                 MUTEX_UNLOCK(mutex);
             }
+            if (processed > 0) { TraceLog(LOG_INFO, "processed %d tiles this loop", processed); }
         }
         for (int cy = 0; cy < CHUNK_COUNT; cy++) {
             for (int cx = 0; cx < CHUNK_COUNT; cx++) {

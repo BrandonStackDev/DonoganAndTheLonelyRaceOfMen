@@ -48,6 +48,8 @@ typedef unsigned(__stdcall* thread_func)(void*);
 static int thread_start_detached(thread_func fn, void* arg) {
     uintptr_t th = _beginthreadex(NULL, 0, fn, arg, 0, NULL);
     if (!th) return -1;
+    HANDLE h = (HANDLE)th;
+    SetThreadPriority(h, THREAD_PRIORITY_BELOW_NORMAL);  // or THREAD_PRIORITY_LOWEST
     CloseHandle((HANDLE)th);   // detach
     return 0;
 }
@@ -963,9 +965,9 @@ static unsigned __stdcall FileManagerThread(void* arg)
     while (!quitFileManager)
     {
         sleep_s(1);
-        int localCount;
         for (int te = 0; te < foundTileCount; te++)
         {
+            if (te % 666 == 0) { sleep_ms(4); }
             if (quitFileManager) { break; }
             if (!wasTilesDocumented) { continue; }
             if (!foundTiles[te].isReady && chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64)
