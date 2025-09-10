@@ -529,7 +529,6 @@ static inline void KfMakeZeroKey(KeyFrame* kf, float t,
 
 //bow anim stuff
 // Forward from yaw+pitch (positive pitch looks UP)
-// Forward from yaw+pitch (positive pitch looks UP)
 static inline Vector3 DonAimForward(const Donogan* d, float upBiasDeg)
 {
     float cy = cosf(d->yawY), sy = sinf(d->yawY);
@@ -538,7 +537,7 @@ static inline Vector3 DonAimForward(const Donogan* d, float upBiasDeg)
     // camera → world forward (opposite of target→camera):
     Vector3 dir = (Vector3){ -sy * cp, -sp, -cy * cp };
 
-    if (upBiasDeg != 0.0f) dir.y += tanf(DEG2RAD * upBiasDeg);
+    if (upBiasDeg != 0.0f) dir.y += sinf(DEG2RAD * upBiasDeg);
     return Vector3Normalize(dir);
 }
 
@@ -1672,7 +1671,7 @@ SpellBall balls[MAX_BALLS] = { 0 };
 static void SpawnBall(const Donogan* d, SpellBall* b) {
     Vector3 spawnOff = (Vector3){ 0.25f, 3.1f, 0.6f }; // tweak: right, up, forward from Donny
     Vector3 spawn = Vector3Add(d->pos, RotYawOffset(spawnOff, d->yawY, d->scale, false));
-    Vector3 dir = Vector3Negate(DonAimForward(d, 0.0f));
+    Vector3 dir = Vector3Negate(DonAimForward(d, 12.34));
     dir.y = -dir.y;
     b->pos = spawn;
     b->vel = Vector3Scale(dir, 28.0f); // speed
