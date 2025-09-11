@@ -27,8 +27,8 @@ void main()
 {
 // ----- hardcoded wind params (edit these 2 if desired) -----
     const vec2  WIND_DIR = normalize(vec2(0.6, 0.8)); // constant XZ direction
-    const float AMP      = 0.12;                      // sway amplitude at tip (meters)
-    const float FREQ     = 0.50;                      // Hz (cycles per second)
+    const float AMP      = 0.13;                      // sway amplitude at tip (meters)
+    const float FREQ     = 0.20;                      // Hz (cycles per second)
     // ----------------------------------------------------------
 
     // 0 at base, 1 at tip (most grass uses V for height)
@@ -45,9 +45,9 @@ void main()
 
     //stuff
     // --- bend top down if above threshold (branchless) ---
-    const float THRESH_Y  = 2.0;   // start bending above this height (object space)
-    const float STR_Y     = 0.5;   // how strongly to bend Y (bigger = more downward)
-    const float STR_XZ    = 0.25;  // how strongly to pull X/Z back toward the stem
+    const float THRESH_Y  = 2.21;   // start bending above this height (object space)
+    const float STR_Y     = 0.3;   // how strongly to bend Y (bigger = more downward)
+    const float STR_XZ    = 0.2;  // how strongly to pull X/Z back toward the stem
     
     float over = max(0.0, vertexPosition.y - THRESH_Y);   // amount above threshold
     
