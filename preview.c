@@ -770,7 +770,17 @@ int main(void) {
                     StartTimer(&don.talkStartTimer);
                 }
             }
-            
+            // --->>> SUMMON (R3 press to start/cancel)
+            {
+                static int prevR3 = 0;
+                int r3 = havePad ? (gpad.btnR3 > 0) : 0;  // ControllerData should already have btnR3 like btnL3
+
+                if (r3 && !prevR3) {
+                    if (!truckSummonActive) TruckSummonStart();
+                    else                    TruckSummonCancel(); // press again to cancel
+                }
+                prevR3 = r3;
+            }
         }
         else if (vehicleMode)
         {
@@ -854,6 +864,51 @@ int main(void) {
                 don.pos = Vector3Add(truckPosition, (Vector3) {3,0,-2});
             }
         }
+        // --->>> SUMMON (autopilot)
+        if (truckSummonActive && !vehicleMode) {
+            float dt = GetFrameTime();
+
+            // Vector to Donny on XZ plane
+            Vector3 to = YOnly(Vector3Subtract(don.pos, truckPosition));
+            float dist = Vector3Length(to);
+
+            // Arrived?
+            if (dist <= truckSummonStopRadius) {
+                // Smooth stop and end
+                float brake = truckSummonAccel * 2.0f * dt;
+                if (truckSpeed > brake) truckSpeed -= brake;
+                else if (truckSpeed < -brake) truckSpeed += brake;
+                else                          truckSpeed = 0.0f;
+
+                if (fabsf(truckSpeed) < 0.01f) {
+                    TruckSummonCancel();
+                }
+            }
+            else {
+                // Desired yaw: forward is +Z in your world, so atan2(x,z)
+                Vector3 dir = Vector3Scale(to, 1.0f / (dist + 1e-6f));
+                float targetYaw = atan2f(dir.x, dir.z);
+                float yawErr = WrapAngle(targetYaw - truckAngle);
+
+                // Turn toward target with capped yaw rate
+                float maxTurn = truckSummonSteerRate * dt;
+                if (yawErr > maxTurn) yawErr = maxTurn;
+                if (yawErr < -maxTurn) yawErr = -maxTurn;
+                truckAngle += yawErr;
+
+                // Speed target: slow down when turning hard
+                float turnFactor = 1.0f - fminf(fabsf(yawErr) / (PI * 0.5f), 1.0f);
+                float want = truckSummonMaxSpeed * (0.25f + 0.75f * turnFactor);
+
+                // Approach want speed with accel clamp (also works as brake)
+                float dv = want - truckSpeed;
+                float lim = truckSummonAccel * dt;
+                if (dv > lim) dv = lim;
+                if (dv < -lim) dv = -lim;
+                truckSpeed += dv;
+            }
+        }
+
         //old important stuff
         float time = GetTime();
         SetShaderValue(waterShader, timeLoc, &time, SHADER_UNIFORM_FLOAT);
@@ -1256,7 +1311,7 @@ int main(void) {
             }
         }
 
-        if (!vehicleMode) { truckSpeed = 0; }
+        if (!vehicleMode && !truckSummonActive) { truckSpeed = 0; }
         truckForward = (Vector3){ sinf(truckAngle), sinf(-truckPitch), cosf(truckAngle) };
         Vector3 tempTruck = Vector3Scale(truckForward, truckSpeed);
         if(isTruckSliding)
@@ -2597,6 +2652,7 @@ int main(void) {
                 DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
                 DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
             }
+            if (truckSummonActive) DrawText("SUMMONING...", 24, 230, 20, YELLOW);
         }
         if (showMap) {
             // Map drawing area (scaled by zoom)

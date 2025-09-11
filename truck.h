@@ -231,4 +231,30 @@ wc.x + TIRE_BOX_HALF, wc.y + TIRE_BOX_HALF, wc.z + TIRE_BOX_HALF
     }
 }
 
+// --->>> SUMMON (state + helpers)
+static bool  truckSummonActive = false;
+static float truckSummonStopRadius = 4.25f;   // stop this far from Donny
+static float truckSummonMaxSpeed = 10.0f;    // cap speed while summoning
+static float truckSummonAccel = 12.0f;    // accel/decel rate (u/s^2)
+static float truckSummonSteerRate = 2.0f;     // rad/s yaw rate cap
+
+static inline float WrapAngle(float a) {
+    while (a > PI) a -= PI * 2.0f;
+    while (a < -PI) a += PI * 2.0f;
+    return a;
+}
+
+static inline Vector3 YOnly(Vector3 v) { return (Vector3) { v.x, 0.0f, v.z }; }
+
+static void TruckSummonStart(void) {
+    truckSummonActive = true;
+    // cute flair: honk once on start if you want
+    // if (!IsSoundPlaying(carHorn)) PlaySound(carHorn);
+}
+
+static void TruckSummonCancel(void) {
+    truckSummonActive = false;
+}
+
+
 #endif // TRUCK_H
