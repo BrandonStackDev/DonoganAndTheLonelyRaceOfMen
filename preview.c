@@ -1206,71 +1206,73 @@ int main(void) {
             don.velXZ = (Vector3){ donMove.x, 0, donMove.z };
             //DonUpdate(&don, havePad ? &gpad : NULL, dt);
         }
-        //adjust LOD for applied movement----------------------------------------------------------------------
-        //truck position
+        if (vehicleMode)
+        {
+            //truck position
         // Clamp speed
-        if(truckAirState==GROUND) //handle rolling down hills
-        {
-            if(truckPitch>=PI/15.0f && (fabsf(gpad.normLY) < 0.1f) ) //roll down hills
+            if (truckAirState == GROUND) //handle rolling down hills
             {
-                truckSpeed += GetFrameTime() * GRAVITY * (1.0f/16.0f) * (1+truckSpeed) * (1+truckSpeed);
+                if (truckPitch >= PI / 15.0f && (fabsf(gpad.normLY) < 0.1f)) //roll down hills
+                {
+                    truckSpeed += GetFrameTime() * GRAVITY * (1.0f / 16.0f) * (1 + truckSpeed) * (1 + truckSpeed);
+                }
+                else if (truckPitch <= -PI / 15.0f && (fabsf(gpad.normLY) < 0.1f))//reverse
+                {
+                    truckSpeed -= GetFrameTime() * GRAVITY * (1.0f / 16.0f) * (1 + truckSpeed) * (1 + truckSpeed);
+                }
+                else
+                {
+                    truckForward.y = 0;
+                }
             }
-            else if(truckPitch<=-PI/15.0f && (fabsf(gpad.normLY) < 0.1f) )//reverse
+            if (truckSpeed > maxSpeed) { truckSpeed = maxSpeed; }
+            if (truckSpeed < maxSpeedReverse) { truckSpeed = maxSpeedReverse; printf("max truck speed reverse\n"); }
+
+            //sliding
+            if (truckAirState == GROUND && truckSlideSpeed >= 0) // sliding, shut off if not on the ground or the slide is complete
             {
-                truckSpeed -= GetFrameTime() * GRAVITY * (1.0f/16.0f) * (1+truckSpeed) * (1+truckSpeed);
+                //sliding 
+                if (truckSpeed > 1.23 && fabsf(gpad.normLX) > 0.56f && !isTruckSliding)//trigger slide
+                {
+                    //printf("sliding ... \n");
+                    isTruckSliding = true;
+                    truckSlidePeek = false; // we just started
+                    truckSlideSpeed += GetFrameTime();
+                    rotSlide = gpad.normLX * -PI / 1.8f;//gpad.normLX>0?-PI/2.0f:PI/2.0f; //use this to control which way we slide
+                    truckSlideForward = RotateY(truckForward, rotSlide);
+                }
+                else if (isTruckSliding && fabsf(gpad.normLX) > 0.12)
+                {
+                    rotSlide = gpad.normLX * -PI / 1.8f;//gpad.normLX>0?-PI/2.0f:PI/2.0f; //use this to control which way we slide
+                    truckSlideForward = RotateY(truckForward, rotSlide);
+                    if (truckSlidePeek) { truckSlideSpeed -= GetFrameTime(); }
+                    else { truckSlideSpeed += GetFrameTime() * truckSpeed; }
+                    if (truckSlideSpeed > 0.71f && fabsf(gpad.normLX) < 0.88f) { truckSlidePeek = true; printf("sliding peeked (%f).... \n", fabsf(gpad.normLX)); }
+                    if (truckSlideSpeed > 1.20f) { truckSlideSpeed = 1.200001f; }
+                    truckSpeed -= GetFrameTime();
+                    //truckSlideForward = RotateY(truckForward,rotSlide); //try with and without this line
+                }
+                else
+                {
+                    //printf("fin \n");
+                    //turn off slide if not on ground
+                    isTruckSliding = false;
+                    truckSlidePeek = false;
+                    truckSlideSpeed = 0;
+                    rotSlide = 0;
+                }
             }
             else
             {
-                truckForward.y=0;
-            }
-        }
-        if (truckSpeed > maxSpeed) {truckSpeed = maxSpeed;}
-        if (truckSpeed < maxSpeedReverse) {truckSpeed = maxSpeedReverse;printf("max truck speed reverse\n");}
-        
-        //sliding
-        if(truckAirState==GROUND && truckSlideSpeed>=0) // sliding, shut off if not on the ground or the slide is complete
-        {
-            //sliding 
-            if(truckSpeed > 1.23 && fabsf(gpad.normLX) > 0.56f && !isTruckSliding)//trigger slide
-            {
-                //printf("sliding ... \n");
-                isTruckSliding = true;
-                truckSlidePeek = false; // we just started
-                truckSlideSpeed+=GetFrameTime();
-                rotSlide = gpad.normLX * -PI/1.8f;//gpad.normLX>0?-PI/2.0f:PI/2.0f; //use this to control which way we slide
-                truckSlideForward = RotateY(truckForward,rotSlide);
-            }
-            else if (isTruckSliding && fabsf(gpad.normLX) > 0.12)
-            {
-                rotSlide = gpad.normLX * -PI/1.8f;//gpad.normLX>0?-PI/2.0f:PI/2.0f; //use this to control which way we slide
-                truckSlideForward = RotateY(truckForward,rotSlide);
-                if(truckSlidePeek){truckSlideSpeed-=GetFrameTime();}
-                else{truckSlideSpeed+=GetFrameTime() * truckSpeed;}
-                if(truckSlideSpeed > 0.71f && fabsf(gpad.normLX) < 0.88f){truckSlidePeek=true;printf("sliding peeked (%f).... \n", fabsf(gpad.normLX));}
-                if(truckSlideSpeed > 1.20f){truckSlideSpeed = 1.200001f;}
-                truckSpeed -= GetFrameTime();
-                //truckSlideForward = RotateY(truckForward,rotSlide); //try with and without this line
-            }
-            else
-            {
-                //printf("fin \n");
-                //turn off slide if not on ground
-                isTruckSliding = false;
-                truckSlidePeek = false;
-                truckSlideSpeed = 0;
-                rotSlide = 0;
-            }
-        }
-        else
-        {
-            if(isTruckSliding)
-            {
-                printf("!\n");//this should never happen
-                //turn off slide if not on ground
-                isTruckSliding = false;
-                truckSlidePeek = false;
-                truckSlideSpeed = 0;
-                rotSlide = 0;
+                if (isTruckSliding)
+                {
+                    printf("!\n");//this should never happen
+                    //turn off slide if not on ground
+                    isTruckSliding = false;
+                    truckSlidePeek = false;
+                    truckSlideSpeed = 0;
+                    rotSlide = 0;
+                }
             }
         }
 
@@ -2045,17 +2047,8 @@ int main(void) {
                 }
                 // ============================================================================
             }
-            if (onLoad && truck.meshCount > 0)
+            if (onLoad)
             {
-                if (displayTruckPoints)
-                {
-                    DrawSphere(front, 0.41f, BLUE);
-                    DrawSphere(back, 0.41f, RED);
-                }
-                if (displayTruckForward)
-                {
-                    DrawLine3D(truckOrigin, Vector3Add(truckOrigin, Vector3Scale(truckForward, (1 + truckSpeed) * truckLength + 1)), MAGENTA);
-                }
                 DrawMesh(truck.meshes[0], truckMaterial, rotationTruck);//tireOffsets[i]
                 for (int i = 0; i < 4; i++)
                 {
@@ -2063,7 +2056,7 @@ int main(void) {
                     float tireAngleDelta = 0.0f;//float tireAngleDelta = tireAngleQ;  // Default for rear tires
                     // Compute tire-specific spin and steering
                     float steerAngle = 0.0f;
-                    if (i < 2) {
+                    if (i < 2 && vehicleMode) {
                         // Front tires only — steer left/right
                         steerAngle = PI / 8.0f * gpad.normLX; // tweak max angle
                     }
