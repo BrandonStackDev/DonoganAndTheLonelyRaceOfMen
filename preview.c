@@ -1381,6 +1381,74 @@ int main(void) {
             bool hitTree = false;
             if (vehicleMode)
             {
+                //building/scene collision for truck
+                for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
+                {
+                    if (i == SCENE_HOME_CABIN_01) { continue; }
+                    if (CheckCollisionBoxes(Scenes[i].box, TruckBoxFront)
+                        || CheckCollisionBoxes(Scenes[i].box, TruckBoxBack)
+                        || CheckCollisionBoxes(Scenes[i].box, TruckBoxLeft)
+                        || CheckCollisionBoxes(Scenes[i].box, TruckBoxRight))
+                    {
+                        //stuff...thanks to chatGPT hahahaha muh hahahahah muh hahahah!!!! (hey look a nickel?)
+                        // --- scene/building collision response (MIT/MTD push) ---
+                        const float SKIN = 0.02f;
+                        BoundingBox prop = Scenes[i].box;
+
+                        Vector3 bestPush = (Vector3){ 0 };
+                        float   bestScore = FLT_MAX;
+
+                        BoundingBox body[4] = { TruckBoxFront, TruckBoxBack, TruckBoxLeft, TruckBoxRight };
+
+                        for (int b = 0; b < 4; ++b)
+                        {
+                            BoundingBox bb = body[b];
+
+                            // Signed overlaps (positive means we need to push +axis, negative -> push -axis)
+                            float left = prop.max.x - bb.min.x;  // +X push
+                            float right = bb.max.x - prop.min.x; // -X push
+                            float bottom = prop.max.y - bb.min.y;  // +Y push
+                            float top = bb.max.y - prop.min.y; // -Y push
+                            float back = prop.max.z - bb.min.z;  // +Z push
+                            float front = bb.max.z - prop.min.z; // -Z push
+
+                            // If any pair doesn't overlap, skip (extra safety)
+                            if (left <= 0 || right <= 0 || bottom <= 0 || top <= 0 || back <= 0 || front <= 0) continue;
+
+                            float ox = (left < right) ? left : -right;
+                            float oy = (bottom < top) ? bottom : -top;
+                            float oz = (back < front) ? back : -front;
+
+                            // Choose smallest absolute axis; add a tiny skin to avoid re-penetration next frame
+                            float ax = fabsf(ox), ay = fabsf(oy), az = fabsf(oz);
+                            Vector3 push = { 0 };
+
+                            if (ax <= ay && ax <= az)      push.x = (ox > 0 ? ox + SKIN : ox - SKIN);
+                            else if (ay <= ax && ay <= az) push.y = (oy > 0 ? oy + SKIN : oy - SKIN);
+                            else                           push.z = (oz > 0 ? oz + SKIN : oz - SKIN);
+
+                            // Score this candidate (L1 is fine here; L2 also ok)
+                            float score = fabsf(push.x) + fabsf(push.y) + fabsf(push.z);
+                            if (score < bestScore) { bestScore = score; bestPush = push; }
+                        }
+
+                        if (bestScore < FLT_MAX)
+                        {
+                            // Bias: don't yank the truck downward (lets you "step up" but not get slammed down)
+                            if (bestPush.y < 0.0f) bestPush.y = 0.0f;
+
+                            truckPosition = Vector3Add(truckPosition, bestPush);
+                            truckOrigin = Vector3Add(truckOrigin, bestPush);
+
+                            truckSpeed *= 0.6f;   // soften impact a bit
+                            disableRoll = true;   // stabilize chassis for this frame
+                            UpdateTruckBoxes();
+
+                            // Optional: if one building hit is enough per frame, early-out the scene loop
+                            // break;
+                        }
+                    }
+                }
                 //truck static props collision
                 for (int cy = 0; cy < CHUNK_COUNT; cy++) {
                     for (int cx = 0; cx < CHUNK_COUNT; cx++) {
