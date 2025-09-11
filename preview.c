@@ -1405,13 +1405,13 @@ int main(void) {
 
                                     // if the tire bottom is below the rock top, lift the truck so it rests on it
                                     float tireBottom = tb.min.y;
-                                    float desiredBottom = tree.box.max.y + SKIN;
+                                    float desiredBottom = tree.box.max.y;
                                     if (tireBottom < desiredBottom)
                                     {
                                         float dy = desiredBottom - tireBottom;
                                         //truckPosition.y += dy;
                                         //truckOrigin.y += dy;      // keep origin consistent for anything using it
-                                        //tireYPos[i] += dy;
+                                        //tireYPos[t] += dy;
                                         Vector3 localOffset = RotateY(tireOffsets[t], -truckAngle);
                                         Vector3 pos = Vector3Add(truckOrigin, localOffset);
                                         float groundYy = desiredBottom;
@@ -1429,55 +1429,55 @@ int main(void) {
                                 }
                                 if (lifted) { UpdateTruckBoxes();}// keep boxes in sync
                                 // Rocks do not block—rolling over is handled by vertical lift only.
-                                continue;
                             }
-
-                            // ---- EVERYTHING ELSE: MIT/MTD push like Donny ----
-                            // narrow-phase against the actual prop box
-                            BoundingBox prop = tree.box;
-                            Vector3 push = (Vector3){ 0 };
-                            bool hit = false;
-
-                            // test each body box; sum axis-minimal pushes
-                            BoundingBox body[4] = { TruckBoxFront, TruckBoxBack, TruckBoxLeft, TruckBoxRight };
-                            for (int b = 0; b < 4; ++b)
+                            else
                             {
-                                if (!CheckCollisionBoxes(body[b], prop)) continue;
+                                // ---- EVERYTHING ELSE: MIT/MTD push like Donny ----
+                                // narrow-phase against the actual prop box
+                                BoundingBox prop = tree.box;
+                                Vector3 push = (Vector3){ 0 };
+                                bool hit = false;
 
-                                // per-axis overlaps (positive => penetration depth)
-                                float left = prop.max.x - body[b].min.x; // +X push
-                                float right = body[b].max.x - prop.min.x;    // -X push
-                                float bottom = prop.max.y - body[b].min.y; // +Y (landing on top)
-                                float top = body[b].max.y - prop.min.y;    // -Y (hitting underside)
-                                float back = prop.max.z - body[b].min.z; // +Z push
-                                float front = body[b].max.z - prop.min.z;    // -Z push
-                                // pick smallest on each pair -> signed overlaps
-                                float ox = (left < right) ? left : -right;
-                                float oy = (bottom < top) ? bottom : -top;
-                                float oz = (back < front) ? back : -front;  // formulation like Donny’s MIT resolver  :contentReference[oaicite:2]{index=2}
+                                // test each body box; sum axis-minimal pushes
+                                BoundingBox body[4] = { TruckBoxFront, TruckBoxBack, TruckBoxLeft, TruckBoxRight };
+                                for (int b = 0; b < 4; ++b)
+                                {
+                                    if (!CheckCollisionBoxes(body[b], prop)) continue;
 
-                                // choose axis with smallest absolute overlap for this box
-                                float ax = fabsf(ox), ay = fabsf(oy), az = fabsf(oz);
-                                if (ax <= ay && ax <= az)      push.x += (ox > 0 ? ox + SKIN : ox - SKIN);
-                                else if (ay <= ax && ay <= az) push.y += (oy > 0 ? oy + SKIN : oy - SKIN);
-                                else                           push.z += (oz > 0 ? oz + SKIN : oz - SKIN);
+                                    // per-axis overlaps (positive => penetration depth)
+                                    float left = prop.max.x - body[b].min.x; // +X push
+                                    float right = body[b].max.x - prop.min.x;    // -X push
+                                    float bottom = prop.max.y - body[b].min.y; // +Y (landing on top)
+                                    float top = body[b].max.y - prop.min.y;    // -Y (hitting underside)
+                                    float back = prop.max.z - body[b].min.z; // +Z push
+                                    float front = body[b].max.z - prop.min.z;    // -Z push
+                                    // pick smallest on each pair -> signed overlaps
+                                    float ox = (left < right) ? left : -right;
+                                    float oy = (bottom < top) ? bottom : -top;
+                                    float oz = (back < front) ? back : -front;  // formulation like Donny’s MIT resolver  :contentReference[oaicite:2]{index=2}
 
-                                hit = true;
+                                    // choose axis with smallest absolute overlap for this box
+                                    float ax = fabsf(ox), ay = fabsf(oy), az = fabsf(oz);
+                                    if (ax <= ay && ax <= az)      push.x += (ox > 0 ? ox + SKIN : ox - SKIN);
+                                    else if (ay <= ax && ay <= az) push.y += (oy > 0 ? oy + SKIN : oy - SKIN);
+                                    else                           push.z += (oz > 0 ? oz + SKIN : oz - SKIN);
+
+                                    hit = true;
+                                }
+
+                                if (hit)
+                                {
+                                    // bias: don’t yank the truck downward; allow stepping up, not down
+                                    if (push.y < 0.0f) push.y = 0.0f;
+
+                                    truckPosition = Vector3Add(truckPosition, push);
+                                    truckOrigin = Vector3Add(truckOrigin, push);
+                                    truckSpeed *= 0.6f;        // soften impact
+                                    disableRoll = true;        // lock roll for this frame on hard contact
+                                    UpdateTruckBoxes();
+                                    hitTree = true;
+                                }
                             }
-
-                            if (hit)
-                            {
-                                // bias: don’t yank the truck downward; allow stepping up, not down
-                                if (push.y < 0.0f) push.y = 0.0f;
-
-                                truckPosition = Vector3Add(truckPosition, push);
-                                truckOrigin = Vector3Add(truckOrigin, push);
-                                truckSpeed *= 0.6f;        // soften impact
-                                disableRoll = true;        // lock roll for this frame on hard contact
-                                UpdateTruckBoxes();
-                                hitTree = true;
-                            }
-
                         }
                     }
                 }
@@ -1526,10 +1526,10 @@ int main(void) {
                         if(groundYy < -9000.0f){groundYy=pos.y;} // if we error, dont change y
                         if(pos.y < groundYy)//tire hit the ground
                         {
-                            //tireYOffsets[i] += (groundYy - groundY) * GetFrameTime();//move the tire up proportional to the difference between the truck y and tire y
+                            if (hitRock[i]) continue;
                             truckAirState=LANDING;
                             tireYPos[i] = groundYy;
-                            tireYOffset[i] -= (groundY - groundYy) * GetFrameTime();
+                            tireYOffset[i] -= (groundY - groundYy) * GetFrameTime();//move the tire up proportional to the difference between the truck y and tire y
                             if(tireYOffset[i]>0.12f){tireYOffset[i]=0.12f;}
                             if(tireYOffset[i]<-0.23f){tireYOffset[i]=-0.23f;}
                             rebuildFromTires = true;
@@ -1577,6 +1577,7 @@ int main(void) {
                             tireYOffset[i] -= (groundY - groundYy) * dt;
                             if(tireYOffset[i]>0.2f){tireYOffset[i]=0.2f;}
                             if(tireYOffset[i]<-0.12f){tireYOffset[i]=-0.12f;}
+                            //TraceLog(LOG_INFO,"NOT HIT ROCK!!!");
                         }
                         rebuildFromTires = true;
                     }
@@ -1594,7 +1595,7 @@ int main(void) {
 
                 // 1. Truck vertical position (Y) — we want the max tire value//-average-of-all-tires-
                 //truckPosition.y = Lerp(truckPosition.y , (fl + fr + bl + br) / 4.0f, GetFrameTime()*16.0f);
-                truckPosition.y = Lerp(truckPosition.y , maxTireY, GetFrameTime()*16.0f);
+                if (!anyHitRock) { truckPosition.y = Lerp(truckPosition.y, maxTireY, GetFrameTime() * 16.0f); }
 
                 // 2. Pitch (X-axis rotation, nose up/down)
                 // front height vs back height
