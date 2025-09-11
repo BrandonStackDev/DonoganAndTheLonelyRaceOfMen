@@ -2014,13 +2014,13 @@ int main(void) {
                         schoolMatrices,
                         localSchoolCount
                     );
-                    //if (schoolMatrices) { MemFree(schoolMatrices); } //this fails for me, not sure what to do with it...
+                    //if (schoolMatrices) { MemFree(schoolMatrices); } //this fails for me, not sure what to do with it...memory leak? todo
                 }
                 // ============================================================================
             }
             if (onLoad)
             {
-                DrawMesh(truck.meshes[0], truckMaterial, rotationTruck);//tireOffsets[i]
+                DrawMesh(truck.meshes[0], truckMaterial, rotationTruck);
                 for (int i = 0; i < 4; i++)
                 {
                     float tireAngleQ = -(tireTurnPos[i]);//fabsf//
@@ -2047,7 +2047,18 @@ int main(void) {
                     rotation.m12 = truckOrigin.x + tireSpace.x;
                     rotation.m13 = truckOrigin.y + tireSpace.y - tireYOffset[i]; //!!!!SPACE TIRES!!!!
                     rotation.m14 = truckOrigin.z + tireSpace.z;
-                    DrawMesh(tire.meshes[0], tireMaterial, rotation);//tireOffsets[i]
+                    DrawMesh(tire.meshes[0], tireMaterial, rotation);
+                }
+                if (displayBoxes)
+                {
+                    DrawBoundingBox(TruckBoxFront, BLUE);
+                    DrawBoundingBox(TruckBoxBack, BLUE);
+                    DrawBoundingBox(TruckBoxLeft, BLUE);
+                    DrawBoundingBox(TruckBoxRight,BLUE);
+                    DrawBoundingBox(TruckBoxTires[0], RED);
+                    DrawBoundingBox(TruckBoxTires[1], RED);
+                    DrawBoundingBox(TruckBoxTires[2], RED);
+                    DrawBoundingBox(TruckBoxTires[3], RED);
                 }
             }
             //lightning bugs &&&&&&&&&
