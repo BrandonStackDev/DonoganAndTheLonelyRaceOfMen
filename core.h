@@ -418,41 +418,8 @@ void OpenTiles()
         fclose(f);
     }
 }
-void DocumentTiles(int cx, int cy)
-{
-    for (int tx = 0; tx < TILE_GRID_SIZE; tx++) {
-        for (int ty = 0; ty < TILE_GRID_SIZE; ty++) {
-            for (int i = 0; i < MODEL_TOTAL_COUNT; i++)
-            {
-                MUTEX_LOCK(mutex);
-                char path[256];
-                snprintf(path, sizeof(path),
-                    "map/chunk_%02d_%02d/tile_64/%02d_%02d/tile_%s_64.obj",
-                    cx, cy, tx, ty, GetModelName(i));
 
-                FILE* f = fopen(path, "r");
-                if (f) {
-                    fclose(f);
-                    // Save entry
-                    TileEntry entry = { cx, cy, tx, ty };
-                    strcpy(entry.path, path);
-                    entry.model = LoadModel(entry.path);
-                    entry.mesh = entry.model.meshes[0];
-                    entry.isReady = true;
-                    entry.type = (Model_Type)i;
-                    MUTEX_LOCK(mutex);
-                    EnsureFoundTilesCapacity(foundTileCount + 1);
-                    foundTiles[foundTileCount++] = entry;
-                    MUTEX_UNLOCK(mutex);
-                    TraceLog(LOG_INFO, "Found tile: %s", path);
-                    loadTileCnt++;
-                }
-                MUTEX_UNLOCK(mutex);
-            }
-        }
-    }
-}
-//
+//why, raylib does this already, doesnt it?, well thats AI for you...
 Color LerpColor(Color from, Color to, float t)
 {
     Color result = {
@@ -993,10 +960,8 @@ static unsigned __stdcall FileManagerThread(void* arg)
 
 static unsigned __stdcall ChunkLoaderThread(void* arg)
 {
-    bool haveManifest = false;
     FILE* f = fopen("map/manifest.txt", "r"); // Open for append
     if (f != NULL) {
-        haveManifest = true;
         //need to count the lines in the file and then set manifestTileCount
         int lines = 0;
         int c;
@@ -1008,21 +973,13 @@ static unsigned __stdcall ChunkLoaderThread(void* arg)
     }
     for (int cy = 0; cy < CHUNK_COUNT; cy++) {
         for (int cx = 0; cx < CHUNK_COUNT; cx++) {
-            if (!haveManifest)
-            {
-                manifestTileCount = 2048; //fall back for the load bar, we dont know so guess and hope its close
-                DocumentTiles(cx, cy);
-            }
             if (!chunks[cx][cy].isLoaded) {
                 PreLoadTexture(cx, cy);
                 LoadChunk(cx, cy);
             }
         }
     }
-    if (haveManifest)//document here so we can check lod_64 setting
-    {
-        OpenTiles();
-    }
+    OpenTiles();
     wasTilesDocumented = true;
     //return NULL;
     return 0u;   // not NULL
