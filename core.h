@@ -841,6 +841,7 @@ void LoadTreePositions(int cx, int cy)
         int type;
         float yaw, pitch, roll, scale;
         fscanf(fp, "%f %f %f %d %f %f %f %f\n", &x, &y, &z, &type, &yaw, &pitch, &roll, &scale);
+        if (i == MODEL_GRASS || i == MODEL_GRASS_THICK || i == MODEL_GRASS_LARGE) { y -= 1.231; }
         treePositions[i] = (StaticGameObject){ type, (Vector3) { x, y, z }, yaw, pitch, roll, scale};
         treePositions[i].origOuterBox = ScaleBoundingBox(GetModelBoundingBox(HighFiStaticObjectModels[type]), scale);
         treePositions[i].outerBox = UpdateBoundingBox(treePositions[i].origOuterBox,(Vector3) { x, y, z });
