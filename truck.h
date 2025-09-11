@@ -234,7 +234,7 @@ wc.x + TIRE_BOX_HALF, wc.y + TIRE_BOX_HALF, wc.z + TIRE_BOX_HALF
 // --->>> SUMMON (state + helpers)
 static bool  truckSummonActive = false;
 static float truckSummonStopRadius = 4.25f;   // stop this far from Donny
-static float truckSummonMaxSpeed = 10.0f;    // cap speed while summoning
+static float truckSummonMaxSpeed = 2.12f;    // cap speed while summoning
 static float truckSummonAccel = 12.0f;    // accel/decel rate (u/s^2)
 static float truckSummonSteerRate = 2.0f;     // rad/s yaw rate cap
 
