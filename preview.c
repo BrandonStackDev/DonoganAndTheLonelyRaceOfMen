@@ -437,9 +437,17 @@ int main(void) {
     instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(instancingLightShader, "viewPos");
     // Create one light
     Light instanceLight = CreateLight(LIGHT_DIRECTIONAL, LightPosDraw, LightTargetDraw, lightColorDraw, instancingLightShader);
+    //grass shader
+    Shader grassInstancingLightShader = LoadShader("shaders/100/grass_lighting_instancing.vs", "shaders/100/grass_lighting.fs");
+    // Get shader locations
+    grassInstancingLightShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(grassInstancingLightShader, "mvp");
+    grassInstancingLightShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(grassInstancingLightShader, "viewPos");
+    // Create one light (distinct var name!)
+    Light grassLight = CreateLight(LIGHT_DIRECTIONAL, LightPosDraw, LightTargetDraw, lightColorDraw, grassInstancingLightShader);
+    int grassTimeLoc = GetShaderLocation(grassInstancingLightShader, "uTime");
     //init the static game props stuff
-    InitStaticGameProps(instancingLightShader);//get the high fi models ready
-    fishModel.materials[0].shader = instancingLightShader; //use this guy for fish as well
+    InitStaticGameProps(instancingLightShader, grassInstancingLightShader);//get the high fi models ready
+    fishModel.materials[0].shader = instancingLightShader; //use this (regular not grassy) guy for fish as well
     //END -- lighting shader---------------------------------------------------------------------------------------
     //START -- lightning bug shader :)---------------------------------------------------------------------------------------
     // Load PBR shader and setup all required locations
@@ -912,6 +920,7 @@ int main(void) {
         //old important stuff
         float time = GetTime();
         SetShaderValue(waterShader, timeLoc, &time, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(grassInstancingLightShader, grassTimeLoc, &time, SHADER_UNIFORM_FLOAT);
         bool reportOn = false;
         int tileTriCount = 0;
         int tileBcCount = 0;

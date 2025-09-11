@@ -208,7 +208,7 @@ Model_Type GetModelTypeFromColor(Color c, float heightEst) {
 }
 
 
-void InitStaticGameProps(Shader shader) {
+void InitStaticGameProps(Shader shader, Shader grass_s) {
     for (int i = 0; i < MODEL_TOTAL_COUNT; i++) {
         // Load base model and texture
         StaticObjectModels[i] = LoadModel(ModelPaths[i]);
@@ -217,7 +217,7 @@ void InitStaticGameProps(Shader shader) {
 
         // Deep copy material
         Material mat = LoadMaterialDefault();
-        mat.shader = shader;
+        mat.shader = (i== MODEL_GRASS || i == MODEL_GRASS_LARGE || i == MODEL_GRASS_THICK) ? grass_s: shader;
         mat.maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
         mat.maps[MATERIAL_MAP_DIFFUSE].texture = HighFiStaticObjectModelTextures[i];
         HighFiStaticObjectMaterials[i] = mat;
