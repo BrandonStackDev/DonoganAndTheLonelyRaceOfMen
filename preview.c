@@ -1374,8 +1374,113 @@ int main(void) {
                 DonExitWater(&don, moveMag, runHeld);
             }
         }
-        if(onLoad) //time to rock and roll!
+        if(onLoad) //truck, time to rock and roll!
         {
+            if (vehicleMode)
+            {
+                //truck static props collision
+                for (int cy = 0; cy < CHUNK_COUNT; cy++) {
+                    for (int cx = 0; cx < CHUNK_COUNT; cx++) {
+                        if (!chunks[cx][cy].isLoaded || chunks[cx][cy].lod != LOD_64) continue;
+                        for (int i = 0; i < chunks[cx][cy].treeCount; i++) {
+                            StaticGameObject tree = chunks[cx][cy].props[i];
+                            if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) { continue; }
+                            // keep boxes fresh (we rely on tire/body world AABBs)
+
+                            const float SKIN = 0.01f;
+
+                            // ---- quick broad-phase using union of the 4 body boxes ----
+                            BoundingBox truckBroad = TruckBoxFront;
+                            truckBroad.min.x = fminf(fminf(TruckBoxBack.min.x, TruckBoxLeft.min.x), fminf(TruckBoxRight.min.x, truckBroad.min.x));
+                            truckBroad.min.y = fminf(fminf(TruckBoxBack.min.y, TruckBoxLeft.min.y), fminf(TruckBoxRight.min.y, truckBroad.min.y));
+                            truckBroad.min.z = fminf(fminf(TruckBoxBack.min.z, TruckBoxLeft.min.z), fminf(TruckBoxRight.min.z, truckBroad.min.z));
+                            truckBroad.max.x = fmaxf(fmaxf(TruckBoxBack.max.x, TruckBoxLeft.max.x), fmaxf(TruckBoxRight.max.x, truckBroad.max.x));
+                            truckBroad.max.y = fmaxf(fmaxf(TruckBoxBack.max.y, TruckBoxLeft.max.y), fmaxf(TruckBoxRight.max.y, truckBroad.max.y));
+                            truckBroad.max.z = fmaxf(fmaxf(TruckBoxBack.max.z, TruckBoxLeft.max.z), fmaxf(TruckBoxRight.max.z, truckBroad.max.z));
+
+                            if (!CheckCollisionBoxes(truckBroad, tree.outerBox)) { continue; } // cheap cull first  :contentReference[oaicite:1]{index=1}
+
+                            // ---- ROCKS: roll over (lift) ----
+                            if (tree.type == MODEL_ROCK || tree.type == MODEL_ROCK2 || tree.type == MODEL_ROCK3
+                                || tree.type == MODEL_ROCK4 || tree.type == MODEL_ROCK5)
+                            {
+                                bool lifted = false;
+                                for (int t = 0; t < 4; ++t)
+                                {
+                                    BoundingBox tb = TruckBoxTires[t];
+
+                                    // XZ overlap test (ignore Y for "is tire over the rock?")
+                                    bool overlapXZ =
+                                        (tb.max.x > tree.box.min.x && tb.min.x < tree.box.max.x) &&
+                                        (tb.max.z > tree.box.min.z && tb.min.z < tree.box.max.z);
+
+                                    if (!overlapXZ) continue;
+
+                                    // if the tire bottom is below the rock top, lift the truck so it rests on it
+                                    float tireBottom = tb.min.y;
+                                    float desiredBottom = tree.box.max.y + SKIN;
+                                    if (tireBottom < desiredBottom)
+                                    {
+                                        float dy = desiredBottom - tireBottom;
+                                        truckPosition.y += dy;
+                                        truckOrigin.y += dy;      // keep origin consistent for anything using it
+                                        lifted = true;
+                                    }
+                                }
+                                if (lifted) {UpdateTruckBoxes();}// keep boxes in sync
+                                // Rocks do not block—rolling over is handled by vertical lift only.
+                                continue;
+                            }
+
+                            // ---- EVERYTHING ELSE: MIT/MTD push like Donny ----
+                            // narrow-phase against the actual prop box
+                            BoundingBox prop = tree.box;
+                            Vector3 push = (Vector3){ 0 };
+                            bool hit = false;
+
+                            // test each body box; sum axis-minimal pushes
+                            BoundingBox body[4] = { TruckBoxFront, TruckBoxBack, TruckBoxLeft, TruckBoxRight };
+                            for (int b = 0; b < 4; ++b)
+                            {
+                                if (!CheckCollisionBoxes(body[b], prop)) continue;
+
+                                // per-axis overlaps (positive => penetration depth)
+                                float left = prop.max.x - body[b].min.x; // +X push
+                                float right = body[b].max.x - prop.min.x;    // -X push
+                                float bottom = prop.max.y - body[b].min.y; // +Y (landing on top)
+                                float top = body[b].max.y - prop.min.y;    // -Y (hitting underside)
+                                float back = prop.max.z - body[b].min.z; // +Z push
+                                float front = body[b].max.z - prop.min.z;    // -Z push
+                                // pick smallest on each pair -> signed overlaps
+                                float ox = (left < right) ? left : -right;
+                                float oy = (bottom < top) ? bottom : -top;
+                                float oz = (back < front) ? back : -front;  // formulation like Donny’s MIT resolver  :contentReference[oaicite:2]{index=2}
+
+                                // choose axis with smallest absolute overlap for this box
+                                float ax = fabsf(ox), ay = fabsf(oy), az = fabsf(oz);
+                                if (ax <= ay && ax <= az)      push.x += (ox > 0 ? ox + SKIN : ox - SKIN);
+                                else if (ay <= ax && ay <= az) push.y += (oy > 0 ? oy + SKIN : oy - SKIN);
+                                else                           push.z += (oz > 0 ? oz + SKIN : oz - SKIN);
+
+                                hit = true;
+                            }
+
+                            if (hit)
+                            {
+                                // bias: don’t yank the truck downward; allow stepping up, not down
+                                if (push.y < 0.0f) push.y = 0.0f;
+
+                                truckPosition = Vector3Add(truckPosition, push);
+                                truckOrigin = Vector3Add(truckOrigin, push);
+                                truckSpeed *= 0.6f;        // soften impact
+                                disableRoll = true;        // lock roll for this frame on hard contact
+                                UpdateTruckBoxes();
+                            }
+
+                        }
+                    }
+                }
+            }
             bool rebuildFromTires = false;
             if (closestCX < 0 || closestCY < 0 || closestCX >= CHUNK_COUNT || closestCY >= CHUNK_COUNT) {
                 // Outside world bounds
@@ -1665,7 +1770,7 @@ int main(void) {
             prevBox.min.y -= deltaFrame.y; prevBox.max.y -= deltaFrame.y;
             prevBox.min.z -= deltaFrame.z; prevBox.max.z -= deltaFrame.z;
 
-            // --- static prop collision ---
+            // --- static prop collision donny---
             for (int cy = 0; cy < CHUNK_COUNT; cy++) {
                 for (int cx = 0; cx < CHUNK_COUNT; cx++) {
                     if (!chunks[cx][cy].isLoaded || chunks[cx][cy].lod != LOD_64) continue;

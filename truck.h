@@ -4,11 +4,19 @@
 // Includes
 #include "raylib.h"
 #include "raymath.h"
+//c
+#include <float.h>          // FLT_MAX
+
 //me
 #include "timer.h"
 #include "core.h"
 
 #define MAX_TURN_ANGLE 0.26f //radians
+
+#define TRUCK_BOX_HALF        1.0f   // half-size for the 4 body boxes  (-1..+1 local)
+#define TIRE_BOX_HALF         1.0f   // half-size for each tire box     (-1..+1 local)
+#define TRUCK_Y_OFFSET_DRAW   1.62f  // same baseline you use when drawing
+
 typedef enum {
     GROUND,
     AIRBORNE,
@@ -86,6 +94,56 @@ BoundingBox TruckBoxLeft;
 BoundingBox TruckBoxRight;
 BoundingBox TruckBoxTires[4];
 
+// Compose the truck body quaternion exactly like your draw code:
+// q = qYaw * (qPitch * qRoll)
+static inline Quaternion Truck_BodyQuat(void)
+{
+    float finalTruckYaw = truckAngle + truckTrickYaw;
+    float finalTruckPitch = truckPitch - truckTrickPitch;
+    float finalTruckRoll = truckRoll + truckTrickRoll;
+
+    Quaternion qYaw = QuaternionFromAxisAngle((Vector3) { 0, 1, 0 }, finalTruckYaw);
+    Quaternion qPitch = QuaternionFromAxisAngle((Vector3) { 1, 0, 0 }, finalTruckPitch);
+    Quaternion qRoll = QuaternionFromAxisAngle((Vector3) { 0, 0, 1 }, finalTruckRoll);
+    return QuaternionMultiply(qYaw, QuaternionMultiply(qPitch, qRoll));
+}
+
+// Rotate a local point and add the world base origin
+static inline Vector3 Truck_LocalToWorld(Vector3 pLocal, Quaternion q, Vector3 worldBase)
+{
+    Vector3 r = Vector3RotateByQuaternion(pLocal, q);
+    return Vector3Add(worldBase, r);
+}
+
+// Build an AABB by rotating the 8 corners of a local cube around localCenter
+static inline BoundingBox Truck_AabbFromLocalCube(Vector3 localCenter, float half,
+    Quaternion q, Vector3 worldBase)
+{
+    Vector3 minv = (Vector3){ FLT_MAX,  FLT_MAX,  FLT_MAX };
+    Vector3 maxv = (Vector3){ -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+    for (int sx = -1; sx <= 1; sx += 2)
+        for (int sy = -1; sy <= 1; sy += 2)
+            for (int sz = -1; sz <= 1; sz += 2)
+            {
+                Vector3 p = (Vector3){
+                    localCenter.x + sx * half,
+                    localCenter.y + sy * half,
+                    localCenter.z + sz * half
+                };
+                Vector3 w = Truck_LocalToWorld(p, q, worldBase);
+                if (w.x < minv.x) minv.x = w.x; if (w.y < minv.y) minv.y = w.y; if (w.z < minv.z) minv.z = w.z;
+                if (w.x > maxv.x) maxv.x = w.x; if (w.y > maxv.y) maxv.y = w.y; if (w.z > maxv.z) maxv.z = w.z;
+            }
+    return (BoundingBox) { minv, maxv };
+}
+
+// Centers for the four body boxes in TRUCK LOCAL space
+static inline float TruckFrontZ_Local(void) { return truckFrontDim - rearAxleOffset.z; }
+static inline float TruckBackZ_Local(void) { return truckBackDim - rearAxleOffset.z; }
+static inline float TruckMidZ_Local(void) { return 0.5f * (TruckFrontZ_Local() + TruckBackZ_Local()); }
+static inline float TruckSideX_Local(bool right) { return (right ? +1.0f : -1.0f) * (truckWidth * 0.5f); }
+
 
 void InitTruck()
 {
@@ -121,14 +179,14 @@ void InitTruck()
     tireOffsets[2] = (Vector3) { 1.6f, 0.0f, -2.64f }; // Rear-right
     tireOffsets[3] = (Vector3) { -1.6f, 0.0f, -2.64f };  // Rear-left
 
-    TruckBoxFront = (BoundingBox){ (Vector3) { 0,0,0 }, (Vector3) { 1,1,1 } };
-    TruckBoxBack = (BoundingBox){ (Vector3) { 0,0,0 }, (Vector3) { 1,1,1 } };
-    TruckBoxLeft = (BoundingBox){ (Vector3) { 0,0,0 }, (Vector3) { 1,1,1 } };
-    TruckBoxRight = (BoundingBox){ (Vector3) { 0,0,0 }, (Vector3) { 1,1,1 } };
-    TruckBoxTires[0] = (BoundingBox){ (Vector3) { 0,0,0 }, (Vector3) { 1,1,1 } };
-    TruckBoxTires[1] = (BoundingBox){ (Vector3) { 0,0,0 }, (Vector3) { 1,1,1 } };
-    TruckBoxTires[2] = (BoundingBox){ (Vector3) { 0,0,0 }, (Vector3) { 1,1,1 } };
-    TruckBoxTires[3] = (BoundingBox){ (Vector3) { 0,0,0 }, (Vector3) { 1,1,1 } };
+    TruckBoxFront = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
+    TruckBoxBack = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
+    TruckBoxLeft = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
+    TruckBoxRight = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
+    TruckBoxTires[0] = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
+    TruckBoxTires[1] = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
+    TruckBoxTires[2] = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
+    TruckBoxTires[3] = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
 
     truckInteractTimer = CreateTimer(1.0f);
     StartTimer(&truckInteractTimer);
@@ -136,14 +194,41 @@ void InitTruck()
 
 void UpdateTruckBoxes()
 {
-    TruckBoxFront = UpdateBoundingBox(TruckBoxFront, truckPosition);
-    TruckBoxBack = UpdateBoundingBox(TruckBoxBack, truckPosition);
-    TruckBoxLeft = UpdateBoundingBox(TruckBoxLeft, truckPosition);
-    TruckBoxRight = UpdateBoundingBox(TruckBoxRight, truckPosition);
-    TruckBoxTires[0] = UpdateBoundingBox(TruckBoxTires[0], truckPosition);
-    TruckBoxTires[1] = UpdateBoundingBox(TruckBoxTires[1], truckPosition);
-    TruckBoxTires[2] = UpdateBoundingBox(TruckBoxTires[2], truckPosition);
-    TruckBoxTires[3] = UpdateBoundingBox(TruckBoxTires[3], truckPosition);
+    // Match the same base translation you use for drawing (baseline Y lift)
+    Vector3 worldBase = (Vector3){ truckOrigin.x, truckOrigin.y + TRUCK_Y_OFFSET_DRAW, truckOrigin.z };
+    Quaternion q = Truck_BodyQuat();
+
+    // Choose the local Y for the body boxes (rough center of the body in your local space)
+    const float boxY = 1.0f; // tweak if you want them higher/lower on the chassis
+
+    // Body box local centers
+    Vector3 cFront = (Vector3){ 0.0f, boxY, TruckFrontZ_Local() };
+    Vector3 cBack = (Vector3){ 0.0f, boxY, TruckBackZ_Local() };
+    Vector3 cLeft = (Vector3){ TruckSideX_Local(false), boxY, TruckMidZ_Local() };
+    Vector3 cRight = (Vector3){ TruckSideX_Local(true),  boxY, TruckMidZ_Local() };
+
+    // Build world AABBs for the 4 sides (all square, -1..+1 local scaled by TRUCK_BOX_HALF)
+    TruckBoxFront = Truck_AabbFromLocalCube(cFront, TRUCK_BOX_HALF, q, worldBase);
+    TruckBoxBack = Truck_AabbFromLocalCube(cBack, TRUCK_BOX_HALF, q, worldBase);
+    TruckBoxLeft = Truck_AabbFromLocalCube(cLeft, TRUCK_BOX_HALF, q, worldBase);
+    TruckBoxRight = Truck_AabbFromLocalCube(cRight, TRUCK_BOX_HALF, q, worldBase);
+
+    // Tires: centers come from tireOffsets[] in truck local space,
+    // plus the per-tire suspension drop on Y (subtract tireYOffset[i] after rotation)
+    for (int i = 0; i < 4; ++i)
+    {
+        Vector3 lc = tireOffsets[i];
+        Vector3 wc = Truck_LocalToWorld(lc, q, worldBase);
+        wc.y -= tireYOffset[i]; // same suspension deflection you apply when drawing tires
+        TruckBoxTires[i] = (BoundingBox){
+            (Vector3) {
+ wc.x - TIRE_BOX_HALF, wc.y - TIRE_BOX_HALF, wc.z - TIRE_BOX_HALF
+},
+(Vector3) {
+wc.x + TIRE_BOX_HALF, wc.y + TIRE_BOX_HALF, wc.z + TIRE_BOX_HALF
+}
+        };
+    }
 }
 
 #endif // TRUCK_H
