@@ -427,6 +427,9 @@ int main(void) {
     Shader waterShader = LoadShader("shaders/120/water.vs", "shaders/120/water.fs");
     int timeLoc = GetShaderLocation(waterShader, "uTime");
     int offsetLoc = GetShaderLocation(waterShader, "worldOffset");
+    gWaterShader = waterShader;
+    gWaterTimeLoc = timeLoc;
+    gWaterOffsetLoc = offsetLoc;
     // Load lighting shader---------------------------------------------------------------------------------------
     Shader instancingLightShader = LoadShader("shaders/100/lighting_instancing.vs","shaders/100/lighting.fs");
     // Get shader locations
@@ -625,7 +628,8 @@ int main(void) {
         }
         waterManifestCount = lines;
         fclose(f);
-        OpenWaterObjects(waterShader);//water manifest is required right now
+        //OpenWaterObjects(waterShader);//water manifest is required right now
+        StartWaterLoader();
     }
     //TODO: loop through each chunk, then each water feature for that chunk, set the sahder of the model
     //launch the initial loading background threads
@@ -910,9 +914,9 @@ int main(void) {
             int playerTileY  = gy % TILE_GRID_SIZE;
             for (int te = 0; te < foundTileCount && processed < MAX_TO_PROCESS; te++)
             {
-                bool maybeNeeded = (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64); //todo: testing this to see if it is my issue
+                bool needed = (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64);
                 MUTEX_LOCK(mutex);
-                if(foundTiles[te].isReady && !foundTiles[te].isLoaded && maybeNeeded)
+                if(foundTiles[te].isReady && !foundTiles[te].isLoaded && needed)
                 {
                     TraceLog(LOG_INFO, "loading tiles: %d", te);
                     // Upload meshes to GPU
@@ -927,7 +931,7 @@ int main(void) {
                     //and now its safe to unlock
                     processed++;
                 }
-                else if(foundTiles[te].isLoaded && !maybeNeeded)
+                else if(foundTiles[te].isLoaded && !needed)
                 {
                     foundTiles[te].isLoaded = false;
                     foundTiles[te].isReady = false;
@@ -940,6 +944,16 @@ int main(void) {
         }
         for (int cy = 0; cy < CHUNK_COUNT; cy++) {
             for (int cx = 0; cx < CHUNK_COUNT; cx++) {
+                if (chunks[cx][cy].isReady && !chunks[cx][cy].waterLoaded)//water
+                {
+                    MUTEX_LOCK(mutex);
+                    for (int w = 0; w < chunks[cx][cy].waterCount; w++)
+                    {
+                        UploadMesh(&chunks[cx][cy].water[w].meshes[0], false);
+                    }
+                    chunks[cx][cy].waterLoaded = true;
+                    MUTEX_UNLOCK(mutex);
+                }
                 if(chunks[cx][cy].isTextureReady && !chunks[cx][cy].isTextureLoaded)
                 {
                     MUTEX_LOCK(mutex);

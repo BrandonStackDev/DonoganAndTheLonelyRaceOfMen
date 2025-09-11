@@ -106,6 +106,8 @@ typedef struct {
     int curTreeIdx;
     Model* water;
     int waterCount;
+    bool waterReady;//in RAM
+    bool waterLoaded;//in GPU
 } Chunk;
 
 //tiles-------------------------------------------------------------------------
@@ -180,9 +182,16 @@ static void EnsureFoundTilesCapacity(int need) //no idea what this does .... but
     foundTilesCap = newCap;
 }
 
+// --- Water globals ---
+static Shader gWaterShader;     // set once during init
+static int    gWaterTimeLoc = -1;
+static int    gWaterOffsetLoc = -1;
+
+//all of the things, except for most of it...?
 int manifestTileCount = 2048; //start with a guess, not 0 because used as a denominatorfor the load bar
 int waterManifestCount = 0; //this is required so start at 0
 bool wasTilesDocumented = false;
+bool wasWaterLoaded = false;
 Color chunk_16_color = { 255,255,255,220 };
 Color chunk_08_color = { 255,255,255,180 };
 Chunk** chunks = NULL;
@@ -521,7 +530,7 @@ void OpenWaterObjects(Shader shader) {
                 // Build file path
                 char path[256];
                 snprintf(path, sizeof(path), "map/chunk_%02d_%02d/water/patch_%d.obj", cx, cy, patch);
-
+                MUTEX_LOCK(mutex);
                 Model model = LoadModel(path);
                 if (model.meshCount > 0) {
                     // Allocate if needed
@@ -536,6 +545,7 @@ void OpenWaterObjects(Shader shader) {
                         chunks[cx][cy].water[chunks[cx][cy].waterCount].materials[0].maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 0, 100, 255, 255 }; // semi-transparent blue;
                         chunks[cx][cy].waterCount++;
                         TraceLog(LOG_INFO, "Loaded water model: %s", path);
+                        chunks[cx][cy].waterReady = true;
                     }
                     else {
                         TraceLog(LOG_WARNING, "Too many water patches in chunk %d,%d", cx, cy);
@@ -545,6 +555,7 @@ void OpenWaterObjects(Shader shader) {
                 else {
                     TraceLog(LOG_WARNING, "Failed to load water mesh: %s", path);
                 }
+                MUTEX_UNLOCK(mutex);
             }
         }
         else {
@@ -553,6 +564,7 @@ void OpenWaterObjects(Shader shader) {
     }
 
     fclose(f);
+    wasWaterLoaded = true;
 }
 
 // Convert world-space position to global tile coordinates
@@ -960,6 +972,10 @@ static unsigned __stdcall FileManagerThread(void* arg)
 
 static unsigned __stdcall ChunkLoaderThread(void* arg)
 {
+    while (!wasWaterLoaded) 
+    {
+        sleep_ms(100);
+    }
     FILE* f = fopen("map/manifest.txt", "r"); // Open for append
     if (f != NULL) {
         //need to count the lines in the file and then set manifestTileCount
@@ -983,6 +999,19 @@ static unsigned __stdcall ChunkLoaderThread(void* arg)
     wasTilesDocumented = true;
     //return NULL;
     return 0u;   // not NULL
+}
+
+// Background water loader
+static unsigned __stdcall WaterLoaderThread(void* arg)
+{
+    OpenWaterObjects(gWaterShader);
+    _endthreadex(0);
+    return 0;
+}
+
+static void StartWaterLoader(void)
+{
+    thread_start_detached(WaterLoaderThread, NULL);
 }
 
 void StartChunkLoader() { thread_start_detached(ChunkLoaderThread, NULL); }
