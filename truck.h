@@ -248,8 +248,7 @@ static inline Vector3 YOnly(Vector3 v) { return (Vector3) { v.x, 0.0f, v.z }; }
 
 static void TruckSummonStart(void) {
     truckSummonActive = true;
-    // cute flair: honk once on start if you want
-    // if (!IsSoundPlaying(carHorn)) PlaySound(carHorn);
+    if(!IsSoundPlaying(carHorn)) {PlaySound(carHorn);}
 }
 
 static void TruckSummonCancel(void) {
