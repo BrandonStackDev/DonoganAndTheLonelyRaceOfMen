@@ -31,47 +31,25 @@ uniform Light lights[MAX_LIGHTS];
 uniform vec4 ambient;
 uniform vec3 viewPos;
 
-void main()
-{
-    // Texel color fetching from texture sampler
-    vec4 texelColor = texture2D(texture0, fragTexCoord);
-    vec3 lightDot = vec3(0.0);
-    vec3 normal = normalize(fragNormal);
-    vec3 viewD = normalize(viewPos - fragPosition);
-    vec3 specular = vec3(0.0);
+void main() {
+    // base texture * material color
+    vec4 base = texture2D(texture0, fragTexCoord) * colDiffuse;
 
-    vec4 tint = colDiffuse * fragColor;
+    // --- tiny, hardcoded styling knobs (edit these if you want) ---
+    const float DARKEN = 0.82;                     // 1.0 = unchanged; <1.0 darkens
+    const vec3  TINT_LOW  = vec3(0.12, 0.30, 0.14); // deeper green (near base)
+    const vec3  TINT_HIGH = vec3(0.18, 0.42, 0.18); // lighter green (near tip)
+    const float BLEND = 0.22;                      // 0..1 mix toward tint
+    // --------------------------------------------------------------
 
-    // NOTE: Implement here your fragment shader code
+    // Height-based tint mix using V (keeps it simple and nicely blended)
+    float h = clamp(fragTexCoord.y, 0.0, 1.0);
+    vec3 tint = mix(TINT_LOW, TINT_HIGH, h);
 
-    for (int i = 0; i < MAX_LIGHTS; i++)
-    {
-        if (lights[i].enabled == 1)
-        {
-            vec3 light = vec3(0.0);
+    // darken + blend
+    vec3 rgb = base.rgb * DARKEN;
+    rgb = mix(rgb, tint, BLEND);
 
-            if (lights[i].type == LIGHT_DIRECTIONAL)
-            {
-                light = -normalize(lights[i].target - lights[i].position);
-            }
-
-            if (lights[i].type == LIGHT_POINT)
-            {
-                light = normalize(lights[i].position - fragPosition);
-            }
-
-            float NdotL = max(dot(normal, light), 0.0);
-            lightDot += lights[i].color.rgb*NdotL;
-
-            float specCo = 0.0;
-            if (NdotL > 0.0) specCo = pow(max(0.0, dot(viewD, reflect(-(light), normal))), 16.0); // 16 refers to shine
-            specular += specCo;
-        }
-    }
-
-    vec4 finalColor = (texelColor*((tint + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
-    finalColor += texelColor*(ambient/10.0);
-
-    // Gamma correction
-    gl_FragColor = pow(finalColor, vec4(1.0/2.2));
+    gl_FragColor = vec4(rgb, base.a);
 }
+
