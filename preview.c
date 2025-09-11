@@ -1376,6 +1376,9 @@ int main(void) {
         }
         if(onLoad) //truck, time to rock and roll!
         {
+            bool hitRock[4] = { false , false , false , false };
+            bool anyHitRock = false;
+            bool hitTree = false;
             if (vehicleMode)
             {
                 //truck static props collision
@@ -1389,17 +1392,6 @@ int main(void) {
 
                             const float SKIN = 0.01f;
 
-                            // ---- quick broad-phase using union of the 4 body boxes ----
-                            BoundingBox truckBroad = TruckBoxFront;
-                            truckBroad.min.x = fminf(fminf(TruckBoxBack.min.x, TruckBoxLeft.min.x), fminf(TruckBoxRight.min.x, truckBroad.min.x));
-                            truckBroad.min.y = fminf(fminf(TruckBoxBack.min.y, TruckBoxLeft.min.y), fminf(TruckBoxRight.min.y, truckBroad.min.y));
-                            truckBroad.min.z = fminf(fminf(TruckBoxBack.min.z, TruckBoxLeft.min.z), fminf(TruckBoxRight.min.z, truckBroad.min.z));
-                            truckBroad.max.x = fmaxf(fmaxf(TruckBoxBack.max.x, TruckBoxLeft.max.x), fmaxf(TruckBoxRight.max.x, truckBroad.max.x));
-                            truckBroad.max.y = fmaxf(fmaxf(TruckBoxBack.max.y, TruckBoxLeft.max.y), fmaxf(TruckBoxRight.max.y, truckBroad.max.y));
-                            truckBroad.max.z = fmaxf(fmaxf(TruckBoxBack.max.z, TruckBoxLeft.max.z), fmaxf(TruckBoxRight.max.z, truckBroad.max.z));
-
-                            if (!CheckCollisionBoxes(truckBroad, tree.outerBox)) { continue; } // cheap cull first  :contentReference[oaicite:1]{index=1}
-
                             // ---- ROCKS: roll over (lift) ----
                             if (tree.type == MODEL_ROCK || tree.type == MODEL_ROCK2 || tree.type == MODEL_ROCK3
                                 || tree.type == MODEL_ROCK4 || tree.type == MODEL_ROCK5)
@@ -1409,12 +1401,7 @@ int main(void) {
                                 {
                                     BoundingBox tb = TruckBoxTires[t];
 
-                                    // XZ overlap test (ignore Y for "is tire over the rock?")
-                                    bool overlapXZ =
-                                        (tb.max.x > tree.box.min.x && tb.min.x < tree.box.max.x) &&
-                                        (tb.max.z > tree.box.min.z && tb.min.z < tree.box.max.z);
-
-                                    if (!overlapXZ) continue;
+                                    if (!CheckCollisionBoxes(tb, tree.outerBox)) continue;
 
                                     // if the tire bottom is below the rock top, lift the truck so it rests on it
                                     float tireBottom = tb.min.y;
@@ -1422,12 +1409,25 @@ int main(void) {
                                     if (tireBottom < desiredBottom)
                                     {
                                         float dy = desiredBottom - tireBottom;
-                                        truckPosition.y += dy;
-                                        truckOrigin.y += dy;      // keep origin consistent for anything using it
+                                        //truckPosition.y += dy;
+                                        //truckOrigin.y += dy;      // keep origin consistent for anything using it
+                                        //tireYPos[i] += dy;
+                                        Vector3 localOffset = RotateY(tireOffsets[t], -truckAngle);
+                                        Vector3 pos = Vector3Add(truckOrigin, localOffset);
+                                        float groundYy = desiredBottom;
+                                        if (groundYy < -9000.0f) { groundYy = pos.y; } // if we error, dont change y
+                                        pos.y = groundYy;
+                                        tireYPos[t] = pos.y;
+                                        tireYOffset[t] -= (tireBottom - groundYy) * dt;
+                                        if (tireYOffset[t] > 0.2f) { tireYOffset[t] = 0.2f; }
+                                        if (tireYOffset[t] < -0.12f) { tireYOffset[t] = -0.12f; }
                                         lifted = true;
+                                        hitRock[t] = true;
+                                        anyHitRock = true;
+                                        TraceLog(LOG_INFO, "tire %d hit rock!", t);
                                     }
                                 }
-                                if (lifted) {UpdateTruckBoxes();}// keep boxes in sync
+                                if (lifted) { UpdateTruckBoxes();}// keep boxes in sync
                                 // Rocks do not block—rolling over is handled by vertical lift only.
                                 continue;
                             }
@@ -1475,6 +1475,7 @@ int main(void) {
                                 truckSpeed *= 0.6f;        // soften impact
                                 disableRoll = true;        // lock roll for this frame on hard contact
                                 UpdateTruckBoxes();
+                                hitTree = true;
                             }
 
                         }
@@ -1500,9 +1501,7 @@ int main(void) {
                     float deltaY = frontY - backY;
                     float deltaZ = truckLength;  // Distance between front and back
                     float pitch = -atanf(deltaY / deltaZ);  // In radians
-                    //truckPitch = Lerp(truckPitch,-pitch,GetFrameTime());//
                     truckPitch = pitch;//set it directly here
-                    //if(pitch<-0.5f){truckSpeed-=fabs(pitch)*0.006*GetFrameTime();}//slow down if we are climbing to steep, pitch is oppisite of what you expect
                 }
                 if (truckAirState==AIRBORNE) {
                     verticalVelocity -= GRAVITY * GetFrameTime();  // e.g. gravity = 9.8f
@@ -1512,7 +1511,9 @@ int main(void) {
                     float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
                     if(groundY < -9000.0f){groundY=truckPosition.y;} 
                     if (truckPosition.y <= groundY) {
-                        truckPosition.y = groundY;
+                        if (!anyHitRock) {
+                            truckPosition.y = groundY;
+                        }
                         verticalVelocity = 0;
                         truckAirState=LANDING;
                     }
@@ -1534,7 +1535,9 @@ int main(void) {
                             rebuildFromTires = true;
                         }
                     }
-                } else { //not airborne, either landing or ground
+                } 
+                else
+                { //not airborne, either landing or ground
                     if(gpad.btnCross>0)
                     {
                         truckAirState=AIRBORNE;
@@ -1546,29 +1549,32 @@ int main(void) {
                         float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
                         //TraceLog(LOG_INFO, "setting camera y: (%d,%d){%f,%f,%f}[%f]", closestCX, closestCY, camera.position.x, camera.position.y, camera.position.z, groundY);
                         if(groundY < -9000.0f){groundY=truckPosition.y;} // if we error, dont change y
-                        if(truckAirState==GROUND && truckPosition.y>groundY)//todo: this might be too aggresive
+                        if(truckAirState==GROUND && truckPosition.y>groundY)
                         {
                             if(truckPitch<-PI/4.0f && truckSpeed > 1.01f && !isTruckSliding) //not while sliding, this is basically shut off for now
                             {
                                 //here, take off!
                                 truckAirState=AIRBORNE;
-                                verticalVelocity=3.2f * truckSpeed * GetFrameTime(); //natural
+                                verticalVelocity=3.2f * truckSpeed * dt; //natural
                             }
                         }
                         else//LANDING
                         {
-                            truckPosition.y = groundY;
+                            if (!anyHitRock) {
+                                truckPosition.y = groundY;
+                            }
                         }
                         //tireYOffsets
                         for(int i=0; i<4; i++)
                         {
+                            if (hitRock[i]) { continue; }
                             Vector3 localOffset = RotateY(tireOffsets[i], -truckAngle);
                             Vector3 pos = Vector3Add(truckOrigin, localOffset);
                             float groundYy = GetTerrainHeightFromMeshXZ(pos.x, pos.z);
                             if(groundYy < -9000.0f){groundYy=pos.y;} // if we error, dont change y
                             pos.y = groundYy;
                             tireYPos[i] = pos.y;
-                            tireYOffset[i] -= (groundY - groundYy) * GetFrameTime();
+                            tireYOffset[i] -= (groundY - groundYy) * dt;
                             if(tireYOffset[i]>0.2f){tireYOffset[i]=0.2f;}
                             if(tireYOffset[i]<-0.12f){tireYOffset[i]=-0.12f;}
                         }
