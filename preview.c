@@ -493,38 +493,8 @@ int main(void) {
     Texture don_head = LoadTexture("textures/don_head.png");
     Texture tol_head = LoadTexture("textures/tol_head.png");
     Texture atreyu_head = LoadTexture("textures/atreyu_head.png");
-    // Load  //todo: move this and most of the truck stuff into truck.h
-    Model truck = LoadModel("models/truck.obj");
-    truck.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
-    Material truckMaterial = LoadMaterialDefault();
-        truckMaterial.shader = LoadShader(0, 0);
-        truckMaterial.maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-        truckMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
-    TraceLog(LOG_INFO, "CWD: %s", GetWorkingDirectory());
-    TraceLog(LOG_INFO, "Has truck.obj? %d  Has texture? %d",
-        FileExists("models/truck.obj"), FileExists("textures/truck.png"));
-
-    if (truck.meshCount == 0) {
-        TraceLog(LOG_ERROR, "Truck failed to load: meshCount==0");
-        // bail out or skip drawing the truck
-    }
-    // Load tire
-    Model tire = LoadModel("models/tire.obj");
-    tire.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/tire.png");
-    Material tireMaterial = LoadMaterialDefault();
-        tireMaterial.shader = LoadShader(0, 0);
-        tireMaterial.maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-        tireMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/tire.png");
-    Model tires[4] = {tire,tire,tire,tire};
-    // Set tire offsets relative to truck
-    Vector3 tireOffsets[4] = {
-        {  1.6f, 0.0f,  3.36f }, // Front-right
-        { -1.58f, 0.0f,  3.36f }, // Front-left - stubby
-        {  1.6f, 0.0f, -2.64f }, // Rear-right
-        { -1.6f, 0.0f, -2.64f }  // Rear-left
-    };
-    truckInteractTimer = CreateTimer(1.0f);
-    StartTimer(&truckInteractTimer);
+    //truck
+    InitTruck();
     //more lb stuff
     Mesh sphereMesh = GenMeshHemiSphere(0.108f,8, 8);
     Material sphereMaterial = LoadMaterialDefault();
@@ -1817,6 +1787,7 @@ int main(void) {
         {
             don.camPitch = pitch;    // your orbit pitch
         }
+        if (vehicleMode) { UpdateTruckBoxes(); }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
@@ -2155,15 +2126,6 @@ int main(void) {
             //TraceLog(LOG_INFO, "-------TILES DRAWING-----------");
             for(int te = 0; te < foundTileCount; te++)
             {
-                // if(chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64)
-                // {
-                //     TraceLog(LOG_INFO, "Tile (%d,%d) [%d,%d] {%d}", 
-                //         foundTiles[te].tx,foundTiles[te].ty,
-                //         foundTiles[te].cx,foundTiles[te].cy,
-                //         !IsTileActive(foundTiles[te].cx,foundTiles[te].cy,foundTiles[te].tx,foundTiles[te].ty, gx, gy)
-                //         //IsBoxInFrustum(foundTiles[te].box , frustumChunk8)
-                //     );
-                // }
                 if (!wasTilesDocumented) { break; }
                 if(!foundTiles[te].isReady){continue;}
                 if(!foundTiles[te].isLoaded){continue;}
@@ -2176,12 +2138,6 @@ int main(void) {
                     SetMaterialTexture(&foundTiles[te].model.materials[0], MATERIAL_MAP_DIFFUSE, foundTiles[te].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture);//added this because I was having tiles draw with the wrong texture
                     if(reportOn){tileBcCount++;tileTriCount+=foundTiles[te].model.meshes[0].triangleCount;};
                     DrawModel(foundTiles[te].model, (Vector3){0,0,0}, 1.0f, lightTileColor);
-                    // TraceLog(LOG_INFO, "TEST Drawing tile model: chunk %02d_%02d, tile %02d_%02d", foundTiles[te].cx, foundTiles[te].cy, foundTiles[te].tx, foundTiles[te].ty);
-                    // TraceLog(LOG_INFO, "Drawing tile %d,%d model with Texture ID: %d Shader ID: %d",
-                    //     foundTiles[te].cx, foundTiles[te].cy,
-                    //     foundTiles[te].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture.id,
-                    //     foundTiles[te].model.materials[0].shader.id
-                    // );
                     if(displayBoxes){DrawBoundingBox(foundTiles[te].box,RED);}
                     EndShaderMode();
                 }
@@ -2192,8 +2148,6 @@ int main(void) {
                     if(chunks[cx][cy].isLoaded)
                     {
                         loadCnt++;
-                        //if(onLoad && !IsBoxInFrustum(chunks[cx][cy].box, frustum)){continue;}
-                        //if(onLoad && (cx!=closestCX||cy!=closestCY) && !ShouldRenderChunk(chunks[cx][cy].center,camera)){continue;}
                         //TraceLog(LOG_INFO, "drawing chunk: %d,%d", cx, cy);
                         if(chunks[cx][cy].lod == LOD_64) 
                         {
