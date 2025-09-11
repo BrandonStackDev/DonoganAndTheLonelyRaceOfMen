@@ -1618,7 +1618,7 @@ int main(void) {
                                         Vector3 pos = Vector3Add(truckOrigin, localOffset);
                                         float groundYy = desiredBottom;
                                         if (groundYy < -9000.0f) { groundYy = pos.y; } // if we error, dont change y
-                                        pos.y = groundYy;
+                                        pos.y = groundYy + 1.2;//this actually works well, adding 1.2 here
                                         tireYPos[t] = pos.y;
                                         tireYOffset[t] -= (tireBottom - groundYy) * dt;
                                         if (tireYOffset[t] > 0.2f) { tireYOffset[t] = 0.2f; }
