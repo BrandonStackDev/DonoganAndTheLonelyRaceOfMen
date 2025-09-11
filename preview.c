@@ -1394,7 +1394,9 @@ int main(void) {
                 //building/scene collision for truck
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
                 {
-                    if (i == SCENE_HOME_CABIN_01)
+                    if (i == SCENE_HOME_CABIN_01
+                        || (i == SCENE_HOME_NICE_01 && truckPosition.x < 1899 && truckPosition.x > 1846)
+                        || (i == SCENE_HOME_NICE_02 && truckPosition.x < -607 && truckPosition.x > -662))
                     {
                         for (int i = 0; i < gEnvBoundingBoxCount; i++)//todo: if this list ever gets big add culling
                         {
