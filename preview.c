@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h> // for seeding rand once if needed
+#include <time.h>
 //for big report numbers
 #include <stdint.h>
 #include <inttypes.h>
@@ -2224,8 +2224,6 @@ int main(void) {
                                     glEnable(GL_POLYGON_OFFSET_FILL);
                                     glPolygonOffset(-1.0f, -1.0f); // Push water slightly forward in Z-buffer
                                     rlDisableBackfaceCulling();
-                                    //rlDisableDepthMask(); 
-                                    //BeginBlendMode(BLEND_ALPHA);
                                     Vector3 cameraPos = camera.position;
                                     Vector3 waterPos = { 0, WATER_Y_OFFSET, 0 };
                                     // Get direction from patch to camera
@@ -2239,8 +2237,6 @@ int main(void) {
                                     BeginShaderMode(waterShader);
                                     DrawModel(chunks[cx][cy].water[w], drawPos, 1.0f, (Color){ 0, 100, 253, 232 });
                                     EndShaderMode();
-                                    //EndBlendMode();
-                                    //rlEnableDepthMask(); 
                                     rlEnableBackfaceCulling();
                                     glDisable(GL_POLYGON_OFFSET_FILL);
                                 }
@@ -2383,14 +2379,6 @@ int main(void) {
                 DrawCircleLines((int)center.x, (int)center.y, 10, WHITE);
                 DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
                 DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
-
-                //Vector3 spawn = Vector3Add(don.pos, RotYawOffset(don.arrowOffset, don.yawY, 1, false));
-                //Vector3 dir = DonAimForward(&don, 0.0f);   // match actual shot direction
-                //float   speed = 46.2;//72.0f;//same speed always
-                //Vector3 hit = PredictArrowImpact(&don, spawn, dir, speed, 3.0f);
-
-                //Vector2 hitSS = GetWorldToScreen(hit, camera);
-                //DrawCircle((int)hitSS.x, (int)hitSS.y, 4, RED);
             }
         }
         if (showMap) {

@@ -1783,12 +1783,8 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             }
             // do this in a separate `if` (not `else if`) so burst + swim can happen same frame
             if (wantMove) {
-                // camera-yaw basis (ignores pitch so speed doesn't collapse when looking up/down)
-                Vector3 camFwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
-                Vector3 camRight = (Vector3){ cosf(d->yawY), 0.0f,-sinf(d->yawY) };
-
                 // stick → world planar direction
-                Vector3 moveXZ = Vector3Add(Vector3Scale(camRight, lx), Vector3Scale(camFwd, -ly));
+                Vector3 moveXZ = fwd;
                 float m = Vector3Length(moveXZ);
                 if (m > 0.001f) {
                     moveXZ = Vector3Scale(moveXZ, 1.0f / m);
