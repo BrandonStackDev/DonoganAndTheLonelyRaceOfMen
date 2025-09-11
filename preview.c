@@ -1039,6 +1039,16 @@ int main(void) {
             if (IsKeyPressed(KEY_F10)) { MemoryReport(); }
             if (IsKeyPressed(KEY_F9)) { GridChunkReport(); }
             if (IsKeyPressed(KEY_F8)) { GridTileReport(); }
+            if (IsKeyPressed(KEY_F1)) {
+                ToggleFullscreen();
+                if (IsWindowFullscreen()) {
+                    int m = GetCurrentMonitor();
+                    SetWindowSize(GetMonitorWidth(m), GetMonitorHeight(m));
+                }
+                else {
+                    SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT); // your preferred windowed size
+                }
+            }
             if (IsKeyPressed(KEY_PAGE_UP)) { chosenX = (chosenX + 1) % CHUNK_COUNT; }
             if (IsKeyPressed(KEY_PAGE_DOWN)) { chosenY = (chosenY + 1) % CHUNK_COUNT; }
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) { goku = true; move = Vector3Add(move, forward); spd = GOKU_DASH_DIST; TraceLog(LOG_INFO, " --> Instant Transmission -->"); }
@@ -1384,8 +1394,75 @@ int main(void) {
                 //building/scene collision for truck
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
                 {
-                    if (i == SCENE_HOME_CABIN_01) { continue; }
-                    if (CheckCollisionBoxes(Scenes[i].box, TruckBoxFront)
+                    if (i == SCENE_HOME_CABIN_01)
+                    {
+                        for (int i = 0; i < gEnvBoundingBoxCount; i++)//todo: if this list ever gets big add culling
+                        {
+                            if (CheckCollisionBoxes(gEnvBoundingBoxes[i].box, TruckBoxFront)
+                                || CheckCollisionBoxes(gEnvBoundingBoxes[i].box, TruckBoxBack)
+                                || CheckCollisionBoxes(gEnvBoundingBoxes[i].box, TruckBoxLeft)
+                                || CheckCollisionBoxes(gEnvBoundingBoxes[i].box, TruckBoxRight))
+                            {
+                                if (gEnvBoundingBoxes[i].type == EBBT_GROUND){continue;}
+                                else if (gEnvBoundingBoxes[i].type == EBBT_WALL)
+                                {
+                                    //stuff goes here
+                                    // --- env wall collision response (MIT/MTD) ---
+                                    const float SKIN = 0.02f;
+
+                                    BoundingBox wall = gEnvBoundingBoxes[i].box;
+                                    BoundingBox body[4] = { TruckBoxFront, TruckBoxBack, TruckBoxLeft, TruckBoxRight };
+
+                                    Vector3 bestPush = (Vector3){ 0 };
+                                    float   bestScore = 1e30f;
+
+                                    for (int b = 0; b < 4; ++b)
+                                    {
+                                        BoundingBox bb = body[b];
+
+                                        // per-axis overlaps (positive if overlapping on that side)
+                                        float left = wall.max.x - bb.min.x;  // push +X
+                                        float right = bb.max.x - wall.min.x; // push -X
+                                        float bottom = wall.max.y - bb.min.y;  // push +Y
+                                        float top = bb.max.y - wall.min.y; // push -Y
+                                        float back = wall.max.z - bb.min.z;  // push +Z
+                                        float front = bb.max.z - wall.min.z; // push -Z
+
+                                        // safety: if not overlapping on some axis, skip
+                                        if (left <= 0 || right <= 0 || bottom <= 0 || top <= 0 || back <= 0 || front <= 0) continue;
+
+                                        // signed overlaps (pick smaller magnitude, keep sign)
+                                        float ox = (left < right) ? left : -right;
+                                        float oy = (bottom < top) ? bottom : -top;
+                                        float oz = (back < front) ? back : -front;
+
+                                        float ax = fabsf(ox), ay = fabsf(oy), az = fabsf(oz);
+                                        Vector3 push = (Vector3){ 0 };
+
+                                        // choose smallest absolute axis and add a tiny skin
+                                        if (ax <= ay && ax <= az)      push.x = (ox > 0 ? ox + SKIN : ox - SKIN);
+                                        else if (ay <= ax && ay <= az) push.y = (oy > 0 ? oy + SKIN : oy - SKIN);
+                                        else                           push.z = (oz > 0 ? oz + SKIN : oz - SKIN);
+
+                                        float score = fabsf(push.x) + fabsf(push.y) + fabsf(push.z);
+                                        if (score < bestScore) { bestScore = score; bestPush = push; }
+                                    }
+
+                                    if (bestScore < 1e30f)
+                                    {
+                                        // Don’t yank the truck downward; allow stepping up but not down
+                                        if (bestPush.y < 0.0f) bestPush.y = 0.0f;
+                                        truckPosition = Vector3Add(truckPosition, bestPush);
+                                        truckOrigin = Vector3Add(truckOrigin, bestPush);
+                                        truckSpeed *= 0.6f;   // soften the impact a bit
+                                        UpdateTruckBoxes();
+                                    }
+                                    //truckSpeed = 0;//for sticky collision instead of above, keep this one, its a good example!
+                                }
+                            }
+                        }
+                    }
+                    else if (CheckCollisionBoxes(Scenes[i].box, TruckBoxFront)
                         || CheckCollisionBoxes(Scenes[i].box, TruckBoxBack)
                         || CheckCollisionBoxes(Scenes[i].box, TruckBoxLeft)
                         || CheckCollisionBoxes(Scenes[i].box, TruckBoxRight))
