@@ -1216,8 +1216,9 @@ int main(void) {
             {
                 if(truckAirState!=AIRBORNE)
                 {
-                    float ratio = fminf(fabsf(truckSpeed) / maxSpeed, 1.0f) + 1.0f;
-                    truckSpeed += -gpad.normLY * acceleration * ratio * ratio * ratio * GetFrameTime() * 12.0f;
+                    //float ratio = fminf(fabsf(truckSpeed) / maxSpeed, 1.0f) + 1.0f; //use this version for exponential acceleration (I like it less)
+                    //truckSpeed += -gpad.normLY * acceleration * ratio * ratio * ratio * GetFrameTime() * 12.0f;
+                    truckSpeed += -gpad.normLY * acceleration * GetFrameTime() * 62.0f;
                 }
                 //printf("speed=%f",truckSpeed);
             }

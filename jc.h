@@ -19,7 +19,7 @@ typedef enum {
     MODEL_HOME_TENT, //teepee, 004
     MODEL_HOME_TEMPLE, //temple
     MODEL_HOME_CASTLE, //castle, cool texture!
-    MODEL_HOME_WINDMILL, //windmilll will have spinning rotor
+    MODEL_HOME_WINDMILL, //windmill, will have spinning rotor
     MODEL_HOME_TOTAL_COUNT
 } Model_Home_Type;
 
@@ -37,6 +37,16 @@ typedef enum {
     SCENE_HOME_TEMPLE_01,
     SCENE_HOME_CASTLE_01,
     SCENE_HOME_WINDMILL_01,
+    SCENE_HOME_WINDMILL_02,
+    SCENE_HOME_WINDMILL_03,
+    SCENE_HOME_WINDMILL_04,
+    SCENE_HOME_WINDMILL_05,
+    SCENE_HOME_WINDMILL_06,
+    SCENE_HOME_WINDMILL_07,
+    SCENE_HOME_WINDMILL_08,
+    SCENE_HOME_WINDMILL_09,
+    SCENE_HOME_WINDMILL_10,
+    SCENE_HOME_WINDMILL_11,
     SCENE_TOTAL_COUNT
 } Scene_Type;
 
@@ -180,6 +190,96 @@ void InitHomes() {
         .type = SCENE_HOME_WINDMILL_01,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ 2662.00f, 502.40f, 1475.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_02] = (Scene){ ////windmill! by donogans
+        .type = SCENE_HOME_WINDMILL_02,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ 2296.00f, 367.00f, 4754.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_03] = (Scene){ ////windmill!
+        .type = SCENE_HOME_WINDMILL_03,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ 2055.00f, 489.00f, 195.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_04] = (Scene){ ////windmill!
+        .type = SCENE_HOME_WINDMILL_04,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ 1933.00f, 420.65f, -533.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_05] = (Scene){ ////windmill!
+        .type = SCENE_HOME_WINDMILL_05,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ 1814.00f, 485.40f, -1185.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_06] = (Scene){ ////windmill!
+        .type = SCENE_HOME_WINDMILL_06,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ 1785.00f, 534.00f, -1723.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_07] = (Scene){ ////windmill!
+        .type = SCENE_HOME_WINDMILL_07,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ 1942.00f, 410.00f, -2710.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_08] = (Scene){ ////windmill!
+        .type = SCENE_HOME_WINDMILL_08,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ -2666.00f, 435.00f, -2406.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_09] = (Scene){ ////windmill!
+        .type = SCENE_HOME_WINDMILL_09,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ -712.00f, 816.00f, 2876.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_10] = (Scene){ ////windmill!
+        .type = SCENE_HOME_WINDMILL_10,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ 922.00f, 353.00f, 1998.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_11] = (Scene){ ////windmill!
+        .type = SCENE_HOME_WINDMILL_11,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ -1696.00f, 465.0f, -1714.00f }, //started at 472 , y from measured => min +24 - +30 max
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 32.0f,
         .origBox = (BoundingBox){0},
