@@ -661,6 +661,10 @@ int main(void) {
             }
             numCloseProps = j;
         }
+        if (loop_counter % 60 == 0)
+        {
+            TraceLog(LOG_INFO,"numCloseProps = %d", numCloseProps);
+        }
         // init disable roll (if we touch a wall, do not allow roll)
         bool disableRoll = false;
         //auto flip day and night
