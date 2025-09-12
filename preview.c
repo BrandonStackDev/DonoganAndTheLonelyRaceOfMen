@@ -628,7 +628,39 @@ int main(void) {
     skyCam.fovy = 60.0f;
     skyCam.projection = CAMERA_PERSPECTIVE;
 
+    long loop_counter = 0;
     while (!WindowShouldClose()) {
+        loop_counter++;
+        int numCloseProps = 0;
+        //document close props
+        if (onLoad)//tweak modulus and total size
+        {
+            int j = 0;
+            for (int cy = 0; cy < CHUNK_COUNT; cy++) 
+            {
+                for (int cx = 0; cx < CHUNK_COUNT; cx++) 
+                {
+                    if (!chunks[cx][cy].isLoaded || chunks[cx][cy].lod != LOD_64) { continue; }
+                    for (int i = 0; i < chunks[cx][cy].treeCount && j < MAX_CLOSE_PROPS; i++) 
+                    {
+                        //set the stuff
+                        StaticGameObject tree = chunks[cx][cy].props[i];
+                        if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) { continue; }
+                        Vector3 ps = { 0 };
+                        if (donnyMode) { ps = don.pos; }
+                        else if (vehicleMode) { ps = truckPosition; }
+                        else { ps = camera.position; }
+                        //test closeness
+                        if (Vector3Distance(ps, tree.pos) < MAX_CLOSE_PROPS_DISTANCE)
+                        {
+                            CloseProps[j] = tree;
+                            j++;
+                        }
+                    }
+                }
+            }
+            numCloseProps = j;
+        }
         // init disable roll (if we touch a wall, do not allow roll)
         bool disableRoll = false;
         //auto flip day and night
@@ -1592,103 +1624,100 @@ int main(void) {
                         }
                     }
                 }
+
                 //truck static props collision
-                for (int cy = 0; cy < CHUNK_COUNT; cy++) {
-                    for (int cx = 0; cx < CHUNK_COUNT; cx++) {
-                        if (!chunks[cx][cy].isLoaded || chunks[cx][cy].lod != LOD_64) continue;
-                        for (int i = 0; i < chunks[cx][cy].treeCount; i++) {
-                            StaticGameObject tree = chunks[cx][cy].props[i];
-                            if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) { continue; }
-                            // keep boxes fresh (we rely on tire/body world AABBs)
+                for (int i = 0; i < numCloseProps; i++)
+                {
+                    StaticGameObject tree = CloseProps[i];
+                    if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) { continue; }
+                    // keep boxes fresh (we rely on tire/body world AABBs)
 
-                            const float SKIN = 0.01f;
+                    const float SKIN = 0.01f;
 
-                            // ---- ROCKS: roll over (lift) ----
-                            if (tree.type == MODEL_ROCK || tree.type == MODEL_ROCK2 || tree.type == MODEL_ROCK3
-                                || tree.type == MODEL_ROCK4 || tree.type == MODEL_ROCK5)
+                    // ---- ROCKS: roll over (lift) ----
+                    if (tree.type == MODEL_ROCK || tree.type == MODEL_ROCK2 || tree.type == MODEL_ROCK3
+                        || tree.type == MODEL_ROCK4 || tree.type == MODEL_ROCK5)
+                    {
+                        bool lifted = false;
+                        for (int t = 0; t < 4; ++t)
+                        {
+                            BoundingBox tb = TruckBoxTires[t];
+
+                            if (!CheckCollisionBoxes(tb, tree.outerBox)) continue;
+
+                            // if the tire bottom is below the rock top, lift the truck so it rests on it
+                            float tireBottom = tb.min.y;
+                            float desiredBottom = tree.box.max.y;
+                            if (tireBottom < desiredBottom)
                             {
-                                bool lifted = false;
-                                for (int t = 0; t < 4; ++t)
-                                {
-                                    BoundingBox tb = TruckBoxTires[t];
-
-                                    if (!CheckCollisionBoxes(tb, tree.outerBox)) continue;
-
-                                    // if the tire bottom is below the rock top, lift the truck so it rests on it
-                                    float tireBottom = tb.min.y;
-                                    float desiredBottom = tree.box.max.y;
-                                    if (tireBottom < desiredBottom)
-                                    {
-                                        float dy = desiredBottom - tireBottom;
-                                        //truckPosition.y += dy;
-                                        //truckOrigin.y += dy;      // keep origin consistent for anything using it
-                                        //tireYPos[t] += dy;
-                                        Vector3 localOffset = RotateY(tireOffsets[t], -truckAngle);
-                                        Vector3 pos = Vector3Add(truckOrigin, localOffset);
-                                        float groundYy = desiredBottom;
-                                        if (groundYy < -9000.0f) { groundYy = pos.y; } // if we error, dont change y
-                                        pos.y = groundYy + 1.2;//this actually works well, adding 1.2 here
-                                        tireYPos[t] = pos.y;
-                                        tireYOffset[t] -= (tireBottom - groundYy) * dt;
-                                        if (tireYOffset[t] > 0.2f) { tireYOffset[t] = 0.2f; }
-                                        if (tireYOffset[t] < -0.12f) { tireYOffset[t] = -0.12f; }
-                                        lifted = true;
-                                        hitRock[t] = true;
-                                        anyHitRock = true;
-                                        TraceLog(LOG_INFO, "tire %d hit rock!", t);
-                                    }
-                                }
-                                if (lifted) { UpdateTruckBoxes();}// keep boxes in sync
-                                // Rocks do not block—rolling over is handled by vertical lift only.
+                                float dy = desiredBottom - tireBottom;
+                                //truckPosition.y += dy;
+                                //truckOrigin.y += dy;      // keep origin consistent for anything using it
+                                //tireYPos[t] += dy;
+                                Vector3 localOffset = RotateY(tireOffsets[t], -truckAngle);
+                                Vector3 pos = Vector3Add(truckOrigin, localOffset);
+                                float groundYy = desiredBottom;
+                                if (groundYy < -9000.0f) { groundYy = pos.y; } // if we error, dont change y
+                                pos.y = groundYy + 1.2;//this actually works well, adding 1.2 here
+                                tireYPos[t] = pos.y;
+                                tireYOffset[t] -= (tireBottom - groundYy) * dt;
+                                if (tireYOffset[t] > 0.2f) { tireYOffset[t] = 0.2f; }
+                                if (tireYOffset[t] < -0.12f) { tireYOffset[t] = -0.12f; }
+                                lifted = true;
+                                hitRock[t] = true;
+                                anyHitRock = true;
+                                TraceLog(LOG_INFO, "tire %d hit rock!", t);
                             }
-                            else
-                            {
-                                // ---- EVERYTHING ELSE: MIT/MTD push like Donny ----
-                                // narrow-phase against the actual prop box
-                                BoundingBox prop = tree.box;
-                                Vector3 push = (Vector3){ 0 };
-                                bool hit = false;
+                        }
+                        if (lifted) { UpdateTruckBoxes(); }// keep boxes in sync
+                        // Rocks do not block—rolling over is handled by vertical lift only.
+                    }
+                    else
+                    {
+                        // ---- EVERYTHING ELSE: MIT/MTD push like Donny ----
+                        // narrow-phase against the actual prop box
+                        BoundingBox prop = tree.box;
+                        Vector3 push = (Vector3){ 0 };
+                        bool hit = false;
 
-                                // test each body box; sum axis-minimal pushes
-                                BoundingBox body[4] = { TruckBoxFront, TruckBoxBack, TruckBoxLeft, TruckBoxRight };
-                                for (int b = 0; b < 4; ++b)
-                                {
-                                    if (!CheckCollisionBoxes(body[b], prop)) continue;
+                        // test each body box; sum axis-minimal pushes
+                        BoundingBox body[4] = { TruckBoxFront, TruckBoxBack, TruckBoxLeft, TruckBoxRight };
+                        for (int b = 0; b < 4; ++b)
+                        {
+                            if (!CheckCollisionBoxes(body[b], prop)) continue;
 
-                                    // per-axis overlaps (positive => penetration depth)
-                                    float left = prop.max.x - body[b].min.x; // +X push
-                                    float right = body[b].max.x - prop.min.x;    // -X push
-                                    float bottom = prop.max.y - body[b].min.y; // +Y (landing on top)
-                                    float top = body[b].max.y - prop.min.y;    // -Y (hitting underside)
-                                    float back = prop.max.z - body[b].min.z; // +Z push
-                                    float front = body[b].max.z - prop.min.z;    // -Z push
-                                    // pick smallest on each pair -> signed overlaps
-                                    float ox = (left < right) ? left : -right;
-                                    float oy = (bottom < top) ? bottom : -top;
-                                    float oz = (back < front) ? back : -front;  // formulation like Donny’s MIT resolver  :contentReference[oaicite:2]{index=2}
+                            // per-axis overlaps (positive => penetration depth)
+                            float left = prop.max.x - body[b].min.x; // +X push
+                            float right = body[b].max.x - prop.min.x;    // -X push
+                            float bottom = prop.max.y - body[b].min.y; // +Y (landing on top)
+                            float top = body[b].max.y - prop.min.y;    // -Y (hitting underside)
+                            float back = prop.max.z - body[b].min.z; // +Z push
+                            float front = body[b].max.z - prop.min.z;    // -Z push
+                            // pick smallest on each pair -> signed overlaps
+                            float ox = (left < right) ? left : -right;
+                            float oy = (bottom < top) ? bottom : -top;
+                            float oz = (back < front) ? back : -front;  // formulation like Donny’s MIT resolver  :contentReference[oaicite:2]{index=2}
 
-                                    // choose axis with smallest absolute overlap for this box
-                                    float ax = fabsf(ox), ay = fabsf(oy), az = fabsf(oz);
-                                    if (ax <= ay && ax <= az)      push.x += (ox > 0 ? ox + SKIN : ox - SKIN);
-                                    else if (ay <= ax && ay <= az) push.y += (oy > 0 ? oy + SKIN : oy - SKIN);
-                                    else                           push.z += (oz > 0 ? oz + SKIN : oz - SKIN);
+                            // choose axis with smallest absolute overlap for this box
+                            float ax = fabsf(ox), ay = fabsf(oy), az = fabsf(oz);
+                            if (ax <= ay && ax <= az)      push.x += (ox > 0 ? ox + SKIN : ox - SKIN);
+                            else if (ay <= ax && ay <= az) push.y += (oy > 0 ? oy + SKIN : oy - SKIN);
+                            else                           push.z += (oz > 0 ? oz + SKIN : oz - SKIN);
 
-                                    hit = true;
-                                }
+                            hit = true;
+                        }
 
-                                if (hit)
-                                {
-                                    // bias: don’t yank the truck downward; allow stepping up, not down
-                                    if (push.y < 0.0f) push.y = 0.0f;
+                        if (hit)
+                        {
+                            // bias: don’t yank the truck downward; allow stepping up, not down
+                            if (push.y < 0.0f) push.y = 0.0f;
 
-                                    truckPosition = Vector3Add(truckPosition, push);
-                                    truckOrigin = Vector3Add(truckOrigin, push);
-                                    truckSpeed *= 0.6f;        // soften impact
-                                    disableRoll = true;        // lock roll for this frame on hard contact
-                                    UpdateTruckBoxes();
-                                    hitTree = true;
-                                }
-                            }
+                            truckPosition = Vector3Add(truckPosition, push);
+                            truckOrigin = Vector3Add(truckOrigin, push);
+                            truckSpeed *= 0.6f;        // soften impact
+                            disableRoll = true;        // lock roll for this frame on hard contact
+                            UpdateTruckBoxes();
+                            hitTree = true;
                         }
                     }
                 }
@@ -1989,77 +2018,72 @@ int main(void) {
             prevBox.min.z -= deltaFrame.z; prevBox.max.z -= deltaFrame.z;
 
             // --- static prop collision donny---
-            for (int cy = 0; cy < CHUNK_COUNT; cy++) {
-                for (int cx = 0; cx < CHUNK_COUNT; cx++) {
-                    if (!chunks[cx][cy].isLoaded || chunks[cx][cy].lod != LOD_64) continue;
+            for (int i = 0; i < numCloseProps; i++)
+            {
+                StaticGameObject tree = CloseProps[i];
+                // broad-phase: ignore grass + outerBox cull
+                if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) { continue; }
+                for (int a = 0; a < MAX_ARROWS; a++)
+                {
+                    if (!don.arrows[a].alive || don.arrows[a].stuck) { continue; }
+                    if (CheckCollisionBoxes(don.arrows[a].box, tree.box))
+                    {
+                        don.arrows[a].stuck = true;
+                    }
+                }
+                if (!CheckCollisionBoxes(don.outerBox, tree.outerBox)) continue;
 
-                    for (int i = 0; i < chunks[cx][cy].treeCount; i++) {
-                        StaticGameObject tree = chunks[cx][cy].props[i];
-                        // broad-phase: ignore grass + outerBox cull
-                        if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) continue;
-                        for (int a = 0; a < MAX_ARROWS; a++)
-                        {
-                            if (!don.arrows[a].alive || don.arrows[a].stuck) { continue; }
-                            if (CheckCollisionBoxes(don.arrows[a].box, tree.box))
-                            {
-                                don.arrows[a].stuck = true;
-                            }
-                        }
-                        if (!CheckCollisionBoxes(don.outerBox, tree.outerBox)) continue;
+                // narrow-phase: collide with the actual prop box
+                if (!CheckCollisionBoxes(don.outerBox, tree.box)) continue;
 
-                        // narrow-phase: collide with the actual prop box
-                        if (!CheckCollisionBoxes(don.outerBox, tree.box)) continue;
+                // compute per-axis overlaps (positive means penetration depth)
+                float left = tree.box.max.x - don.outerBox.min.x; // push +X
+                float right = don.outerBox.max.x - tree.box.min.x; // push -X
+                float bottom = tree.box.max.y - don.outerBox.min.y; // push +Y (landing on top)
+                float top = don.outerBox.max.y - tree.box.min.y; // push -Y (hitting underside)
+                float back = tree.box.max.z - don.outerBox.min.z; // push +Z
+                float front = don.outerBox.max.z - tree.box.min.z; // push -Z
 
-                        // compute per-axis overlaps (positive means penetration depth)
-                        float left = tree.box.max.x - don.outerBox.min.x; // push +X
-                        float right = don.outerBox.max.x - tree.box.min.x; // push -X
-                        float bottom = tree.box.max.y - don.outerBox.min.y; // push +Y (landing on top)
-                        float top = don.outerBox.max.y - tree.box.min.y; // push -Y (hitting underside)
-                        float back = tree.box.max.z - don.outerBox.min.z; // push +Z
-                        float front = don.outerBox.max.z - tree.box.min.z; // push -Z
+                float ox = (left < right) ? left : -right;   float absOx = fabsf(ox);
+                float oy = (bottom < top) ? bottom : -top;   float absOy = fabsf(oy);
+                float oz = (back < front) ? back : -front;   float absOz = fabsf(oz);
 
-                        float ox = (left < right) ? left : -right;   float absOx = fabsf(ox);
-                        float oy = (bottom < top) ? bottom : -top;   float absOy = fabsf(oy);
-                        float oz = (back < front) ? back : -front;   float absOz = fabsf(oz);
+                // Are we coming down from above and close enough to stand?
+                bool descending = (deltaFrame.y <= 0.0f);
+                bool wasAbove = (prevBox.min.y >= tree.box.max.y - 0.01f);
+                bool canStep = ((don.outerBox.min.y - tree.box.max.y) <= STEP_HEIGHT + SKIN_EPS);
 
-                        // Are we coming down from above and close enough to stand?
-                        bool descending = (deltaFrame.y <= 0.0f);
-                        bool wasAbove = (prevBox.min.y >= tree.box.max.y - 0.01f);
-                        bool canStep = ((don.outerBox.min.y - tree.box.max.y) <= STEP_HEIGHT + SKIN_EPS);
+                // Prefer resolving vertically onto the top when appropriate
+                if (descending && wasAbove && canStep && (absOy <= absOx) && (absOy <= absOz) && oy > MIN_PUSH_EPS) {
+                    // snap feet onto the prop top
+                    float snapUp = bottom + SKIN_EPS; // bottom is positive penetration to push +Y
+                    don.pos.y += snapUp;
+                    don.outerBox.min.y += snapUp;
+                    don.outerBox.max.y += snapUp;
 
-                        // Prefer resolving vertically onto the top when appropriate
-                        if (descending && wasAbove && canStep && (absOy <= absOx) && (absOy <= absOz) && oy > MIN_PUSH_EPS) {
-                            // snap feet onto the prop top
-                            float snapUp = bottom + SKIN_EPS; // bottom is positive penetration to push +Y
-                            don.pos.y += snapUp;
-                            don.outerBox.min.y += snapUp;
-                            don.outerBox.max.y += snapUp;
+                    // optional: if you track vertical velocity, zero it here
+                    // don.vel.y = 0.0f;
 
-                            // optional: if you track vertical velocity, zero it here
-                            // don.vel.y = 0.0f;
+                    // you may also want to mark grounded: don.onGround = true;
+                }
+                else {
+                    // side hit: push along the smallest horizontal penetration
+                    if (absOx < absOz) {
+                        // push in X
+                        float pushX = (fabsf(ox) > MIN_PUSH_EPS) ? ox + ((ox > 0) ? SKIN_EPS : -SKIN_EPS) : 0.0f;
+                        don.pos.x += pushX;
+                        don.outerBox.min.x += pushX;
+                        don.outerBox.max.x += pushX;
 
-                            // you may also want to mark grounded: don.onGround = true;
-                        }
-                        else {
-                            // side hit: push along the smallest horizontal penetration
-                            if (absOx < absOz) {
-                                // push in X
-                                float pushX = (fabsf(ox) > MIN_PUSH_EPS) ? ox + ((ox > 0) ? SKIN_EPS : -SKIN_EPS) : 0.0f;
-                                don.pos.x += pushX;
-                                don.outerBox.min.x += pushX;
-                                don.outerBox.max.x += pushX;
-
-                                // optional: kill x-velocity into the wall if you track velocity
-                                // if ((pushX > 0 && don.vel.x < 0) || (pushX < 0 && don.vel.x > 0)) don.vel.x = 0.0f;
-                            }
-                            else {
-                                // push in Z
-                                float pushZ = (fabsf(oz) > MIN_PUSH_EPS) ? oz + ((oz > 0) ? SKIN_EPS : -SKIN_EPS) : 0.0f;
-                                don.pos.z += pushZ;
-                                don.outerBox.min.z += pushZ;
-                                don.outerBox.max.z += pushZ;
-                            }
-                        }
+                        // optional: kill x-velocity into the wall if you track velocity
+                        // if ((pushX > 0 && don.vel.x < 0) || (pushX < 0 && don.vel.x > 0)) don.vel.x = 0.0f;
+                    }
+                    else {
+                        // push in Z
+                        float pushZ = (fabsf(oz) > MIN_PUSH_EPS) ? oz + ((oz > 0) ? SKIN_EPS : -SKIN_EPS) : 0.0f;
+                        don.pos.z += pushZ;
+                        don.outerBox.min.z += pushZ;
+                        don.outerBox.max.z += pushZ;
                     }
                 }
             }

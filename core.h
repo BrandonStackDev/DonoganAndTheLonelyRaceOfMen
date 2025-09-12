@@ -219,6 +219,12 @@ Color lightColorTargetDay = { 102, 191, 255, 255 };
 Color lightColorDraw = { 102, 191, 255, 255 };
 Color lightTileColor = { 254, 254, 254, 254 };
 
+//closeprops
+#define MAX_CLOSE_PROPS 1024
+#define MAX_CLOSE_PROPS_DISTANCE 321 
+
+StaticGameObject CloseProps[MAX_CLOSE_PROPS];
+
 BoundingBox UpdateBoundingBox(BoundingBox box, Vector3 pos)
 {
     // Calculate the half-extents from the current box
