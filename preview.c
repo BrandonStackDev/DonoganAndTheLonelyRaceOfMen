@@ -2337,8 +2337,27 @@ int main(void) {
                         WHITE);
                     if (Scenes[i].modelType == MODEL_HOME_WINDMILL)
                     {
-                        DrawModelEx(rotor, Vector3Add(Scenes[i].pos,rotorOffset),(Vector3) { 0, 0, 1 }, rotorSpin,(Vector3) { 16 , 16 , 16 }, WHITE);
+                        // Inputs we already have
+                        float yaw = Scenes[i].yaw;                 // radians (Scene uses radians)
+                        float spin = rotorSpin * DEG2RAD;           // keep your existing rotorSpin but use radians
+                        Vector3 pos = Scenes[i].pos;                 // home world position
+
+                        // --- Build transforms (no quaternions) ---
+                        Matrix Srot = MatrixScale(16.0f, 16.0f, 16.0f);        // rotor mesh scale (kept same as before)
+                        Matrix Rspin = MatrixRotateZ(spin);                    // rotor roll about its local +Z
+                        Matrix Toff = MatrixTranslate(rotorOffset.x, rotorOffset.y, rotorOffset.z); // hub offset in home-local space
+                        Matrix Ryaw = MatrixRotateY(yaw);                     // home yaw
+                        Matrix Thome = MatrixTranslate(pos.x, pos.y, pos.z);   // home world translation
+
+                        // Order:  Scale · (Spin · Offset) · (HomeYaw · HomeTranslate)
+                        Matrix rotorM = MatrixMultiply(
+                            MatrixMultiply(MatrixMultiply(Srot, Rspin), Toff),
+                            MatrixMultiply(Ryaw, Thome));
+
+                        // Draw rotor with explicit matrix
+                        DrawMesh(rotor.meshes[0], rotor.materials[0], rotorM);
                     }
+
                     if (displayBoxes) { DrawBoundingBox(Scenes[i].box, PURPLE); }
                 }
                 rlEnableBackfaceCulling();

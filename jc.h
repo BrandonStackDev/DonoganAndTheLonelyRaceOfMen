@@ -207,8 +207,8 @@ void InitHomes() {
     Scenes[SCENE_HOME_WINDMILL_03] = (Scene){ ////windmill!
         .type = SCENE_HOME_WINDMILL_03,
         .modelType = MODEL_HOME_WINDMILL,
-        .pos = (Vector3){ 2055.00f, 489.00f, 195.00f }, //started at 472 , y from measured => min +24 - +30 max
-        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .pos = (Vector3){ 2055.00f, 490.00f, 195.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = PI / 2.0f,          // adjust if you want a different facing
         .scale = 32.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
@@ -216,8 +216,8 @@ void InitHomes() {
     Scenes[SCENE_HOME_WINDMILL_04] = (Scene){ ////windmill!
         .type = SCENE_HOME_WINDMILL_04,
         .modelType = MODEL_HOME_WINDMILL,
-        .pos = (Vector3){ 1933.00f, 420.65f, -533.00f }, //started at 472 , y from measured => min +24 - +30 max
-        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .pos = (Vector3){ 1933.00f, 435.00f, -533.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = PI / 2.0f,          // adjust if you want a different facing
         .scale = 32.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
@@ -226,7 +226,7 @@ void InitHomes() {
         .type = SCENE_HOME_WINDMILL_05,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ 1814.00f, 485.40f, -1185.00f }, //started at 472 , y from measured => min +24 - +30 max
-        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .yaw = PI / 2.0f,          // adjust if you want a different facing
         .scale = 32.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
@@ -235,7 +235,7 @@ void InitHomes() {
         .type = SCENE_HOME_WINDMILL_06,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ 1785.00f, 534.00f, -1723.00f }, //started at 472 , y from measured => min +24 - +30 max
-        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .yaw = PI / 2.0f,          // adjust if you want a different facing
         .scale = 32.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
