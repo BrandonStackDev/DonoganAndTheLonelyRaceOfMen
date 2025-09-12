@@ -491,6 +491,11 @@ int main(void) {
     don.pos = Scenes[SCENE_HOME_CABIN_02].pos;
     don.pos.y = 533.333f;
     StartTimer(&don.talkStartTimer); //so we can talk right away;
+    //windmill Rotor
+    Model rotor = LoadModel("models/rotor.obj");
+    rotor.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/rotor.png");
+    Vector3 rotorOffset = { 1.0f, 12.0f, 18.0f };
+    float rotorSpin = 0; //degrees + dt, then convert to radians
     //tree of Life
     Model tol = LoadModel("models/tree_of_life.obj");
     tol.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/tree_of_life.png");
@@ -633,6 +638,7 @@ int main(void) {
     long loop_counter = 0;
     while (!WindowShouldClose()) {
         loop_counter++;
+        rotorSpin += GetFrameTime() * 128;
         int numCloseProps = 0;
         //document close props
         if (onLoad)//tweak modulus and total size
@@ -708,6 +714,7 @@ int main(void) {
         {
             bool inBowCam = (don.bowMode || (don.bowReleaseCamHold > 0.0f)) && don.state != DONOGAN_STATE_BOW_EXIT;
             float dt = GetFrameTime();
+            ;//as soon as we have dt, increment rotor spin
             // Right stick controls camera orbit (mouse RMB fallback also works)
             float rsx = havePad ? gpad.normRX : 0.0f;
             float rsy = havePad ? gpad.normRY : 0.0f;
@@ -2327,6 +2334,10 @@ int main(void) {
                         (Vector3) { 0, 1, 0 }, Scenes[i].yaw * RAD2DEG,
                         (Vector3) { Scenes[i].scale , Scenes[i].scale, Scenes[i].scale}, 
                         WHITE);
+                    if (Scenes[i].modelType == MODEL_HOME_WINDMILL)
+                    {
+                        DrawModelEx(rotor, Vector3Add(Scenes[i].pos,rotorOffset),(Vector3) { 0, 0, 1 }, rotorSpin,(Vector3) { 16 , 16 , 16 }, WHITE);
+                    }
                     if (displayBoxes) { DrawBoundingBox(Scenes[i].box, PURPLE); }
                 }
                 rlEnableBackfaceCulling();

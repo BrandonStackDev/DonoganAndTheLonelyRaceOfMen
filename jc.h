@@ -19,6 +19,7 @@ typedef enum {
     MODEL_HOME_TENT, //teepee, 004
     MODEL_HOME_TEMPLE, //temple
     MODEL_HOME_CASTLE, //castle, cool texture!
+    MODEL_HOME_WINDMILL, //windmilll will have spinning rotor
     MODEL_HOME_TOTAL_COUNT
 } Model_Home_Type;
 
@@ -35,6 +36,7 @@ typedef enum {
     SCENE_HOME_TENT_04,
     SCENE_HOME_TEMPLE_01,
     SCENE_HOME_CASTLE_01,
+    SCENE_HOME_WINDMILL_01,
     SCENE_TOTAL_COUNT
 } Scene_Type;
 
@@ -70,6 +72,9 @@ void InitHomes() {
     Model home006 = LoadModel("models/home_006.obj");
     home006.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_006.png");
     HomeModels[MODEL_HOME_CASTLE] = home006;
+    Model home007 = LoadModel("models/home_007.obj");
+    home007.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_007.png");
+    HomeModels[MODEL_HOME_WINDMILL] = home007;
 
     // Populate the scene list (the important part)
     Scenes[SCENE_HOME_CABIN_01] = (Scene){ //where the truck is
@@ -168,6 +173,15 @@ void InitHomes() {
         .pos = (Vector3){ 2360.00f, 572.00f, 750.00f },
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 256.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_WINDMILL_01] = (Scene){ ////windmill! by castle
+        .type = SCENE_HOME_WINDMILL_01,
+        .modelType = MODEL_HOME_WINDMILL,
+        .pos = (Vector3){ 2662.00f, 502.40f, 1475.00f }, //started at 472 , y from measured => min +24 - +30 max
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
