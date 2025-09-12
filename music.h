@@ -9,6 +9,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+//me
+#include "game.h"
+
 
 // --- Limits & sizes ----------------------------------------------------------
 #define MAX_SONGS_PER_ALBUM   16
@@ -43,18 +46,6 @@ struct GameMusic {
     Album albums[MAX_ALBUMS];
     int   albumCount;
 };
-
-// Your global game state: add indices & a single active Music object.
-typedef struct {
-    bool invY, invX;
-    float musicVol, soundVol;
-
-    // Playback state
-    int   currentAlbumIndex;   // -1 if none selected
-    int   currentSongIndex;    // -1 if none selected
-    Music currentMusic;        // currently loaded/playing stream (if any)
-    bool  currentMusicLoaded;  // guard for unload/play calls
-} GameState;
 
 // --- Small helpers -----------------------------------------------------------
 

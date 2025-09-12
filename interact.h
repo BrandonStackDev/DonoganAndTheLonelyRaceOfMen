@@ -56,7 +56,7 @@ static HANDLE g_ollamaThread = NULL;
 
 static const char* SHEET_TOL =
 "You are the Tree of Life, an ancient, gentle, mystical entity rooted in wisdom.\n"
-"You speak briefly, in simple sentences.\n"
+"You speak in haiku.\n"
 "Tone: kind, serene, a little playful. Avoid long paragraphs.\n"
 "Knowledge: the forest, Donogan (the player), magic arrows, rivers, winds, and hidden groves.\n"
 "Stay in character. Do not mention being an AI or models.\n";
@@ -70,9 +70,17 @@ static const char* SHEET_ATREYU =
 "Stay in character. Do not mention being an AI or models.\n";
 static const char* SHEET_ATREYU_DEFAULT = "(uhg!) Hello, I am Atreyu. Please be quiet, I am trying to meditate...\n";
 
+static const char* SHEET_ATREYU_HORN =
+"You are the Indian Warrior Atreyu, the last of the Lenape.\n"
+"You speak in simple sentences. You are trying to meditating on a high peak. Donogan just blew the truck horn and it was loud!\n"
+"Tone: Wise, but very rude because you are trying to meditate, but Donogan keeps blowing the truck horn!\n"
+"Stay in character. Do not mention being an AI or models.\n";
+static const char* SHEET_ATREYU_HORN_DEFAULT = "Donogan! Dont blow the truck horn... Please be quiet, I am trying to meditate...\n";
+
 typedef enum {
     TALK_TYPE_TOL,
-    TALK_TYPE_ATREYU
+    TALK_TYPE_ATREYU,
+    TALK_TYPE_ATREYU_CAR_HORN
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
 
@@ -81,6 +89,7 @@ static inline const char* GetCharacterSheet(TALK_TYPE who)
     switch (who) {
     case TALK_TYPE_TOL:         return SHEET_TOL;
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU;
+    case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN;
     default:              return "?";
     }
 }
@@ -90,6 +99,7 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
     switch (who) {
     case TALK_TYPE_TOL:         return SHEET_TOL_DEFAULT;
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU_DEFAULT;
+    case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN_DEFAULT;
     default:              return "?";
     }
 }

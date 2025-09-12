@@ -20,6 +20,7 @@
 #include "core.h"
 #include "music.h"   // song/album structs + helpers
 #include "duct_tape.h"
+#include "game.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -230,7 +231,6 @@ void UpdateLightningBugs(LightningBug* bugs, int count, float deltaTime)
 }
 
 static GameMusic gMusic;
-static GameState gAudio;
 static float gSongPrevPlayed = 0.0f;
 
 // Edge detection for D-pad (so we act on "press", not "hold")
@@ -240,28 +240,28 @@ static void Audio_SelectAlbumRelative(int delta)
 {
     if (gMusic.albumCount <= 0) return;
 
-    int a = (gAudio.currentAlbumIndex < 0) ? 0 : gAudio.currentAlbumIndex;
+    int a = (gGame.currentAlbumIndex < 0) ? 0 : gGame.currentAlbumIndex;
     a = (a + delta + gMusic.albumCount) % gMusic.albumCount;
 
     // Reset to first track on album change
-    GM_Select(&gAudio, &gMusic, a, 0);
-    if (GM_LoadCurrent(&gAudio, &gMusic)) {
-        PlayMusicStream(gAudio.currentMusic);
+    GM_Select(&gGame, &gMusic, a, 0);
+    if (GM_LoadCurrent(&gGame, &gMusic)) {
+        PlayMusicStream(gGame.currentMusic);
         gSongPrevPlayed = 0.0f;  // <-- add
     }
 }
 
 static void Audio_SelectSongRelative(int delta)
 {
-    const Album* alb = GM_GetAlbum(&gMusic, gAudio.currentAlbumIndex);
+    const Album* alb = GM_GetAlbum(&gMusic, gGame.currentAlbumIndex);
     if (!alb || alb->songCount <= 0) return;
 
-    int s = (gAudio.currentSongIndex < 0) ? 0 : gAudio.currentSongIndex;
+    int s = (gGame.currentSongIndex < 0) ? 0 : gGame.currentSongIndex;
     s = (s + delta + alb->songCount) % alb->songCount;
 
-    GM_Select(&gAudio, &gMusic, gAudio.currentAlbumIndex, s);
-    if (GM_LoadCurrent(&gAudio, &gMusic)) {
-        PlayMusicStream(gAudio.currentMusic);
+    GM_Select(&gGame, &gMusic, gGame.currentAlbumIndex, s);
+    if (GM_LoadCurrent(&gGame, &gMusic)) {
+        PlayMusicStream(gGame.currentMusic);
         gSongPrevPlayed = 0.0f;  // <-- add
     }
 }
@@ -307,15 +307,17 @@ int main(void) {
     int modelSearchType = 0;
     //---------------RAYLIB INIT STUFF---------------------------------------
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Donogan And The Lonely Race Of Men");
+    //game state
+    gGame.HonkedHornRecently = CreateTimer(60);//60 seconds
     //audio
     SetAudioStreamBufferSizeDefault(4096);
     InitAudioDevice();
     GameMusic_Init(&gMusic);
-    GameState_InitAudio(&gAudio);
-    GM_Select(&gAudio, &gMusic, 1, 0);         // default: Second album, first track, (Garden -> Arketized)
-    if (GM_LoadCurrent(&gAudio, &gMusic)) {
-        SetMusicVolume(gAudio.currentMusic, gAudio.musicVol);
-        PlayMusicStream(gAudio.currentMusic);
+    GameState_InitAudio(&gGame);
+    GM_Select(&gGame, &gMusic, 1, 0);         // default: Second album, first track, (Garden -> Arketized)
+    if (GM_LoadCurrent(&gGame, &gMusic)) {
+        SetMusicVolume(gGame.currentMusic, gGame.musicVol);
+        PlayMusicStream(gGame.currentMusic);
     }
     //get sound clips
     carHorn = LoadSound("sounds/horn.mp3");
@@ -661,7 +663,7 @@ int main(void) {
             }
             numCloseProps = j;
         }
-        if (loop_counter % 60 == 0)
+        if (loop_counter % 69 == 0)
         {
             TraceLog(LOG_INFO,"numCloseProps = %d", numCloseProps);
         }
@@ -701,6 +703,7 @@ int main(void) {
             prevDpadUp = dUp; prevDpadDown = dDown; prevDpadLeft = dLeft; prevDpadRight = dRight;
 
         }
+        if (vehicleMode) { donnyMode = false; }//just make sure this is always exlusive or, one or the other, never both
         if (!vehicleMode && donnyMode)
         {
             bool inBowCam = (don.bowMode || (don.bowReleaseCamHold > 0.0f)) && don.state != DONOGAN_STATE_BOW_EXIT;
@@ -799,6 +802,16 @@ int main(void) {
                     don.who = TALK_TYPE_TOL;
                     StartTimer(&don.talkStartTimer);
                 }
+                else if (!HasTimerElapsed(&gGame.HonkedHornRecently) //carhorn comes first, most pressing
+                    && !don.isTalking
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.03f
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    ResetTimer(&gGame.HonkedHornRecently);//just once
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_ATREYU_CAR_HORN;
+                    StartTimer(&don.talkStartTimer);
+                }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.02f
                     && HasTimerElapsed(&don.talkStartTimer))
@@ -820,8 +833,14 @@ int main(void) {
                 int r3 = havePad ? (gpad.btnR3 > 0) : 0;  // ControllerData should already have btnR3 like btnL3
 
                 if (r3 && !prevR3) {
-                    if (!truckSummonActive) TruckSummonStart();
-                    else                    TruckSummonCancel(); // press again to cancel
+                    if (!truckSummonActive)
+                    {
+                        TruckSummonStart(); StartTimer(&gGame.HonkedHornRecently);//horn honks in summon start
+                    }
+                    else
+                    {
+                        TruckSummonCancel(); // press again to cancel
+                    }
                 }
                 prevR3 = r3;
             }
@@ -905,7 +924,7 @@ int main(void) {
             {
                 StartTimer(&truckInteractTimer);
                 vehicleMode = false; donnyMode = true;
-                don.pos = Vector3Add(truckPosition, (Vector3) {3,0,-2});
+                don.pos = Vector3Add(truckPosition, (Vector3) {6,1,-5});//todo: why did I put a one here for y?
             }
         }
         // --->>> SUMMON (autopilot)
@@ -1219,7 +1238,11 @@ int main(void) {
             if(gpad.btnCircle > 0)
             {
                 //displayTruckPoints = !displayTruckPoints;
-                if (!IsSoundPlaying(carHorn)) { PlaySound(carHorn); }
+                if (!IsSoundPlaying(carHorn)) 
+                { 
+                    PlaySound(carHorn);
+                    StartTimer(&gGame.HonkedHornRecently);
+                }
             }
             //some extra stuff for the truck - steering
             steerInput = gpad.normLX * GetFrameTime();
@@ -2143,13 +2166,13 @@ int main(void) {
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
-        if (onLoad && gAudio.currentMusicLoaded) 
+        if (onLoad && gGame.currentMusicLoaded) 
         {
             // Keep music stream ticking
-            UpdateMusicStream(gAudio.currentMusic);
+            UpdateMusicStream(gGame.currentMusic);
             // End-of-track detection
-            const float len = GetMusicTimeLength(gAudio.currentMusic);
-            const float played = GetMusicTimePlayed(gAudio.currentMusic);
+            const float len = GetMusicTimeLength(gGame.currentMusic);
+            const float played = GetMusicTimePlayed(gGame.currentMusic);
             const float EPS = 0.02f; // seconds threshold near the end
             // 3 ways we consider a song "finished":
             // 1) Crossed into the last EPS window this frame
@@ -2157,7 +2180,7 @@ int main(void) {
             // 2) Stream wrapped back to small time (in case driver/codec loops internally)
             bool wrapped = (len > 0.0f) && (gSongPrevPlayed > 1.0f) && (played < 0.05f);
             // 3) Stream reports stopped (extra guard)
-            bool stopped = !IsMusicStreamPlaying(gAudio.currentMusic) && (gSongPrevPlayed > 0.1f);
+            bool stopped = !IsMusicStreamPlaying(gGame.currentMusic) && (gSongPrevPlayed > 0.1f);
             if (crossedEnd || wrapped || stopped) {
                 Audio_SelectSongRelative(+1);   // next song; modulo wrap keeps album looping
                 // gSongPrevPlayed reset happens inside Audio_SelectSongRelative()
@@ -2761,7 +2784,7 @@ int main(void) {
             
             DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
             Texture2D talkee = tol_head;
-            if (don.who == TALK_TYPE_ATREYU) { talkee = atreyu_head; }
+            if (don.who == TALK_TYPE_ATREYU || don.who == TALK_TYPE_ATREYU_CAR_HORN) { talkee = atreyu_head; }
             src = (Rectangle){ 0, 0, talkee.width, talkee.height };
             dest = (Rectangle){ (res_contain.x + res_contain.width) - 66, (res_contain.y + res_contain.height) - 66, 64, 64 }; //64x64
             DrawTexturePro(talkee, src, dest, (Vector2) { 0, 0 }, 0.0f, WHITE);
@@ -2775,8 +2798,8 @@ int main(void) {
         }
         if (onLoad) 
         {
-            const Album* a = GM_GetAlbum(&gMusic, gAudio.currentAlbumIndex);
-            const Song* s = GM_GetSong(a, gAudio.currentSongIndex);
+            const Album* a = GM_GetAlbum(&gMusic, gGame.currentAlbumIndex);
+            const Song* s = GM_GetSong(a, gGame.currentSongIndex);
             if (a && s) {DrawText(TextFormat("%s - %s  [%s]", a->artist, a->display, s->display), SCREEN_WIDTH - 400, SCREEN_HEIGHT - 50, 20, RAYWHITE);}
         }
         if(!loadedEem || !wasTilesDocumented)
