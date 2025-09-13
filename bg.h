@@ -51,7 +51,7 @@ typedef struct {
 BadGuy * bg;
 int total_bg_models_all_types, bg_count;
 
-void InitBadGuyModels()
+void InitBadGuyModels(Shader ghostShader)
 {
     total_bg_models_all_types = MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT;
     bgModelBorrower = (BadGuyBorrowModel*)malloc(sizeof(BadGuyBorrowModel) * total_bg_models_all_types);
@@ -67,6 +67,8 @@ void InitBadGuyModels()
                 bgModelBorrower[index].model = LoadModel("models/ghost.obj");
                 bgModelBorrower[index].tex = LoadTexture("textures/ghost.png");
                 bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
+                bgModelBorrower[index].shader = ghostShader;
+                bgModelBorrower[index].model.materials[0].shader = ghostShader;
             }
         }
     }
@@ -122,9 +124,9 @@ BadGuy CreateGhost(Vector3 pos)
     return b;
 }
 
-void InitBadGuys()
+void InitBadGuys(Shader ghostShader)
 {
-    InitBadGuyModels();
+    InitBadGuyModels(ghostShader);
     bg_count = 1; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 2973.00f, 325.00f, 4042.42f }); //y was 319

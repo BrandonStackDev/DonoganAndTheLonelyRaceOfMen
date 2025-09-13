@@ -328,8 +328,6 @@ int main(void) {
     Image icon = LoadImage("res/icon.png");
     SetWindowIcon(icon);
     UnloadImage(icon);
-    //bg
-    InitBadGuys();
     //load the homes models/scenes and stuff like that
     InitHomes();
     //talking
@@ -474,6 +472,11 @@ int main(void) {
     Mesh ballMesh = GenMeshSphere(0.5f, 24, 24);
     Model ball = LoadModelFromMesh(ballMesh);
     ball.materials[0].shader = lightningBall;
+    //ghost shader
+    Shader ghostShader = LoadShader("shaders/330/ghost.vs", "shaders/330/ghost.fs");
+    int locGhostTime = GetShaderLocation(ghostShader, "u_time");
+    //bg
+    InitBadGuys(ghostShader);
     // end all shaders
 
     //tree model //todo: replace with bounding boxes for reals in the models.h stuff
@@ -986,6 +989,7 @@ int main(void) {
         float time = GetTime();
         SetShaderValue(waterShader, timeLoc, &time, SHADER_UNIFORM_FLOAT);
         SetShaderValue(grassInstancingLightShader, grassTimeLoc, &time, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(ghostShader, locGhostTime, &time, SHADER_UNIFORM_FLOAT);
         bool reportOn = false;
         int tileTriCount = 0;
         int tileBcCount = 0;
