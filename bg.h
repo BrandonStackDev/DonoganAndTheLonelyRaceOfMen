@@ -27,7 +27,7 @@ typedef struct {
     BoundingBox origBox, origBodyBox, origHeadBox;
 } BadGuyBorrowModel; //for borrowing models for bad guy instances
 
-BadGuyBorrowModel* bgModelBorrower;
+BadGuyBorrowModel * bgModelBorrower;
 
 typedef struct {
     bool active;
@@ -44,7 +44,8 @@ typedef struct {
     BoundingBox box, bodyBox, headBox;
 } BadGuy; //instance of a bad guy, will borrow its model
 
-int total_bg_models_all_types;
+BadGuy * bg;
+int total_bg_models_all_types, bg_count;
 
 void InitBadGuyModels()
 {
@@ -58,10 +59,28 @@ void InitBadGuyModels()
             bgModelBorrower[index].type = bg_t;
             if (bg_t == BG_GHOST)
             {
-
+                bgModelBorrower[index].model = LoadModel("models/ghost.obj");
+                bgModelBorrower[index].tex = LoadTexture("textures/ghost.png");
             }
         }
     }
+}
+
+BadGuy CreateGhost(Vector3 pos)
+{
+    BadGuy b = { 0 };
+    b.type = BG_GHOST;
+    b.spawnPoint = pos;
+    b.spawnRadius = 80;
+    b.gbm_index = -1;
+}
+
+void InitBadGuys()
+{
+    InitBadGuyModels();
+    bg_count = 1; //increment this, every time, you add, a bg...
+    bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
+    bg[0] = CreateGhost((Vector3) { 2970.70f, 325.00f, 4042.42f }); //y was 319
 }
 
 #endif // BG_H
