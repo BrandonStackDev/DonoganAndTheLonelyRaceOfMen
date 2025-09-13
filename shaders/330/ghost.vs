@@ -43,5 +43,6 @@ void main()
     vWorldPos = worldDisplaced.xyz;
     vNormal   = normalize((matNormal * vec4(vertexNormal, 0.0)).xyz);
 
-    gl_Position = mvp * worldDisplaced;
+    //gl_Position = mvp * worldDisplaced;
+    gl_Position = mvp * vec4(displaced, 1.0);
 }

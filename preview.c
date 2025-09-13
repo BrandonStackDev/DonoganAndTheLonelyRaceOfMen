@@ -474,6 +474,9 @@ int main(void) {
     ball.materials[0].shader = lightningBall;
     //ghost shader
     Shader ghostShader = LoadShader("shaders/330/ghost.vs", "shaders/330/ghost.fs");
+    ghostShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(ghostShader, "mvp");
+    ghostShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(ghostShader, "matModel");
+    ghostShader.locs[SHADER_LOC_MATRIX_NORMAL] = GetShaderLocation(ghostShader, "matNormal");
     int locGhostTime = GetShaderLocation(ghostShader, "u_time");
     //bg
     InitBadGuys(ghostShader);
@@ -2178,9 +2181,14 @@ int main(void) {
             don.camPitch = pitch;    // your orbit pitch
         }
         if (vehicleMode) { UpdateTruckBoxes(); }
+        //update bg
         if (onLoad && donnyMode && CheckSpawnAndActivateNext(don.pos)) //hopefully we support short circuiting, I would assume
         { 
             TraceLog(LOG_INFO, "Uh Oh! Here Comes Trouble...!"); 
+        }
+        if (onLoad)
+        {
+            BG_UpdateAll(dt);
         }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         // Update the light shader with the camera view position

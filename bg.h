@@ -20,6 +20,11 @@ typedef enum {
     BG_TYPE_COUNT
 } BadGuyType;
 
+typedef enum {
+    GHOST_STATE_IDLE,
+    GHOST_STATE_BARREL_ROLL,
+} GhostState;
+
 typedef struct {
     bool isInUse;
     BadGuyType type;
@@ -46,6 +51,22 @@ typedef struct {
     float scale;
     BoundingBox box, bodyBox, headBox;
     int health, startHealth;
+    // --- flight runtime (ghost) ---
+    Vector3 vel;          // current velocity (we'll mostly use XZ; Y is altitude control)
+    float   speed;        // current forward speed
+    float   targetSpeed;  // desired forward speed (always >= minSpeed; never backward)
+    float   minSpeed, maxSpeed;
+    float   accel, decel; // rate to reach targetSpeed
+
+    float   targetYaw;    // where we’re steering to (deg)
+    float   steerTimer;   // seconds left before picking a new heading
+    float   yawMaxRate;   // max yaw change (deg/s)
+
+    float   desiredAGL;   // nominal altitude above ground (meters)
+    float   minAGL, maxAGL; // don’t stay lower/higher than these for long
+
+    float   barrelTimer;  // remaining time in barrel roll (sec)
+    unsigned int rng;     // tiny instance RNG
 } BadGuy; //instance of a bad guy, will borrow its model
 
 BadGuy * bg;
@@ -73,6 +94,20 @@ void InitBadGuyModels(Shader ghostShader)
         }
     }
 }
+
+//helpers
+static inline float clampf(float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); }
+static inline float approachf(float cur, float tgt, float rate, float dt) {
+    float d = tgt - cur, s = rate * dt;
+    return (fabsf(d) <= s) ? tgt : (cur + (d > 0 ? s : -s));
+}
+static inline float wrapDeg(float a) {
+    while (a > 180.0f) a -= 360.0f; while (a < -180.0f) a += 360.0f; return a;
+}
+static inline Vector3 fwdFromYaw(float yawDeg) {
+    float r = DEG2RAD * yawDeg; return (Vector3) { sinf(r), 0.0f, cosf(r) };
+}
+static inline float rand01u(unsigned int* s) { *s = (*s) * 1664525u + 1013904223u; return ((*s >> 9) & 0x3FFFFFu) / 4194303.0f; }
 
 //draw stuff
 // --- Quaternion helpers for BadGuy full-body rotation -----------------------
@@ -129,7 +164,112 @@ void InitBadGuys(Shader ghostShader)
     InitBadGuyModels(ghostShader);
     bg_count = 1; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
-    bg[0] = CreateGhost((Vector3) { 2973.00f, 325.00f, 4042.42f }); //y was 319
+    bg[0] = CreateGhost((Vector3) { 3022.00f, 322.00f, 4042.42f }); //y was 319
+}
+
+static inline void BG_GhostInitFlight(BadGuy* b) {
+    b->state = GHOST_STATE_IDLE;
+    b->speed = 0.8f;          b->targetSpeed = 1.2f;
+    b->minSpeed = 0.25f;      b->maxSpeed = 3.5f;
+    b->accel = 1.8f;          b->decel = 2.2f;
+
+    b->targetYaw = b->yaw;    b->yawMaxRate = 60.0f; // deg/s
+    b->steerTimer = 0.0f;
+
+    b->desiredAGL = 3.0f;     b->minAGL = 2.0f;      b->maxAGL = 6.0f;
+
+    b->barrelTimer = 0.0f;
+    // simple stable per-instance seed
+    b->rng = (unsigned)(fabsf(b->pos.x * 73856093.0f) + fabsf(b->pos.z * 19349663.0f)) + 1u;
+}
+
+static inline void BG_GhostPickNewWander(BadGuy* b) {
+    // +/-45° jitter around current heading; tweak speed a bit
+    float jitter = (rand01u(&b->rng) * 2.0f - 1.0f) * 45.0f;
+    b->targetYaw = b->yaw + jitter;
+    float speedScale = 0.85f + 0.3f * rand01u(&b->rng);
+    b->targetSpeed = clampf(b->targetSpeed * speedScale, b->minSpeed, b->maxSpeed);
+    b->steerTimer = 1.5f + 2.0f * rand01u(&b->rng); // 1.5..3.5 sec
+}
+
+// rare barrel-roll trigger
+static inline bool BG_GhostMaybeStartBarrel(BadGuy* b, float dt) {
+    if (b->state == GHOST_STATE_BARREL_ROLL) return false;
+    // ~5% chance per second when moving reasonably fast
+    float p = (b->speed > 1.0f ? 0.05f : 0.01f);
+    if (rand01u(&b->rng) < p * dt) {
+        b->state = GHOST_STATE_BARREL_ROLL;
+        b->barrelTimer = 0.9f;         // duration
+        return true;
+    }
+    return false;
+}
+
+static inline void BG_UpdateGhostIdle(BadGuy* b, float dt)
+{
+    // --- Altitude control (XZ mesh “thingy”) ---
+    float groundY = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
+    if (groundY < -9000.0f) groundY = b->pos.y - b->desiredAGL;   // safe fallback
+    float agl = b->pos.y - groundY;
+    float targetY = groundY + clampf(b->desiredAGL, b->minAGL, b->maxAGL);
+    if (agl < b->minAGL) targetY = groundY + b->minAGL;
+    if (agl > b->maxAGL) targetY = groundY + b->maxAGL;
+    b->pos.y = approachf(b->pos.y, targetY, 2.0f, dt);            // gentle vertical
+
+    // --- Barrel roll (rare) ---
+    if (BG_GhostMaybeStartBarrel(b, dt)) {
+        // keep heading/speed; roll handled below
+    }
+
+    // --- Steering & speed (always forward, no back moves) ---
+    b->steerTimer -= dt;
+    if (b->steerTimer <= 0.0f) BG_GhostPickNewWander(b);
+
+    // ease yaw toward targetYaw, bounded by max turn rate
+    float dYaw = wrapDeg(b->targetYaw - b->yaw);
+    float step = clampf(dYaw, -b->yawMaxRate * dt, b->yawMaxRate * dt);
+    float prevYaw = b->yaw;
+    b->yaw += step;
+    float yawRate = wrapDeg(b->yaw - prevYaw) / fmaxf(dt, 1e-5f);  // deg/s
+
+    // ease speed to target
+    float prevSpeed = b->speed;
+    float rate = (b->targetSpeed >= b->speed) ? b->accel : b->decel;
+    b->speed = approachf(b->speed, b->targetSpeed, rate, dt);
+    if (b->speed < b->minSpeed) b->speed = b->minSpeed;
+
+    // --- Leaning (no front/back flips) ---
+    // pitch: lean forward when accelerating, back when decelerating
+    float accelF = (b->speed - prevSpeed) / fmaxf(dt, 1e-5f);
+    float pitchTarget = clampf(-0.7f * accelF, -18.0f, 14.0f);    // degrees
+    b->pitch = approachf(b->pitch, pitchTarget, 120.0f, dt);
+
+    // roll: bank into the turn; in barrel-roll state, we override below
+    float rollTarget = clampf(-0.35f * yawRate, -45.0f, 45.0f);
+    if (b->state == GHOST_STATE_BARREL_ROLL) {
+        b->barrelTimer -= dt;
+        b->roll += 360.0f * 1.2f * dt;             // 1.2 spins/sec
+        if (b->barrelTimer <= 0.0f) {
+            b->state = GHOST_STATE_IDLE;
+            b->roll = fmodf(b->roll, 360.0f);
+        }
+    }
+    else {
+        b->roll = approachf(b->roll, rollTarget, 180.0f, dt);
+    }
+
+    // --- Advance forward (never backwards) ---
+    Vector3 fwd = fwdFromYaw(b->yaw);
+    b->pos.x += fwd.x * b->speed * dt;
+    b->pos.z += fwd.z * b->speed * dt;
+}
+
+static inline void BG_UpdateAll(float dt)
+{
+    for (int i = 0; i < bg_count; ++i) {
+        if (!bg[i].active) continue;
+        if (bg[i].type == BG_GHOST) BG_UpdateGhostIdle(&bg[i], dt);
+    }
 }
 
 //only activate one per call
@@ -149,7 +289,8 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                 bg[b].dead = false;
                 bg[b].health = bg[b].startHealth;
                 bg[b].pos = bg[b].spawnPoint;
-                //todo: will need to set the start state per bg type...also respwan timer
+                //todo: will need to set the start state per bg type...also respawn timer
+                if (bg[b].type == BG_GHOST) { BG_GhostInitFlight(&bg[b]); }
                 return true;
             }
         }
