@@ -2380,9 +2380,9 @@ int main(void) {
                 {
                     //todo: culling
                     if (!bg[b].active) { continue; }
-                    //rlDisableBackfaceCulling();
+                    rlDisableBackfaceCulling();
                     DrawBadGuy(&bg[b]);
-                    //rlEnableBackfaceCulling();
+                    rlEnableBackfaceCulling();
                 }
             }
             //whales and fish

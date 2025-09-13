@@ -60,5 +60,6 @@ void main()
     vec3 color = mix(clothColor, eyeColor * (1.0 + eyeGlow), eyeMask);
     float alpha = mix(ghostAlpha, 0.95, eyeMask); // eyes stay mostly solid
 
-    finalColor = vec4(color, alpha);
+    //finalColor = vec4(color, alpha);
+    finalColor = vec4(color, 1.0);
 }
