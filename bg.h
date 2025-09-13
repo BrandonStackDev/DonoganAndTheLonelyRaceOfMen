@@ -183,7 +183,7 @@ BadGuy CreateGhost(Vector3 pos)
     BadGuy b = { 0 };
     b.type = BG_GHOST;
     b.spawnPoint = pos;
-    b.spawnRadius = 80;
+    b.spawnRadius = 80; //80
     b.gbm_index = -1;
     b.active = false;
     b.pos = pos;
