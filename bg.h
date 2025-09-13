@@ -1,4 +1,4 @@
-#ifndef BG_H
+﻿#ifndef BG_H
 #define BG_H
 
 // Includes
@@ -71,6 +71,43 @@ void InitBadGuyModels()
         }
     }
 }
+
+//draw stuff
+// --- Quaternion helpers for BadGuy full-body rotation -----------------------
+static inline Quaternion BG_ModelFixQuat(const BadGuy* b) {
+    // Exporter/model local-axis fix (if needed). Ghost seems fine → 0.
+    // If the ghost appears 90° off, try setting xFixDeg = -90.0f.
+    float xFixDeg = 0.0f;
+    (void)b; // per-type switch if you add more BG types later
+    return QuaternionFromAxisAngle((Vector3) { 1, 0, 0 }, DEG2RAD* xFixDeg);
+}
+
+static inline Quaternion BG_BuildWorldQuat(const BadGuy* b) {
+    // World yaw (Y), local pitch (X), local roll (Z) – same axis choices as whales.
+    Quaternion qYaw = QuaternionFromAxisAngle((Vector3) { 0, 1, 0 }, DEG2RAD* b->yaw);
+    Quaternion qPitch = QuaternionFromAxisAngle((Vector3) { 1, 0, 0 }, DEG2RAD* b->pitch);
+    Quaternion qRoll = QuaternionFromAxisAngle((Vector3) { 0, 0, 1 }, DEG2RAD* b->roll);
+
+    Quaternion qWorld = QuaternionMultiply(QuaternionMultiply(qYaw, qPitch), qRoll);
+    return QuaternionMultiply(qWorld, BG_ModelFixQuat(b));  // apply local fix last
+}
+
+// Draw the model with S * (R * T), matching the whale path.
+static inline void DrawBadGuy(BadGuy* b) {
+    if (!b || !b->active || b->gbm_index < 0) return;
+
+    Model* M = &bgModelBorrower[b->gbm_index].model;
+
+    Quaternion q = BG_BuildWorldQuat(b);
+    Matrix R = QuaternionToMatrix(q);
+    Matrix T = MatrixTranslate(b->pos.x, b->pos.y, b->pos.z);
+    float s = (b->scale > 0.0f) ? b->scale : 1.0f;
+    Matrix S = MatrixScale(s, s, s);
+
+    Matrix world = MatrixMultiply(S, MatrixMultiply(R, T));
+    DrawMesh(M->meshes[0], M->materials[0], world);
+}
+//end draw stuff
 
 BadGuy CreateGhost(Vector3 pos)
 {

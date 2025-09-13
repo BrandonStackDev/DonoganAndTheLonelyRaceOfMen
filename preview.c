@@ -2376,9 +2376,9 @@ int main(void) {
                 {
                     //todo: culling
                     if (!bg[b].active) { continue; }
-                    rlDisableBackfaceCulling();
-                    DrawModel(bgModelBorrower[bg[b].gbm_index].model,bg[b].pos,bg[b].scale, WHITE);
-                    rlEnableBackfaceCulling();
+                    //rlDisableBackfaceCulling();
+                    DrawBadGuy(&bg[b]);
+                    //rlEnableBackfaceCulling();
                 }
             }
             //whales and fish
