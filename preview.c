@@ -21,6 +21,7 @@
 #include "music.h"   // song/album structs + helpers
 #include "duct_tape.h"
 #include "game.h"
+#include "bg.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -327,6 +328,8 @@ int main(void) {
     Image icon = LoadImage("res/icon.png");
     SetWindowIcon(icon);
     UnloadImage(icon);
+    //bg
+    InitBadGuys();
     //load the homes models/scenes and stuff like that
     InitHomes();
     //talking
@@ -2171,6 +2174,10 @@ int main(void) {
             don.camPitch = pitch;    // your orbit pitch
         }
         if (vehicleMode) { UpdateTruckBoxes(); }
+        if (onLoad && donnyMode && CheckSpawnAndActivateNext(don.pos)) //hopefully we support short circuiting, I would assume
+        { 
+            TraceLog(LOG_INFO, "Uh Oh! Here Comes Trouble...!"); 
+        }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
@@ -2361,6 +2368,18 @@ int main(void) {
                     if (displayBoxes) { DrawBoundingBox(Scenes[i].box, PURPLE); }
                 }
                 rlEnableBackfaceCulling();
+            }
+            //bg
+            if (onLoad)
+            {
+                for (int b = 0; b < bg_count; b++)
+                {
+                    //todo: culling
+                    if (!bg[b].active) { continue; }
+                    rlDisableBackfaceCulling();
+                    DrawModel(bgModelBorrower[bg[b].gbm_index].model,bg[b].pos,bg[b].scale, WHITE);
+                    rlEnableBackfaceCulling();
+                }
             }
             //whales and fish
             if (onLoad)
