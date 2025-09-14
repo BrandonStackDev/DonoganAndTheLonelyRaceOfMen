@@ -59,5 +59,10 @@
 
 
 static float Clampf(float v, float lo, float hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
+static int RandomRange(int lo, int hi)
+{
+	int r = lo + (rand() % (hi - lo + 1));
+	return r;
+}
 
 #endif // UTIL_H
