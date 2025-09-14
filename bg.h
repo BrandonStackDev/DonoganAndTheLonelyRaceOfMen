@@ -290,7 +290,11 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                     bg[b].pos = bg[b].spawnPoint;
                     bg[b].targetPos = bg[b].spawnPoint;
                     //todo: respawn timer
-                    if (bg[b].type == BG_GHOST) { bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z) - 30; }
+                    if (bg[b].type == BG_GHOST) 
+                    { 
+                        bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z) - 30;
+                        bg[b].state = GHOST_STATE_SPAWN;
+                    }
                     return true;
                 }
             }
