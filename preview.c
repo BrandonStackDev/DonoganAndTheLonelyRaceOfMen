@@ -2188,7 +2188,7 @@ int main(void) {
         }
         if (onLoad)
         {
-            BG_UpdateAll(dt);
+            BG_UpdateAll(&don, dt);
         }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         // Update the light shader with the camera view position
