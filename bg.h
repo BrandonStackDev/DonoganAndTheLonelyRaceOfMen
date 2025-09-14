@@ -155,6 +155,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     float dzT = b->targetPos.z - b->pos.z;
     float distToTarget = sqrtf(dxT * dxT + dzT * dzT);
     float yawToTarget = (distToTarget > 1e-4f) ? (RAD2DEG * atan2f(dxT, dzT)) : b->yaw;
+    b->targetYaw = yawToTarget;
     //first check if he is outside of the activation radius, for ghosts they die if this is true
     if (Vector3Distance(b->pos, b->spawnPoint) > b->spawnRadius)
     {
@@ -176,11 +177,11 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
             int decision = RandomRange(0, 10);
             if (decision == 0) 
             {
-                //todo: set target position,
+                b->targetPitch = 60;
+                b->targetPos = d->pos;
             }
             else 
             { 
-                //todo: set target yaw
                 b->targetPitch = 90;
                 b->targetPos = GetTargetPoint(d->pos, b->tetherRadius, 0.01f, 0.998f);
             }
@@ -201,51 +202,11 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     case GHOST_STATE_FLY_DEC: {
         if (Vector3Distance(b->targetPos, b->pos) < 3)
         {
+            b->targetPitch = 0;
             b->state = GHOST_STATE_PLAN;
         }
     }
     case GHOST_STATE_WANDER: {
-        // Low, slow amble near spawn. If no target, pick one.
-        if (distToTarget <= b->arriveRadius * 0.9f) {
-            b->targetPos = GetTargetPoint(b->spawnPoint, b->spawnRadius, 0.2f, 0.8f);
-        }
-        b->targetSpeed = fminf(b->maxSpeed, 0.9f);
-        targetY = groundY + landAGL;
-
-        float dyaw = yawToTarget - b->yaw; while (dyaw > 180.0f) dyaw -= 360.0f; while (dyaw < -180.0f) dyaw += 360.0f;
-        float yawStepMax = (b->yawMaxRate * 0.6f) * dt;
-        if (dyaw > yawStepMax) dyaw = yawStepMax;
-        if (dyaw < -yawStepMax) dyaw = -yawStepMax;
-        b->yaw += dyaw;
-
-        float prevSpeed = b->speed;
-        float sStep = (b->accel * 0.75f) * dt;
-        float ds = b->targetSpeed - b->speed;
-        if (fabsf(ds) <= sStep) b->speed = b->targetSpeed;
-        else b->speed += (ds > 0 ? sStep : -sStep);
-        if (b->speed < b->minSpeed) b->speed = b->minSpeed;
-
-        // tiny leans
-        float pStep = 90.0f * dt, rStep = 120.0f * dt;
-        float pitchTarget = -0.4f * (b->speed - prevSpeed) / fmaxf(dt, 1e-5f);
-        if (pitchTarget < -10.0f) pitchTarget = -10.0f;
-        if (pitchTarget > 10.0f) pitchTarget = 10.0f;
-        float rollTarget = -0.25f * (dyaw / fmaxf(dt, 1e-5f));
-        if (rollTarget < -12.0f) rollTarget = -12.0f;
-        if (rollTarget > 12.0f) rollTarget = 12.0f;
-
-        float dp = pitchTarget - b->pitch;
-        if (fabsf(dp) <= pStep) b->pitch = pitchTarget; else b->pitch += (dp > 0 ? pStep : -pStep);
-        float dr = rollTarget - b->roll;
-        if (fabsf(dr) <= rStep) b->roll = rollTarget; else b->roll += (dr > 0 ? rStep : -rStep);
-
-        float yawRad = DEG2RAD * b->yaw;
-        b->pos.x += sinf(yawRad) * b->speed * dt;
-        b->pos.z += cosf(yawRad) * b->speed * dt;
-
-        float yStep = 1.6f * dt;
-        float dy = (groundY + landAGL) - b->pos.y;
-        if (fabsf(dy) <= yStep) b->pos.y = groundY + landAGL; else b->pos.y += (dy > 0 ? yStep : -yStep);
     } break;
     case GHOST_STATE_HIT: {}
     case GHOST_STATE_DEATH: {
