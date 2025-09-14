@@ -2151,6 +2151,16 @@ int main(void) {
                 }
             }
         }
+        for (int b = 0; b < bg_count; b++)
+        {
+            if (!bg[b].active) { continue; }
+            if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
+            if(bg[b].type==BG_GHOST)
+            {
+                //hit don
+                TraceLog(LOG_INFO,"ouch!");
+            }
+        }
         //end collision section -----------------------------------------------------------------------------------------------------------------
 
         //updates before drawing--------------------------------------------------------
