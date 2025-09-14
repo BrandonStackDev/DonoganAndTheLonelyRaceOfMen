@@ -2134,6 +2134,23 @@ int main(void) {
                 }
             }
         }
+        //collision for bad guys and attacks
+        //donogans spell balls
+        for (int i = 0; i < MAX_BALLS; i++)
+        {
+            if (!balls[i].alive) { continue; }
+            for (int b = 0; b < bg_count; b++)//todo: culling of some sort on this...
+            {
+                if (!bg[b].active) { continue; }
+                if (bg[b].state != GHOST_STATE_HIT && Vector3Distance(balls[i].pos, bg[b].pos) < balls[i].radius + 1.6f)//little outside the radius, hit!
+                {
+                    if (bg[b].type == BG_GHOST)
+                    {
+                        bg[b].state = GHOST_STATE_HIT;
+                    }
+                }
+            }
+        }
         //end collision section -----------------------------------------------------------------------------------------------------------------
 
         //updates before drawing--------------------------------------------------------

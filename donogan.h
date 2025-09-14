@@ -2307,7 +2307,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     // locomotion loops; jump start/land clamp at last frame; jump loop loops
     if (!d->animFinished) { d->animTime += dt; }
 
-    if (d->curAnimId >= 0)
+    if (d->curAnimId >= 0 && d->animCount>0)
     {
         const ModelAnimation* A = &d->anims[d->curAnimId];
         int frameCount = (A) ? (int)A->frameCount : 1;
