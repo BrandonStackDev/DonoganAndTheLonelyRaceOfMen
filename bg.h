@@ -135,11 +135,14 @@ static inline void DrawBadGuy(BadGuy* b) {
 //end draw stuff
 
 //helper
-Vector3 GetTargetPoint(Vector3 pos, float radius, float low, float high)
+Vector3 GetGhostTargetPoint(Vector3 pos, float radius, float low, float high, bool aware)
 {
+    float ground = GetTerrainHeightFromMeshXZ(pos.x,pos.z);
     float r = (float)GetRandomValue((int)(radius * low), (int)(radius * high));
     float a = (float)GetRandomValue(0, 359) * DEG2RAD;
-    return (Vector3){ pos.x + sinf(a) * r, pos.y, pos.z + cosf(a) * r };
+    float y = (float)GetRandomValue(ground - 10, ground + 26);
+    y = aware ? pos.y + 3.8f : y;
+    return (Vector3){ pos.x + sinf(a) * r, y, pos.z + cosf(a) * r };
 }
 
 //update functions
@@ -183,7 +186,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
             else 
             { 
                 b->targetPitch = 90;
-                b->targetPos = GetTargetPoint(d->pos, b->tetherRadius, 0.01f, 0.998f);
+                b->targetPos = GetGhostTargetPoint(d->pos, b->tetherRadius, 0.01f, 0.998f, b->aware);
             }
             b->state = GHOST_STATE_FLY;
         }
@@ -214,6 +217,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         b->active = false;
         b->dead = true;
         bgModelBorrower[b->gbm_index].isInUse = false;
+        b->gbm_index = -1;
     }
     default: {}
     }
@@ -230,9 +234,9 @@ BadGuy CreateGhost(Vector3 pos)
     BadGuy b = { 0 };
     b.type = BG_GHOST;
     b.spawnPoint = pos;
-    b.spawnRadius = 80;
-    b.awareRadius = 30;
-    b.tetherRadius = 20;
+    b.spawnRadius = 200;
+    b.awareRadius = 50;
+    b.tetherRadius = 30;
     b.gbm_index = -1;
     b.active = false;
     b.dead = false;
