@@ -279,9 +279,23 @@ BadGuy CreateGhost(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 1; //increment this, every time, you add, a bg...
+    bg_count = 15; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
-    bg[0] = CreateGhost((Vector3) { 3022.00f, 322.00f, 4042.42f }); //y was 319
+    bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
+    bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
+    bg[2] = CreateGhost((Vector3) { -738, 750, 3117 });
+    bg[3] = CreateGhost((Vector3) { -461, 755, 3168 });
+    bg[4] = CreateGhost((Vector3) { -681, 723, 3285 });
+    bg[5] = CreateGhost((Vector3) { -612, 755, 3133 });
+    bg[6] = CreateGhost((Vector3) { 2284, 528, 670 });
+    bg[7] = CreateGhost((Vector3) { 2467, 510, 922 });
+    bg[8] = CreateGhost((Vector3) { 2520, 452, 627 });
+    bg[9] = CreateGhost((Vector3) { 176, 728, 517 });
+    bg[10] = CreateGhost((Vector3) { -109, 721, 628 });
+    bg[11] = CreateGhost((Vector3) { -703, 715, -154 });
+    bg[12] = CreateGhost((Vector3) { 83, 720, -683 });
+    bg[13] = CreateGhost((Vector3) { 196, 735, 450 });
+    bg[14] = CreateGhost((Vector3) { 259, 372, 1206 });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
