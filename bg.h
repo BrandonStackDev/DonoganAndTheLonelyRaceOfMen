@@ -162,6 +162,10 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     //first check if he is outside of the activation radius, for ghosts they die if this is true
     if (Vector3Distance(b->pos, b->spawnPoint) > b->spawnRadius)
     {
+        b->targetPitch = 0;
+        b->speed = 0.4f;
+        b->targetPos = b->pos;
+        b->targetPos.y = groundY - 20;
         b->state = GHOST_STATE_DEATH;
     }
     //next, switch and update on states
@@ -221,13 +225,23 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
             b->state = GHOST_STATE_PLAN;
         }
     } break;
-    case GHOST_STATE_HIT: {}break;
+    case GHOST_STATE_HIT: { //ghosts are one hit always
+        b->targetPitch = 0;
+        b->speed = 0.4f;
+        b->targetPos = b->pos;
+        b->targetPos.y = groundY - 20;
+        b->state = GHOST_STATE_DEATH;
+    }break;
     case GHOST_STATE_DEATH: {
-        //todo: this should do something, identify when its complete, then mark him as dead and inactive
-        b->active = false;
-        b->dead = true;
-        bgModelBorrower[b->gbm_index].isInUse = false;
-        b->gbm_index = -1;
+        if (Vector3Distance(b->targetPos, b->pos) < 3)
+        {
+            b->targetPitch = 0;
+            b->active = false;
+            b->dead = true;
+            b->aware = false;
+            bgModelBorrower[b->gbm_index].isInUse = false;
+            b->gbm_index = -1;
+        }
     }break;
     default: {}
     }
