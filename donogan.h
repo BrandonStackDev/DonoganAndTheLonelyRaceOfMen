@@ -485,6 +485,10 @@ typedef struct {
     bool isTalking;
     Timer talkStartTimer;
     TALK_TYPE who;
+
+    //for hit state
+    Timer hitTimer;
+    Color drawColor;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1506,6 +1510,8 @@ static Donogan InitDonogan(void)
     d.bowDrawTLatch = 0.0f;
     d.bowReleaseCamHold = 0.0f;
 
+    d.hitTimer = CreateTimer(2.4f);
+    d.drawColor = WHITE;
 
     PrintModelBones(&d.model);
     PrintModelBones(&d.bowModel);

@@ -496,6 +496,7 @@ int main(void) {
     
     //controller and truck and donny
     // //donny boy
+    Color targetHitColor = (Color){ 200,220,250,100 };
     Donogan don = InitDonogan();
     don.pos = Scenes[SCENE_HOME_CABIN_02].pos;
     don.pos.y = 533.333f;
@@ -644,6 +645,7 @@ int main(void) {
     skyCam.fovy = 60.0f;
     skyCam.projection = CAMERA_PERSPECTIVE;
 
+    StartTimer(&don.hitTimer);
     long loop_counter = 0;
     while (!WindowShouldClose()) {
         loop_counter++;
@@ -2151,15 +2153,19 @@ int main(void) {
                 }
             }
         }
-        for (int b = 0; b < bg_count; b++)
+        if (HasTimerElapsed(&don.hitTimer))
         {
-            if (!bg[b].active) { continue; }
-            if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
-            if(bg[b].type==BG_GHOST)
+            for (int b = 0; b < bg_count; b++)
             {
-                //hit don
-                TraceLog(LOG_INFO,"ouch!");
-                DonSetState(&don, DONOGAN_STATE_HIT);
+                if (!bg[b].active) { continue; }
+                if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
+                if (bg[b].type == BG_GHOST)
+                {
+                    //hit don
+                    TraceLog(LOG_INFO, "ouch!");
+                    DonSetState(&don, DONOGAN_STATE_HIT);
+                    StartTimer(&don.hitTimer);
+                }
             }
         }
         //end collision section -----------------------------------------------------------------------------------------------------------------
@@ -2218,6 +2224,8 @@ int main(void) {
         {
             BG_UpdateAll(&don, dt);
         }
+        don.drawColor = LerpColor(don.drawColor,!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
+        if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
@@ -2316,7 +2324,7 @@ int main(void) {
             if (onLoad && donnyMode)
             {
                 // Draw Donogan
-                DrawModel(don.model, don.pos, don.scale, WHITE); // uses model.transform for rotation
+                DrawModel(don.model, don.pos, don.scale, don.drawColor); // uses model.transform for rotation
                 if (displayBoxes) 
                 { 
                     DrawBoundingBox(don.box, RED); 
