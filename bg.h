@@ -92,6 +92,7 @@ void InitBadGuyModels(Shader ghostShader)
                 bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
                 bgModelBorrower[index].shader = ghostShader;
                 bgModelBorrower[index].model.materials[0].shader = ghostShader;
+                bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
             }
         }
     }
@@ -289,6 +290,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         {
             BG_Update_Ghost(d, &bg[i], dt);
         }
+        bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);
     }
 }
 

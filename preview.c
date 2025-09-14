@@ -2408,6 +2408,7 @@ int main(void) {
                     rlDisableBackfaceCulling();
                     DrawBadGuy(&bg[b]);
                     rlEnableBackfaceCulling();
+                    if (displayBoxes) { DrawBoundingBox(bg[b].box, PURPLE); }
                 }
             }
             //whales and fish
