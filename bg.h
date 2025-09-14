@@ -168,6 +168,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     switch (b->state)
     {
     case GHOST_STATE_SPAWN: {
+        b->pos.y += dt;//little boost to make sure we get there
         if (b->pos.y >= b->spawnPoint.y)
         {
             b->state = GHOST_STATE_PLAN;
@@ -192,7 +193,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         }
         else
         {
-            b->targetPitch = 30;
+            b->targetPitch = 0;
             b->targetPos = GetGhostTargetPoint(b->spawnPoint, b->spawnRadius, 0.2f, 0.6f, b->aware);
             b->state = GHOST_STATE_WANDER;
         }
@@ -212,10 +213,10 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         }
     }break;
     case GHOST_STATE_WANDER: {
-        if (Vector3Distance(b->targetPos, b->pos) < 8)
+        if (Vector3Distance(b->targetPos, b->pos) < 4)
         {
-            b->targetPitch = -10;
-            b->state = GHOST_STATE_FLY_DEC;
+            b->targetPitch = 0;
+            b->state = GHOST_STATE_PLAN;
         }
     } break;
     case GHOST_STATE_HIT: {}break;
