@@ -134,6 +134,14 @@ static inline void DrawBadGuy(BadGuy* b) {
 }
 //end draw stuff
 
+//helper
+Vector3 GetTargetPoint(Vector3 pos, float radius, float low, float high)
+{
+    float r = (float)GetRandomValue((int)(radius * low), (int)(radius * high));
+    float a = (float)GetRandomValue(0, 359) * DEG2RAD;
+    return (Vector3){ pos.x + sinf(a) * r, pos.y, pos.z + cosf(a) * r };
+}
+
 //update functions
 static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
 {
@@ -156,7 +164,6 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     switch (b->state)
     {
     case GHOST_STATE_SPAWN: {
-        b->pos.y += dt;
         if (b->pos.y >= b->spawnPoint.y)
         {
             b->state = GHOST_STATE_PLAN;
@@ -173,7 +180,9 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
             }
             else 
             { 
-                //todo: set target position,
+                //todo: set target yaw
+                b->targetPitch = 90;
+                b->targetPos = GetTargetPoint(d->pos, b->tetherRadius, 0.01f, 0.998f);
             }
             b->state = GHOST_STATE_FLY;
         }
@@ -182,16 +191,23 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
             //wander
         }
     }
-    case GHOST_STATE_FLY: {}
-    case GHOST_STATE_FLY_DEC: {}
+    case GHOST_STATE_FLY: {
+        if (Vector3Distance(b->targetPos, b->pos) < 8)
+        {
+            b->targetPitch = -10;
+            b->state = GHOST_STATE_FLY_DEC;
+        }
+    }
+    case GHOST_STATE_FLY_DEC: {
+        if (Vector3Distance(b->targetPos, b->pos) < 3)
+        {
+            b->state = GHOST_STATE_PLAN;
+        }
+    }
     case GHOST_STATE_WANDER: {
-        //stuff
-        
         // Low, slow amble near spawn. If no target, pick one.
         if (distToTarget <= b->arriveRadius * 0.9f) {
-            float r = (float)GetRandomValue((int)(b->spawnRadius * 0.2f), (int)(b->spawnRadius * 0.6f));
-            float a = (float)GetRandomValue(0, 359) * DEG2RAD;
-            b->targetPos = (Vector3){ b->spawnPoint.x + sinf(a) * r, b->spawnPoint.y, b->spawnPoint.z + cosf(a) * r };
+            b->targetPos = GetTargetPoint(b->spawnPoint, b->spawnRadius, 0.2f, 0.8f);
         }
         b->targetSpeed = fminf(b->maxSpeed, 0.9f);
         targetY = groundY + landAGL;
@@ -241,6 +257,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     default: {}
     }
     //then set everything
+    b->pos = Vector3Lerp(b->pos, b->targetPos, dt);
     b->yaw = Lerp(b->yaw, b->targetYaw, dt);
     b->pitch = Lerp(b->pitch, b->targetPitch, dt);
     b->roll = Lerp(b->roll, b->targetRoll, dt);
@@ -306,6 +323,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                     bg[b].dead = false;
                     bg[b].health = bg[b].startHealth;
                     bg[b].pos = bg[b].spawnPoint;
+                    bg[b].targetPos = bg[b].spawnPoint;
                     //todo: respawn timer
                     if (bg[b].type == BG_GHOST) { bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z) - 30; }
                     return true;
