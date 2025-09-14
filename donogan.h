@@ -211,7 +211,8 @@ typedef enum {
     DONOGAN_STATE_SPELL_ENTER,
     DONOGAN_STATE_SPELL_IDLE,
     DONOGAN_STATE_SPELL_EXIT,
-    DONOGAN_STATE_SPELL_SHOOT
+    DONOGAN_STATE_SPELL_SHOOT,
+    DONOGAN_STATE_HIT,
 } DonoganState;
 
 // ---------- Anim IDs present in your GLB (+procedural negatives)----------
@@ -1590,6 +1591,7 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_SPELL_IDLE:              return DONOGAN_ANIM_Spell_Simple_Idle_Loop;
     case DONOGAN_STATE_SPELL_EXIT:              return DONOGAN_ANIM_Spell_Simple_Exit;
     case DONOGAN_STATE_SPELL_SHOOT:     return DONOGAN_ANIM_PROC_SPELL_SHOOT;
+    case DONOGAN_STATE_HIT:         return DONOGAN_ANIM_Hit_Chest;
     default:                        return DONOGAN_ANIM_Idle_Loop;
     }
 }
@@ -2169,6 +2171,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     DonSetState(d, DONOGAN_STATE_IDLE);
                 }
             } break;
+
+            case DONOGAN_STATE_HIT:
+                if (d->animFinished) { DonSetState(d, DONOGAN_STATE_IDLE);}
+                break;
 
             default: { // IDLE / WALK / RUN (grounded locomotion)
                 if (L2Pressed) {

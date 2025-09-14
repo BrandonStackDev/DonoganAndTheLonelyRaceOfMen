@@ -2159,6 +2159,7 @@ int main(void) {
             {
                 //hit don
                 TraceLog(LOG_INFO,"ouch!");
+                DonSetState(&don, DONOGAN_STATE_HIT);
             }
         }
         //end collision section -----------------------------------------------------------------------------------------------------------------
