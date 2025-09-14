@@ -242,6 +242,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
             b->aware = false;
             bgModelBorrower[b->gbm_index].isInUse = false;
             b->gbm_index = -1;
+            StartTimer(&b->respawnTimer);
         }
     }break;
     default: {}
@@ -269,6 +270,7 @@ BadGuy CreateGhost(Vector3 pos)
     b.pos = pos;
     b.scale = 4;
     b.speed = 1;
+    b.respawnTimer = CreateTimer(360);
     return b;
 }
 
@@ -303,7 +305,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
         if (bg[b].active) { continue; }//if its turned on, dont run it on again
         else 
         {
-            if (Vector3Distance(pos, bg[b].spawnPoint) < bg[b].spawnRadius)
+            if (Vector3Distance(pos, bg[b].spawnPoint) < bg[b].spawnRadius && (!bg[b].respawnTimer.running || HasTimerElapsed(&bg[b].respawnTimer)))
             {
                 for (int i = 0; i < MAX_BG_PER_TYPE_AT_ONCE; i++)
                 {
