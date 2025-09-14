@@ -140,7 +140,7 @@ Vector3 GetGhostTargetPoint(Vector3 pos, float radius, float low, float high, bo
     float ground = GetTerrainHeightFromMeshXZ(pos.x,pos.z);
     float r = (float)GetRandomValue((int)(radius * low), (int)(radius * high));
     float a = (float)GetRandomValue(0, 359) * DEG2RAD;
-    float y = (float)GetRandomValue(ground - 10, ground + 26);
+    float y = (float)GetRandomValue(ground + 4, ground + 12);
     y = aware ? pos.y + 3.8f : y;
     return (Vector3){ pos.x + sinf(a) * r, y, pos.z + cosf(a) * r };
 }
@@ -177,6 +177,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     case GHOST_STATE_PLAN: {
         if (Vector3Distance(d->pos, b->pos) < b->awareRadius || b->aware) //if aware of donogan
         {
+            b->speed = 1;
             b->aware = true;
             int decision = RandomRange(0, 10);
             if (decision == 0) 
@@ -193,8 +194,9 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         }
         else
         {
-            b->targetPitch = 0;
-            b->targetPos = GetGhostTargetPoint(b->spawnPoint, b->spawnRadius, 0.2f, 0.6f, b->aware);
+            b->speed = 0.34f;
+            b->targetPitch = 15;
+            b->targetPos = GetGhostTargetPoint(b->spawnPoint, 45.0f, 0.2f, 0.98f, b->aware);
             b->state = GHOST_STATE_WANDER;
         }
     }break;
@@ -230,7 +232,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     default: {}
     }
     //then set everything
-    b->pos = Vector3Lerp(b->pos, b->targetPos, dt);
+    b->pos = Vector3Lerp(b->pos, b->targetPos, dt * b->speed);
     b->yaw = Lerp(b->yaw, b->targetYaw, dt);
     b->pitch = Lerp(b->pitch, b->targetPitch, dt);
     b->roll = Lerp(b->roll, b->targetRoll, dt);
@@ -251,6 +253,7 @@ BadGuy CreateGhost(Vector3 pos)
     b.aware = false;
     b.pos = pos;
     b.scale = 4;
+    b.speed = 1;
     return b;
 }
 
