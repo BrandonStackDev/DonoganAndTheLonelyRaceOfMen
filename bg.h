@@ -172,7 +172,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         {
             b->state = GHOST_STATE_PLAN;
         }
-    }
+    }break;
     case GHOST_STATE_PLAN: {
         if (Vector3Distance(d->pos, b->pos) < b->awareRadius || b->aware) //if aware of donogan
         {
@@ -192,33 +192,40 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         }
         else
         {
-            //wander
+            b->targetPitch = 30;
+            b->targetPos = GetGhostTargetPoint(b->spawnPoint, b->spawnRadius, 0.2f, 0.6f, b->aware);
+            b->state = GHOST_STATE_WANDER;
         }
-    }
+    }break;
     case GHOST_STATE_FLY: {
         if (Vector3Distance(b->targetPos, b->pos) < 8)
         {
             b->targetPitch = -10;
             b->state = GHOST_STATE_FLY_DEC;
         }
-    }
+    }break;
     case GHOST_STATE_FLY_DEC: {
         if (Vector3Distance(b->targetPos, b->pos) < 3)
         {
             b->targetPitch = 0;
             b->state = GHOST_STATE_PLAN;
         }
-    }
+    }break;
     case GHOST_STATE_WANDER: {
+        if (Vector3Distance(b->targetPos, b->pos) < 8)
+        {
+            b->targetPitch = -10;
+            b->state = GHOST_STATE_FLY_DEC;
+        }
     } break;
-    case GHOST_STATE_HIT: {}
+    case GHOST_STATE_HIT: {}break;
     case GHOST_STATE_DEATH: {
         //todo: this should do something, identify when its complete, then mark him as dead and inactive
         b->active = false;
         b->dead = true;
         bgModelBorrower[b->gbm_index].isInUse = false;
         b->gbm_index = -1;
-    }
+    }break;
     default: {}
     }
     //then set everything
@@ -286,6 +293,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                     bg[b].gbm_index = index;
                     bg[b].active = true;
                     bg[b].dead = false;
+                    bg[b].aware = false;
                     bg[b].health = bg[b].startHealth;
                     bg[b].pos = bg[b].spawnPoint;
                     bg[b].targetPos = bg[b].spawnPoint;
