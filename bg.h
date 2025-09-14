@@ -26,7 +26,7 @@ typedef enum {
     GHOST_STATE_FLY_LIFT,      // take off to cruise AGL
     GHOST_STATE_FLY_CRUISE,    // forward flight to target
     GHOST_STATE_FLY_LAND,      // decelerate + descend
-    GHOST_STATE_BARREL_ROLL    // temporary overlay: roll around forward axis while cruising
+    GHOST_STATE_BARREL_ROLL    // temporary overlay: roll around forward axis while cruising, actually yaw spin, not a real barrel roll
 } GhostState;
 
 typedef struct {
@@ -175,7 +175,7 @@ static inline void BG_GhostSetTarget(BadGuy* b, Vector3 target, float arriveRadi
 }
 
 static inline void BG_GhostReturnToSpawn(BadGuy* b) {
-    BG_GhostSetTarget(b, b->spawnPoint, 1.25f, 2.2f, 3.0f);
+    BG_GhostSetTarget(b, b->spawnPoint, 5.6f, 2.2f, 3.0f);
 }
 
 BadGuy CreateGhost(Vector3 pos)
@@ -183,7 +183,7 @@ BadGuy CreateGhost(Vector3 pos)
     BadGuy b = { 0 };
     b.type = BG_GHOST;
     b.spawnPoint = pos;
-    b.spawnRadius = 80; //80
+    b.spawnRadius = 10; //80
     b.gbm_index = -1;
     b.active = false;
     b.pos = pos;
@@ -210,7 +210,7 @@ static inline void BG_GhostInitFlight(BadGuy* b) {
     b->steerTimer = 0.0f;
 
     b->desiredAGL = 3.0f;     b->minAGL = 2.0f; b->maxAGL = 6.0f;
-    b->cruiseAGL = 3.2f;     b->liftAGL = 3.0f; b->landAGL = 0.35f;
+    b->cruiseAGL = 3.2f;     b->liftAGL = 13.0f; b->landAGL = 0.35f;
     b->landSpeed = 0.6f;
 
     b->arriveRadius = 1.2f;
@@ -274,10 +274,11 @@ static inline void BG_GhostSteerAndLean(BadGuy* b, float dt, float yawToTargetDe
 
     if (b->state == GHOST_STATE_BARREL_ROLL) {
         b->barrelTimer -= dt;
-        b->roll += b->barrelRollSpeed * dt;           // spin around forward axis
+        b->yaw += b->barrelRollSpeed * dt;           // spin around forward axis
+        b->pitch = Lerp(PI,b->pitch,dt);
         if (b->barrelTimer <= 0.0f) {
             b->state = GHOST_STATE_FLY_CRUISE;
-            b->roll = fmodf(b->roll, 360.0f);
+            b->yaw = fmodf(b->roll, 360.0f);
         }
     }
     else {
@@ -436,6 +437,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
 {
     for (int b = 0; b < bg_count; b++)
     {
+        if (bg[b].active) { continue; }//if its turned on, dont run it on again
         if (Vector3Distance(pos,bg[b].spawnPoint)<bg[b].spawnRadius)
         {
             for (int i = 0; i < MAX_BG_PER_TYPE_AT_ONCE; i++)
@@ -448,7 +450,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                 bg[b].dead = false;
                 bg[b].health = bg[b].startHealth;
                 bg[b].pos = bg[b].spawnPoint;
-                //todo: will need to set the start state per bg type...also respawn timer
+                //todo: respawn timer
                 if (bg[b].type == BG_GHOST) { BG_GhostInitFlight(&bg[b]); }
                 return true;
             }

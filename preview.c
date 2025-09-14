@@ -2182,7 +2182,7 @@ int main(void) {
         }
         if (vehicleMode) { UpdateTruckBoxes(); }
         //update bg
-        if (onLoad && donnyMode && CheckSpawnAndActivateNext(don.pos)) //hopefully we support short circuiting, I would assume
+        if (onLoad && donnyMode && loop_counter%69==0 && CheckSpawnAndActivateNext(don.pos)) //hopefully we support short circuiting, I would assume
         { 
             TraceLog(LOG_INFO, "Uh Oh! Here Comes Trouble...!"); 
         }
