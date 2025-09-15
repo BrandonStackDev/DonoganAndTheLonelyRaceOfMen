@@ -2812,7 +2812,7 @@ int main(void) {
                 DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
                 DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
             }
-            if (truckSummonActive) DrawText("SUMMONING...", 24, 230, 20, YELLOW);
+            if (truckSummonActive) { DrawText("SUMMONING...", 24, 230, 20, YELLOW); }
         }
         if (showMap) {
             // Map drawing area (scaled by zoom)
@@ -2868,7 +2868,10 @@ int main(void) {
             DrawTriangle(left, right, marker, YELLOW);
             // Optional crisp outline
             // DrawTriangleLines(left, right, tip, BLACK);
-
+            DrawRectangleLines(SCREEN_WIDTH - (don.maxHealth + 10) - 10, 160, don.maxHealth+4, 10, BLACK);
+            DrawRectangle(SCREEN_WIDTH - (don.maxHealth + 10) - 8, 162, don.health, 6, DARKGREEN);
+            DrawRectangleLines(SCREEN_WIDTH - (don.maxMana + 10) - 10, 180, don.maxMana+4, 10, BLACK);
+            DrawRectangle(SCREEN_WIDTH - (don.maxMana + 10) - 8, 182, don.mana, 6, BLUE);
         }
         if (donnyMode && don.isTalking)
         {

@@ -489,6 +489,9 @@ typedef struct {
     //for hit state
     Timer hitTimer;
     Color drawColor;
+
+    //health and mana
+    int health, mana, maxHealth, maxMana;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1512,6 +1515,11 @@ static Donogan InitDonogan(void)
 
     d.hitTimer = CreateTimer(2.4f);
     d.drawColor = WHITE;
+
+    d.maxHealth = 100;
+    d.health = 100;
+    d.mana = 100;
+    d.maxMana = 100;
 
     PrintModelBones(&d.model);
     PrintModelBones(&d.bowModel);
