@@ -648,6 +648,20 @@ int main(void) {
     StartTimer(&don.hitTimer);
     long loop_counter = 0;
     while (!WindowShouldClose()) {
+        //handle health and mana re-gen
+        if (loop_counter % 999 == 0)
+        {
+            don.health += 1;
+        }
+        if (loop_counter % 107 == 0)
+        {
+            don.mana += 1;
+        }
+        if (don.health > don.maxHealth) { don.health = don.maxHealth; }
+        if (don.health < 0) { don.health = 0; }
+        if (don.mana > don.maxMana) { don.mana = don.maxMana; }
+        if (don.mana < 0) { don.mana = 0; }
+        //increment loop counter and rotor spin
         loop_counter++;
         rotorSpin += GetFrameTime() * 128;
         int numCloseProps = 0;
@@ -702,6 +716,14 @@ int main(void) {
         }
         //controller and truck stuff
         havePad = ReadControllerWindows(0, &gpad);
+        if (!onLoad) 
+        { 
+            float s_rx = gpad.normRX;
+            float s_ry = gpad.normRY;
+            gpad = (ControllerData){ 0 }; //dont let the player move around until the screen is loaded, but let them look
+            gpad.normRX = s_rx;
+            gpad.normRY = s_ry;
+        }
         //music selection
         if (onLoad)
         {
@@ -2153,7 +2175,7 @@ int main(void) {
                 }
             }
         }
-        if (HasTimerElapsed(&don.hitTimer))
+        if (HasTimerElapsed(&don.hitTimer))//todo: this will need to change as other enemies are added, collision might be needed when donogan has already been hit
         {
             for (int b = 0; b < bg_count; b++)
             {
@@ -2163,6 +2185,7 @@ int main(void) {
                 {
                     //hit don
                     TraceLog(LOG_INFO, "ouch!");
+                    don.health -= 5;
                     DonSetState(&don, DONOGAN_STATE_HIT);
                     StartTimer(&don.hitTimer);
                 }
@@ -2868,6 +2891,7 @@ int main(void) {
             DrawTriangle(left, right, marker, YELLOW);
             // Optional crisp outline
             // DrawTriangleLines(left, right, tip, BLACK);
+            //health bars
             DrawRectangleLines(SCREEN_WIDTH - (don.maxHealth + 10) - 10, 160, don.maxHealth+4, 10, BLACK);
             DrawRectangle(SCREEN_WIDTH - (don.maxHealth + 10) - 8, 162, don.health, 6, DARKGREEN);
             DrawRectangleLines(SCREEN_WIDTH - (don.maxMana + 10) - 10, 180, don.maxMana+4, 10, BLACK);

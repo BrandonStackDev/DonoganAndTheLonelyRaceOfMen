@@ -2045,7 +2045,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     else if (squarePressed) {
                         DonSetState(d, DONOGAN_STATE_SPELL_ENTER);
                     }
-                    else if (!d->bowMode && R2Pressed)
+                    else if (!d->bowMode && R2Pressed && d->mana >= 8)
                     {
                         // Find a free slot and spawn
                         for (int i = 0; i < MAX_BALLS; ++i) {
@@ -2055,6 +2055,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                             }
                         }
                         DonSetState(d, DONOGAN_STATE_SPELL_SHOOT);
+                        d->mana -= 8;
                     }
                 }
             } break;
@@ -2268,7 +2269,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     DonSetState(d, DONOGAN_STATE_SPELL_ENTER);
                     break;
                 }
-                else if (!d->bowMode && R2Pressed)
+                else if (!d->bowMode && R2Pressed && d->mana >= 8)
                 {
                     // Find a free slot and spawn
                     for (int i = 0; i < MAX_BALLS; ++i) {
@@ -2278,6 +2279,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         }
                     }
                     DonSetState(d, DONOGAN_STATE_SPELL_SHOOT);
+                    d->mana -= 8;
                     break;
                 }
                 // --- Ground stick logic ---
@@ -2376,6 +2378,9 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     d->box = UpdateBoundingBox(d->origBB, (Vector3) {d->pos.x, d->pos.y + 2.22f, d->pos.z});
     d->innerBox = UpdateBoundingBox(d->origInnerBB, (Vector3) { d->pos.x, d->pos.y + 2.22f, d->pos.z });
     d->outerBox = UpdateBoundingBox(d->origOuterBB, (Vector3) { d->pos.x, d->pos.y + 2.22f, d->pos.z });
+    //always need health and mana no lower than 0
+    if (d->mana < 0) { d->mana = 0; }
+    if (d->health < 0) { d->health = 0; }
 }
 
 #include "rlgl.h"  // at top of preview.c
