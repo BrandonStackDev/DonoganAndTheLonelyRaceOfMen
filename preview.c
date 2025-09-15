@@ -2175,13 +2175,13 @@ int main(void) {
                 }
             }
         }
-        if (HasTimerElapsed(&don.hitTimer))//todo: this will need to change as other enemies are added, collision might be needed when donogan has already been hit
+        if (donnyMode)//todo: this will need to change as other enemies are added, collision might be needed when donogan has already been hit
         {
             for (int b = 0; b < bg_count; b++)
             {
                 if (!bg[b].active) { continue; }
                 if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
-                if (bg[b].type == BG_GHOST)
+                if (bg[b].type == BG_GHOST && HasTimerElapsed(&don.hitTimer))
                 {
                     //hit don
                     TraceLog(LOG_INFO, "ouch!");
