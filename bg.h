@@ -49,7 +49,7 @@ typedef struct {
     BadGuyType type;
     Vector3 spawnPoint;
     float spawnRadius, awareRadius;
-    Timer respawnTimer;
+    Timer respawnTimer, interactionTimer; //respawn controls after death how long until respawn, interaction controls how long without interaction to let the bg live
     int gbm_index; //global borrowed model index
     int state;
     int curAnim;
@@ -169,6 +169,18 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         b->targetPos.y = groundY - 20;
         b->state = GHOST_STATE_DEATH;
     }
+    if (Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
+    {
+        StartTimer(&b->interactionTimer);
+    }
+    else if (HasTimerElapsed(&b->interactionTimer))
+    {
+        b->targetPitch = 0;
+        b->speed = 0.4f;
+        b->targetPos = b->pos;
+        b->targetPos.y = groundY - 20;
+        b->state = GHOST_STATE_DEATH;
+    }
     //next, switch and update on states
     switch (b->state)
     {
@@ -243,6 +255,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
             bgModelBorrower[b->gbm_index].isInUse = false;
             b->gbm_index = -1;
             StartTimer(&b->respawnTimer);
+            ResetTimer(&b->interactionTimer);
         }
     }break;
     default: {}
@@ -270,7 +283,8 @@ BadGuy CreateGhost(Vector3 pos)
     b.pos = pos;
     b.scale = 4;
     b.speed = 1;
-    b.respawnTimer = CreateTimer(360);
+    b.respawnTimer = CreateTimer(360);//6 minutes
+    b.interactionTimer = CreateTimer(120);//2 minutes
     return b;
 }
 
