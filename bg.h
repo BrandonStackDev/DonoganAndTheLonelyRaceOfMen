@@ -365,7 +365,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                 if (deltaDeg < -180.0f) deltaDeg += 360.0f;
 
                 if (fabsf(deltaDeg) > 0.0001f) {
-                    float r = DEG2RAD * -deltaDeg;
+                    float r = DEG2RAD * (-deltaDeg * dt);
                     float s = sinf(r), c = cosf(r);
 
                     float rx = bg[i].pos.x - d->pos.x;  // vector from Don -> BG (XZ only)
