@@ -494,6 +494,7 @@ typedef struct {
 
     //health and mana
     int health, mana, maxHealth, maxMana;
+    Timer spellTimer;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1509,7 +1510,7 @@ static Donogan InitDonogan(void)
     d.steepSlideFriction = 1.6f;    // decay a bit each frame
     d.slideDwell = CreateTimer(0.25f);
     d.talkStartTimer = CreateTimer(0.2222f);
-
+    d.spellTimer = CreateTimer(0.2f);
     //bow speed turn
     d.bowTurnSpeed = DEG2RAD * 90; // turn quickly to face motion
     d.bowDrawTLatch = 0.0f;
@@ -2158,6 +2159,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             case DONOGAN_STATE_SPELL_ENTER: {
                 // Enter is non-loop; when it finishes, go to loop if still holding,
                 // otherwise immediately play Exit.
+                StartTimer(&d->spellTimer);
                 if (d->animFinished) {
                     if (square) DonSetState(d, DONOGAN_STATE_SPELL_IDLE);
                     else        DonSetState(d, DONOGAN_STATE_SPELL_EXIT);
@@ -2174,6 +2176,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             } break;
 
             case DONOGAN_STATE_SPELL_EXIT: {
+                ResetTimer(&d->spellTimer);
                 // Exit is non-loop; when done, return to locomotion like other one-shots
                 if (d->animFinished) {
                     float moveMag = sqrtf(lx * lx + ly * ly);

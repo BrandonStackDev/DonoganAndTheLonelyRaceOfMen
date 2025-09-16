@@ -69,6 +69,7 @@ typedef struct {
     float   yawMaxRate;   // max yaw change (deg/s)
     Vector3 targetPos;      // where we're flying to
     float   arriveRadius, tetherRadius;   // how close is "arrived" (m)
+    bool frozen;
 } BadGuy; //instance of a bad guy, will borrow its model
 
 BadGuy * bg;
@@ -338,12 +339,40 @@ void InitBadGuys(Shader ghostShader)
 static inline void BG_UpdateAll(Donogan *d, float dt)
 {
     for (int i = 0; i < bg_count; ++i) {
-        if (!bg[i].active) continue;
+        if (!bg[i].active) { continue; }
+        //handle square spell
+        if (Vector3Distance(d->pos, bg[i].pos) < 60)
+        {
+            if (!d->spellTimer.running) { bg[i].frozen = false; }
+            else if (HasTimerElapsed(&d->spellTimer))
+            {
+                bg[i].health -= 5;
+                bg[i].frozen = true;
+                if (bg[i].type == BG_GHOST)
+                {
+                    bg[i].state = GHOST_STATE_DEATH;
+                    bg[i].targetPos = bg[i].pos;
+                }
+            }
+            if (d->spellTimer.running)
+            {
+                bg[i].pos.y += dt;
+            }
+        }
+        if (bg[i].frozen) { continue; }
+        //end handle square spell, handle types next....
         if (bg[i].type == BG_GHOST)
         {
             BG_Update_Ghost(d, &bg[i], dt);
         }
+        //update general stuff
         bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);
+    }
+    //handle don and timer for square spell
+    if (HasTimerElapsed(&d->spellTimer))
+    {
+        d->mana -= 1;
+        StartTimer(&d->spellTimer);
     }
 }
 
