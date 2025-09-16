@@ -2175,9 +2175,10 @@ int main(void) {
                 }
             }
         }
-        if (donnyMode)//todo: this will need to change as other enemies are added, collision might be needed when donogan has already been hit
+        //donny collision with bg
+        if (donnyMode)
         {
-            for (int b = 0; b < bg_count; b++)
+            for (int b = 0; b < bg_count; b++)//maybe we need to one time loop and find all active, and only do that every other loop or so
             {
                 if (!bg[b].active) { continue; }
                 if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
