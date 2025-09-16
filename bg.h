@@ -293,7 +293,7 @@ BadGuy CreateGhost(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 15; //increment this, every time, you add, a bg...
+    bg_count = 38; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -310,6 +310,29 @@ void InitBadGuys(Shader ghostShader)
     bg[12] = CreateGhost((Vector3) { 83, 720, -683 });
     bg[13] = CreateGhost((Vector3) { 196, 735, 450 });
     bg[14] = CreateGhost((Vector3) { 259, 372, 1206 });
+    bg[15] = CreateGhost((Vector3) { 2689, 337, 4540 });
+    bg[16] = CreateGhost((Vector3) { 2798, 365, 4377 });
+    bg[17] = CreateGhost((Vector3) { 2287, 420, 4350 });
+    bg[18] = CreateGhost((Vector3) { -2129, 328, 3594 });
+    bg[19] = CreateGhost((Vector3) { -2246, 343, 3487 });
+    bg[20] = CreateGhost((Vector3) { -2299, 343, 3435 });
+    bg[21] = CreateGhost((Vector3) { -2308, 343, 3534 });
+    bg[22] = CreateGhost((Vector3) { -362, 962, 1957 });
+    bg[23] = CreateGhost((Vector3) { -525, 758, 3140 });
+    bg[24] = CreateGhost((Vector3) { -528, 718, 3355 });
+    bg[25] = CreateGhost((Vector3) { -785, 767, 2207 });
+    bg[26] = CreateGhost((Vector3) { -1349, 375, 972 });
+    bg[27] = CreateGhost((Vector3) { -506, 412, 964 });
+    bg[28] = CreateGhost((Vector3) { -358, 415, 1029 });
+    bg[29] = CreateGhost((Vector3) { -169, 417, 1054 });
+    bg[30] = CreateGhost((Vector3) { 49, 386, 1000 });
+    bg[31] = CreateGhost((Vector3) { 232, 394, 1147 });
+    bg[32] = CreateGhost((Vector3) { -375, 469, 234 });
+    bg[33] = CreateGhost((Vector3) { -344, 474, 106 });
+    bg[34] = CreateGhost((Vector3) { -341, 610, -728 });
+    bg[35] = CreateGhost((Vector3) { 2200, 550, 818 });
+    bg[36] = CreateGhost((Vector3) { 2430, 498, 809 });
+    bg[37] = CreateGhost((Vector3) { 2462, 460, 680 });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
