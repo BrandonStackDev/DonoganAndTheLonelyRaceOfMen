@@ -273,6 +273,7 @@ static void Audio_SelectSongRelative(int delta)
 /// @param  
 /// @return 
 int main(void) {
+    bool devDisplay = false;
     SetTraceLogLevel(LOG_ALL);
     MUTEX_INIT(mutex);
     bool displayBoxes = false;
@@ -1201,6 +1202,7 @@ int main(void) {
             if (IsKeyPressed(KEY_F10)) { MemoryReport(); }
             if (IsKeyPressed(KEY_F9)) { GridChunkReport(); }
             if (IsKeyPressed(KEY_F8)) { GridTileReport(); }
+            if (IsKeyPressed(KEY_F2)) { devDisplay = !devDisplay; }
             if (IsKeyPressed(KEY_F1)) {
                 ToggleFullscreen();
                 if (IsWindowFullscreen()) {
@@ -2808,38 +2810,41 @@ int main(void) {
             }
             //DrawGrid(256, 1.0f);
         EndMode3D();
-        //DrawText("WASD to move, mouse to look", 10, 10, 20, BLACK);
-        DrawText(TextFormat("Pitch: %.2f  Yaw: %.2f", pitch, yaw), 10, 30, 20, BLACK);
-        DrawText(TextFormat("Next Chunk: (%d,%d)", chosenX, chosenY), 10, 50, 20, BLACK);
-        DrawText(TextFormat("Current Chunk: (%d,%d), Tile: (%d,%d), Global Tile: (%d,%d)", closestCX, closestCY, playerTileX, playerTileY, gx, gy), 10, 70, 20, BLACK);
-        Vector3 disPositionRightHere = donnyMode?don.pos:camera.position;
-        DrawText(TextFormat("X: %.2f  Y: %.2f Z: %.2f", disPositionRightHere.x, disPositionRightHere.y, disPositionRightHere.z), 10, 90, 20, BLACK);
-        DrawText(TextFormat("Search Type: %s (%d) [t=toggle,r=search]", GetModelName(modelSearchType), modelSearchType), 10, 110, 20, BLACK);
-        if(vehicleMode && onLoad)
+        if (devDisplay)
         {
-            DrawText(TextFormat("Tuck Speed (MPH): %.2f", truckSpeed * 60), 10, 150, 20, BLUE);
-            DrawText(TextFormat("Tuck Angle (Rad): %.2f", truckAngle), 10, 170, 20, PURPLE);
-            DrawText(TextFormat("Tuck Pitch (Rad): %.2f", truckPitch), 10, 190, 20, PURPLE);
-            DrawText(TextFormat("Tuck Roll  (Rad): %.2f", truckRoll), 10, 210, 20, PURPLE);
-            DrawText(TextFormat("Points: %d", points), 10, 230, 16, BLACK);
-            DrawText(TextFormat("Truck Air State = %d", truckAirState), 10, 250, 16, BLACK);//
-            DrawText(TextFormat("F=[%.3f][%.3f]", tireYOffset[0], tireYOffset[1]), 10, 270, 16, GRAY);
-            DrawText(TextFormat("B=[%.3f][%.3f]", tireYOffset[2], tireYOffset[3]), 10, 290, 16, GRAY);
-        }
-        if (donnyMode && onLoad)
-        {
-            DrawText(TextFormat("%d", don.state), 10, 150, 20, BLUE);
-            DrawText(TextFormat("Normal: %.2f %.2f %.2f", don.groundNormal.x, don.groundNormal.y, don.groundNormal.z), 10, 170, 20, PURPLE);
-            DrawText(TextFormat("GroundY: %.2f", don.groundY), 10, 190, 20, PURPLE);
-            if (don.bowMode && (don.state == DONOGAN_STATE_BOW_PULL || don.state == DONOGAN_STATE_BOW_AIM || don.state == DONOGAN_STATE_BOW_REL))
+            //DrawText("WASD to move, mouse to look", 10, 10, 20, BLACK);
+            DrawText(TextFormat("Pitch: %.2f  Yaw: %.2f", pitch, yaw), 10, 30, 20, BLACK);
+            DrawText(TextFormat("Next Chunk: (%d,%d)", chosenX, chosenY), 10, 50, 20, BLACK);
+            DrawText(TextFormat("Current Chunk: (%d,%d), Tile: (%d,%d), Global Tile: (%d,%d)", closestCX, closestCY, playerTileX, playerTileY, gx, gy), 10, 70, 20, BLACK);
+            Vector3 disPositionRightHere = donnyMode ? don.pos : camera.position;
+            DrawText(TextFormat("X: %.2f  Y: %.2f Z: %.2f", disPositionRightHere.x, disPositionRightHere.y, disPositionRightHere.z), 10, 90, 20, BLACK);
+            DrawText(TextFormat("Search Type: %s (%d) [t=toggle,r=search]", GetModelName(modelSearchType), modelSearchType), 10, 110, 20, BLACK);
+            if (vehicleMode && onLoad)
             {
-                Vector2 center = { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
-                DrawCircleLines((int)center.x, (int)center.y, 10, WHITE);
-                DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
-                DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
+                DrawText(TextFormat("Tuck Speed (MPH): %.2f", truckSpeed * 60), 10, 150, 20, BLUE);
+                DrawText(TextFormat("Tuck Angle (Rad): %.2f", truckAngle), 10, 170, 20, PURPLE);
+                DrawText(TextFormat("Tuck Pitch (Rad): %.2f", truckPitch), 10, 190, 20, PURPLE);
+                DrawText(TextFormat("Tuck Roll  (Rad): %.2f", truckRoll), 10, 210, 20, PURPLE);
+                DrawText(TextFormat("Points: %d", points), 10, 230, 16, BLACK);
+                DrawText(TextFormat("Truck Air State = %d", truckAirState), 10, 250, 16, BLACK);//
+                DrawText(TextFormat("F=[%.3f][%.3f]", tireYOffset[0], tireYOffset[1]), 10, 270, 16, GRAY);
+                DrawText(TextFormat("B=[%.3f][%.3f]", tireYOffset[2], tireYOffset[3]), 10, 290, 16, GRAY);
             }
-            if (truckSummonActive) { DrawText("SUMMONING...", 24, 230, 20, YELLOW); }
+            if (donnyMode && onLoad)
+            {
+                DrawText(TextFormat("%d", don.state), 10, 150, 20, BLUE);
+                DrawText(TextFormat("Normal: %.2f %.2f %.2f", don.groundNormal.x, don.groundNormal.y, don.groundNormal.z), 10, 170, 20, PURPLE);
+                DrawText(TextFormat("GroundY: %.2f", don.groundY), 10, 190, 20, PURPLE);
+                if (don.bowMode && (don.state == DONOGAN_STATE_BOW_PULL || don.state == DONOGAN_STATE_BOW_AIM || don.state == DONOGAN_STATE_BOW_REL))
+                {
+                    Vector2 center = { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
+                    DrawCircleLines((int)center.x, (int)center.y, 10, WHITE);
+                    DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
+                    DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
+                }
+            }
         }
+        if (truckSummonActive) { DrawText("SUMMONING...", 24, SCREEN_HEIGHT - 60, 20, YELLOW); }
         if (showMap) {
             // Map drawing area (scaled by zoom)
             //
