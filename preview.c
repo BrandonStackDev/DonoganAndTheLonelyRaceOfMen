@@ -322,6 +322,8 @@ int main(void) {
     }
     //get sound clips
     carHorn = LoadSound("sounds/horn.mp3");
+    donScream = LoadSound("sounds/scream.mp3");
+    //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
     //icon

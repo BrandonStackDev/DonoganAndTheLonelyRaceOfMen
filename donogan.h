@@ -16,6 +16,7 @@
 #include "timer.h"
 #include "collision.h"
 #include "interact.h"
+#include "game.h"
 //bubbles
 #define DON_MAX_BUBBLES 128
 
@@ -213,6 +214,7 @@ typedef enum {
     DONOGAN_STATE_SPELL_EXIT,
     DONOGAN_STATE_SPELL_SHOOT,
     DONOGAN_STATE_HIT,
+    DONOGAN_STATE_DEATH,
 } DonoganState;
 
 // ---------- Anim IDs present in your GLB (+procedural negatives)----------
@@ -1604,8 +1606,9 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_SPELL_ENTER:              return DONOGAN_ANIM_Spell_Simple_Enter;
     case DONOGAN_STATE_SPELL_IDLE:              return DONOGAN_ANIM_Spell_Simple_Idle_Loop;
     case DONOGAN_STATE_SPELL_EXIT:              return DONOGAN_ANIM_Spell_Simple_Exit;
-    case DONOGAN_STATE_SPELL_SHOOT:     return DONOGAN_ANIM_PROC_SPELL_SHOOT;
+    case DONOGAN_STATE_SPELL_SHOOT:             return DONOGAN_ANIM_PROC_SPELL_SHOOT;
     case DONOGAN_STATE_HIT:         return DONOGAN_ANIM_Hit_Chest;
+    case DONOGAN_STATE_DEATH:       return DONOGAN_ANIM_Death01;
     default:                        return DONOGAN_ANIM_Idle_Loop;
     }
 }
@@ -1711,6 +1714,10 @@ void UpdateBalls(float dt) {
 static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool freeze, bool disableRoll)
 {
     if (!d) return;
+    if (d->health <= 0)
+    {
+        DonSetState(d, DONOGAN_STATE_DEATH);
+    }
     if (!freeze)
     {
         // --- Input ---
@@ -2189,6 +2196,16 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
             case DONOGAN_STATE_HIT:
                 if (d->animFinished) { DonSetState(d, DONOGAN_STATE_IDLE);}
+                break;
+
+            case DONOGAN_STATE_DEATH:
+                if (d->animFinished) { 
+                    DonSetState(d, DONOGAN_STATE_IDLE);
+                    d->pos = (Vector3){ 2973.70f, 322.00f, 4042.42f };//start at home position after death
+                    d->health = d->maxHealth;
+                    d->mana = d->maxMana;
+                    if (!IsSoundPlaying(donScream)) { PlaySound(donScream); }
+                }
                 break;
 
             default: { // IDLE / WALK / RUN (grounded locomotion)
