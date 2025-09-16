@@ -357,15 +357,16 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             if (d->spellTimer.running)
             {
                 //make em raise up
-                bg[i].pos.y += dt;
+                bg[i].pos.y += dt/100.0f;
                 //make em spin
                 float deltaDeg = d->yawY - d->cached_yawY;       // Donogan's spin since last frame
                 // Wrap to [-180, 180] so crossing 359->0 doesn't cause a huge jump.
-                if (deltaDeg > 180.0f)  deltaDeg -= 360.0f;
-                if (deltaDeg < -180.0f) deltaDeg += 360.0f;
-
+                //if (deltaDeg > 180.0f)  deltaDeg -= 360.0f;
+                //if (deltaDeg < -180.0f) deltaDeg += 360.0f;
+                while (deltaDeg > 8) { deltaDeg *=dt; } //good thing to do this....
+                while (deltaDeg < -8) { deltaDeg *= dt; }
                 if (fabsf(deltaDeg) > 0.0001f) {
-                    float r = DEG2RAD * (-deltaDeg * dt);
+                    float r = DEG2RAD * -deltaDeg;
                     float s = sinf(r), c = cosf(r);
 
                     float rx = bg[i].pos.x - d->pos.x;  // vector from Don -> BG (XZ only)
@@ -391,7 +392,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
     //handle don and timer for square spell
     if (d->spellTimer.running)
     {
-        //d->cached_yawY = d->yawY;//this does not work....
+        //d->cached_yawY = d->yawY;//this does not work....?
     }
     if (HasTimerElapsed(&d->spellTimer))
     {
