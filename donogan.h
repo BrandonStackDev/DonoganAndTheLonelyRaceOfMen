@@ -495,6 +495,7 @@ typedef struct {
     //health and mana
     int health, mana, maxHealth, maxMana;
     Timer spellTimer;
+    float cached_yawY;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1511,6 +1512,7 @@ static Donogan InitDonogan(void)
     d.slideDwell = CreateTimer(0.25f);
     d.talkStartTimer = CreateTimer(0.2222f);
     d.spellTimer = CreateTimer(0.2f);
+    d.cached_yawY = 0;
     //bow speed turn
     d.bowTurnSpeed = DEG2RAD * 90; // turn quickly to face motion
     d.bowDrawTLatch = 0.0f;
@@ -2159,6 +2161,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             case DONOGAN_STATE_SPELL_ENTER: {
                 // Enter is non-loop; when it finishes, go to loop if still holding,
                 // otherwise immediately play Exit.
+                d->cached_yawY = d->yawY;
                 StartTimer(&d->spellTimer);
                 if (d->animFinished) {
                     if (square) DonSetState(d, DONOGAN_STATE_SPELL_IDLE);

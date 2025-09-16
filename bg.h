@@ -356,7 +356,27 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             }
             if (d->spellTimer.running)
             {
+                //make em raise up
                 bg[i].pos.y += dt;
+                //make em spin
+                float deltaDeg = d->yawY - d->cached_yawY;       // Donogan's spin since last frame
+                // Wrap to [-180, 180] so crossing 359->0 doesn't cause a huge jump.
+                if (deltaDeg > 180.0f)  deltaDeg -= 360.0f;
+                if (deltaDeg < -180.0f) deltaDeg += 360.0f;
+
+                if (fabsf(deltaDeg) > 0.0001f) {
+                    float r = DEG2RAD * -deltaDeg;
+                    float s = sinf(r), c = cosf(r);
+
+                    float rx = bg[i].pos.x - d->pos.x;  // vector from Don -> BG (XZ only)
+                    float rz = bg[i].pos.z - d->pos.z;
+
+                    float nx = rx * c - rz * s;         // rotate around Donogan
+                    float nz = rx * s + rz * c;
+
+                    bg[i].pos.x = d->pos.x + nx;
+                    bg[i].pos.z = d->pos.z + nz;
+                }
             }
         }
         if (bg[i].frozen) { continue; }
@@ -369,6 +389,10 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);
     }
     //handle don and timer for square spell
+    if (d->spellTimer.running)
+    {
+        //d->cached_yawY = d->yawY;//this does not work....
+    }
     if (HasTimerElapsed(&d->spellTimer))
     {
         d->mana -= 1;
