@@ -343,7 +343,7 @@ int main(void) {
     Font req_font = LoadFontEx("res/Tangerine/Tangerine-Bold.ttf", 32, 0, 250);
     Font res_font = LoadFontEx("res/Lexend/static/Lexend-SemiBold.ttf", 15, 0, 250);
     ////whales---------------------------------------------------
-    int numWhales = 6; // six whales right now
+    int numWhales = 9; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
     //init whale struct
     whales[0] = (Whale){ 0 };
@@ -364,6 +364,15 @@ int main(void) {
     whales[5] = (Whale){ 0 };
     InitWhale(&whales[5], (Vector3) { 2782.00, 140, -2063.00 }, 80, WHALE_SURFACE);
     if (!LoadWhale(&whales[5])) { return 1; }
+    whales[6] = (Whale){ 0 };
+    InitWhale(&whales[6], (Vector3) { -4320.00, 256, 43 }, 190, WHALE_SURFACE);
+    if (!LoadWhale(&whales[6])) { return 1; }
+    whales[7] = (Whale){ 0 };
+    InitWhale(&whales[7], (Vector3) { -3504.00, 267, -1533.00 }, 230, WHALE_SURFACE);
+    if (!LoadWhale(&whales[7])) { return 1; }
+    whales[8] = (Whale){ 0 };
+    InitWhale(&whales[8], (Vector3) { -3273, 190, -4415.00 }, 110, WHALE_SURFACE);
+    if (!LoadWhale(&whales[8])) { return 1; }
     ////end whales setup-----------------------------------------
         // fish
     // --- FISH SETUP --------------------------------------------------------------
