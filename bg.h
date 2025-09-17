@@ -281,13 +281,17 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     {
         StartTimer(&b->interactionTimer);
     }
-    else if (HasTimerElapsed(&b->interactionTimer))
+    else if (HasTimerElapsed(&b->interactionTimer) && Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius)
     {
         b->targetPitch = 0;
         b->speed = 0.4f;
         b->targetPos = b->pos;
         b->targetPos.y = groundY - 20;
         b->state = GHOST_STATE_DEATH;
+    }
+    else
+    {
+        ResetTimer(&b->interactionTimer);
     }
     //next, switch and update on states
     switch (b->state)
