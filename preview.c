@@ -2175,9 +2175,24 @@ int main(void) {
         }
         //collision for bad guys and attacks
         // //arrows
-        /*for (int i = 0; i < MAX_ARROWS; i++)
+        for (int a = 0; a < MAX_ARROWS; a++)
         {
-        }*/
+            if (!don.arrows[a].alive || don.arrows[a].stuck) { continue; }
+            for (int b = 0; b < bg_count; b++)
+            {
+                if (!bg[b].active || bg[b].type == BG_GHOST) { continue; }
+                if (CheckCollisionBoxes(don.arrows[a].box, bg[b].box))
+                {
+                    don.arrows[a].stuck = true;
+                    if (bg[b].type == BG_YETI)
+                    {
+                        bg[b].health -= 8;
+                        bg[b].state = YETI_STATE_HIT;
+                        BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
+                    }
+                }
+            }
+        }
         //donogans spell balls
         for (int i = 0; i < MAX_BALLS; i++)
         {
@@ -2215,13 +2230,27 @@ int main(void) {
                     DonSetState(&don, DONOGAN_STATE_HIT);
                     StartTimer(&don.hitTimer);
                 }
-                else if (bg[b].type == BG_GHOST && HasTimerElapsed(&don.hitTimer))
+                else if (bg[b].type == BG_YETI && HasTimerElapsed(&don.hitTimer))
                 {
-                    //hit don
-                    TraceLog(LOG_INFO, "ouch! yeti oof!");
-                    don.health -= 10;
-                    DonSetState(&don, DONOGAN_STATE_HIT);
-                    StartTimer(&don.hitTimer);
+                    if (don.state == DONOGAN_STATE_PUNCH_CROSS_ENTER
+                        || don.state == DONOGAN_STATE_PUNCH_JAB_ENTER
+                        || don.state == DONOGAN_STATE_PUNCH_CROSS
+                        || don.state == DONOGAN_STATE_PUNCH_JAB)
+                    {
+                        //punched a yeti!
+                        TraceLog(LOG_INFO, "punched a yeti!");
+                        bg[b].health -= 30;
+                        bg[b].state = YETI_STATE_HIT;
+                        BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
+                    }
+                    else
+                    {
+                        //hit don
+                        TraceLog(LOG_INFO, "ouch! yeti oof!");
+                        don.health -= 10;
+                        DonSetState(&don, DONOGAN_STATE_HIT);
+                        StartTimer(&don.hitTimer);
+                    }
                 }
             }
         }
