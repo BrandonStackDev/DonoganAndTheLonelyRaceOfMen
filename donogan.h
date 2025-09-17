@@ -2211,10 +2211,15 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
             case DONOGAN_STATE_HIT:
                 d->bowMode = false;
+                d->squareThrowRequest = false;
+                ResetTimer(&d->spellTimer);
                 if (d->animFinished) { DonSetState(d, DONOGAN_STATE_IDLE);}
                 break;
 
             case DONOGAN_STATE_DEATH:
+                d->bowMode = false;
+                d->squareThrowRequest = false;
+                ResetTimer(&d->spellTimer);
                 if (d->animFinished) { 
                     DonSetState(d, DONOGAN_STATE_IDLE);
                     d->pos = (Vector3){ 2973.70f, 322.00f, 4042.42f };//start at home position after death
