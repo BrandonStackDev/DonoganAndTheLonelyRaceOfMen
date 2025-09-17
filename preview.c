@@ -2230,22 +2230,23 @@ int main(void) {
                     DonSetState(&don, DONOGAN_STATE_HIT);
                     StartTimer(&don.hitTimer);
                 }
-                else if (bg[b].type == BG_YETI && HasTimerElapsed(&don.hitTimer))
+                else if (bg[b].type == BG_YETI) 
                 {
-                    if (don.state == DONOGAN_STATE_PUNCH_CROSS_ENTER
+                    bool punching = (don.state == DONOGAN_STATE_PUNCH_CROSS_ENTER
                         || don.state == DONOGAN_STATE_PUNCH_JAB_ENTER
                         || don.state == DONOGAN_STATE_PUNCH_CROSS
-                        || don.state == DONOGAN_STATE_PUNCH_JAB)
-                    {
-                        //punched a yeti!
+                        || don.state == DONOGAN_STATE_PUNCH_JAB);
+
+                    if (punching) {
+                        // punched a yeti!
                         TraceLog(LOG_INFO, "punched a yeti!");
-                        bg[b].health -= 30;
+                        bg[b].health -= 1;
                         bg[b].state = YETI_STATE_HIT;
                         BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
+                        // optional: StartTimer(&don.hitTimer); // if you want a brief punch cooldown
                     }
-                    else
-                    {
-                        //hit don
+                    else if (HasTimerElapsed(&don.hitTimer)) {
+                        // yeti damages Don (cooldown applies here only)
                         TraceLog(LOG_INFO, "ouch! yeti oof!");
                         don.health -= 10;
                         DonSetState(&don, DONOGAN_STATE_HIT);
