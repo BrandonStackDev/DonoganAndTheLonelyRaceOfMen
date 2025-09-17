@@ -418,7 +418,6 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
             p.y = BG_GroundY(p);
             b->targetPos = p;
         }
-        //b->speed = 2.2f;                     // walk speed
         BG_SetAnim(b, ANIM_YETI_WALK, (b->curAnim != ANIM_YETI_WALK));
         b->state = YETI_STATE_WALKING;
     } break;
@@ -427,13 +426,18 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     {
         // face and move toward target on ground
         b->targetPitch = 0;
-        b->pos = Vector3Lerp(b->pos, (Vector3) { b->targetPos.x, BG_GroundY(b->pos), b->targetPos.z }, dt* b->speed);
+        //b->pos = Vector3Lerp(b->pos, (Vector3) { b->targetPos.x, BG_GroundY(b->pos), b->targetPos.z }, dt* b->speed);
+        Vector3 to = (Vector3){ b->targetPos.x, BG_GroundY(b->pos), b->targetPos.z };
+        float dist = Vector3Distance(b->pos, to);
+        float t = (dist > 0.0f) ? fminf((b->speed * dt) / dist, 1.0f) : 1.0f;
+        b->pos = Vector3Lerp(b->pos, to, t);
+        b->pos.y = groundY;//keep him on the ground always
         b->yaw = Lerp(b->yaw, b->targetYaw, dt * 4.0f); // snappier turn for a brawler
 
         // Arrived?
-        if (distToTarget < 1.8f) {
+        if (distToTarget < 1.8f || distToDon < 50.0f) {
             // if chasing Donogan and close, jump attack; otherwise re-plan
-            if (b->aware && distToDon < 6.0f) {
+            if (b->aware && distToDon < 16.0f) {
                 // setup a forward leap
                 Vector3 dir = Vector3Normalize(Vector3Subtract(d->pos, b->pos));
                 b->vel.x = dir.x * 9.0f;
@@ -503,7 +507,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
             BG_SetAnim(b, ANIM_YETI_ROAR, true);
         }
         break;
-    case YETI_STATE_DEAD:
+    case YETI_STATE_DEAD: //todo: why did we never reach this code?
         // You can add timers/effects here. For now, deactivate on "dead".
         b->active = false; b->dead = true;
         bgModelBorrower[b->gbm_index].isInUse = false;
@@ -556,7 +560,7 @@ BadGuy CreateYeti(Vector3 pos)
     b.aware = false;
     b.pos = pos;
     b.scale = 1.6;
-    b.speed = 0.826;
+    b.speed = 1.826;
     b.startHealth = 100;   // === NEW: give the big guy some HP
     b.health = b.startHealth;
     b.animFPS = 24.0f;   // === NEW: default playback speed
@@ -611,7 +615,7 @@ void InitBadGuys(Shader ghostShader)
     bg[35] = CreateGhost((Vector3) { 2200, 550, 818 });
     bg[36] = CreateGhost((Vector3) { 2430, 498, 809 });
     bg[37] = CreateGhost((Vector3) { 2462, 460, 680 });
-    bg[38] = CreateYeti((Vector3) { -1803, 877, 2145 });
+    bg[38] = CreateYeti((Vector3) { -73, 877, 2145 });
     bg[39] = CreateYeti((Vector3) { -418, 922, 2152 });
     bg[40] = CreateYeti((Vector3) { -249, 921, 2183 });
     bg[41] = CreateYeti((Vector3) { -274, 874, 2470 });
