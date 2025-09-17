@@ -640,7 +640,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             TraceLog(LOG_INFO, "throwing request!");
             Vector3 dir = Vector3Normalize(Vector3Subtract(bg[i].pos, d->pos));
             bg[i].throwing = true;
-            bg[i].throwVel = (Vector3){ dir.x * 128.0f, 64.0f, dir.z * 128.0f }; // tweakable
+            bg[i].throwVel = (Vector3){ dir.x * 128.0f, 32.0f, dir.z * 128.0f }; // tweakable
         }
         /*if (!bg[i].throwing
             && d->state != DONOGAN_STATE_SPELL_ENTER
