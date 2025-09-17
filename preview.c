@@ -2914,13 +2914,16 @@ int main(void) {
                 DrawText(TextFormat("%d", don.state), 10, 150, 20, BLUE);
                 DrawText(TextFormat("Normal: %.2f %.2f %.2f", don.groundNormal.x, don.groundNormal.y, don.groundNormal.z), 10, 170, 20, PURPLE);
                 DrawText(TextFormat("GroundY: %.2f", don.groundY), 10, 190, 20, PURPLE);
-                if (don.bowMode && (don.state == DONOGAN_STATE_BOW_PULL || don.state == DONOGAN_STATE_BOW_AIM || don.state == DONOGAN_STATE_BOW_REL))
-                {
-                    Vector2 center = { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
-                    DrawCircleLines((int)center.x, (int)center.y, 10, WHITE);
-                    DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
-                    DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
-                }
+            }
+        }
+        if (donnyMode && onLoad)
+        {
+            if (don.bowMode && (don.state == DONOGAN_STATE_BOW_PULL || don.state == DONOGAN_STATE_BOW_AIM || don.state == DONOGAN_STATE_BOW_REL))
+            {
+                Vector2 center = { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
+                DrawCircleLines((int)center.x, (int)center.y, 10, WHITE);
+                DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
+                DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
             }
         }
         if (truckSummonActive) { DrawText("SUMMONING...", 24, SCREEN_HEIGHT - 60, 20, YELLOW); }
