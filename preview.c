@@ -2189,9 +2189,12 @@ int main(void) {
                 {
                     bg[b].state = GHOST_STATE_HIT;
                 } 
-                else if (bg[b].type == BG_YETI && bg[b].state != YETI_STATE_HIT && CheckCollisionBoxSphere(bg[b].box, balls[i].pos, balls[i].radius))//little outside the radius, hit!
+                else if (bg[b].type == BG_YETI 
+                    && bg[b].state != YETI_STATE_HIT && bg[b].state != YETI_STATE_DYING && bg[b].state != YETI_STATE_DEAD
+                    && CheckCollisionBoxSphere(bg[b].box, balls[i].pos, balls[i].radius))//little outside the radius, hit!
                 {
                     bg[b].state = YETI_STATE_HIT;
+                    BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
                     balls[i].alive = false;
                     bg[b].health -= 40;
                 }

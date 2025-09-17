@@ -482,15 +482,25 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     } break;
 
     case YETI_STATE_HIT:
-        BG_SetAnim(b, ANIM_YETI_ROAR, false);
-        b->state = YETI_STATE_PLANNING;
+        if (b->animFrame >= b->anims[b->curAnim].frameCount - 1) {
+            b->state = YETI_STATE_PLANNING;
+        }
         break;
 
     case YETI_STATE_DYING:
         if (b->drawColor.a != 0) { b->drawColor.a--; }
-        else if (b->drawColor.a == 0)
+        if (b->drawColor.a == 0)
         {
             b->state = YETI_STATE_DEAD;
+            b->drawColor.a = 255;
+            b->active = false; b->dead = true;
+            bgModelBorrower[b->gbm_index].isInUse = false;
+            b->gbm_index = -1;
+            StartTimer(&b->respawnTimer);
+            ResetTimer(&b->interactionTimer);
+        }
+        if (b->animFrame >= b->anims[b->curAnim].frameCount - 1) {
+            BG_SetAnim(b, ANIM_YETI_ROAR, true);
         }
         break;
     case YETI_STATE_DEAD:
