@@ -2181,12 +2181,15 @@ int main(void) {
             for (int b = 0; b < bg_count; b++)//todo: culling of some sort on this...
             {
                 if (!bg[b].active) { continue; }
-                if (bg[b].state != GHOST_STATE_HIT && Vector3Distance(balls[i].pos, bg[b].pos) < balls[i].radius + 1.6f)//little outside the radius, hit!
+                if (bg[b].type == BG_GHOST && bg[b].state != GHOST_STATE_HIT && Vector3Distance(balls[i].pos, bg[b].pos) < balls[i].radius + 1.6f)//little outside the radius, hit!
                 {
-                    if (bg[b].type == BG_GHOST)
-                    {
-                        bg[b].state = GHOST_STATE_HIT;
-                    }
+                    bg[b].state = GHOST_STATE_HIT;
+                } 
+                else if (bg[b].type == BG_YETI && bg[b].state != YETI_STATE_HIT && CheckCollisionBoxSphere(bg[b].box, balls[i].pos, balls[i].radius))//little outside the radius, hit!
+                {
+                    bg[b].state = YETI_STATE_HIT;
+                    balls[i].alive = false;
+                    bg[b].health -= 40;
                 }
             }
         }
@@ -2202,6 +2205,14 @@ int main(void) {
                     //hit don
                     TraceLog(LOG_INFO, "ouch!");
                     don.health -= 5;
+                    DonSetState(&don, DONOGAN_STATE_HIT);
+                    StartTimer(&don.hitTimer);
+                }
+                else if (bg[b].type == BG_GHOST && HasTimerElapsed(&don.hitTimer))
+                {
+                    //hit don
+                    TraceLog(LOG_INFO, "ouch! yeti oof!");
+                    don.health -= 10;
                     DonSetState(&don, DONOGAN_STATE_HIT);
                     StartTimer(&don.hitTimer);
                 }

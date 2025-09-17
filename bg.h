@@ -390,7 +390,10 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     // Awareness check
     float distToDon = Vector3Distance(b->pos, d->pos);
     if (distToDon < b->awareRadius) b->aware = true;
-
+    if (b->health <= 0)
+    {
+        b->state = YETI_STATE_DYING;
+    }
     switch (b->state)
     {
     case YETI_STATE_SPAWN:
@@ -471,6 +474,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
                 d->shook += dt;
                 d->health -= 5;
                 DonSetState(d,DONOGAN_STATE_HIT);
+                StartTimer(&d->hitTimer);
             }
         }
     } break;
