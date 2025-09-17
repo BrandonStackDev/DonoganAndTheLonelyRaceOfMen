@@ -363,8 +363,8 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                 // Wrap to [-180, 180] so crossing 359->0 doesn't cause a huge jump.
                 //if (deltaDeg > 180.0f)  deltaDeg -= 360.0f;
                 //if (deltaDeg < -180.0f) deltaDeg += 360.0f;
-                while (deltaDeg > 8) { deltaDeg *=dt; } //good thing to do this....
-                while (deltaDeg < -8) { deltaDeg *= dt; }
+                if (deltaDeg > 4*PI) { deltaDeg = PI; } //good thing to do this....?
+                if (deltaDeg < -4 * PI) { deltaDeg = -PI; }
                 if (fabsf(deltaDeg) > 0.0001f) {
                     float r = DEG2RAD * -deltaDeg;
                     float s = sinf(r), c = cosf(r);

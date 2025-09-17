@@ -2171,7 +2171,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
             case DONOGAN_STATE_SPELL_IDLE: {
                 // Hold to stay; release to exit
-                if (squareReleased) {
+                if (squareReleased || d->mana<=0) {
                     DonSetState(d, DONOGAN_STATE_SPELL_EXIT);
                     break;
                 }
