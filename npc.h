@@ -1,6 +1,8 @@
 #ifndef NPC_H
 #define NPC_H
 
+// --- npc.h additions ---
+#include "donogan.h"   // so we can accept Donogan* in update/draw
 // Includes
 #include "raylib.h"
 #include "raymath.h"
@@ -34,7 +36,7 @@ typedef struct {
 
     // === NEW: simple, general per-BG animation control
     int    curAnim;        // which animation index is playing
-    int    animFrame;      // current frame within that animation
+    float  animFrame;      // current frame within that animation, this is a float now...!
     float  animFPS;        // playback speed (frames/sec)
     ModelAnimation* anims; // shared pointer to per-type animations
     int    animCount;      // number of animations for this BG
@@ -53,31 +55,6 @@ typedef struct {
 } NPC;
 
 NPC npcs[NPC_TOTAL];
-
-void InitAllNPC()
-{
-    Model darrel_model = LoadModel("models/darrel.glb");
-    Texture darrel_tex = LoadTexture("textures/darrel.png");
-    int darrel_animCount = 0;
-    ModelAnimation* darrel_anims = LoadModelAnimations("models/darrel_orig.glb", &darrel_animCount);
-    npcs[NPC_DARREL].type = NPC_DARREL;
-    npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
-    npcs[NPC_DARREL].model = darrel_model; //models with animations have to have a unique model instance in raylib, otherwise they all display the same animation at the same time
-    npcs[NPC_DARREL].tex = darrel_tex;
-    npcs[NPC_DARREL].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = darrel_tex;
-    npcs[NPC_DARREL].anims = darrel_anims;
-    npcs[NPC_DARREL].animCount = darrel_animCount;
-    npcs[NPC_DARREL].pos = (Vector3){ 3022.00f, 322.00f, 4042.42f };
-    npcs[NPC_DARREL].targetPos = npcs[NPC_DARREL].pos;
-    npcs[NPC_DARREL].scale = 0.08f;
-    npcs[NPC_DARREL].yaw = 0.0f;
-    npcs[NPC_DARREL].curAnim = npcs[NPC_DARREL].state;
-    npcs[NPC_DARREL].animFPS = 24.0f;
-    npcs[NPC_DARREL].animFrame = 0.0f;
-}
-
-// --- npc.h additions ---
-#include "donogan.h"   // so we can accept Donogan* in update/draw
 
 // Optional: tiny helpers
 static inline float NPC_GroundY(Vector3 p) {
@@ -107,24 +84,97 @@ static inline void NPC_AnimSet(NPC* n, int animIndex, bool forceReset, float fps
     }
 }
 
-static inline void NPC_AnimTick(NPC* n, float dt) {
-    if (!n || !n->anims || n->animCount <= 0) return;
-    ModelAnimation* a = &n->anims[n->curAnim];
-    if (a->frameCount <= 0) return;
+//init the stuff
+void InitAllNPC()
+{
+    Model darrel_model = LoadModel("models/darrel.glb");
+    Texture darrel_tex = LoadTexture("textures/darrel.png");
+    int darrel_animCount = 0;
+    ModelAnimation* darrel_anims = LoadModelAnimations("models/darrel.glb", &darrel_animCount);
+    npcs[NPC_DARREL].type = NPC_DARREL;
+    npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
+    npcs[NPC_DARREL].model = darrel_model; //models with animations have to have a unique model instance in raylib, otherwise they all display the same animation at the same time
+    npcs[NPC_DARREL].tex = darrel_tex;
+    npcs[NPC_DARREL].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = darrel_tex;
+    npcs[NPC_DARREL].anims = darrel_anims;
+    npcs[NPC_DARREL].animCount = darrel_animCount;
+    npcs[NPC_DARREL].pos = (Vector3){ 3022.00f, 322.00f, 4042.42f };
+    npcs[NPC_DARREL].targetPos = npcs[NPC_DARREL].pos;
+    npcs[NPC_DARREL].scale = 3.8f;
+    npcs[NPC_DARREL].yaw = 0.0f;
+    npcs[NPC_DARREL].state = DARREL_STATE_CONFUSED;
+    npcs[NPC_DARREL].curAnim = npcs[NPC_DARREL].state;
+    npcs[NPC_DARREL].animFPS = 24.0f;
+    npcs[NPC_DARREL].animFrame = 0.0f;
+    NPC_AnimSet(&npcs[NPC_DARREL], npcs[NPC_DARREL].curAnim, true, 24.0f); // start correct clip
+}
+//static inline void NPC_AnimTick(NPC* n, float dt) {
+//    if (!n || !n->anims || n->animCount <= 0) return;
+//    ModelAnimation* a = &n->anims[n->curAnim];
+//    if (a->frameCount <= 0) return;
+//
+//    n->animFrame += n->animFPS * dt;
+//    if (n->animFrame >= a->frameCount) {
+//        n->animFrame = fmodf(n->animFrame, (float)a->frameCount);
+//    }
+//    // Safe to guard, but generally fine:
+//    if (IsModelAnimationValid(n->model, *a)) {
+//        UpdateModelAnimation(n->model, *a, (int)n->animFrame);
+//    }
+//}
+// 
+bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
+{
+    int result = true;
 
+    if (model.boneCount != anim.boneCount)
+    {
+        result = false;
+    }
+    else
+    {
+        for (int i = 0; i < model.boneCount; i++)
+        {
+            if (model.bones[i].parent != anim.bones[i].parent) 
+            { 
+                result = false; 
+                break; 
+            }
+        }
+    }
+
+    return result;
+}
+// was: static inline void NPC_AnimTick(NPC* n, float dt)
+static inline bool NPC_AnimTick(NPC* n, float dt) {
+    if (!n || !n->anims || n->animCount <= 0) return false;
+    ModelAnimation* a = &n->anims[n->curAnim];
+    if (a->frameCount <= 0) return false;
+
+    float prev = n->animFrame;
     n->animFrame += n->animFPS * dt;
+
+    bool looped = false;
     if (n->animFrame >= a->frameCount) {
         n->animFrame = fmodf(n->animFrame, (float)a->frameCount);
+        looped = true;
     }
-    // Safe to guard, but generally fine:
-    if (IsModelAnimationValid(n->model, *a)) {
+    if (IsModelAnimationValidMe(n->model, *a)) {
         UpdateModelAnimation(n->model, *a, (int)n->animFrame);
     }
+    return looped;
 }
+
 
 // --- Case-specific handler for Darrel ---
 static inline void NPC_Update_Darrel(NPC* n, const Donogan* d, float dt) {
-    n->curAnim = n->state;
+    n->pos.y -= 0.2f;
+    ModelAnimation* a = &n->anims[n->curAnim];
+    if (n->animFrame >= a->frameCount)
+    {
+        n->curAnim = n->state;
+        NPC_AnimSet(n, n->curAnim, true, 24.0f);
+    }
 }
 
 // --- General per-NPC update entry point ---
