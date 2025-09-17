@@ -97,6 +97,8 @@ typedef struct {
     float   arriveRadius, tetherRadius;
     bool frozen;
     Color drawColor;
+    bool     throwing;
+    Vector3  throwVel;
 } BadGuy;
 //instance of a bad guy, will borrow its model
 
@@ -434,23 +436,29 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
         b->pos.y = groundY;//keep him on the ground always
         b->yaw = Lerp(b->yaw, b->targetYaw, dt * 4.0f); // snappier turn for a brawler
 
-        // Arrived?
-        if (distToTarget < 1.8f || distToDon < 50.0f) {
-            // if chasing Donogan and close, jump attack; otherwise re-plan
-            if (b->aware && distToDon < 16.0f) {
-                // setup a forward leap
+        // Arrived / chase logic
+        if (b->aware) {
+            // keep chasing Don — don't bounce back to PLANNING
+            b->targetPos = d->pos;
+
+            // close enough? do the jump attack
+            if (distToDon <= 16.0f) {
                 Vector3 dir = Vector3Normalize(Vector3Subtract(d->pos, b->pos));
                 b->vel.x = dir.x * 9.0f;
                 b->vel.z = dir.z * 9.0f;
-                b->vel.y = 12.0f;          // upward impulse
+                b->vel.y = 12.0f;
                 BG_SetAnim(b, ANIM_YETI_JUMP, true);
                 b->state = YETI_STATE_ATTACK;
             }
-            else {
+        }
+        else {
+            // only replan if we actually reached the wander target
+            if (distToTarget < 1.8f) {
                 b->state = YETI_STATE_PLANNING;
-                BG_SetAnim(b, ANIM_YETI_ROAR, true);
+                BG_SetAnim(b, ANIM_YETI_ROAR, false);
             }
         }
+
     } break;
 
     case YETI_STATE_ATTACK: // jump attack (ballistic)
@@ -627,42 +635,69 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
     for (int i = 0; i < bg_count; ++i) {
         if (!bg[i].active) { continue; }
         //handle square spell
-        if (Vector3Distance(d->pos, bg[i].pos) < 60)
+        if (d->squareThrowRequest)
         {
-            if (!d->spellTimer.running) { bg[i].frozen = false; }
-            else if (HasTimerElapsed(&d->spellTimer))
-            {
-                bg[i].health -= 5;
-                bg[i].frozen = true;
-                if (bg[i].type == BG_GHOST)
-                {
-                    bg[i].state = GHOST_STATE_DEATH;
-                    bg[i].targetPos = bg[i].pos;
-                }
+            Vector3 dir = Vector3Normalize(Vector3Subtract(bg[i].pos, d->pos));
+            bg[i].throwing = true;
+            bg[i].throwVel = (Vector3){ dir.x * 24.0f, 12.0f, dir.z * 24.0f }; // tweakable
+        }
+        if (bg[i].throwing) {
+            // simple ballistic arc + frictiony horizontal slow-down
+            bg[i].throwVel.y += -24.0f * dt;
+            bg[i].pos.x += bg[i].throwVel.x * dt;
+            bg[i].pos.z += bg[i].throwVel.z * dt;
+            bg[i].pos.y += bg[i].throwVel.y * dt;
+
+            // light air drag
+            bg[i].throwVel.x *= (1.0f - 1.5f * dt);
+            bg[i].throwVel.z *= (1.0f - 1.5f * dt);
+
+            float gy = BG_GroundY(bg[i].pos);
+            if (bg[i].pos.y <= gy) {
+                bg[i].pos.y = gy;
+                bg[i].throwing = false;
+                bg[i].frozen = false;
             }
-            if (d->spellTimer.running)
+        }
+        else
+        {
+            if (Vector3Distance(d->pos, bg[i].pos) < 60)
             {
-                //make em raise up
-                bg[i].pos.y += dt/100.0f;
-                //make em spin
-                float deltaDeg = d->yawY - d->cached_yawY;       // Donogan's spin since last frame
-                // Wrap to [-180, 180] so crossing 359->0 doesn't cause a huge jump.
-                //if (deltaDeg > 180.0f)  deltaDeg -= 360.0f;
-                //if (deltaDeg < -180.0f) deltaDeg += 360.0f;
-                if (deltaDeg > 4*PI) { deltaDeg = PI; } //good thing to do this....?
-                if (deltaDeg < -4 * PI) { deltaDeg = -PI; }
-                if (fabsf(deltaDeg) > 0.0001f) {
-                    float r = DEG2RAD * -deltaDeg;
-                    float s = sinf(r), c = cosf(r);
+                if (!d->spellTimer.running) { bg[i].frozen = false; }
+                else if (HasTimerElapsed(&d->spellTimer))
+                {
+                    bg[i].health -= 5;
+                    bg[i].frozen = true;
+                    if (bg[i].type == BG_GHOST)
+                    {
+                        bg[i].state = GHOST_STATE_DEATH;
+                        bg[i].targetPos = bg[i].pos;
+                    }
+                }
+                if (d->spellTimer.running)
+                {
+                    //make em raise up
+                    bg[i].pos.y += dt / 100.0f;
+                    //make em spin
+                    float deltaDeg = d->yawY - d->cached_yawY;       // Donogan's spin since last frame
+                    // Wrap to [-180, 180] so crossing 359->0 doesn't cause a huge jump.
+                    //if (deltaDeg > 180.0f)  deltaDeg -= 360.0f;
+                    //if (deltaDeg < -180.0f) deltaDeg += 360.0f;
+                    if (deltaDeg > 4 * PI) { deltaDeg = 4 * PI; } //limit spin speed
+                    if (deltaDeg < -4 * PI) { deltaDeg = 4 * -PI; }
+                    if (fabsf(deltaDeg) > 0.0001f) {
+                        float r = DEG2RAD * -deltaDeg;
+                        float s = sinf(r), c = cosf(r);
 
-                    float rx = bg[i].pos.x - d->pos.x;  // vector from Don -> BG (XZ only)
-                    float rz = bg[i].pos.z - d->pos.z;
+                        float rx = bg[i].pos.x - d->pos.x;  // vector from Don -> BG (XZ only)
+                        float rz = bg[i].pos.z - d->pos.z;
 
-                    float nx = rx * c - rz * s;         // rotate around Donogan
-                    float nz = rx * s + rz * c;
+                        float nx = rx * c - rz * s;         // rotate around Donogan
+                        float nz = rx * s + rz * c;
 
-                    bg[i].pos.x = d->pos.x + nx;
-                    bg[i].pos.z = d->pos.z + nz;
+                        bg[i].pos.x = d->pos.x + nx;
+                        bg[i].pos.z = d->pos.z + nz;
+                    }
                 }
             }
         }
@@ -693,6 +728,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         d->mana -= 1;
         StartTimer(&d->spellTimer);
     }
+    if (d->squareThrowRequest) { d->squareThrowRequest = false; }
 }
 
 

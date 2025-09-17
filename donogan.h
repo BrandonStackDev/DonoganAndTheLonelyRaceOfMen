@@ -497,6 +497,7 @@ typedef struct {
     Timer spellTimer;
     float cached_yawY;
     float shook;
+    bool squareThrowRequest;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1724,6 +1725,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     }
     if (!freeze)
     {
+        d->squareThrowRequest = false;
         // --- Input ---
         bool padPresent = (pad != NULL);
         float lx = padPresent ? pad->normLX : 0.0f;
@@ -2183,6 +2185,11 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 ResetTimer(&d->spellTimer);
                 // Exit is non-loop; when done, return to locomotion like other one-shots
                 if (d->animFinished) {
+                    float deltaDeg = d->yawY - d->cached_yawY;
+                    if (fabsf(deltaDeg) > (3.6 * PI))
+                    {
+                        d->squareThrowRequest = true;
+                    }
                     float moveMag = sqrtf(lx * lx + ly * ly);
                     if (moveMag > 0.1f)
                     {
