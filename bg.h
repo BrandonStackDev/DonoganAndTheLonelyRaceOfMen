@@ -162,7 +162,9 @@ static inline void BG_UpdateAnim(BadGuy* b, float dt) {
     // advance frames
     float framesToAdvance = b->animFPS * dt;
     int oldFrame = b->animFrame;
-    b->animFrame += (int)(framesToAdvance + 0.5f);
+    int adv = (int)(framesToAdvance + 0.5f);
+    if (adv <= 0) { adv = 1; }
+    b->animFrame += adv;
 
     // Loop everything except "one-shot" jumps (we'll clamp on ATTACK state)
     if (b->animFrame >= A->frameCount) {
@@ -524,7 +526,7 @@ BadGuy CreateYeti(Vector3 pos)
     b.dead = false;
     b.aware = false;
     b.pos = pos;
-    b.scale = 4;
+    b.scale = 1.6;
     b.speed = 1;
     b.startHealth = 100;   // === NEW: give the big guy some HP
     b.health = b.startHealth;
@@ -634,6 +636,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         }
         else if (bg[i].type == BG_YETI) {
             BG_Update_Yeti(d, &bg[i], dt);
+            BG_UpdateAnim(&bg[i], dt);
         }
         //update general stuff
         bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);
@@ -673,7 +676,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                     bg[b].health = bg[b].startHealth;
                     bg[b].pos = bg[b].spawnPoint;
                     bg[b].targetPos = bg[b].spawnPoint;
-                    //todo: respawn timer
+                    BG_AttachBorrowed(&bg[b]);   // <-- add this
                     if (bg[b].type == BG_GHOST) 
                     { 
                         bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z) - 30;
