@@ -2174,6 +2174,10 @@ int main(void) {
             }
         }
         //collision for bad guys and attacks
+        // //arrows
+        /*for (int i = 0; i < MAX_ARROWS; i++)
+        {
+        }*/
         //donogans spell balls
         for (int i = 0; i < MAX_BALLS; i++)
         {

@@ -96,6 +96,7 @@ typedef struct {
     Vector3 targetPos;
     float   arriveRadius, tetherRadius;
     bool frozen;
+    Color drawColor;
 } BadGuy;
 //instance of a bad guy, will borrow its model
 
@@ -234,7 +235,7 @@ static inline void DrawBadGuy(BadGuy * b) {
 
     rlPushMatrix();
     rlMultMatrixf(MatrixToFloatV(world).v);
-    DrawModel(*M, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
+    DrawModel(*M, (Vector3) { 0, 0, 0 }, 1.0f, b->drawColor);
     rlPopMatrix();
 }
 
@@ -393,6 +394,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     if (b->health <= 0)
     {
         b->state = YETI_STATE_DYING;
+        BG_SetAnim(b, ANIM_YETI_ROAR, true);
     }
     switch (b->state)
     {
@@ -485,6 +487,12 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
         break;
 
     case YETI_STATE_DYING:
+        if (b->drawColor.a != 0) { b->drawColor.a--; }
+        else if (b->drawColor.a == 0)
+        {
+            b->state = YETI_STATE_DEAD;
+        }
+        break;
     case YETI_STATE_DEAD:
         // You can add timers/effects here. For now, deactivate on "dead".
         b->active = false; b->dead = true;
@@ -520,6 +528,7 @@ BadGuy CreateGhost(Vector3 pos)
     b.speed = 1;
     b.respawnTimer = CreateTimer(360);//6 minutes
     b.interactionTimer = CreateTimer(120);//2 minutes
+    b.drawColor = WHITE;
     return b;
 }
 
@@ -543,6 +552,7 @@ BadGuy CreateYeti(Vector3 pos)
     b.animFPS = 24.0f;   // === NEW: default playback speed
     b.respawnTimer = CreateTimer(360);
     b.interactionTimer = CreateTimer(120);
+    b.drawColor = WHITE;
     return b;
 }
 
