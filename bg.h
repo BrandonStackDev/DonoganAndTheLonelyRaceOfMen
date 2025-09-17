@@ -127,7 +127,7 @@ void InitBadGuyModels(Shader ghostShader)
                 bgModelBorrower[index].model = LoadModel("models/yeti_anim_2.glb");
                 bgModelBorrower[index].tex = LoadTexture("textures/yeti_skin_2.png");
                 bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
-                bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
+                bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model),1.6);
                 // === NEW: load animations ONCE per-slot for this type (cheap to duplicate pointer)
                 int animCount = 0;
                 ModelAnimation* anims = LoadModelAnimations("models/yeti_anim_2.glb", &animCount);
@@ -640,6 +640,10 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         }
         //update general stuff
         bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);
+        if (bg[i].type == BG_YETI) {//im sick of these mfn snakes on this mfn plane!
+            bg[i].box.max.y += 4.5;
+            bg[i].box.min.y += 4;
+        }
     }
     //handle don and timer for square spell
     if (d->spellTimer.running)
