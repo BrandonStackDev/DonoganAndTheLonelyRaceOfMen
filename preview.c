@@ -22,6 +22,7 @@
 #include "duct_tape.h"
 #include "game.h"
 #include "bg.h"
+#include "npc.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -331,6 +332,8 @@ int main(void) {
     Image icon = LoadImage("res/icon.png");
     SetWindowIcon(icon);
     UnloadImage(icon);
+    //npc
+    InitAllNPC();
     //load the homes models/scenes and stuff like that
     InitHomes();
     //talking
@@ -2329,6 +2332,11 @@ int main(void) {
         }
         if (onLoad)
         {
+            for (int i = 0; i < NPC_TOTAL; i++)
+            {
+                if (Vector3Distance(don.pos, npcs[i].pos) > 1000.0f) { continue; }
+                NPC_Update(&npcs[i], &don, GetFrameTime());
+            }
             BG_UpdateAll(&don, dt);
         }
         don.drawColor = LerpColor(don.drawColor,!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
@@ -2485,6 +2493,15 @@ int main(void) {
             if (IsPointInFrustum(atreyuPos, frustumChunk8))
             {
                 DrawModel(atreyu, atreyuPos, 2.8f, WHITE);
+            }
+            //npcs
+            if (onLoad)
+            {
+                for (int i = 0; i < NPC_TOTAL; i++)
+                {
+                    if (Vector3Distance(don.pos, npcs[i].pos) > 1000.0f) { continue; } //todo: add frustum culling here also
+                    NPC_Draw(&npcs[i]);
+                }
             }
             //homes
             if (onLoad)
