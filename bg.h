@@ -57,6 +57,8 @@ typedef struct {
     Texture tex;
     Shader shader;
     BoundingBox origBox, origBodyBox, origHeadBox;
+    ModelAnimation* anims;
+    int animCount;
 } BadGuyBorrowModel; //for borrowing models for bad guy instances
 
 BadGuyBorrowModel * bgModelBorrower;
@@ -68,28 +70,34 @@ typedef struct {
     BadGuyType type;
     Vector3 spawnPoint;
     float spawnRadius, awareRadius;
-    Timer respawnTimer, interactionTimer; //respawn controls after death how long until respawn, interaction controls how long without interaction to let the bg live
-    int gbm_index; //global borrowed model index
+    Timer respawnTimer, interactionTimer;
+    int gbm_index;
     int state;
-    int curAnim;
+
+    // === NEW: simple, general per-BG animation control
+    int    curAnim;        // which animation index is playing
+    int    animFrame;      // current frame within that animation
+    float  animFPS;        // playback speed (frames/sec)
+    ModelAnimation* anims; // shared pointer to per-type animations
+    int    animCount;      // number of animations for this BG
+
     Vector3 pos;
     float yaw, pitch, roll;
     float scale;
     BoundingBox box, bodyBox, headBox;
     int health, startHealth;
-    // --- flight runtime (ghost) ---
-    Vector3 vel;          // current velocity (we'll mostly use XZ; Y is altitude control)
-    float   speed;        // current forward speed
-    float   targetSpeed;  // desired forward speed (always >= minSpeed; never backward)
-    float   minSpeed, maxSpeed;
-    float   accel; // rate to reach targetSpeed
-    float   targetYaw, targetPitch, targetRoll;    // where we’re steering to (deg)
-    float   steerTimer;   // seconds left before picking a new heading
-    float   yawMaxRate;   // max yaw change (deg/s)
-    Vector3 targetPos;      // where we're flying to
-    float   arriveRadius, tetherRadius;   // how close is "arrived" (m)
+
+    // flight runtime (ghost) ...
+    Vector3 vel;
+    float   speed, targetSpeed, minSpeed, maxSpeed, accel;
+    float   targetYaw, targetPitch, targetRoll;
+    float   steerTimer;
+    float   yawMaxRate;
+    Vector3 targetPos;
+    float   arriveRadius, tetherRadius;
     bool frozen;
-} BadGuy; //instance of a bad guy, will borrow its model
+} BadGuy;
+//instance of a bad guy, will borrow its model
 
 BadGuy * bg;
 int total_bg_models_all_types, bg_count;
@@ -120,11 +128,61 @@ void InitBadGuyModels(Shader ghostShader)
                 bgModelBorrower[index].tex = LoadTexture("textures/yeti_skin_2.png");
                 bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
                 bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
+                // === NEW: load animations ONCE per-slot for this type (cheap to duplicate pointer)
+                int animCount = 0;
+                ModelAnimation* anims = LoadModelAnimations("models/yeti_anim_2.glb", &animCount);
+                bgModelBorrower[index].anims = anims;
+                bgModelBorrower[index].animCount = animCount;
             }
         }
     }
 }
 
+//anim helpers
+// === NEW: general animation helpers =========================================
+static inline void BG_SetAnim(BadGuy* b, int animIndex, bool forceRestart) {
+    if (!b || b->gbm_index < 0) return;
+    if (b->animCount <= 0 || !b->anims) return;
+    if (animIndex < 0 || animIndex >= b->animCount) return;
+
+    if (forceRestart || b->curAnim != animIndex) {
+        b->curAnim = animIndex;
+        b->animFrame = 0;
+    }
+}
+
+static inline void BG_UpdateAnim(BadGuy* b, float dt) {
+    if (!b || b->gbm_index < 0) return;
+    if (b->animCount <= 0 || !b->anims) return;
+
+    const int a = b->curAnim;
+    const ModelAnimation* A = &b->anims[a];
+    if (A->frameCount <= 0) return;
+
+    // advance frames
+    float framesToAdvance = b->animFPS * dt;
+    int oldFrame = b->animFrame;
+    b->animFrame += (int)(framesToAdvance + 0.5f);
+
+    // Loop everything except "one-shot" jumps (we'll clamp on ATTACK state)
+    if (b->animFrame >= A->frameCount) {
+        b->animFrame %= A->frameCount;
+    }
+
+    // Apply pose to the shared model we're borrowing
+    Model* M = &bgModelBorrower[b->gbm_index].model;
+    UpdateModelAnimation(*M, b->anims[a], b->animFrame);
+}
+// === NEW: attach shared borrowed resources to instance
+static inline void BG_AttachBorrowed(BadGuy* b) {
+    if (!b || b->gbm_index < 0) return;
+    BadGuyBorrowModel* BM = &bgModelBorrower[b->gbm_index];
+    b->anims = BM->anims;
+    b->animCount = BM->animCount;
+    if (b->animFPS <= 0.0f) b->animFPS = 24.0f; // default
+    b->curAnim = 0;
+    b->animFrame = 0;
+}
 //draw stuff
 // --- Quaternion helpers for BadGuy full-body rotation -----------------------
 static inline Quaternion BG_ModelFixQuat(const BadGuy* b) {
@@ -146,7 +204,21 @@ static inline Quaternion BG_BuildWorldQuat(const BadGuy* b) {
 }
 
 // Draw the model with S * (R * T), matching the whale path.
-static inline void DrawBadGuy(BadGuy* b) {
+//static inline void DrawBadGuy(BadGuy* b) {
+//    if (!b || !b->active || b->gbm_index < 0) return;
+//
+//    Model* M = &bgModelBorrower[b->gbm_index].model;
+//
+//    Quaternion q = BG_BuildWorldQuat(b);
+//    Matrix R = QuaternionToMatrix(q);
+//    Matrix T = MatrixTranslate(b->pos.x, b->pos.y, b->pos.z);
+//    float s = (b->scale > 0.0f) ? b->scale : 1.0f;
+//    Matrix S = MatrixScale(s, s, s);
+//
+//    Matrix world = MatrixMultiply(S, MatrixMultiply(R, T));
+//    DrawMesh(M->meshes[0], M->materials[0], world);
+//}
+static inline void DrawBadGuy(BadGuy * b) {
     if (!b || !b->active || b->gbm_index < 0) return;
 
     Model* M = &bgModelBorrower[b->gbm_index].model;
@@ -156,10 +228,14 @@ static inline void DrawBadGuy(BadGuy* b) {
     Matrix T = MatrixTranslate(b->pos.x, b->pos.y, b->pos.z);
     float s = (b->scale > 0.0f) ? b->scale : 1.0f;
     Matrix S = MatrixScale(s, s, s);
-
     Matrix world = MatrixMultiply(S, MatrixMultiply(R, T));
-    DrawMesh(M->meshes[0], M->materials[0], world);
+
+    rlPushMatrix();
+    rlMultMatrixf(MatrixToFloatV(world).v);
+    DrawModel(*M, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
+    rlPopMatrix();
 }
+
 //end draw stuff
 
 //helper
@@ -293,6 +369,126 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     b->pitch = Lerp(b->pitch, b->targetPitch, dt);
     b->roll = Lerp(b->roll, b->targetRoll, dt);
 }
+// === NEW: helper for ground
+static inline float BG_GroundY(Vector3 p) {
+    float g = GetTerrainHeightFromMeshXZ(p.x, p.z);
+    return (g < -9000.0f) ? p.y : g;
+}
+
+// === NEW: Yeti state update ================================================
+static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
+{
+    float groundY = BG_GroundY(b->pos);
+    float dxT = b->targetPos.x - b->pos.x;
+    float dzT = b->targetPos.z - b->pos.z;
+    float distToTarget = sqrtf(dxT * dxT + dzT * dzT);
+    float yawToTarget = (distToTarget > 1e-4f) ? (RAD2DEG * atan2f(dxT, dzT)) : b->yaw;
+    b->targetYaw = yawToTarget;
+
+    // Awareness check
+    float distToDon = Vector3Distance(b->pos, d->pos);
+    if (distToDon < b->awareRadius) b->aware = true;
+
+    switch (b->state)
+    {
+    case YETI_STATE_SPAWN:
+        // ensure on ground, then plan
+        b->pos.y = groundY;
+        b->state = YETI_STATE_PLANNING;
+        BG_SetAnim(b, ANIM_YETI_ROAR, true);
+        break;
+
+    case YETI_STATE_PLANNING:
+    {
+        // choose target: wander within spawn radius or chase Donogan
+        if (b->aware) {
+            b->targetPos = d->pos;          // chase
+        }
+        else {
+            float a = (float)GetRandomValue(0, 359) * DEG2RAD;
+            float r = (float)GetRandomValue(8, (int)b->spawnRadius);
+            Vector3 p = (Vector3){ b->spawnPoint.x + sinf(a) * r, 0, b->spawnPoint.z + cosf(a) * r };
+            p.y = BG_GroundY(p);
+            b->targetPos = p;
+        }
+        b->speed = 2.2f;                     // walk speed
+        BG_SetAnim(b, ANIM_YETI_WALK, (b->curAnim != ANIM_YETI_WALK));
+        b->state = YETI_STATE_WALKING;
+    } break;
+
+    case YETI_STATE_WALKING:
+    {
+        // face and move toward target on ground
+        b->targetPitch = 0;
+        b->pos = Vector3Lerp(b->pos, (Vector3) { b->targetPos.x, BG_GroundY(b->pos), b->targetPos.z }, dt* b->speed);
+        b->yaw = Lerp(b->yaw, b->targetYaw, dt * 4.0f); // snappier turn for a brawler
+
+        // Arrived?
+        if (distToTarget < 1.8f) {
+            // if chasing Donogan and close, jump attack; otherwise re-plan
+            if (b->aware && distToDon < 6.0f) {
+                // setup a forward leap
+                Vector3 dir = Vector3Normalize(Vector3Subtract(d->pos, b->pos));
+                b->vel.x = dir.x * 9.0f;
+                b->vel.z = dir.z * 9.0f;
+                b->vel.y = 12.0f;          // upward impulse
+                BG_SetAnim(b, ANIM_YETI_JUMP, true);
+                b->state = YETI_STATE_ATTACK;
+            }
+            else {
+                b->state = YETI_STATE_PLANNING;
+                BG_SetAnim(b, ANIM_YETI_ROAR, true);
+            }
+        }
+    } break;
+
+    case YETI_STATE_ATTACK: // jump attack (ballistic)
+    {
+        // Advance physics
+        b->pos.x += b->vel.x * dt;
+        b->pos.z += b->vel.z * dt;
+        b->vel.y += -24.0f * dt; // gravity
+        b->pos.y += b->vel.y * dt;
+
+        // Don't loop the JUMP anim: clamp last frame until we land
+        if (b->anims && b->animCount > 0) {
+            int a = b->curAnim;
+            const int last = b->anims[a].frameCount > 0 ? b->anims[a].frameCount - 1 : 0;
+            if (b->animFrame > last) b->animFrame = last;
+        }
+
+        // Land?
+        float gy = BG_GroundY(b->pos);
+        if (b->pos.y <= gy) {
+            b->pos.y = gy;
+            // Post-attack behavior: roar then continue hunting/roaming
+            BG_SetAnim(b, ANIM_YETI_ROAR, true);
+            b->state = YETI_STATE_PLANNING;
+        }
+    } break;
+
+    case YETI_STATE_HIT:
+        BG_SetAnim(b, ANIM_YETI_ROAR, false);
+        b->state = YETI_STATE_PLANNING;
+        break;
+
+    case YETI_STATE_DYING:
+    case YETI_STATE_DEAD:
+        // You can add timers/effects here. For now, deactivate on "dead".
+        b->active = false; b->dead = true;
+        bgModelBorrower[b->gbm_index].isInUse = false;
+        b->gbm_index = -1;
+        StartTimer(&b->respawnTimer);
+        ResetTimer(&b->interactionTimer);
+        break;
+
+    default: break;
+    }
+
+    // keep box in sync
+    b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+}
+
 
 //create functions
 BadGuy CreateGhost(Vector3 pos)
@@ -330,8 +526,11 @@ BadGuy CreateYeti(Vector3 pos)
     b.pos = pos;
     b.scale = 4;
     b.speed = 1;
-    b.respawnTimer = CreateTimer(360);//6 minutes
-    b.interactionTimer = CreateTimer(120);//2 minutes
+    b.startHealth = 100;   // === NEW: give the big guy some HP
+    b.health = b.startHealth;
+    b.animFPS = 24.0f;   // === NEW: default playback speed
+    b.respawnTimer = CreateTimer(360);
+    b.interactionTimer = CreateTimer(120);
     return b;
 }
 
@@ -433,6 +632,9 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         {
             BG_Update_Ghost(d, &bg[i], dt);
         }
+        else if (bg[i].type == BG_YETI) {
+            BG_Update_Yeti(d, &bg[i], dt);
+        }
         //update general stuff
         bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);
     }
@@ -476,6 +678,12 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                     { 
                         bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z) - 30;
                         bg[b].state = GHOST_STATE_SPAWN;
+                    }
+                    else if (bg[b].type == BG_YETI) {
+                        // snap to ground and start in SPAWN (will fall into PLANNING next update)
+                        bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z);
+                        bg[b].state = YETI_STATE_SPAWN;
+                        BG_SetAnim(&bg[b], ANIM_YETI_ROAR, true); // default roar on spawn
                     }
                     return true;
                 }
