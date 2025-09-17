@@ -642,13 +642,15 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             bg[i].throwing = true;
             bg[i].throwVel = (Vector3){ dir.x * 128.0f, 32.0f, dir.z * 128.0f }; // tweakable
         }
-        /*if (!bg[i].throwing
-            && d->state != DONOGAN_STATE_SPELL_ENTER
+        if (d->state != DONOGAN_STATE_SPELL_ENTER
             && d->state != DONOGAN_STATE_SPELL_IDLE
             && d->state != DONOGAN_STATE_SPELL_EXIT)
         {
             bg[i].frozen = false;
-        }*/
+            bg[i].throwing = false;
+            d->squareThrowRequest = false;
+            bg[i].targetPos = bg[i].pos;
+        }
         if (bg[i].throwing) {
             //TraceLog(LOG_INFO,"throwing...");
             // simple ballistic arc + frictiony horizontal slow-down
@@ -665,6 +667,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             if (bg[i].pos.y <= gy) {
                 TraceLog(LOG_INFO, "thrown landing!");
                 bg[i].pos.y = gy;
+                bg[i].targetPos = bg[i].pos;
                 bg[i].throwing = false;
                 bg[i].frozen = false;
             }
