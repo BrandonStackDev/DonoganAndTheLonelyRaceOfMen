@@ -1725,7 +1725,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     }
     if (!freeze)
     {
-        d->squareThrowRequest = false;
+        //d->squareThrowRequest = false;
         // --- Input ---
         bool padPresent = (pad != NULL);
         float lx = padPresent ? pad->normLX : 0.0f;
@@ -2182,14 +2182,15 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             } break;
 
             case DONOGAN_STATE_SPELL_EXIT: {
+                float deltaDeg = d->yawY - d->cached_yawY;
+                if (fabsf(deltaDeg) > (3.6 * PI))
+                {
+                    d->squareThrowRequest = true;
+                    TraceLog(LOG_INFO, "squareThrowRequest set");
+                }
                 ResetTimer(&d->spellTimer);
                 // Exit is non-loop; when done, return to locomotion like other one-shots
                 if (d->animFinished) {
-                    float deltaDeg = d->yawY - d->cached_yawY;
-                    if (fabsf(deltaDeg) > (3.6 * PI))
-                    {
-                        d->squareThrowRequest = true;
-                    }
                     float moveMag = sqrtf(lx * lx + ly * ly);
                     if (moveMag > 0.1f)
                     {
@@ -2209,6 +2210,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             } break;
 
             case DONOGAN_STATE_HIT:
+                d->bowMode = false;
                 if (d->animFinished) { DonSetState(d, DONOGAN_STATE_IDLE);}
                 break;
 

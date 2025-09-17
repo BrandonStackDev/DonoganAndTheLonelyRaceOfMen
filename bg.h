@@ -635,15 +635,22 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
     for (int i = 0; i < bg_count; ++i) {
         if (!bg[i].active) { continue; }
         //handle square spell
-        if (d->squareThrowRequest)
+        if (d->squareThrowRequest && bg[i].frozen)
         {
             TraceLog(LOG_INFO, "throwing request!");
             Vector3 dir = Vector3Normalize(Vector3Subtract(bg[i].pos, d->pos));
             bg[i].throwing = true;
             bg[i].throwVel = (Vector3){ dir.x * 128.0f, 64.0f, dir.z * 128.0f }; // tweakable
         }
+        /*if (!bg[i].throwing
+            && d->state != DONOGAN_STATE_SPELL_ENTER
+            && d->state != DONOGAN_STATE_SPELL_IDLE
+            && d->state != DONOGAN_STATE_SPELL_EXIT)
+        {
+            bg[i].frozen = false;
+        }*/
         if (bg[i].throwing) {
-            TraceLog(LOG_INFO,"throwing...");
+            //TraceLog(LOG_INFO,"throwing...");
             // simple ballistic arc + frictiony horizontal slow-down
             bg[i].throwVel.y += -24.0f * dt;
             bg[i].pos.x += bg[i].throwVel.x * dt;
@@ -683,9 +690,6 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                     bg[i].pos.y += dt / 100.0f;
                     //make em spin
                     float deltaDeg = d->yawY - d->cached_yawY;       // Donogan's spin since last frame
-                    // Wrap to [-180, 180] so crossing 359->0 doesn't cause a huge jump.
-                    //if (deltaDeg > 180.0f)  deltaDeg -= 360.0f;
-                    //if (deltaDeg < -180.0f) deltaDeg += 360.0f;
                     if (deltaDeg > 4 * PI) { deltaDeg = 4 * PI; } //limit spin speed
                     if (deltaDeg < -4 * PI) { deltaDeg = 4 * -PI; }
                     if (fabsf(deltaDeg) > 0.0001f) {
