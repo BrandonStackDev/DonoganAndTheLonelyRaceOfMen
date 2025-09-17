@@ -595,6 +595,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
     InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
     InteractivePoints[POI_TYPE_ATREYU] = (POI){ POI_TYPE_ATREYU , &atreyuPos };
+    InteractivePoints[POI_TYPE_DARREL] = (POI){ POI_TYPE_DARREL , &npcs[NPC_DARREL].pos};
     //init the stuff before launching thread launcher
     //INIT
     //----------------------init chunks---------------------
@@ -877,11 +878,24 @@ int main(void) {
                     don.who = TALK_TYPE_ATREYU;
                     StartTimer(&don.talkStartTimer);
                 }
-                else if (don.isTalking && HasTimerElapsed(&don.talkStartTimer))
+                else if (!don.isTalking
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_DARREL].pos, don.pos) < 11.44f
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_DARREL;
+                    npcs[NPC_DARREL].state = DARREL_STATE_TALK;
+                    StartTimer(&don.talkStartTimer);
+                }
+                else if (don.isTalking && HasTimerElapsed(&don.talkStartTimer))//timer prevents entering and exiting quickly, this is the exit talking routine...
                 {
                     Conv_Clear();
                     don.isTalking = false;
                     StartTimer(&don.talkStartTimer);
+                    if (don.who == TALK_TYPE_DARREL)
+                    {
+                        npcs[NPC_DARREL].state = DARREL_STATE_CONFUSED;
+                    }
                 }
             }
             // --->>> SUMMON (R3 press to start/cancel)

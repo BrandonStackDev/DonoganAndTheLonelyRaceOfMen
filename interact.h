@@ -77,10 +77,18 @@ static const char* SHEET_ATREYU_HORN =
 "Stay in character. Do not mention being an AI or models.\n";
 static const char* SHEET_ATREYU_HORN_DEFAULT = "Donogan! Dont blow the truck horn... Please be quiet, I am trying to meditate...\n";
 
+static const char* SHEET_DARREL =
+"You are Darrel, just a kindhearted normal guy.\n"
+"You speak in simple sentences. You are convinced that the tree of life is the tiny tree in front of you, when really its a large obvious tree near by. he wonders why its so small tho...?\n"
+"Tone: humorous, Darrel is funny, he can hear the Tree of Life speak, its says 'Im over hear you idiot...'\n"
+"Stay in character. Do not mention being an AI or models.\n";
+static const char* SHEET_DARREL_DEFAULT = "This is the Tree of Life...Its kind of small...?\n";
+
 typedef enum {
     TALK_TYPE_TOL,
     TALK_TYPE_ATREYU,
-    TALK_TYPE_ATREYU_CAR_HORN
+    TALK_TYPE_ATREYU_CAR_HORN,
+    TALK_TYPE_DARREL
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
 
@@ -90,6 +98,7 @@ static inline const char* GetCharacterSheet(TALK_TYPE who)
     case TALK_TYPE_TOL:         return SHEET_TOL;
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU;
     case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN;
+    case TALK_TYPE_DARREL:         return SHEET_DARREL;
     default:              return "?";
     }
 }
@@ -100,6 +109,7 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
     case TALK_TYPE_TOL:         return SHEET_TOL_DEFAULT;
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU_DEFAULT;
     case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN_DEFAULT;
+    case TALK_TYPE_DARREL:         return SHEET_DARREL_DEFAULT;
     default:              return "?";
     }
 }
@@ -110,6 +120,7 @@ typedef enum {
     POI_TYPE_TRUCK,
     POI_TYPE_TREE_OF_LIFE,
     POI_TYPE_ATREYU,
+    POI_TYPE_DARREL,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
