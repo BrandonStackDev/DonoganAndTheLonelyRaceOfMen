@@ -383,6 +383,20 @@ static inline float BG_GroundY(Vector3 p) {
 // === NEW: Yeti state update ================================================
 static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
 {
+    if (Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
+    {
+        StartTimer(&b->interactionTimer);
+    }
+    else if (HasTimerElapsed(&b->interactionTimer) && Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius)//if it expires and donny is still outisde the radius, kill him
+    {
+        b->targetPitch = 0;
+        b->targetPos = b->pos;
+        b->state = YETI_STATE_DEAD;
+    }
+    else
+    {
+        ResetTimer(&b->interactionTimer);
+    }
     float groundY = BG_GroundY(b->pos);
     float dxT = b->targetPos.x - b->pos.x;
     float dzT = b->targetPos.z - b->pos.z;
