@@ -413,7 +413,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
             p.y = BG_GroundY(p);
             b->targetPos = p;
         }
-        b->speed = 2.2f;                     // walk speed
+        //b->speed = 2.2f;                     // walk speed
         BG_SetAnim(b, ANIM_YETI_WALK, (b->curAnim != ANIM_YETI_WALK));
         b->state = YETI_STATE_WALKING;
     } break;
@@ -447,8 +447,8 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     case YETI_STATE_ATTACK: // jump attack (ballistic)
     {
         // Advance physics
-        b->pos.x += b->vel.x * dt;
-        b->pos.z += b->vel.z * dt;
+        b->pos.x += b->vel.x * dt * b->speed;
+        b->pos.z += b->vel.z * dt * b->speed;
         b->vel.y += -24.0f * dt; // gravity
         b->pos.y += b->vel.y * dt;
 
@@ -527,7 +527,7 @@ BadGuy CreateYeti(Vector3 pos)
     b.aware = false;
     b.pos = pos;
     b.scale = 1.6;
-    b.speed = 1;
+    b.speed = 0.826;
     b.startHealth = 100;   // === NEW: give the big guy some HP
     b.health = b.startHealth;
     b.animFPS = 24.0f;   // === NEW: default playback speed
