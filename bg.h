@@ -637,11 +637,13 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         //handle square spell
         if (d->squareThrowRequest)
         {
+            TraceLog(LOG_INFO, "throwing request!");
             Vector3 dir = Vector3Normalize(Vector3Subtract(bg[i].pos, d->pos));
             bg[i].throwing = true;
-            bg[i].throwVel = (Vector3){ dir.x * 24.0f, 12.0f, dir.z * 24.0f }; // tweakable
+            bg[i].throwVel = (Vector3){ dir.x * 128.0f, 64.0f, dir.z * 128.0f }; // tweakable
         }
         if (bg[i].throwing) {
+            TraceLog(LOG_INFO,"throwing...");
             // simple ballistic arc + frictiony horizontal slow-down
             bg[i].throwVel.y += -24.0f * dt;
             bg[i].pos.x += bg[i].throwVel.x * dt;
@@ -654,6 +656,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
 
             float gy = BG_GroundY(bg[i].pos);
             if (bg[i].pos.y <= gy) {
+                TraceLog(LOG_INFO, "thrown landing!");
                 bg[i].pos.y = gy;
                 bg[i].throwing = false;
                 bg[i].frozen = false;
