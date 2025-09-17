@@ -466,6 +466,12 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
             // Post-attack behavior: roar then continue hunting/roaming
             BG_SetAnim(b, ANIM_YETI_ROAR, true);
             b->state = YETI_STATE_PLANNING;
+            if (Vector3Distance(d->pos, b->pos) < 25)
+            {
+                d->shook += dt;
+                d->health -= 5;
+                DonSetState(d,DONOGAN_STATE_HIT);
+            }
         }
     } break;
 

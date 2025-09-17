@@ -2217,6 +2217,26 @@ int main(void) {
         skyCam.position = (Vector3){ 0,0,0 };                                // remove translation
         skyCam.target = Vector3Add(skyCam.position, Vector3Normalize(skyDir));
         skyCam.up = (Vector3){ 0,1,0 };
+        if (donnyMode && don.shook>0)//apply shook jitter
+        {
+            float amp = don.shook; // *don.shook;
+            // Smooth “fake noise” = sum of a few sines at different freqs
+            float ox = sinf(17.0f * amp) + sinf(13.0f * amp * 1.31f);
+            float oy = sinf(19.0f * amp * 0.91f) + sinf(23.0f * amp * 1.07f);
+            float oz = sinf(29.0f * amp * 1.19f) + sinf(31.0f * amp * 0.83f);
+
+            // Max offsets in world units; keep these small
+            const Vector3 maxOfs = { 0.25f, 0.15f, 0.25f };
+
+            camera.position.x += amp * 0.5f * ox * maxOfs.x;
+            camera.position.y += amp * 0.5f * oy * maxOfs.y;
+            camera.position.z += amp * 0.5f * oz * maxOfs.z;
+            don.shook += dt;
+            if (don.shook > 1.2)
+            {
+                don.shook = false;
+            }
+        }
         // BeginMode3D(skyCam) ... draw panels around (0,0,0) as you already do
         UpdateCamera(&camera, vehicleMode||donnyMode?CAMERA_THIRD_PERSON:CAMERA_FIRST_PERSON);
         UpdateCamera(&skyCam, CAMERA_FIRST_PERSON);

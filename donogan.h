@@ -496,6 +496,7 @@ typedef struct {
     int health, mana, maxHealth, maxMana;
     Timer spellTimer;
     float cached_yawY;
+    float shook;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1525,7 +1526,7 @@ static Donogan InitDonogan(void)
     d.health = 100;
     d.mana = 100;
     d.maxMana = 100;
-
+    d.shook = 0.0f;
     PrintModelBones(&d.model);
     PrintModelBones(&d.bowModel);
     //proc anim setup
