@@ -98,7 +98,7 @@ void InitAllNPC()
     npcs[NPC_DARREL].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = darrel_tex;
     npcs[NPC_DARREL].anims = darrel_anims;
     npcs[NPC_DARREL].animCount = darrel_animCount;
-    npcs[NPC_DARREL].pos = (Vector3){ 3022.00f, 322.00f, 4042.42f };
+    npcs[NPC_DARREL].pos = (Vector3){ -346.16f, 496, -24.73f }; //test pos = (Vector3){ 3022.00f, 322.00f, 4042.42f };
     npcs[NPC_DARREL].targetPos = npcs[NPC_DARREL].pos;
     npcs[NPC_DARREL].scale = 3.8f;
     npcs[NPC_DARREL].yaw = 0.0f;
