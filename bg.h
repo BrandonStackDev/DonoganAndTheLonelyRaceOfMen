@@ -635,13 +635,6 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
     for (int i = 0; i < bg_count; ++i) {
         if (!bg[i].active) { continue; }
         //handle square spell
-        if (d->squareThrowRequest && bg[i].frozen)
-        {
-            TraceLog(LOG_INFO, "throwing request!");
-            Vector3 dir = Vector3Normalize(Vector3Subtract(bg[i].pos, d->pos));
-            bg[i].throwing = true;
-            bg[i].throwVel = (Vector3){ dir.x * 128.0f, 32.0f, dir.z * 128.0f }; // tweakable
-        }
         if (d->state != DONOGAN_STATE_SPELL_ENTER
             && d->state != DONOGAN_STATE_SPELL_IDLE
             && d->state != DONOGAN_STATE_SPELL_EXIT)
@@ -650,6 +643,13 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             bg[i].throwing = false;
             d->squareThrowRequest = false;
             bg[i].targetPos = bg[i].pos;
+        }
+        else if (d->squareThrowRequest && bg[i].frozen)
+        {
+            TraceLog(LOG_INFO, "throwing request!");
+            Vector3 dir = Vector3Normalize(Vector3Subtract(bg[i].pos, d->pos));
+            bg[i].throwing = true;
+            bg[i].throwVel = (Vector3){ dir.x * 128.0f, 32.0f, dir.z * 128.0f }; // tweakable
         }
         if (bg[i].throwing) {
             //TraceLog(LOG_INFO,"throwing...");
@@ -667,6 +667,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             if (bg[i].pos.y <= gy) {
                 TraceLog(LOG_INFO, "thrown landing!");
                 bg[i].pos.y = gy;
+                bg[i].health -= 10;
                 bg[i].targetPos = bg[i].pos;
                 bg[i].throwing = false;
                 bg[i].frozen = false;
