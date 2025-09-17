@@ -13,7 +13,7 @@
 #include "game.h"
 #include "util.h"
 
-#define MAX_BG_PER_TYPE_AT_ONCE 16
+#define MAX_BG_PER_TYPE_AT_ONCE 12
 
 typedef enum {
     BG_NONE = -1,//probably do not use
@@ -26,7 +26,7 @@ typedef enum {
     GHOST_STATE_SPAWN, //raise out of the ground to the spawn point
     GHOST_STATE_PLAN, //AI state, picks something randomly based on rules
     GHOST_STATE_FLY, //fly horizontally to the target position, when we get near enough the target, go to FLY_DEC
-    GHOST_STATE_FLY_DEC, //once we get close to the target position, declerate, target pitch should be so he leans backwards while right, when we get near enough to the target, go back to plan
+    GHOST_STATE_FLY_DEC, //once we get close to the target position, decelerate, target pitch should be so he leans backwards while right, when we get near enough to the target, go back to plan
     GHOST_STATE_WANDER, //wander on the ground aimlessly
     GHOST_STATE_HIT, //nothing yet, for when damage is taken
     GHOST_STATE_DEATH, //nothing yet, for death animation
@@ -109,6 +109,11 @@ void InitBadGuyModels(Shader ghostShader)
 {
     total_bg_models_all_types = MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT;
     bgModelBorrower = (BadGuyBorrowModel*)malloc(sizeof(BadGuyBorrowModel) * total_bg_models_all_types);
+    //ghost model can be shared
+    Model ghost_model = LoadModel("models/ghost.obj");
+    Texture ghost_tex = LoadTexture("textures/ghost.png");
+    int yeti_animCount = 0;
+    ModelAnimation* yeti_anims = LoadModelAnimations("models/yeti_anim_2.glb", &yeti_animCount);
     for (int bg_t = 0; bg_t < BG_TYPE_COUNT; bg_t++)
     {
         for (int i = 0; i < MAX_BG_PER_TYPE_AT_ONCE; i++)
@@ -118,8 +123,8 @@ void InitBadGuyModels(Shader ghostShader)
             bgModelBorrower[index].isInUse = false;
             if (bg_t == BG_GHOST)
             {
-                bgModelBorrower[index].model = LoadModel("models/ghost.obj");
-                bgModelBorrower[index].tex = LoadTexture("textures/ghost.png");
+                bgModelBorrower[index].model = ghost_model;
+                bgModelBorrower[index].tex = ghost_tex;
                 bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
                 bgModelBorrower[index].shader = ghostShader;
                 bgModelBorrower[index].model.materials[0].shader = ghostShader;
@@ -127,15 +132,12 @@ void InitBadGuyModels(Shader ghostShader)
             }
             else if (bg_t == BG_YETI)
             {
-                bgModelBorrower[index].model = LoadModel("models/yeti_anim_2.glb");
+                bgModelBorrower[index].model = LoadModel("models/yeti_anim_2.glb"); //models with animations have to have a unique model instance in raylib, otherwise they all display the same animation at the same time
                 bgModelBorrower[index].tex = LoadTexture("textures/yeti_skin_2.png");
                 bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
                 bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model),1.6);
-                // === NEW: load animations ONCE per-slot for this type (cheap to duplicate pointer)
-                int animCount = 0;
-                ModelAnimation* anims = LoadModelAnimations("models/yeti_anim_2.glb", &animCount);
-                bgModelBorrower[index].anims = anims;
-                bgModelBorrower[index].animCount = animCount;
+                bgModelBorrower[index].anims = yeti_anims;
+                bgModelBorrower[index].animCount = yeti_animCount;
             }
         }
     }
