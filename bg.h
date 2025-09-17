@@ -18,6 +18,7 @@
 typedef enum {
     BG_NONE = -1,//probably do not use
     BG_GHOST,
+    BG_YETI,
     BG_TYPE_COUNT
 } BadGuyType;
 
@@ -30,6 +31,24 @@ typedef enum {
     GHOST_STATE_HIT, //nothing yet, for when damage is taken
     GHOST_STATE_DEATH, //nothing yet, for death animation
 } GhostState;
+
+typedef enum {
+    //for the yeti
+    ANIM_YETI_JUMP = 0,
+    ANIM_YETI_ROAR = 1,
+    ANIM_YETI_WALK = 2,
+} YetiAnimation;
+
+typedef enum {
+    YETI_STATE_SPAWN,
+    YETI_STATE_PLANNING,
+    YETI_STATE_DEAD,
+    YETI_STATE_DYING,
+    YETI_STATE_HIT,
+    YETI_STATE_ATTACK,
+    YETI_STATE_WALKING,
+    //for the yeti
+} YetiState;
 
 typedef struct {
     bool isInUse;
@@ -93,6 +112,13 @@ void InitBadGuyModels(Shader ghostShader)
                 bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
                 bgModelBorrower[index].shader = ghostShader;
                 bgModelBorrower[index].model.materials[0].shader = ghostShader;
+                bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
+            }
+            else if (bg_t == BG_YETI)
+            {
+                bgModelBorrower[index].model = LoadModel("models/yeti_anim_2.glb");
+                bgModelBorrower[index].tex = LoadTexture("textures/yeti_skin_2.png");
+                bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
                 bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
             }
         }
@@ -289,12 +315,32 @@ BadGuy CreateGhost(Vector3 pos)
     return b;
 }
 
+BadGuy CreateYeti(Vector3 pos)
+{
+    BadGuy b = { 0 };
+    b.type = BG_YETI;
+    b.spawnPoint = pos;
+    b.spawnRadius = 200;
+    b.awareRadius = 80;
+    b.tetherRadius = 30;
+    b.gbm_index = -1;
+    b.active = false;
+    b.dead = false;
+    b.aware = false;
+    b.pos = pos;
+    b.scale = 4;
+    b.speed = 1;
+    b.respawnTimer = CreateTimer(360);//6 minutes
+    b.interactionTimer = CreateTimer(120);//2 minutes
+    return b;
+}
+
 
 //end of the file stuff, important!
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 38; //increment this, every time, you add, a bg...
+    bg_count = 39; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -334,6 +380,7 @@ void InitBadGuys(Shader ghostShader)
     bg[35] = CreateGhost((Vector3) { 2200, 550, 818 });
     bg[36] = CreateGhost((Vector3) { 2430, 498, 809 });
     bg[37] = CreateGhost((Vector3) { 2462, 460, 680 });
+    bg[38] = CreateYeti((Vector3) { 3022.00f, 322.00f, 4042.42f });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
