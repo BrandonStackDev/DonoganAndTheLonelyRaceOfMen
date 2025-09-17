@@ -571,7 +571,7 @@ BadGuy CreateYeti(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 39; //increment this, every time, you add, a bg...
+    bg_count = 43; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -611,7 +611,11 @@ void InitBadGuys(Shader ghostShader)
     bg[35] = CreateGhost((Vector3) { 2200, 550, 818 });
     bg[36] = CreateGhost((Vector3) { 2430, 498, 809 });
     bg[37] = CreateGhost((Vector3) { 2462, 460, 680 });
-    bg[38] = CreateYeti((Vector3) { 3022.00f, 322.00f, 4042.42f });
+    bg[38] = CreateYeti((Vector3) { -1803, 877, 2145 });
+    bg[39] = CreateYeti((Vector3) { -418, 922, 2152 });
+    bg[40] = CreateYeti((Vector3) { -249, 921, 2183 });
+    bg[41] = CreateYeti((Vector3) { -274, 874, 2470 });
+    bg[42] = CreateYeti((Vector3) { -625, 864, 2476 });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
