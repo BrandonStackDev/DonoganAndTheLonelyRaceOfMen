@@ -167,13 +167,13 @@ static inline bool NPC_AnimTick(NPC* n, float dt) {
 
 
 // --- Case-specific handler for Darrel ---
-static inline void NPC_Update_Darrel(NPC* n, const Donogan* d, float dt) {
+static inline void NPC_Update_Darrel(NPC* n, const Donogan* d, float dt, bool looped) {
     n->pos.y -= 0.2f;
     ModelAnimation* a = &n->anims[n->curAnim];
-    if (n->animFrame >= a->frameCount)
+    if (looped)
     {
         n->curAnim = n->state;
-        NPC_AnimSet(n, n->curAnim, true, 24.0f);
+        NPC_AnimSet(n, n->curAnim, true, n->animFPS);
     }
 }
 
@@ -192,14 +192,13 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt) {
 
     //put them on the ground always
     n->pos.y = NPC_GroundY(n->pos);
+    // Tick animation & refresh box
+    bool looped = NPC_AnimTick(n, dt);
     // Case dispatch
     switch (n->type) {
-    case NPC_DARREL: NPC_Update_Darrel(n, d, dt); break;
+    case NPC_DARREL: NPC_Update_Darrel(n, d, dt, looped); break;
     default: break;
     }
-
-    // Tick animation & refresh box
-    NPC_AnimTick(n, dt);
     //n->box = UpdateBoundingBox(n->origBox, n->pos);
 }
 
