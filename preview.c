@@ -2560,7 +2560,7 @@ int main(void) {
                         fires[i].pos.y = GetTerrainHeightFromMeshXZ(fires[i].pos.x, fires[i].pos.z) + 0.8f;//+offset
                     }
                     DrawModel(firepit,fires[i].pos, 3, WHITE);
-                    if (fires[i].lit)
+                    if (fires[i].lit)//if its lit, draw flame
                     {
                         BeginBlendMode(BLEND_ADDITIVE);
 
