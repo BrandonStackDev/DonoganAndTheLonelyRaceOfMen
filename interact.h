@@ -116,6 +116,11 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
 
 //points of interest, for tri interact
 typedef enum {
+    FIREPIT_HOME = 0,
+    FIREPIT_TOTAL_COUNT
+} FirepitLocation;
+
+typedef enum {
     POI_TYPE_NONE = -1,
     POI_TYPE_TRUCK,
     POI_TYPE_TREE_OF_LIFE,
@@ -130,6 +135,15 @@ typedef struct {
     Vector3* pos;
 } POI;
 
+// Type Definitions
+typedef struct {
+    FirepitLocation location;
+    Vector3 pos;
+    bool lit;
+    char* name;
+} Firepit;
+
+Firepit fires[FIREPIT_TOTAL_COUNT];
 POI InteractivePoints[POI_TYPE_TOTAL_COUNT];
 char *TalkInput;      // NOTE: One extra space required for null terminator char '\0'
 int LetterCount;

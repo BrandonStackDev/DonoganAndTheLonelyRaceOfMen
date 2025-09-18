@@ -279,6 +279,7 @@ int main(void) {
     MUTEX_INIT(mutex);
     bool displayBoxes = false;
     bool displayLod = false;
+    bool dopped_firepits = false;
     LightningBug *bugs;
     Star *stars;
     bool vehicleMode = false;
@@ -497,6 +498,15 @@ int main(void) {
     int locGhostTime = GetShaderLocation(ghostShader, "u_time");
     //bg
     InitBadGuys(ghostShader);
+    // --- Firepit shader + model ---
+    Shader fireShader = LoadShader("shaders/120/fire.vs", "shaders/120/fire.fs");
+    fireShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(fireShader, "mvp");
+    fireShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(fireShader, "model");
+    int fireTimeLoc = GetShaderLocation(fireShader, "uTime");
+    // a small sphere we stretch upward in the vertex shader
+    Mesh fireMesh = GenMeshSphere(0.6f, 18, 18);
+    Model fireModel = LoadModelFromMesh(fireMesh);
+    fireModel.materials[0].shader = fireShader;
     // end all shaders
 
     //tree model //todo: replace with bounding boxes for reals in the models.h stuff
@@ -592,6 +602,12 @@ int main(void) {
     //         }
     //     }
     // }
+    //fireplaces
+    Model firepit = LoadModel("models/firepit.obj");
+    firepit.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/firepit.png");;
+    fires[FIREPIT_HOME].location = FIREPIT_HOME;
+    fires[FIREPIT_HOME].pos = (Vector3){ 3022.00f, 319.00f, 4042.42f };
+    fires[FIREPIT_HOME].name = "Home";
     // INIT INTERACTIVE POINTS OF INTEREST
     InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
     InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
@@ -902,6 +918,15 @@ int main(void) {
                         npcs[NPC_DARREL].state = DARREL_STATE_CONFUSED;
                     }
                 }
+                //fire places/pits
+                for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++)
+                {
+                    if (Vector3Distance(don.pos,fires[i].pos)<14.3f)
+                    {
+                        TraceLog(LOG_INFO, "%s firepit lit!", fires[i].name);
+                        fires[i].lit = true;
+                    }
+                }
             }
             // --->>> SUMMON (R3 press to start/cancel)
             {
@@ -1053,6 +1078,7 @@ int main(void) {
         SetShaderValue(waterShader, timeLoc, &time, SHADER_UNIFORM_FLOAT);
         SetShaderValue(grassInstancingLightShader, grassTimeLoc, &time, SHADER_UNIFORM_FLOAT);
         SetShaderValue(ghostShader, locGhostTime, &time, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(fireShader, fireTimeLoc, &time, SHADER_UNIFORM_FLOAT);
         bool reportOn = false;
         int tileTriCount = 0;
         int tileBcCount = 0;
@@ -2521,6 +2547,28 @@ int main(void) {
                     if (Vector3Distance(don.pos, npcs[i].pos) > 1000.0f) { continue; } //todo: add frustum culling here also
                     NPC_Draw(&npcs[i]);
                 }
+            }
+            //fireplaces
+            if (onLoad)
+            {
+                for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++)
+                {
+                    if (Vector3Distance(don.pos, fires[i].pos) > 800) { continue; }
+                    if (!dopped_firepits)
+                    {
+                        fires[i].pos.y = GetTerrainHeightFromMeshXZ(fires[i].pos.x, fires[i].pos.z) + 0.8f;//+offset
+                    }
+                    DrawModel(firepit,fires[i].pos, 3, WHITE);
+                    if (fires[i].lit)
+                    {
+                        BeginBlendMode(BLEND_ADDITIVE);
+                        Vector3 P = fires[i].pos;
+                        P.y += 0.35f;
+                        DrawModel(fireModel, P, 1.0f, WHITE);
+                        EndBlendMode();
+                    }
+                }
+                dopped_firepits = true;
             }
             //homes
             if (onLoad)
