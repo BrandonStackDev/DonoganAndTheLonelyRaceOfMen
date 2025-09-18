@@ -760,7 +760,11 @@ int main(void) {
             prevDpadUp = dUp; prevDpadDown = dDown; prevDpadLeft = dLeft; prevDpadRight = dRight;
 
         }
-        if (vehicleMode) { donnyMode = false; }//just make sure this is always exlusive or, one or the other, never both
+        if (vehicleMode) 
+        { 
+            don.pos = truckPosition;
+            donnyMode = false; 
+        }//just make sure this is always exlusive or, one or the other, never both, and update his position for npc culling, so they appear
         if (!vehicleMode && donnyMode)
         {
             bool inBowCam = (don.bowMode || (don.bowReleaseCamHold > 0.0f)) && don.state != DONOGAN_STATE_BOW_EXIT;
