@@ -2545,7 +2545,7 @@ int main(void) {
             {
                 for (int i = 0; i < NPC_TOTAL; i++)
                 {
-                    if (Vector3Distance(don.pos, npcs[i].pos) > 1000.0f) { continue; } //todo: add frustum culling here also
+                    if (Vector3Distance(don.pos, npcs[i].pos) > 600.0f) { continue; } //todo: add frustum culling here also
                     NPC_Draw(&npcs[i]);
                 }
             }

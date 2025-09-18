@@ -210,21 +210,6 @@ static inline Quaternion BG_BuildWorldQuat(const BadGuy* b) {
     return QuaternionMultiply(qWorld, BG_ModelFixQuat(b));  // apply local fix last
 }
 
-// Draw the model with S * (R * T), matching the whale path.
-//static inline void DrawBadGuy(BadGuy* b) {
-//    if (!b || !b->active || b->gbm_index < 0) return;
-//
-//    Model* M = &bgModelBorrower[b->gbm_index].model;
-//
-//    Quaternion q = BG_BuildWorldQuat(b);
-//    Matrix R = QuaternionToMatrix(q);
-//    Matrix T = MatrixTranslate(b->pos.x, b->pos.y, b->pos.z);
-//    float s = (b->scale > 0.0f) ? b->scale : 1.0f;
-//    Matrix S = MatrixScale(s, s, s);
-//
-//    Matrix world = MatrixMultiply(S, MatrixMultiply(R, T));
-//    DrawMesh(M->meshes[0], M->materials[0], world);
-//}
 static inline void DrawBadGuy(BadGuy * b) {
     if (!b || !b->active || b->gbm_index < 0) return;
 

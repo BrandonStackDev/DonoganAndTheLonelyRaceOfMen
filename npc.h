@@ -12,13 +12,21 @@
 
 // Type Definitions
 typedef enum {
-    NPC_MODEL_TYPE_DARREL //darrel is the name of the model + the name of the first chararcter that we are using it with...
+    NPC_MODEL_TYPE_DARREL,
+    NPC_MODEL_TYPE_CHICKEN, //darrel is the name of the model + the name of the first chararcter that we are using it with...
 } NPC_Model_Type;
 
 typedef enum {
     NPC_DARREL = 0, //a few npc's will use the darrel model, but only one darrel record
+    NPC_CHICKEN,
     NPC_TOTAL,
 } NPC_Type;
+
+typedef enum {
+    CHICKEN_STATE_PLAN = 0,
+    CHICKEN_STATE_WALK,
+    CHICKEN_STATE_FOLLOW,
+} ChickenState;
 
 typedef enum {
     DARREL_STATE_HELLO = 0,
@@ -26,7 +34,8 @@ typedef enum {
     DARREL_STATE_CONFUSED,
     DARREL_STATE_TALK,
     DARREL_STATE_WALKING,
-} DarrelState; //darrel is simple, so animations indexes match states and we use state for animation index, many npc's will be simple and can do it this way
+} DarrelState; 
+//darrel is simple, so animations indexes match states and we use state for animation index, many npc's will be simple and can do it this way
 //we dont care about shared models with shared animations, I will place the similar models far aprt and cull on distance for update and draw
 
 typedef struct {
@@ -44,6 +53,7 @@ typedef struct {
     Texture tex;
 
     Vector3 pos;
+    Vector3 tether;
     float yaw, pitch, roll;
     float scale;
     BoundingBox box, origBox;
@@ -87,10 +97,17 @@ static inline void NPC_AnimSet(NPC* n, int animIndex, bool forceReset, float fps
 //init the stuff
 void InitAllNPC()
 {
+    //darrel
     Model darrel_model = LoadModel("models/darrel.glb");
     Texture darrel_tex = LoadTexture("textures/darrel.png");
     int darrel_animCount = 0;
-    ModelAnimation* darrel_anims = LoadModelAnimations("models/darrel.glb", &darrel_animCount);
+    ModelAnimation * darrel_anims = LoadModelAnimations("models/darrel.glb", &darrel_animCount);
+    //chicken
+    Model chicken_model = LoadModel("models/chicken_run.glb");
+    Texture chicken_tex = LoadTexture("textures/chicken.png");
+    int chicken_animCount = 0;
+    ModelAnimation* chicken_anims = LoadModelAnimations("models/chicken_run.glb", &darrel_animCount);
+    //setup darrel
     npcs[NPC_DARREL].type = NPC_DARREL;
     npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
     npcs[NPC_DARREL].model = darrel_model; //models with animations have to have a unique model instance in raylib, otherwise they all display the same animation at the same time
@@ -106,23 +123,27 @@ void InitAllNPC()
     npcs[NPC_DARREL].curAnim = npcs[NPC_DARREL].state;
     npcs[NPC_DARREL].animFPS = 24.0f;
     npcs[NPC_DARREL].animFrame = 0.0f;
-    NPC_AnimSet(&npcs[NPC_DARREL], npcs[NPC_DARREL].curAnim, true, 24.0f); // start correct clip
+    NPC_AnimSet(&npcs[NPC_DARREL], npcs[NPC_DARREL].curAnim, true, npcs[NPC_DARREL].animFPS); // start correct clip
+    //setup chicken
+    npcs[NPC_CHICKEN].type = NPC_CHICKEN;
+    npcs[NPC_CHICKEN].modelType = NPC_MODEL_TYPE_CHICKEN;
+    npcs[NPC_CHICKEN].model = chicken_model;
+    npcs[NPC_CHICKEN].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = chicken_tex;
+    npcs[NPC_CHICKEN].anims = chicken_anims;
+    npcs[NPC_CHICKEN].animCount = chicken_animCount;
+    npcs[NPC_CHICKEN].pos = (Vector3){ 3025.00f, 322.00f, 4048.00f };
+    npcs[NPC_CHICKEN].targetPos = npcs[NPC_CHICKEN].pos;
+    npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos; //the chicken in regular non follow state is tethered so it doesnt wander too much
+    npcs[NPC_CHICKEN].scale = 1.8f;
+    npcs[NPC_CHICKEN].speed = 1.0f;
+    npcs[NPC_CHICKEN].yaw = 0.0f;
+    npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
+    npcs[NPC_CHICKEN].curAnim = 0; //only walk for the chicken
+    npcs[NPC_CHICKEN].animFPS = 24.0f;
+    npcs[NPC_CHICKEN].animFrame = 0.0f;
+    NPC_AnimSet(&npcs[NPC_CHICKEN], npcs[NPC_CHICKEN].curAnim, true, npcs[NPC_CHICKEN].animFPS); // start correct clip
 }
-//static inline void NPC_AnimTick(NPC* n, float dt) {
-//    if (!n || !n->anims || n->animCount <= 0) return;
-//    ModelAnimation* a = &n->anims[n->curAnim];
-//    if (a->frameCount <= 0) return;
-//
-//    n->animFrame += n->animFPS * dt;
-//    if (n->animFrame >= a->frameCount) {
-//        n->animFrame = fmodf(n->animFrame, (float)a->frameCount);
-//    }
-//    // Safe to guard, but generally fine:
-//    if (IsModelAnimationValid(n->model, *a)) {
-//        UpdateModelAnimation(n->model, *a, (int)n->animFrame);
-//    }
-//}
-// 
+
 bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
 {
     int result = true;
@@ -167,8 +188,12 @@ static inline bool NPC_AnimTick(NPC* n, float dt) {
 
 
 // --- Case-specific handler for Darrel ---
-static inline void NPC_Update_Darrel(NPC* n, const Donogan* d, float dt, bool looped) {
+static inline void NPC_Update_Darrel(NPC* n, const Donogan* d, float dt, bool looped) 
+{
     n->pos.y -= 0.2f;
+    // Face Donogan
+    float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
+    n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
     ModelAnimation* a = &n->anims[n->curAnim];
     if (looped)
     {
@@ -177,18 +202,47 @@ static inline void NPC_Update_Darrel(NPC* n, const Donogan* d, float dt, bool lo
     }
 }
 
+//cases for chicken
+static inline void NPC_Update_Chicken(NPC* n, const Donogan* d, float dt, bool looped) 
+{
+    //handle states
+    if (n->state == CHICKEN_STATE_PLAN)
+    {
+        float r = (float)GetRandomValue(2, 7);
+        float a = (float)GetRandomValue(0, 359) * DEG2RAD;
+        n-> targetPos = (Vector3) { n->tether.x + sinf(a) * r, n->pos.y, n->tether.z + cosf(a) * r };
+        //needs to be on relativly flat ground so we identify when we are close to the target
+        n->state = CHICKEN_STATE_WALK;
+    }
+    else if (n->state == CHICKEN_STATE_WALK) 
+    {
+        if (Vector3Distance(n->pos, n->targetPos) < 2.4)
+        {
+            n->state = CHICKEN_STATE_PLAN;
+        }
+    }
+    else if (n->state == CHICKEN_STATE_FOLLOW) 
+    {
+        n->targetPos = d->pos;
+    }
+    else { return; } //not a valid state, dont update the chicken...
+    //lerp target pos
+    Vector3Lerp(n->pos, n->targetPos, dt*n->speed);
+    // Face Target and adjust after lerp for ground again
+    float targetYaw = atan2f(n->targetPos.x - n->pos.x, n->targetPos.z - n->pos.z);
+    n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
+    n->pos.y = NPC_GroundY(n->pos);
+    n->pos.y -= 0.71f;
+}
+
 // --- General per-NPC update entry point ---
 static inline void NPC_Update(NPC* n, const Donogan* d, float dt) {
     if (!n || !d) return;
 
     // Distance cull (skip everything if too far)
     float dist = Vector3Distance(n->pos, d->pos);
-    float cutoff = 1000.0f;
+    float cutoff = 600.0f; //was 1000
     if (dist > cutoff) return;
-
-    // Face Donogan
-    float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
-    n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
 
     //put them on the ground always
     n->pos.y = NPC_GroundY(n->pos);
@@ -197,6 +251,7 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt) {
     // Case dispatch
     switch (n->type) {
     case NPC_DARREL: NPC_Update_Darrel(n, d, dt, looped); break;
+    case NPC_CHICKEN: NPC_Update_Chicken(n, d, dt, looped); break;
     default: break;
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);
