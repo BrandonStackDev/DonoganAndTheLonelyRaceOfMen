@@ -166,7 +166,7 @@ void InitAllNPC()
     npcs[NPC_LUCY].animCount = lucy_animCount;
     npcs[NPC_LUCY].pos = (Vector3){ 3026.00f, 322.00f, 4048.42f };
     npcs[NPC_LUCY].targetPos = npcs[NPC_LUCY].pos;
-    npcs[NPC_LUCY].scale = 1.00f;
+    npcs[NPC_LUCY].scale = 3.50f;
     npcs[NPC_LUCY].yaw = 0.0f;
     npcs[NPC_LUCY].state = LUCY_STATE_HELLO;
     npcs[NPC_LUCY].curAnim = 0; //only walk for the chicken
@@ -219,9 +219,9 @@ static inline bool NPC_AnimTick(NPC* n, float dt) {
 
 
 // --- Case-specific handler for Darrel ---
-static inline void NPC_Update_Darrel(NPC* n, const Donogan* d, float dt, bool looped) 
+static inline void NPC_Update_Simple(NPC* n, const Donogan* d, float dt, bool looped) 
 {
-    n->pos.y -= 0.2f;
+    if (n->type == NPC_DARREL) { n->pos.y -= 0.2f; }
     // Face Donogan
     float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
     n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
@@ -283,8 +283,9 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     bool looped = NPC_AnimTick(n, dt);
     // Case dispatch
     switch (n->type) {
-    case NPC_DARREL: NPC_Update_Darrel(n, d, dt, looped); break;
+    case NPC_DARREL: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_CHICKEN: NPC_Update_Chicken(n, d, dt, looped); break;
+    case NPC_LUCY: NPC_Update_Simple(n, d, dt, looped); break;
     default: break;
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);
