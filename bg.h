@@ -355,6 +355,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
             b->gbm_index = -1;
             StartTimer(&b->respawnTimer);
             ResetTimer(&b->interactionTimer);
+            d->xp += 10;
         }
     }break;
     default: {}
@@ -515,6 +516,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
             b->gbm_index = -1;
             StartTimer(&b->respawnTimer);
             ResetTimer(&b->interactionTimer);
+            d->xp += 50;
         }
         if (b->animFrame >= b->anims[b->curAnim].frameCount - 1) {
             BG_SetAnim(b, ANIM_YETI_ROAR, true);
@@ -655,7 +657,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         }
         if (bg[i].throwing) {
             //TraceLog(LOG_INFO,"throwing...");
-            // simple ballistic arc + frictiony horizontal slow-down
+            // simple ballistic arc + friction horizontal slow-down
             bg[i].throwVel.y += -24.0f * dt;
             bg[i].pos.x += bg[i].throwVel.x * dt;
             bg[i].pos.z += bg[i].throwVel.z * dt;
