@@ -268,12 +268,17 @@ static void Audio_SelectSongRelative(int delta)
     }
 }
 
+char* toast;
+Timer toastTimer;
 
 
 /// @brief main!
 /// @param  
 /// @return 
 int main(void) {
+    toast = "";
+    toastTimer = CreateTimer(8);
+    StartTimer(&toastTimer);
     bool devDisplay = false;
     SetTraceLogLevel(LOG_ALL);
     MUTEX_INIT(mutex);
@@ -688,7 +693,8 @@ int main(void) {
     StartTimer(&don.hitTimer);
     long loop_counter = 0;
     while (!WindowShouldClose()) {
-        //handle health and mana re-gen
+        //handle health and mana re-gen, xp to level conversion as well
+        don.level = (int)(don.xp / 100) + 1;
         if (loop_counter % 999 == 0)
         {
             don.health += 1;
@@ -869,7 +875,7 @@ int main(void) {
             camera.position.y = camera.target.y + radius * sinf(pitch);
             camera.position.z = camera.target.z + radius * cosf(pitch) * cosf(yaw);
 
-            if (gpad.btnTriangle > 0)//handle triangle interactions here
+            if (gpad.btnTriangle > 0)//handle triangle interactions here, dont debounce here incase we want a cumulative feel, like a lawn mower that doesnt want to start right away sort of thing
             {
                 if (!don.isTalking 
                     && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
@@ -911,9 +917,14 @@ int main(void) {
                     don.isTalking = true;
                     if (Vector3Distance(npcs[NPC_CHICKEN].pos, npcs[NPC_LUCY].pos) < 40 || missions[MISSION_CLARENCE_CHICKEN].complete)
                     {
-                        missions[MISSION_CLARENCE_CHICKEN].complete = true;
+                        if (!missions[MISSION_CLARENCE_CHICKEN].complete)
+                        {
+                            toast = "Completed mission! Clarence is home with Lucy";
+                            StartTimer(&toastTimer);
+                            don.xp += 100;
+                            missions[MISSION_CLARENCE_CHICKEN].complete = true;
+                        }
                         don.who = TALK_TYPE_LUCY_TWO;
-                        //todo: reward donogan...
                     }
                     else
                     {
@@ -921,7 +932,7 @@ int main(void) {
                     }
                     
                     npcs[NPC_LUCY].state = LUCY_STATE_TALK;
-                    StartTimer(&don.talkStartTimer);
+                    StartTimer(&don.talkStartTimer);//debounce triangle
                 }
                 else if (don.isTalking && HasTimerElapsed(&don.talkStartTimer))//timer prevents entering and exiting quickly, this is the exit talking routine...
                 {
@@ -947,10 +958,13 @@ int main(void) {
                     if (npcs[NPC_CHICKEN].state != CHICKEN_STATE_FOLLOW)
                     {
                         npcs[NPC_CHICKEN].state = CHICKEN_STATE_FOLLOW;//enter follow mode
+                        toast = "Clarence is following you";
+                        StartTimer(&toastTimer);
                         TraceLog(LOG_INFO, "Chicken follow");
                     }
                     else //exit follow mode
                     {
+                        toast = "Clarence is no longer following you...";
                         npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
                         npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos;
                         TraceLog(LOG_INFO, "Chicken tenders .... mmmm");
@@ -3080,7 +3094,14 @@ int main(void) {
                 DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
             }
         }
-        if (truckSummonActive) { DrawText("SUMMONING...", 24, SCREEN_HEIGHT - 60, 20, YELLOW); }
+        if (onLoad)
+        {
+            if (!HasTimerElapsed(&toastTimer))
+            {
+                DrawText(toast, 24, SCREEN_HEIGHT - 60, 16, YELLOW);
+            }
+            else if (truckSummonActive) { DrawText("SUMMONING...", 24, SCREEN_HEIGHT - 60, 16, YELLOW); }
+        }
         if (showMap) {
             // Map drawing area (scaled by zoom)
             //
@@ -3140,6 +3161,11 @@ int main(void) {
             DrawRectangle(SCREEN_WIDTH - (don.maxHealth + 10) - 8, 162, don.health, 6, DARKGREEN);
             DrawRectangleLines(SCREEN_WIDTH - (don.maxMana + 10) - 10, 180, don.maxMana+4, 10, BLACK);
             DrawRectangle(SCREEN_WIDTH - (don.maxMana + 10) - 8, 182, don.mana, 6, BLUE);
+            if (!devDisplay)
+            {
+                DrawText(TextFormat("XP: %d", don.xp), 10, 30, 20, RAYWHITE);
+                DrawText(TextFormat("LEVEL: %d", don.level), 10, 50, 20, RAYWHITE);
+            }
         }
         if (donnyMode && don.isTalking)
         {

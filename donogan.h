@@ -494,11 +494,12 @@ typedef struct {
     Color drawColor;
 
     //health and mana
-    int health, mana, maxHealth, maxMana;
+    int health, mana, maxHealth, maxMana, xp, level;
     Timer spellTimer;
     float cached_yawY;
     float shook;
     bool squareThrowRequest;
+    
 } Donogan;
 
 // Assets (adjust if needed)
