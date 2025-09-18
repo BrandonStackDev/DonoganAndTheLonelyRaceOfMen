@@ -503,6 +503,7 @@ int main(void) {
     fireShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(fireShader, "mvp");
     fireShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(fireShader, "model");
     int fireTimeLoc = GetShaderLocation(fireShader, "uTime");
+    int fireVariantLoc = GetShaderLocation(fireShader, "uVariant");
     // a small sphere we stretch upward in the vertex shader
     Mesh fireMesh = GenMeshSphere(0.6f, 18, 18);
     Model fireModel = LoadModelFromMesh(fireMesh);
@@ -2562,10 +2563,42 @@ int main(void) {
                     if (fires[i].lit)
                     {
                         BeginBlendMode(BLEND_ADDITIVE);
+
                         Vector3 P = fires[i].pos;
-                        P.y += 0.35f;
-                        DrawModel(fireModel, P, 1.0f, WHITE);
+                        P.y += 0.35f; // small lift if needed
+
+                        // Core (hot, narrow)
+                        {
+                            float v = 0.00f;
+                            SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
+                            DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0.0f,
+                                (Vector3) {
+                                0.8f, 1.9f, 0.8f
+                            }, WHITE);
+                        }
+
+                        // Left/Right tongue (different phase & taller)
+                        {
+                            float v = 1.37f;
+                            SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
+                            DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0.0f,
+                                (Vector3) {
+                                0.65f, 2.4f, 0.65f
+                            }, WHITE);
+                        }
+
+                        // Outer soft body (wider, shorter, redder via rampShift)
+                        {
+                            float v = 2.73f;
+                            SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
+                            DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0.0f,
+                                (Vector3) {
+                                1.5f, 1.1f, 1.5f
+                            }, WHITE);
+                        }
+
                         EndBlendMode();
+
                     }
                 }
                 dopped_firepits = true;
