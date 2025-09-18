@@ -14,11 +14,13 @@
 typedef enum {
     NPC_MODEL_TYPE_DARREL,
     NPC_MODEL_TYPE_CHICKEN, //darrel is the name of the model + the name of the first chararcter that we are using it with...
+    NPC_MODEL_TYPE_LUCY,
 } NPC_Model_Type;
 
 typedef enum {
     NPC_DARREL = 0, //a few npc's will use the darrel model, but only one darrel record
     NPC_CHICKEN,
+    NPC_LUCY,
     NPC_TOTAL,
 } NPC_Type;
 
@@ -36,7 +38,15 @@ typedef enum {
     DARREL_STATE_WALKING,
 } DarrelState; 
 //darrel is simple, so animations indexes match states and we use state for animation index, many npc's will be simple and can do it this way
-//we dont care about shared models with shared animations, I will place the similar models far aprt and cull on distance for update and draw
+//we dont care about shared models with shared animations, I will place the similar models far apart and cull on distance for update and draw
+
+typedef enum {
+    LUCY_STATE_HELLO = 0,
+    LUCY_STATE_TALK,
+    LUCY_STATE_RUN,
+    LUCY_STATE_WALK,
+    LUCY_STATE_JOG,
+} LucyState;
 
 typedef struct {
     NPC_Type type;
@@ -107,6 +117,11 @@ void InitAllNPC()
     Texture chicken_tex = LoadTexture("textures/chicken.png");
     int chicken_animCount = 0;
     ModelAnimation* chicken_anims = LoadModelAnimations("models/chicken_run.glb", &chicken_animCount);
+    //lucy
+    Model lucy_model = LoadModel("models/lucy.glb");
+    Texture lucy_tex = LoadTexture("textures/lucy.png");
+    int lucy_animCount = 0;
+    ModelAnimation* lucy_anims = LoadModelAnimations("models/lucy.glb", &lucy_animCount);
     //setup darrel
     npcs[NPC_DARREL].type = NPC_DARREL;
     npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
@@ -142,6 +157,22 @@ void InitAllNPC()
     npcs[NPC_CHICKEN].animFPS = 48.0f;
     npcs[NPC_CHICKEN].animFrame = 0.0f;
     NPC_AnimSet(&npcs[NPC_CHICKEN], npcs[NPC_CHICKEN].curAnim, true, npcs[NPC_CHICKEN].animFPS); // start correct clip
+    //setup lucy
+    npcs[NPC_LUCY].type = NPC_LUCY;
+    npcs[NPC_LUCY].modelType = NPC_MODEL_TYPE_LUCY;
+    npcs[NPC_LUCY].model = lucy_model;
+    npcs[NPC_LUCY].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = lucy_tex;
+    npcs[NPC_LUCY].anims = lucy_anims;
+    npcs[NPC_LUCY].animCount = lucy_animCount;
+    npcs[NPC_LUCY].pos = (Vector3){ 3026.00f, 322.00f, 4048.42f };
+    npcs[NPC_LUCY].targetPos = npcs[NPC_LUCY].pos;
+    npcs[NPC_LUCY].scale = 1.00f;
+    npcs[NPC_LUCY].yaw = 0.0f;
+    npcs[NPC_LUCY].state = LUCY_STATE_HELLO;
+    npcs[NPC_LUCY].curAnim = 0; //only walk for the chicken
+    npcs[NPC_LUCY].animFPS = 60.0f;
+    npcs[NPC_LUCY].animFrame = 0.0f;
+    NPC_AnimSet(&npcs[NPC_LUCY], npcs[NPC_LUCY].curAnim, true, npcs[NPC_LUCY].animFPS); // start correct clip
 }
 
 bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
@@ -237,7 +268,8 @@ static inline void NPC_Update_Chicken(NPC* n, const Donogan* d, float dt, bool l
 }
 
 // --- General per-NPC update entry point ---
-static inline void NPC_Update(NPC* n, const Donogan* d, float dt) {
+static inline void NPC_Update(NPC* n, const Donogan* d, float dt) 
+{
     if (!n || !d) return;
 
     // Distance cull (skip everything if too far)
@@ -259,7 +291,8 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt) {
 }
 
 // --- Minimal draw (preview will do the frustum check before calling this) ---
-static inline void NPC_Draw(const NPC* n) {
+static inline void NPC_Draw(const NPC* n) 
+{
     if (!n) return;
     DrawModelEx(n->model, n->pos, (Vector3) { 0, 1, 0 }, RAD2DEG* n->yaw,
         (Vector3) {
