@@ -483,9 +483,10 @@ typedef struct {
     float bowDrawTLatch;        // last pull amount [0..1]
     float bowReleaseCamHold;    // seconds to keep aim camera active after release
 
-    //for conversation
+    //for conversation and interaction
     bool isTalking;
     Timer talkStartTimer;
+    Timer interactionLimitTimer;
     TALK_TYPE who;
 
     //for hit state
@@ -1513,6 +1514,8 @@ static Donogan InitDonogan(void)
     d.steepSlideFriction = 1.6f;    // decay a bit each frame
     d.slideDwell = CreateTimer(0.25f);
     d.talkStartTimer = CreateTimer(0.2222f);
+    d.interactionLimitTimer = CreateTimer(1.00f);
+    StartTimer(&d.interactionLimitTimer);
     d.spellTimer = CreateTimer(0.2f);
     d.cached_yawY = 0;
     //bow speed turn

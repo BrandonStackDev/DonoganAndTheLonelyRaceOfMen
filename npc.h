@@ -131,10 +131,10 @@ void InitAllNPC()
     npcs[NPC_CHICKEN].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = chicken_tex;
     npcs[NPC_CHICKEN].anims = chicken_anims;
     npcs[NPC_CHICKEN].animCount = chicken_animCount;
-    npcs[NPC_CHICKEN].pos = (Vector3){ 3025.00f, 322.00f, 4048.00f };
+    npcs[NPC_CHICKEN].pos = (Vector3){ 1887, 361, 4737 };
     npcs[NPC_CHICKEN].targetPos = npcs[NPC_CHICKEN].pos;
     npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos; //the chicken in regular non follow state is tethered so it doesnt wander too much
-    npcs[NPC_CHICKEN].scale = 1.8f;
+    npcs[NPC_CHICKEN].scale = 1.23f;
     npcs[NPC_CHICKEN].speed = 0.2f;
     npcs[NPC_CHICKEN].yaw = 0.0f;
     npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
@@ -224,6 +224,8 @@ static inline void NPC_Update_Chicken(NPC* n, const Donogan* d, float dt, bool l
     else if (n->state == CHICKEN_STATE_FOLLOW) 
     {
         n->targetPos = d->pos;
+        n->targetPos.x += 5;
+        n->targetPos.z += 4;
     }
     else { return; } //not a valid state, dont update the chicken...
     //lerp target pos

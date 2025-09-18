@@ -921,16 +921,19 @@ int main(void) {
                     }
                 }
                 //end else if//the rest can happen all at once with something else
-                if (npcs[NPC_CHICKEN].state == CHICKEN_STATE_FOLLOW || Vector3Distance(*InteractivePoints[POI_TYPE_CHICKEN].pos, don.pos) < 12.0f)
+                if (HasTimerElapsed(&don.interactionLimitTimer) && (npcs[NPC_CHICKEN].state == CHICKEN_STATE_FOLLOW || Vector3Distance(*InteractivePoints[POI_TYPE_CHICKEN].pos, don.pos) < 12.0f))
                 {
+                    StartTimer(&don.interactionLimitTimer);//make sure we dont toggle the state of the chicken really fast
                     if (npcs[NPC_CHICKEN].state != CHICKEN_STATE_FOLLOW)
                     {
                         npcs[NPC_CHICKEN].state = CHICKEN_STATE_FOLLOW;//enter follow mode
+                        TraceLog(LOG_INFO, "Chicken follow");
                     }
                     else //exit follow mode
                     {
                         npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
                         npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos;
+                        TraceLog(LOG_INFO, "Chicken tenders .... mmmm");
                     }
                 }
                 //fire places/pits
