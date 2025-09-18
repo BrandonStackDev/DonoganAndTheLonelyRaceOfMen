@@ -164,7 +164,7 @@ void InitAllNPC()
     npcs[NPC_LUCY].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = lucy_tex;
     npcs[NPC_LUCY].anims = lucy_anims;
     npcs[NPC_LUCY].animCount = lucy_animCount;
-    npcs[NPC_LUCY].pos = (Vector3){ 3026.00f, 322.00f, 4048.42f };
+    npcs[NPC_LUCY].pos = (Vector3){ 1886, 361, 4201 };
     npcs[NPC_LUCY].targetPos = npcs[NPC_LUCY].pos;
     npcs[NPC_LUCY].scale = 3.50f;
     npcs[NPC_LUCY].yaw = 0.0f;

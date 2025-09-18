@@ -135,6 +135,20 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
     }
 }
 
+//missions
+typedef enum {
+    MISSION_NONE = -1,
+    MISSION_CLARENCE_CHICKEN,
+    MISSION_TOTAL_COUNT
+} MissionType;
+
+// Type Definitions
+typedef struct {
+    MissionType type;
+    bool complete;
+    char* name;
+    char* desc;
+} Mission;
 //points of interest, for tri interact
 typedef enum {
     FIREPIT_HOME = 0,
@@ -166,6 +180,7 @@ typedef struct {
     char* name;
 } Firepit;
 
+Mission missions[MISSION_TOTAL_COUNT];
 Firepit fires[FIREPIT_TOTAL_COUNT];
 POI InteractivePoints[POI_TYPE_TOTAL_COUNT];
 char *TalkInput;      // NOTE: One extra space required for null terminator char '\0'
@@ -286,6 +301,16 @@ void InitTalkingInteractions()
     TalkInput[0] = '\0';
     LetterCount = 0;
     Conv_Clear();
+}
+
+void InitTalkingMissions()
+{
+    //MISSION_CLARENCE_CHICKEN
+    missions[MISSION_CLARENCE_CHICKEN].complete = false;
+    missions[MISSION_CLARENCE_CHICKEN].type = MISSION_CLARENCE_CHICKEN;
+    missions[MISSION_CLARENCE_CHICKEN].name = "Find Clarence";
+    missions[MISSION_CLARENCE_CHICKEN].desc = "Lucy's chicken Clarence is missing, find him and bring him to Lucy.";
+    //todo: atreyu find mission
 }
 
 // Draw text using font inside rectangle limits with support for text selection

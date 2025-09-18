@@ -339,6 +339,8 @@ int main(void) {
     InitHomes();
     //talking
     InitTalkingInteractions();
+    //missions
+    InitTalkingMissions();
     //env bounding boxes, duct tape
     GoGoGadgetDuctTape();
     Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
@@ -907,7 +909,17 @@ int main(void) {
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
-                    don.who = TALK_TYPE_LUCY_ONE; //--->>> TODO: When mission complete for chicken, change to two
+                    if (Vector3Distance(npcs[NPC_CHICKEN].pos, npcs[NPC_LUCY].pos) < 40 || missions[MISSION_CLARENCE_CHICKEN].complete)
+                    {
+                        missions[MISSION_CLARENCE_CHICKEN].complete = true;
+                        don.who = TALK_TYPE_LUCY_TWO;
+                        //todo: reward donogan...
+                    }
+                    else
+                    {
+                        don.who = TALK_TYPE_LUCY_ONE;
+                    }
+                    
                     npcs[NPC_LUCY].state = LUCY_STATE_TALK;
                     StartTimer(&don.talkStartTimer);
                 }
@@ -926,7 +938,10 @@ int main(void) {
                     }
                 }
                 //end else if//the rest can happen all at once with something else
-                if (HasTimerElapsed(&don.interactionLimitTimer) && (npcs[NPC_CHICKEN].state == CHICKEN_STATE_FOLLOW || Vector3Distance(*InteractivePoints[POI_TYPE_CHICKEN].pos, don.pos) < 12.0f))
+                //clarence the chicken mission
+                if (!missions[MISSION_CLARENCE_CHICKEN].complete
+                    && HasTimerElapsed(&don.interactionLimitTimer) 
+                    && (npcs[NPC_CHICKEN].state == CHICKEN_STATE_FOLLOW || Vector3Distance(*InteractivePoints[POI_TYPE_CHICKEN].pos, don.pos) < 12.0f))
                 {
                     StartTimer(&don.interactionLimitTimer);//make sure we dont toggle the state of the chicken really fast
                     if (npcs[NPC_CHICKEN].state != CHICKEN_STATE_FOLLOW)
