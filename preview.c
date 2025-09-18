@@ -2660,7 +2660,7 @@ int main(void) {
                 //whales
                 for (int i = 0; i < numWhales; i++)
                 {
-                    if (!IsPointInFrustum(whales[i].pos, frustumChunk8)) { continue; }
+                    if (!IsPointInFrustum(whales[i].pos, frustum)) { continue; }
                     FSM_Tick(&whales[i], (float)GetTime(), GetFrameTime());
                     Quaternion qFinal = BuildWorldQuat(&whales[i]);
                     Matrix R = QuaternionToMatrix(qFinal);
@@ -2675,7 +2675,7 @@ int main(void) {
                 // === FISH UPDATE + DRAW ======================================================
                 for (int s = 0; s < numSchools; s++)
                 {
-                    if (Vector3Distance(donnyMode?don.pos:camera.position, fish[s].fishTarget) > 1000) { continue; }//good culling on fish because they are expensive
+                    if (Vector3Distance(donnyMode?don.pos:camera.position, fish[s].fishTarget) > 890) { continue; }//good culling on fish because they are expensive
                     // 1) steer the school target a bit each frame (orbit + optional player nudge)
                     static float schoolTheta = 0.0f;
                     float dt = GetFrameTime();
