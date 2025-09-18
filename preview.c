@@ -2573,7 +2573,7 @@ int main(void) {
                             SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
                             DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0.0f,
                                 (Vector3) {
-                                0.8f, 1.9f, 0.8f
+                                0.8f, 0.9f, 0.8f
                             }, WHITE);
                         }
 
@@ -2583,7 +2583,7 @@ int main(void) {
                             SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
                             DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0.0f,
                                 (Vector3) {
-                                0.65f, 2.4f, 0.65f
+                                0.65f, 1.4f, 0.65f
                             }, WHITE);
                         }
 
