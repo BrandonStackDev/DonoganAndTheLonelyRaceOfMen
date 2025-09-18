@@ -10,6 +10,11 @@
 //me
 #include "timer.h"
 
+typedef enum {
+    DIFF_EASY,
+    DIFF_NORMAL,
+    DIFF_HARD
+} Difficulty;
 // Your global game state: add indices & a single active Music object.
 typedef struct {
     bool invY, invX;
@@ -21,6 +26,7 @@ typedef struct {
     Music currentMusic;        // currently loaded/playing stream (if any)
     bool  currentMusicLoaded;  // guard for unload/play calls
     Timer HonkedHornRecently;
+    Difficulty diff;
 } GameState;
 
 static GameState gGame;

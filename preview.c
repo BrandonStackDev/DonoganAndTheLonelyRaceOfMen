@@ -318,6 +318,7 @@ int main(void) {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Donogan And The Lonely Race Of Men");
     //game state
     gGame.HonkedHornRecently = CreateTimer(60);//60 seconds
+    gGame.diff = DIFF_NORMAL; // default to normal
     //audio
     SetAudioStreamBufferSizeDefault(4096);
     InitAudioDevice();
@@ -533,6 +534,7 @@ int main(void) {
     // //donny boy
     Color targetHitColor = (Color){ 200,220,250,100 };
     Donogan don = InitDonogan();
+    don.gs = &gGame;
     don.pos = Scenes[SCENE_HOME_CABIN_02].pos;
     don.pos.y = 533.333f;
     StartTimer(&don.talkStartTimer); //so we can talk right away;
@@ -2311,7 +2313,7 @@ int main(void) {
                     don.arrows[a].stuck = true;
                     if (bg[b].type == BG_YETI)
                     {
-                        bg[b].health -= 8;
+                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
                         bg[b].state = YETI_STATE_HIT;
                         BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
                     }
@@ -2336,7 +2338,7 @@ int main(void) {
                     bg[b].state = YETI_STATE_HIT;
                     BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
                     balls[i].alive = false;
-                    bg[b].health -= 40;
+                    bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
                 }
             }
         }
@@ -2365,10 +2367,10 @@ int main(void) {
                     if (punching) {
                         // punched a yeti!
                         TraceLog(LOG_INFO, "punched a yeti!");
-                        bg[b].health -= 1;
+                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
                         bg[b].state = YETI_STATE_HIT;
                         BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
-                        // optional: StartTimer(&don.hitTimer); // if you want a brief punch cooldown
+                        // todo: punch-applied timer?
                     }
                     else if (HasTimerElapsed(&don.hitTimer)) {
                         // yeti damages Don (cooldown applies here only)

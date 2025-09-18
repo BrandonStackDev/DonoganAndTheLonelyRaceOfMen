@@ -499,7 +499,7 @@ typedef struct {
     float cached_yawY;
     float shook;
     bool squareThrowRequest;
-    
+    GameState *gs;
 } Donogan;
 
 // Assets (adjust if needed)

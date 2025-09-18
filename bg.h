@@ -23,6 +23,96 @@ typedef enum {
 } BadGuyType;
 
 typedef enum {
+    ATTACK_PUNCH,
+    ATTACK_BALL,
+    ATTACK_FREEZE,
+    ATTACK_THROW,
+    ATTACK_ARROW,
+} DonAttackType;
+
+//todo: badguy specific (because ghosts are one hit and I only have the yeti it doesnt make sense yet)
+int GetDamageDone(GameState *gs, Donogan *d, DonAttackType attack, BadGuyType bg_type)
+{
+    if (attack == ATTACK_PUNCH)
+    {
+        if (gs->diff == DIFF_EASY)
+        {
+            return 20;
+        }
+        else if (gs->diff == DIFF_NORMAL)
+        {
+            return 10;
+        }
+        else//hard
+        {
+            return 5;
+        }
+    }
+    else if (attack == ATTACK_BALL)
+    {
+        if (gs->diff == DIFF_EASY)
+        {
+            return 100;
+        }
+        else if (gs->diff == DIFF_NORMAL)
+        {
+            return 50;
+        }
+        else//hard
+        {
+            return 20;
+        }
+    }
+    else if (attack == ATTACK_FREEZE)
+    {
+        if (gs->diff == DIFF_EASY)
+        {
+            return 10;
+        }
+        else if (gs->diff == DIFF_NORMAL)
+        {
+            return 5;
+        }
+        else//hard
+        {
+            return 1;
+        }
+    }
+    else if (attack == ATTACK_THROW)
+    {
+        if (gs->diff == DIFF_EASY)
+        {
+            return 20;
+        }
+        else if (gs->diff == DIFF_NORMAL)
+        {
+            return 10;
+        }
+        else//hard
+        {
+            return 5;
+        }
+    }
+    else if (attack == ATTACK_ARROW)
+    {
+        if (gs->diff == DIFF_EASY)
+        {
+            return 8 + d->level;
+        }
+        else if (gs->diff == DIFF_NORMAL)
+        {
+            return d->level;
+        }
+        else//hard
+        {
+            return (d->level/4)+1;
+        }
+    }
+    TraceLog(LOG_WARNING, "we should never reach this, GetDamageDone routine!");
+    return 1; //default case
+}
+
+typedef enum {
     GHOST_STATE_SPAWN, //raise out of the ground to the spawn point
     GHOST_STATE_PLAN, //AI state, picks something randomly based on rules
     GHOST_STATE_FLY, //fly horizontally to the target position, when we get near enough the target, go to FLY_DEC
@@ -671,7 +761,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             if (bg[i].pos.y <= gy) {
                 TraceLog(LOG_INFO, "thrown landing!");
                 bg[i].pos.y = gy;
-                bg[i].health -= 10;
+                bg[i].health -= GetDamageDone(d->gs, d, ATTACK_THROW, bg[i].type);
                 bg[i].targetPos = bg[i].pos;
                 bg[i].throwing = false;
                 bg[i].frozen = false;
@@ -684,7 +774,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                 if (!d->spellTimer.running) { bg[i].frozen = false; }
                 else if (HasTimerElapsed(&d->spellTimer))
                 {
-                    bg[i].health -= 5;
+                    bg[i].health -= GetDamageDone(d->gs, d, ATTACK_FREEZE, bg[i].type);
                     bg[i].frozen = true;
                     if (bg[i].type == BG_GHOST)
                     {
