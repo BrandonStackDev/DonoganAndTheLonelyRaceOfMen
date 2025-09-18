@@ -614,6 +614,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
     InteractivePoints[POI_TYPE_ATREYU] = (POI){ POI_TYPE_ATREYU , &atreyuPos };
     InteractivePoints[POI_TYPE_DARREL] = (POI){ POI_TYPE_DARREL , &npcs[NPC_DARREL].pos};
+    InteractivePoints[POI_TYPE_CHICKEN] = (POI){ POI_TYPE_CHICKEN , &npcs[NPC_CHICKEN].pos };
     //init the stuff before launching thread launcher
     //INIT
     //----------------------init chunks---------------------
@@ -917,6 +918,19 @@ int main(void) {
                     if (don.who == TALK_TYPE_DARREL)
                     {
                         npcs[NPC_DARREL].state = DARREL_STATE_CONFUSED;
+                    }
+                }
+                //end else if//the rest can happen all at once with something else
+                if (npcs[NPC_CHICKEN].state == CHICKEN_STATE_FOLLOW || Vector3Distance(*InteractivePoints[POI_TYPE_CHICKEN].pos, don.pos) < 12.0f)
+                {
+                    if (npcs[NPC_CHICKEN].state != CHICKEN_STATE_FOLLOW)
+                    {
+                        npcs[NPC_CHICKEN].state = CHICKEN_STATE_FOLLOW;//enter follow mode
+                    }
+                    else //exit follow mode
+                    {
+                        npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
+                        npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos;
                     }
                 }
                 //fire places/pits

@@ -106,7 +106,7 @@ void InitAllNPC()
     Model chicken_model = LoadModel("models/chicken_run.glb");
     Texture chicken_tex = LoadTexture("textures/chicken.png");
     int chicken_animCount = 0;
-    ModelAnimation* chicken_anims = LoadModelAnimations("models/chicken_run.glb", &darrel_animCount);
+    ModelAnimation* chicken_anims = LoadModelAnimations("models/chicken_run.glb", &chicken_animCount);
     //setup darrel
     npcs[NPC_DARREL].type = NPC_DARREL;
     npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
@@ -135,11 +135,11 @@ void InitAllNPC()
     npcs[NPC_CHICKEN].targetPos = npcs[NPC_CHICKEN].pos;
     npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos; //the chicken in regular non follow state is tethered so it doesnt wander too much
     npcs[NPC_CHICKEN].scale = 1.8f;
-    npcs[NPC_CHICKEN].speed = 1.0f;
+    npcs[NPC_CHICKEN].speed = 0.2f;
     npcs[NPC_CHICKEN].yaw = 0.0f;
     npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
     npcs[NPC_CHICKEN].curAnim = 0; //only walk for the chicken
-    npcs[NPC_CHICKEN].animFPS = 24.0f;
+    npcs[NPC_CHICKEN].animFPS = 48.0f;
     npcs[NPC_CHICKEN].animFrame = 0.0f;
     NPC_AnimSet(&npcs[NPC_CHICKEN], npcs[NPC_CHICKEN].curAnim, true, npcs[NPC_CHICKEN].animFPS); // start correct clip
 }
@@ -227,12 +227,11 @@ static inline void NPC_Update_Chicken(NPC* n, const Donogan* d, float dt, bool l
     }
     else { return; } //not a valid state, dont update the chicken...
     //lerp target pos
-    Vector3Lerp(n->pos, n->targetPos, dt*n->speed);
+    n->pos = Vector3Lerp(n->pos, n->targetPos, dt*n->speed);
     // Face Target and adjust after lerp for ground again
     float targetYaw = atan2f(n->targetPos.x - n->pos.x, n->targetPos.z - n->pos.z);
     n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
     n->pos.y = NPC_GroundY(n->pos);
-    n->pos.y -= 0.71f;
 }
 
 // --- General per-NPC update entry point ---
