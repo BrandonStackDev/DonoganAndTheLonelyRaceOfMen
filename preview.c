@@ -885,7 +885,7 @@ int main(void) {
                     vehicleMode = true; donnyMode = false;
                 }
                 else if (!don.isTalking 
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos, don.pos) < 12.82f
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos, don.pos) < 13
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
@@ -923,6 +923,9 @@ int main(void) {
                             StartTimer(&toastTimer);
                             don.xp += 100;
                             missions[MISSION_CLARENCE_CHICKEN].complete = true;
+                            //make clarence not follow us anymore
+                            npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
+                            npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos;
                         }
                         don.who = TALK_TYPE_LUCY_TWO;
                     }
@@ -1076,7 +1079,10 @@ int main(void) {
             if (gpad.btnTriangle > 0 && HasTimerElapsed(&truckInteractTimer) && truckAirState != AIRBORNE)
             {
                 StartTimer(&truckInteractTimer);
-                vehicleMode = false; donnyMode = true;
+                vehicleMode = false; 
+                donnyMode = true;
+                don.xp += (int)(points / 1000);
+                points = 0;
                 don.pos = Vector3Add(truckPosition, (Vector3) {6,1,-5});//todo: why did I put a one here for y?
             }
         }
@@ -1305,7 +1311,17 @@ int main(void) {
             //if (IsKeyDown(KEY_MINUS)) mapZoom -= 0.01f;  // Zoom out (- key)
             //mapZoom = Clamp(mapZoom, 0.5f, 4.0f);
             //end map input
-            if (onLoad && IsKeyPressed(KEY_V)) { vehicleMode = !vehicleMode; donnyMode = false; EnableCursor(); }
+            if (onLoad && IsKeyPressed(KEY_V)) 
+            { 
+                vehicleMode = !vehicleMode; 
+                donnyMode = false;
+                if (!vehicleMode)
+                {
+                    don.xp += (int)(points / 1000);
+                    points = 0;
+                }
+                EnableCursor(); 
+            }
             if (IsKeyPressed(KEY_B)) { displayBoxes = !displayBoxes; }
             if (IsKeyPressed(KEY_L)) { displayLod = !displayLod; }
             if (IsKeyPressed(KEY_F12)) { TakeScreenshotWithTimestamp(); }
@@ -1324,17 +1340,26 @@ int main(void) {
                     SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT); // your preferred windowed size
                 }
             }
-            if (IsKeyPressed(KEY_PAGE_UP)) { chosenX = (chosenX + 1) % CHUNK_COUNT; }
-            if (IsKeyPressed(KEY_PAGE_DOWN)) { chosenY = (chosenY + 1) % CHUNK_COUNT; }
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) { goku = true; move = Vector3Add(move, forward); spd = GOKU_DASH_DIST; TraceLog(LOG_INFO, " --> Instant Transmission -->"); }
-            if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) { goku = true; move = Vector3Add(move, forward); spd = GOKU_DASH_DIST_SHORT; TraceLog(LOG_INFO, " --> Steady does it -->"); }
-            if (IsKeyDown(KEY_W)) move = Vector3Add(move, forward);
-            if (IsKeyDown(KEY_S)) move = Vector3Subtract(move, forward);
-            if (IsKeyDown(KEY_D)) move = Vector3Add(move, right);
-            if (IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
+            if (devDisplay && !donnyMode && !vehicleMode && IsKeyPressed(KEY_PAGE_UP)) { chosenX = (chosenX + 1) % CHUNK_COUNT; }
+            if (devDisplay && !donnyMode && !vehicleMode && IsKeyPressed(KEY_PAGE_DOWN)) { chosenY = (chosenY + 1) % CHUNK_COUNT; }
+            if (devDisplay && !donnyMode && !vehicleMode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) { goku = true; move = Vector3Add(move, forward); spd = GOKU_DASH_DIST; TraceLog(LOG_INFO, " --> Instant Transmission -->"); }
+            if (devDisplay && !donnyMode && !vehicleMode && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) { goku = true; move = Vector3Add(move, forward); spd = GOKU_DASH_DIST_SHORT; TraceLog(LOG_INFO, " --> Steady does it -->"); }
+            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_W)) move = Vector3Add(move, forward);
+            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_S)) move = Vector3Subtract(move, forward);
+            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_D)) move = Vector3Add(move, right);
+            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
             if (IsKeyPressed(KEY_Z)) { dayTime = !dayTime; }
-            if (IsKeyPressed(KEY_LEFT_CONTROL)) { donnyMode = !donnyMode; vehicleMode = false; }
-            if (IsKeyDown(KEY_ENTER)) { chunks[chosenX][chosenY].curTreeIdx = 0; closestCX = chosenX; closestCY = chosenY; camera.position.x = chunks[closestCX][closestCY].center.x; camera.position.z = chunks[closestCX][closestCY].center.z; }
+            if (IsKeyPressed(KEY_LEFT_CONTROL)) 
+            { 
+                donnyMode = !donnyMode; 
+                if (vehicleMode)
+                {
+                    don.xp += (int)(points / 1000);
+                    points = 0;
+                }
+                vehicleMode = false;
+            }
+            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_ENTER)) { chunks[chosenX][chosenY].curTreeIdx = 0; closestCX = chosenX; closestCY = chosenY; camera.position.x = chunks[closestCX][closestCY].center.x; camera.position.z = chunks[closestCX][closestCY].center.z; }
         }
         else if (don.isTalking)
         {
@@ -3161,10 +3186,17 @@ int main(void) {
             DrawRectangle(SCREEN_WIDTH - (don.maxHealth + 10) - 8, 162, don.health, 6, DARKGREEN);
             DrawRectangleLines(SCREEN_WIDTH - (don.maxMana + 10) - 10, 180, don.maxMana+4, 10, BLACK);
             DrawRectangle(SCREEN_WIDTH - (don.maxMana + 10) - 8, 182, don.mana, 6, BLUE);
-            if (!devDisplay)
+            if (!devDisplay && onLoad)
             {
-                DrawText(TextFormat("XP: %d", don.xp), 10, 30, 20, RAYWHITE);
-                DrawText(TextFormat("LEVEL: %d", don.level), 10, 50, 20, RAYWHITE);
+                if (donnyMode)
+                {
+                    DrawText(TextFormat("XP: %d", don.xp), 10, 30, 20, RAYWHITE);
+                    DrawText(TextFormat("LEVEL: %d", don.level), 10, 50, 20, RAYWHITE);
+                }
+                else if (vehicleMode)
+                {
+                    DrawText(TextFormat("POINTS: %d", points), 10, 30, 20, RAYWHITE);
+                }
             }
         }
         if (donnyMode && don.isTalking)
