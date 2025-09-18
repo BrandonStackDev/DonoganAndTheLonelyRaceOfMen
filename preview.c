@@ -615,6 +615,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_ATREYU] = (POI){ POI_TYPE_ATREYU , &atreyuPos };
     InteractivePoints[POI_TYPE_DARREL] = (POI){ POI_TYPE_DARREL , &npcs[NPC_DARREL].pos};
     InteractivePoints[POI_TYPE_CHICKEN] = (POI){ POI_TYPE_CHICKEN , &npcs[NPC_CHICKEN].pos };
+    InteractivePoints[POI_TYPE_LUCY] = (POI){ POI_TYPE_LUCY , &npcs[NPC_LUCY].pos };
     //init the stuff before launching thread launcher
     //INIT
     //----------------------init chunks---------------------
@@ -883,22 +884,13 @@ int main(void) {
                     don.who = TALK_TYPE_TOL;
                     StartTimer(&don.talkStartTimer);
                 }
-                else if (!HasTimerElapsed(&gGame.HonkedHornRecently) //carhorn comes first, most pressing
-                    && !don.isTalking
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.03f
-                    && HasTimerElapsed(&don.talkStartTimer))
-                {
-                    ResetTimer(&gGame.HonkedHornRecently);//just once
-                    don.isTalking = true;
-                    don.who = TALK_TYPE_ATREYU_CAR_HORN;
-                    StartTimer(&don.talkStartTimer);
-                }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.02f
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
                     don.who = TALK_TYPE_ATREYU;
+                    if (!HasTimerElapsed(&gGame.HonkedHornRecently)) { don.who = TALK_TYPE_ATREYU_CAR_HORN; }
                     StartTimer(&don.talkStartTimer);
                 }
                 else if (!don.isTalking
@@ -910,6 +902,15 @@ int main(void) {
                     npcs[NPC_DARREL].state = DARREL_STATE_TALK;
                     StartTimer(&don.talkStartTimer);
                 }
+                else if (!don.isTalking
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_LUCY].pos, don.pos) < 12.00f
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_LUCY_ONE; //--->>> TODO: When mission complete for chicken, change to two
+                    npcs[NPC_LUCY].state = LUCY_STATE_TALK;
+                    StartTimer(&don.talkStartTimer);
+                }
                 else if (don.isTalking && HasTimerElapsed(&don.talkStartTimer))//timer prevents entering and exiting quickly, this is the exit talking routine...
                 {
                     Conv_Clear();
@@ -918,6 +919,10 @@ int main(void) {
                     if (don.who == TALK_TYPE_DARREL)
                     {
                         npcs[NPC_DARREL].state = DARREL_STATE_CONFUSED;
+                    }
+                    else if (don.who == TALK_TYPE_LUCY_ONE || don.who == TALK_TYPE_LUCY_TWO)
+                    {
+                        npcs[NPC_LUCY].state = LUCY_STATE_HELLO;
                     }
                 }
                 //end else if//the rest can happen all at once with something else

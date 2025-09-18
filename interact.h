@@ -84,11 +84,28 @@ static const char* SHEET_DARREL =
 "Stay in character. Do not mention being an AI or models.\n";
 static const char* SHEET_DARREL_DEFAULT = "This is the Tree of Life...Its kind of small...?\n";
 
+static const char* SHEET_LUCY_ONE =
+"You are Lucy, A kind old women of 73. She is at her home.\n"
+"You speak in simple sentences. Your chicken (Clarence) wondered down the road and is lost. You need Donogan to go get him.\n"
+"Tone: Concerned for the chicken.\n"
+"Stay in character. Do not mention being an AI or models. Keep responses brief.\n";
+static const char* SHEET_LUCY_ONE_DEFAULT = "Clarence my chicken is missing! Will you help me look for him?\n";
+
+static const char* SHEET_LUCY_TWO =
+"You are Lucy, A kind old women of 73. She is at her home.\n"
+"You speak in simple sentences. Donogan brought your chicken (Clarence) back and you are grateful.\n"
+"Tone: Very thankful.\n"
+"IF Donogan asks, the Tree of Life is in a gorge near the center of the mainland."
+"Stay in character. Do not mention being an AI or models. Keep responses brief.\n";
+static const char* SHEET_LUCY_TWO_DEFAULT = "Thank you for finding Clarence! The tree of Life is near the center of the mainland in a large gorge.\n";
+
 typedef enum {
     TALK_TYPE_TOL,
     TALK_TYPE_ATREYU,
     TALK_TYPE_ATREYU_CAR_HORN,
-    TALK_TYPE_DARREL
+    TALK_TYPE_DARREL,
+    TALK_TYPE_LUCY_ONE,
+    TALK_TYPE_LUCY_TWO,
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
 
@@ -99,6 +116,8 @@ static inline const char* GetCharacterSheet(TALK_TYPE who)
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU;
     case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN;
     case TALK_TYPE_DARREL:         return SHEET_DARREL;
+    case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE;
+    case TALK_TYPE_LUCY_TWO:         return SHEET_LUCY_TWO;
     default:              return "?";
     }
 }
@@ -110,6 +129,8 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU_DEFAULT;
     case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN_DEFAULT;
     case TALK_TYPE_DARREL:         return SHEET_DARREL_DEFAULT;
+    case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE_DEFAULT;
+    case TALK_TYPE_LUCY_TWO:         return SHEET_LUCY_TWO_DEFAULT;
     default:              return "?";
     }
 }
@@ -127,6 +148,7 @@ typedef enum {
     POI_TYPE_ATREYU,
     POI_TYPE_DARREL,
     POI_TYPE_CHICKEN,
+    POI_TYPE_LUCY,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
