@@ -535,6 +535,7 @@ int main(void) {
     Texture don_head = LoadTexture("textures/don_head.png");
     Texture tol_head = LoadTexture("textures/tol_head.png");
     Texture atreyu_head = LoadTexture("textures/atreyu_head.png");
+    Texture darrel_head = LoadTexture("textures/darrel_head.png");
     //truck
     InitTruck();
     //more lb stuff
@@ -3037,6 +3038,7 @@ int main(void) {
             DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
             Texture2D talkee = tol_head;
             if (don.who == TALK_TYPE_ATREYU || don.who == TALK_TYPE_ATREYU_CAR_HORN) { talkee = atreyu_head; }
+            else if (don.who == TALK_TYPE_DARREL) { talkee = darrel_head; }
             src = (Rectangle){ 0, 0, talkee.width, talkee.height };
             dest = (Rectangle){ (res_contain.x + res_contain.width) - 66, (res_contain.y + res_contain.height) - 66, 64, 64 }; //64x64
             DrawTexturePro(talkee, src, dest, (Vector2) { 0, 0 }, 0.0f, WHITE);
