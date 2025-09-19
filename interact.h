@@ -77,6 +77,13 @@ static const char* SHEET_ATREYU_HORN =
 "Stay in character. Do not mention being an AI or models.\n";
 static const char* SHEET_ATREYU_HORN_DEFAULT = "Donogan! Dont blow the truck horn... Please be quiet, I am trying to meditate...\n";
 
+static const char* SHEET_ATREYU_BOW =
+"You are the Indian Warrior Atreyu, the last of the Lenape.\n"
+"You speak in simple sentences. You are trying to meditating on a high peak. You are meeting Donogan for the first time. You give him your bow and arrows. The player holds L2 to use the bow, and R2 to fire.\n"
+"Tone: Wise, gentle\n"
+"Stay in character. Do not mention being an AI or models.\n";
+static const char* SHEET_ATREYU_BOW_DEFAULT = "Here is my bow, you may have it.\n";
+
 static const char* SHEET_DARREL =
 "You are Darrel, just a kindhearted normal guy.\n"
 "You speak in simple sentences. You are convinced that the tree of life is the tiny tree in front of you, when really its a large obvious tree near by. he wonders why its so small tho...?\n"
@@ -103,6 +110,7 @@ typedef enum {
     TALK_TYPE_TOL,
     TALK_TYPE_ATREYU,
     TALK_TYPE_ATREYU_CAR_HORN,
+    TALK_TYPE_ATREYU_BOW,
     TALK_TYPE_DARREL,
     TALK_TYPE_LUCY_ONE,
     TALK_TYPE_LUCY_TWO,
@@ -115,6 +123,7 @@ static inline const char* GetCharacterSheet(TALK_TYPE who)
     case TALK_TYPE_TOL:         return SHEET_TOL;
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU;
     case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN;
+    case TALK_TYPE_ATREYU_BOW:         return SHEET_ATREYU_BOW;
     case TALK_TYPE_DARREL:         return SHEET_DARREL;
     case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE;
     case TALK_TYPE_LUCY_TWO:         return SHEET_LUCY_TWO;
@@ -128,6 +137,7 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
     case TALK_TYPE_TOL:         return SHEET_TOL_DEFAULT;
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU_DEFAULT;
     case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN_DEFAULT;
+    case TALK_TYPE_ATREYU_BOW:         return SHEET_ATREYU_BOW_DEFAULT;
     case TALK_TYPE_DARREL:         return SHEET_DARREL_DEFAULT;
     case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE_DEFAULT;
     case TALK_TYPE_LUCY_TWO:         return SHEET_LUCY_TWO_DEFAULT;
@@ -139,6 +149,10 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
 typedef enum {
     MISSION_NONE = -1,
     MISSION_CLARENCE_CHICKEN,
+    MISSION_FIND_ATREYU,
+    MISSION_FIND_TOL,
+    MISSION_KILL_GHOST,
+    MISSION_KILL_YETI,
     MISSION_TOTAL_COUNT
 } MissionType;
 
@@ -303,14 +317,33 @@ void InitTalkingInteractions()
     Conv_Clear();
 }
 
-void InitTalkingMissions()
+void InitMissions()
 {
     //MISSION_CLARENCE_CHICKEN
     missions[MISSION_CLARENCE_CHICKEN].complete = false;
     missions[MISSION_CLARENCE_CHICKEN].type = MISSION_CLARENCE_CHICKEN;
     missions[MISSION_CLARENCE_CHICKEN].name = "Find Clarence";
     missions[MISSION_CLARENCE_CHICKEN].desc = "Lucy's chicken Clarence is missing, find him and bring him to Lucy.";
-    //todo: atreyu find mission
+    //find and talk to atreyu
+    missions[MISSION_FIND_ATREYU].complete = false;
+    missions[MISSION_FIND_ATREYU].type = MISSION_FIND_ATREYU;
+    missions[MISSION_FIND_ATREYU].name = "Find and Talk to Atreyu";
+    missions[MISSION_FIND_ATREYU].desc = "Find and Talk to Atreyu. He has a gift for you.";
+    //MISSION_FIND_TOL,
+    missions[MISSION_FIND_TOL].complete = false;
+    missions[MISSION_FIND_TOL].type = MISSION_FIND_TOL;
+    missions[MISSION_FIND_TOL].name = "Find and Talk to the Tree of Life";
+    missions[MISSION_FIND_TOL].desc = "Find and Talk to the Tree of Life. It has much wisdom and many poems.";
+    //MISSION_KILL_GHOST,
+    missions[MISSION_KILL_GHOST].complete = false;
+    missions[MISSION_KILL_GHOST].type = MISSION_KILL_GHOST;
+    missions[MISSION_KILL_GHOST].name = "Kill 10 Ghosts";
+    missions[MISSION_KILL_GHOST].desc = "Kill 10 Ghosts.";
+    //MISSION_KILL_YETI,
+    missions[MISSION_KILL_YETI].complete = false;
+    missions[MISSION_KILL_YETI].type = MISSION_KILL_YETI;
+    missions[MISSION_KILL_YETI].name = "Kill 10 Yetis";
+    missions[MISSION_KILL_YETI].desc = "Kill 10 Yetis.";
 }
 
 // Draw text using font inside rectangle limits with support for text selection

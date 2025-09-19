@@ -22,6 +22,10 @@ typedef enum {
     BG_TYPE_COUNT
 } BadGuyType;
 
+//kill counters (sum for total)
+int ghostKillCount;
+int yetiKillCount;
+
 typedef enum {
     ATTACK_PUNCH,
     ATTACK_BALL,
@@ -446,6 +450,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
             StartTimer(&b->respawnTimer);
             ResetTimer(&b->interactionTimer);
             d->xp += 10;
+            ghostKillCount++;
         }
     }break;
     default: {}
@@ -607,13 +612,13 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
             StartTimer(&b->respawnTimer);
             ResetTimer(&b->interactionTimer);
             d->xp += 50;
+            yetiKillCount++;
         }
         if (b->animFrame >= b->anims[b->curAnim].frameCount - 1) {
             BG_SetAnim(b, ANIM_YETI_ROAR, true);
         }
         break;
     case YETI_STATE_DEAD: //todo: why did we never reach this code?
-        // You can add timers/effects here. For now, deactivate on "dead".
         b->active = false; b->dead = true;
         bgModelBorrower[b->gbm_index].isInUse = false;
         b->gbm_index = -1;
@@ -878,4 +883,5 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
     }
     return false;
 }
+
 #endif // BG_H

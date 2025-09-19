@@ -355,7 +355,7 @@ int main(void) {
     //talking
     InitTalkingInteractions();
     //missions
-    InitTalkingMissions();
+    InitMissions();
     //env bounding boxes, duct tape
     GoGoGadgetDuctTape();
     Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
@@ -706,6 +706,21 @@ int main(void) {
     StartTimer(&don.hitTimer);
     long loop_counter = 0;
     while (!WindowShouldClose()) {
+        //detect general missions for completion (the non talking triggered missions)
+        if (!missions[MISSION_KILL_GHOST].complete && ghostKillCount >= 10)
+        {
+            toast = "Completed mission! You killed ten Ghosts!";
+            StartTimer(&toastTimer);
+            don.xp += 100;
+            missions[MISSION_KILL_GHOST].complete = true;
+        }
+        if (!missions[MISSION_KILL_YETI].complete && yetiKillCount >= 10)
+        {
+            toast = "Completed mission! You killed ten Yetis!";
+            StartTimer(&toastTimer);
+            don.xp += 150;
+            missions[MISSION_KILL_YETI].complete = true;
+        }
         //handle health and mana re-gen, xp to level conversion as well
         don.level = (int)(don.xp / 100) + 1;
         if (loop_counter % 999 == 0)
@@ -927,6 +942,14 @@ int main(void) {
                     don.isTalking = true;
                     don.who = TALK_TYPE_TOL;
                     StartTimer(&don.talkStartTimer);
+                    if (!missions[MISSION_FIND_ATREYU].complete)
+                    {
+                        don.who = TALK_TYPE_ATREYU_BOW;
+                        toast = "Completed mission! You found The Tree of Life!";
+                        StartTimer(&toastTimer);
+                        don.xp += 150;
+                        missions[MISSION_FIND_ATREYU].complete = true;
+                    }
                 }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.02f
@@ -934,7 +957,16 @@ int main(void) {
                 {
                     don.isTalking = true;
                     don.who = TALK_TYPE_ATREYU;
-                    if (!HasTimerElapsed(&gGame.HonkedHornRecently)) { don.who = TALK_TYPE_ATREYU_CAR_HORN; }
+                    if (!missions[MISSION_FIND_ATREYU].complete)
+                    {
+                        don.who = TALK_TYPE_ATREYU_BOW;
+                        toast = "Completed mission! You found Atreyu! Got the Bow!";
+                        don.hasBow = true;
+                        StartTimer(&toastTimer);
+                        don.xp += 150;
+                        missions[MISSION_FIND_ATREYU].complete = true;
+                    }
+                    else if (!HasTimerElapsed(&gGame.HonkedHornRecently)) { don.who = TALK_TYPE_ATREYU_CAR_HORN; }
                     StartTimer(&don.talkStartTimer);
                 }
                 else if (!don.isTalking
