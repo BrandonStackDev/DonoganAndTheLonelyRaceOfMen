@@ -219,9 +219,7 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
     fclose(f);
 
     // snap to ground after warps/loads
-#ifdef GetTerrainHeightFromMeshXZ
     d->groundY = GetTerrainHeightFromMeshXZ(d->pos.x, d->pos.z);
-#endif
     DonSnapToGround(d); // :contentReference[oaicite:7]{index=7}
     Menu_ApplyVolumes(gs);
     return true;
