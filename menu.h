@@ -15,6 +15,7 @@
 //#include "donogan.h"    // Donogan (pos, health/mana/max, level, xp)  :contentReference[oaicite:0]{index=0}
 #include "interact.h"   // missions[], fires[], counts, names, desc   :contentReference[oaicite:1]{index=1}
 #include "collision.h"
+#include "core.h"
 
 // --- config ---
 #ifndef MENU_VISIBLE_ROWS
@@ -101,6 +102,7 @@ static inline void  Menu_ScrollClamp(int count, int* sel, int* scroll) {
 // Overwrites file completely on Save (as requested).
 bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
 {
+    PlaySoundVol(menuSaveOrLoad);
     FILE* f = fopen(path ? path : "don.save.txt", "wb");
     if (!f) return false;
 
@@ -143,6 +145,7 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
 
 static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
 {
+    PlaySoundVol(menuSaveOrLoad);
     FILE* f = fopen(path ? path : "don.save.txt", "rb");
     if (!f) return false;
 
@@ -251,6 +254,7 @@ static bool Menu_SaveNow(GameState* gs, Donogan* d) { return SaveGameToFile("don
 static bool Menu_LoadNow(GameState* gs, Donogan* d) { bool ok = LoadGameFromFile("don.save.txt", gs, d); return ok; } //ok...why?
 
 static void Menu_OnTriangle(GameState* gs) {
+    PlaySoundVol(menuBack);
     switch (gs->menuPage) {
     case MENU_PAGE_INVENTORY:
     case MENU_PAGE_OPTIONS:
@@ -275,6 +279,7 @@ static int _BuildLitFires(_LitIdx* out, int cap) {
 
 static void Menu_OnCross(GameState* gs, Donogan* d)
 {
+    PlaySoundVol(menuSelect);
     if (gs->menuPage == MENU_PAGE_MAIN) {
         static const char* entries[] = { "Inventory", "Save", "Load", "Options", "Missions", "Warp" };
         const int count = 6;

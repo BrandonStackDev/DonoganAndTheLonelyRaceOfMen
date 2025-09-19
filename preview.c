@@ -338,6 +338,9 @@ int main(void) {
     //get sound clips
     carHorn = LoadSound("sounds/horn.mp3");
     donScream = LoadSound("sounds/scream.mp3");
+    menuSelect = LoadSound("sounds/select.mp3");
+    menuBack = LoadSound("sounds/back.mp3");
+    menuSaveOrLoad = LoadSound("sounds/save.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -1453,12 +1456,8 @@ int main(void) {
             }
             if(gpad.btnCircle > 0)
             {
-                //displayTruckPoints = !displayTruckPoints;
-                if (!IsSoundPlaying(carHorn)) 
-                { 
-                    PlaySoundVol(carHorn);
-                    StartTimer(&gGame.HonkedHornRecently);
-                }
+                PlaySoundVol(carHorn);
+                StartTimer(&gGame.HonkedHornRecently);
             }
             //some extra stuff for the truck - steering
             steerInput = gpad.normLX * GetFrameTime();

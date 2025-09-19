@@ -2233,7 +2233,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     d->pos = (Vector3){ 2973.70f, 322.00f, 4042.42f };//start at home position after death
                     d->health = d->maxHealth;
                     d->mana = d->maxMana;
-                    if (!IsSoundPlaying(donScream)) { PlaySoundVol(donScream); }
+                    PlaySoundVol(donScream);
                 }
                 break;
 

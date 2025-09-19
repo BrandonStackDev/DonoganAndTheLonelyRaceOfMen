@@ -1026,5 +1026,7 @@ void StartFileManger() { thread_start_detached(FileManagerThread, NULL); }
 
 Sound carHorn;
 Sound donScream;
-
+Sound menuSelect;
+Sound menuBack;
+Sound menuSaveOrLoad;
 #endif // CORE_H

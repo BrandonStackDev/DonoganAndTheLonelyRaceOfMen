@@ -249,7 +249,7 @@ static inline Vector3 YOnly(Vector3 v) { return (Vector3) { v.x, 0.0f, v.z }; }
 
 static void TruckSummonStart(void) {
     truckSummonActive = true;
-    if(!IsSoundPlaying(carHorn)) { PlaySoundVol(carHorn);}
+    PlaySoundVol(carHorn);
 }
 
 static void TruckSummonCancel(void) {
