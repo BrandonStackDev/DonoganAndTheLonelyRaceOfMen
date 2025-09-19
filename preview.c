@@ -774,6 +774,20 @@ int main(void) {
             }
             numCloseProps = j;
         }
+        //document active bg
+        if (onLoad) //todo: && loop_counter%17==0 ?
+        {
+            int j = 0;
+            for (int b = 0; b < bg_count && j < (MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT); b++)
+            {
+                if (bg[b].active) 
+                {
+                    act_bg[j] = b;
+                    j++;
+                }
+            }
+            act_bg_count = j;
+        }
         if (loop_counter % 69 == 0)
         {
             TraceLog(LOG_INFO,"numCloseProps = %d", numCloseProps);
@@ -2365,8 +2379,9 @@ int main(void) {
         for (int a = 0; a < MAX_ARROWS; a++)
         {
             if (!don.arrows[a].alive || don.arrows[a].stuck) { continue; }
-            for (int b = 0; b < bg_count; b++)
+            for (int i = 0; i < act_bg_count; i++)
             {
+                int b = act_bg[i];
                 if (!bg[b].active || bg[b].type == BG_GHOST) { continue; }
                 if (CheckCollisionBoxes(don.arrows[a].box, bg[b].box))
                 {
@@ -2384,8 +2399,9 @@ int main(void) {
         for (int i = 0; i < MAX_BALLS; i++)
         {
             if (!balls[i].alive) { continue; }
-            for (int b = 0; b < bg_count; b++)//todo: culling of some sort on this...
+            for (int k = 0; k < act_bg_count; k++)//todo: culling of some sort on this...
             {
+                int b = act_bg[k];
                 if (!bg[b].active) { continue; }
                 if (bg[b].type == BG_GHOST && bg[b].state != GHOST_STATE_HIT && Vector3Distance(balls[i].pos, bg[b].pos) < balls[i].radius + 1.6f)//little outside the radius, hit!
                 {
@@ -2405,8 +2421,9 @@ int main(void) {
         //donny collision with bg
         if (donnyMode)
         {
-            for (int b = 0; b < bg_count; b++)//maybe we need to one time loop and find all active, and only do that every other loop or so
+            for (int i = 0; i < act_bg_count; i++)//maybe we need to one time loop and find all active, and only do that every other loop or so
             {
+                int b = act_bg[i];
                 if (!bg[b].active) { continue; }
                 if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
                 if (bg[b].type == BG_GHOST && HasTimerElapsed(&don.hitTimer))
@@ -2782,10 +2799,11 @@ int main(void) {
             //bg
             if (onLoad)
             {
-                for (int b = 0; b < bg_count; b++)
+                for (int i = 0; i < act_bg_count; i++)
                 {
-                    //todo: culling
+                    int b = act_bg[i];
                     if (!bg[b].active) { continue; }
+                    if (!IsBoxInFrustum(bg[b].box, frustum)) { continue; }
                     rlDisableBackfaceCulling();
                     DrawBadGuy(&bg[b]);
                     rlEnableBackfaceCulling();

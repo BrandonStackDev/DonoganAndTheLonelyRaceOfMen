@@ -196,6 +196,8 @@ typedef struct {
 } BadGuy;
 //instance of a bad guy, will borrow its model
 
+int act_bg_count = 0;
+int act_bg[MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT]; //store indexes of active bg's so we dont loop alot ever (except for spawning check...)
 BadGuy * bg;
 int total_bg_models_all_types, bg_count;
 
