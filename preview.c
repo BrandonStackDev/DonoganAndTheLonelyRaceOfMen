@@ -985,7 +985,8 @@ int main(void) {
                     }
                 }
                 else if (!missions[MISSION_CLARENCE_CHICKEN].complete //clarence the chicken mission
-                    && HasTimerElapsed(&don.interactionLimitTimer) 
+                    && HasTimerElapsed(&don.interactionLimitTimer)
+                    && HasTimerElapsed(&don.talkStartTimer) //make sure talking to lucy doesnt trigger this on the next pass
                     && (npcs[NPC_CHICKEN].state == CHICKEN_STATE_FOLLOW || Vector3Distance(*InteractivePoints[POI_TYPE_CHICKEN].pos, don.pos) < 12.0f))
                 {
                     StartTimer(&don.interactionLimitTimer);//make sure we dont toggle the state of the chicken really fast
