@@ -736,7 +736,8 @@ void InitBadGuys(Shader ghostShader)
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
 {
-    for (int i = 0; i < bg_count; ++i) {
+    for (int b = 0; b < act_bg_count; ++b) {
+        int i = act_bg[b];
         if (!bg[i].active) { continue; }
         if (Vector3Distance(d->pos, bg[i].pos) > 800) //general guard to help enforce that when don is far away, bad guys get put away
         {

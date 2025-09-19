@@ -775,7 +775,7 @@ int main(void) {
             numCloseProps = j;
         }
         //document active bg
-        if (onLoad) //todo: && loop_counter%17==0 ?
+        if (onLoad && loop_counter % 17 == 0)
         {
             int j = 0;
             for (int b = 0; b < bg_count && j < (MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT); b++)
@@ -788,9 +788,10 @@ int main(void) {
             }
             act_bg_count = j;
         }
-        if (loop_counter % 69 == 0)
+        if (loop_counter % 169 == 0)
         {
             TraceLog(LOG_INFO,"numCloseProps = %d", numCloseProps);
+            TraceLog(LOG_INFO, "act_bg_count = %d", act_bg_count);
         }
         // init disable roll (if we touch a wall, do not allow roll)
         bool disableRoll = false;
