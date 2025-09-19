@@ -1,5 +1,5 @@
 DON_SAVE_V1
-don_pos = 1851.288 361.412 4195.650
+don_pos = 3027.000 316.235 4047.420
 don_health = 100
 don_mana   = 100
 don_starthealth = 100

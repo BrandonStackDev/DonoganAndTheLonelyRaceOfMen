@@ -1455,7 +1455,7 @@ int main(void) {
                 //displayTruckPoints = !displayTruckPoints;
                 if (!IsSoundPlaying(carHorn)) 
                 { 
-                    PlaySound(carHorn);
+                    PlaySoundVol(carHorn);
                     StartTimer(&gGame.HonkedHornRecently);
                 }
             }

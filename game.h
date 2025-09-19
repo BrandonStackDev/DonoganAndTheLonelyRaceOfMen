@@ -51,4 +51,6 @@ typedef struct {
 
 static GameState gGame;
 
+static inline void PlaySoundVol(Sound s) { SetSoundVolume(s, gGame.soundVol); PlaySound(s); }
+
 #endif // GAME_H

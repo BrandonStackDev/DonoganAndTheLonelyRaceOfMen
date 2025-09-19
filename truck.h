@@ -10,6 +10,7 @@
 //me
 #include "timer.h"
 #include "core.h"
+#include "game.h"
 
 #define MAX_TURN_ANGLE 0.26f //radians
 
@@ -248,7 +249,7 @@ static inline Vector3 YOnly(Vector3 v) { return (Vector3) { v.x, 0.0f, v.z }; }
 
 static void TruckSummonStart(void) {
     truckSummonActive = true;
-    if(!IsSoundPlaying(carHorn)) {PlaySound(carHorn);}
+    if(!IsSoundPlaying(carHorn)) { PlaySoundVol(carHorn);}
 }
 
 static void TruckSummonCancel(void) {
