@@ -111,6 +111,7 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
 
     // Donogan stats (position first)
     fprintf(f, "don_pos = %.3f %.3f %.3f\n", d->pos.x, d->pos.y, d->pos.z);
+    fprintf(f, "don_bow = %d\n", d->hasBow);
     fprintf(f, "don_health = %d\n", d->health);
     fprintf(f, "don_mana   = %d\n", d->mana);
     fprintf(f, "don_starthealth = %d\n", d->maxHealth);
@@ -179,6 +180,9 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
         // scalars
         if (!strncmp(s, "don_pos", 7)) {
             float x, y, z; if (sscanf(s, "don_pos = %f %f %f", &x, &y, &z) == 3) { d->pos.x = x; d->pos.y = y; d->pos.z = z; }
+        }
+        else if (!strncmp(s, "don_bow", 7)) {
+            sscanf(s, "don_bow = %d", &d->hasBow);
         }
         else if (!strncmp(s, "don_health", 10)) {
             sscanf(s, "don_health = %d", &d->health);
