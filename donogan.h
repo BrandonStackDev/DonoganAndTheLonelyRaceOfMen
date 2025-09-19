@@ -1735,6 +1735,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         float lx = padPresent ? pad->normLX : 0.0f;
         float ly = padPresent ? pad->normLY : 0.0f;
         bool cross = padPresent ? pad->btnCross : false;
+        if (d->gs->menuOpen)
+        {
+            cross = 0;
+        }
         bool circle = padPresent ? pad->btnCircle : false;
         bool L3 = padPresent ? pad->btnL3 : false;
         bool L2 = padPresent ? pad->btnL2 : false;

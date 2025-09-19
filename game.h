@@ -11,14 +11,26 @@
 #include "timer.h"
 
 typedef enum {
+    MENU_PAGE_NONE = 0,
+    MENU_PAGE_MAIN,
+    MENU_PAGE_INVENTORY,
+    MENU_PAGE_OPTIONS,
+    MENU_PAGE_MISSIONS,
+    MENU_PAGE_MISSION_DETAIL,
+    MENU_PAGE_WARP
+} MenuPage;
+
+typedef enum {
     DIFF_EASY,
     DIFF_NORMAL,
     DIFF_HARD
 } Difficulty;
+
 // Your global game state: add indices & a single active Music object.
 typedef struct {
     bool invY, invX;
     float musicVol, soundVol;
+    Difficulty diff;
 
     // Playback state
     int   currentAlbumIndex;   // -1 if none selected
@@ -26,7 +38,15 @@ typedef struct {
     Music currentMusic;        // currently loaded/playing stream (if any)
     bool  currentMusicLoaded;  // guard for unload/play calls
     Timer HonkedHornRecently;
-    Difficulty diff;
+    
+
+    // --- menu state ---
+    bool     menuOpen;
+    MenuPage menuPage;
+    int      menuSel;
+    int      menuScroll;
+    int      menuDetailIndex; // for mission detail
+    Timer    menuTimer;
 } GameState;
 
 static GameState gGame;

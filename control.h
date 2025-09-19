@@ -36,6 +36,7 @@ typedef struct {
     int btnR2;
     int btnL3;
     int btnR3;
+    int btnStart;
 } ControllerData;
 
 // You read this name elsewhere; make it real.
@@ -85,6 +86,8 @@ static bool ReadControllerWindows(int index, ControllerData* out)
     out->dpad_down = IsGamepadButtonDown(index, GAMEPAD_BUTTON_LEFT_FACE_DOWN);
     out->dpad_left = IsGamepadButtonDown(index, GAMEPAD_BUTTON_LEFT_FACE_LEFT);
     out->dpad_right = IsGamepadButtonDown(index, GAMEPAD_BUTTON_LEFT_FACE_RIGHT);
+
+    out->btnStart = IsGamepadButtonDown(index, GAMEPAD_BUTTON_MIDDLE_RIGHT);//start button
 
     return true;
 }

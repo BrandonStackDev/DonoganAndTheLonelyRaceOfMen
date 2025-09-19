@@ -23,6 +23,7 @@
 #include "game.h"
 #include "bg.h"
 #include "npc.h"
+#include "menu.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -276,6 +277,7 @@ Timer toastTimer;
 /// @param  
 /// @return 
 int main(void) {
+    static bool prevOptions = false;
     toast = "";
     toastTimer = CreateTimer(8);
     StartTimer(&toastTimer);
@@ -319,6 +321,8 @@ int main(void) {
     //game state
     gGame.HonkedHornRecently = CreateTimer(60);//60 seconds
     gGame.diff = DIFF_NORMAL; // default to normal
+    gGame.menuTimer = CreateTimer(0.22f);
+    StartTimer(&gGame.menuTimer);
     //audio
     SetAudioStreamBufferSizeDefault(4096);
     InitAudioDevice();
@@ -627,6 +631,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_CHICKEN] = (POI){ POI_TYPE_CHICKEN , &npcs[NPC_CHICKEN].pos };
     InteractivePoints[POI_TYPE_LUCY] = (POI){ POI_TYPE_LUCY , &npcs[NPC_LUCY].pos };
     //init the stuff before launching thread launcher
+    InitMenu();//just for some color stuff
     //INIT
     //----------------------init chunks---------------------
     chunks = malloc(sizeof(Chunk *) * CHUNK_COUNT);
@@ -773,6 +778,8 @@ int main(void) {
             gpad.normRX = s_rx;
             gpad.normRY = s_ry;
         }
+        else if (HasTimerElapsed(&gGame.menuTimer) && gpad.btnStart) { Menu_Toggle(&gGame); StartTimer(&gGame.menuTimer); } //toggle the menu
+
         //music selection
         if (onLoad)
         {
@@ -782,14 +789,15 @@ int main(void) {
             int dLeft = gpad.dpad_left > 0;
             int dRight = gpad.dpad_right > 0;
 
-            // Rising edges = single press
-            if (dUp && !prevDpadUp)    Audio_SelectAlbumRelative(-1); // previous album
-            if (dDown && !prevDpadDown)  Audio_SelectAlbumRelative(+1); // next album
-            if (dLeft && !prevDpadLeft)  Audio_SelectSongRelative(-1);  // previous track
-            if (dRight && !prevDpadRight) Audio_SelectSongRelative(+1);  // next track
-
+            if (Menu_IsOpen(&gGame))
+            {
+                // Rising edges = single press
+                if (dUp && !prevDpadUp)    Audio_SelectAlbumRelative(-1); // previous album
+                if (dDown && !prevDpadDown)  Audio_SelectAlbumRelative(+1); // next album
+                if (dLeft && !prevDpadLeft)  Audio_SelectSongRelative(-1);  // previous track
+                if (dRight && !prevDpadRight) Audio_SelectSongRelative(+1);  // next track
+            }
             prevDpadUp = dUp; prevDpadDown = dDown; prevDpadLeft = dLeft; prevDpadRight = dRight;
-
         }
         if (vehicleMode) 
         { 
@@ -878,7 +886,7 @@ int main(void) {
             camera.position.y = camera.target.y + radius * sinf(pitch);
             camera.position.z = camera.target.z + radius * cosf(pitch) * cosf(yaw);
 
-            if (gpad.btnTriangle > 0)//handle triangle interactions here, dont debounce here incase we want a cumulative feel, like a lawn mower that doesnt want to start right away sort of thing
+            if (gpad.btnTriangle > 0 && !Menu_IsOpen(&gGame))//handle triangle interactions here, dont debounce here incase we want a cumulative feel, like a lawn mower that doesnt want to start right away sort of thing
             {
                 if (!don.isTalking 
                     && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
@@ -1079,7 +1087,7 @@ int main(void) {
                     if (truckAirState == AIRBORNE) { points += 650; }//points 
                 }
             }
-            if (gpad.btnTriangle > 0 && HasTimerElapsed(&truckInteractTimer) && truckAirState != AIRBORNE)
+            if (!Menu_IsOpen(&gGame) && gpad.btnTriangle > 0 && HasTimerElapsed(&truckInteractTimer) && truckAirState != AIRBORNE)
             {
                 StartTimer(&truckInteractTimer);
                 vehicleMode = false; 
@@ -1991,7 +1999,7 @@ int main(void) {
                 } 
                 else
                 { //not airborne, either landing or ground
-                    if(gpad.btnCross>0)
+                    if(!Menu_IsOpen(&gGame) && gpad.btnCross>0)
                     {
                         truckAirState=AIRBORNE;
                         truckPosition.y+=1.28;
@@ -3201,6 +3209,10 @@ int main(void) {
                     DrawText(TextFormat("POINTS: %d", points), 10, 30, 20, RAYWHITE);
                 }
             }
+        }
+        if (onLoad)
+        {
+            Menu_DrawOverlay(&gGame, &don);
         }
         if (donnyMode && don.isTalking)
         {
