@@ -295,6 +295,8 @@ int main(void) {
     Vector3 donMove = (Vector3){ 0 };
     ControllerData gpad = { 0 };
     bool havePad = false;
+    int prevCross = 0;
+    int prevTri = 0;
     float moveMag = 0.0f;
     // --- Third-person orbit camera state (around don.pos) ---
     float yaw = 0.0f, pitch = 0.25f, radius = 14.0f;
@@ -780,7 +782,7 @@ int main(void) {
         }
         else if (HasTimerElapsed(&gGame.menuTimer) && gpad.btnStart) { Menu_Toggle(&gGame); StartTimer(&gGame.menuTimer); } //toggle the menu
 
-        //music selection
+        //music/start menu selection
         if (onLoad)
         {
             // --- D-pad album/song navigation (edge-triggered) ---
@@ -796,6 +798,25 @@ int main(void) {
                 if (dDown && !prevDpadDown)  Audio_SelectAlbumRelative(+1); // next album
                 if (dLeft && !prevDpadLeft)  Audio_SelectSongRelative(-1);  // previous track
                 if (dRight && !prevDpadRight) Audio_SelectSongRelative(+1);  // next track
+            }
+            else
+            {
+                // Route D-pad + Cross/Triangle to the menu (edge-triggered)
+                int cross = gpad.btnCross > 0;
+                int tri = gpad.btnTriangle > 0;
+
+                if (dUp && !prevDpadUp)    Menu_OnUp(&gGame);
+                if (dDown && !prevDpadDown)  Menu_OnDown(&gGame);
+                if (dLeft && !prevDpadLeft)  Menu_OnLeft(&gGame);
+                if (dRight && !prevDpadRight) Menu_OnRight(&gGame);
+
+                if (cross && !prevCross)      Menu_OnCross(&gGame, &don);
+                if (tri && !prevTri)        Menu_OnTriangle(&gGame);
+
+                // remember button states for next frame
+                prevCross = cross;
+                prevTri = tri;
+
             }
             prevDpadUp = dUp; prevDpadDown = dDown; prevDpadLeft = dLeft; prevDpadRight = dRight;
         }
