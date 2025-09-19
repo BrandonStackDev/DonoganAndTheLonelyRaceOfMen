@@ -562,15 +562,15 @@ static inline void DrawLasers(void) {
         float w = L->width * (0.65f + 0.35f * t); // small shrink over time
 
         // soft outer pass (cheap glow)
-        Color halo = (Color){ 40, 60, 200, (unsigned char)(90.0f * t) };
+        Color halo = (Color){ 200, 60, 40, (unsigned char)(90.0f * t) };
         DrawCylinderEx(L->a, L->b, w * 2.2f, w * 2.2f, 8, halo);
 
         // bright core
-        Color core = (Color){ 220, 240, 255, (unsigned char)(220.0f * t) };
+        Color core = (Color){ 255, 100, 100, (unsigned char)(220.0f * t) };
         DrawCylinderEx(L->a, L->b, w, w, 10, core);
 
         // end caps
-        DrawSphere(L->a, w * 0.9f, (Color) { 120, 180, 255, (unsigned char)(180.0f * t) });
+        DrawSphere(L->a, w * 0.9f, (Color) { 255, 180, 200, (unsigned char)(180.0f * t) });
         DrawSphere(L->b, w * 1.2f, core);
     }
     EndBlendMode();
