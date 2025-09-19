@@ -339,7 +339,7 @@ typedef struct {
     Vector3 bowEulerDeg;     // local rotation (degrees)
     float   bowScale;
     int bowBoneIndex;
-    bool     bowMode;
+    bool     bowMode, hasBow;
     bool     prevL2Held;   // edge-detect L2
     float    bowBlend;     // 0..1 simple raise/settle timer if you want later
     bool prevL2;
@@ -1401,6 +1401,7 @@ static Donogan InitDonogan(void)
 
     // bow mode state
     d.bowMode = false;
+    d.hasBow = false;
     d.prevL2Held = false;
     d.bowBlend = 0.0f;
 
@@ -1742,7 +1743,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         bool circle = padPresent ? pad->btnCircle : false;
         bool L3 = padPresent ? pad->btnL3 : false;
         bool L2 = padPresent ? pad->btnL2 : false;
-        bool L2Pressed = L2 && !d->prevL2;
+        bool L2Pressed = d->hasBow && L2 && !d->prevL2; //prevent the bow mode if not have bow
         bool L2Released = !L2 && d->prevL2;
         bool R2 = padPresent ? pad->btnR2 : false;
         bool R2Pressed = (R2 && !d->prevR2);
