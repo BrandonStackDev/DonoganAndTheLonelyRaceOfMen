@@ -73,6 +73,10 @@ typedef enum {
 } TypeLOD;
 
 typedef struct {
+    Model model;
+    BoundingBox box;
+} WaterModel;
+typedef struct {
     int id;
     int cx;
     int cy;
@@ -104,7 +108,7 @@ typedef struct {
     StaticGameObject* props;
     int treeCount;
     int curTreeIdx;
-    Model* water;
+    WaterModel* water;
     int waterCount;
     bool waterReady;//in RAM
     bool waterLoaded;//in GPU
@@ -541,14 +545,15 @@ void OpenWaterObjects(Shader shader) {
                 if (model.meshCount > 0) {
                     // Allocate if needed
                     if (chunks[cx][cy].water == NULL) {
-                        chunks[cx][cy].water = MemAlloc(sizeof(Model) * MAX_WATER_PATCHES_PER_CHUNK);
+                        chunks[cx][cy].water = MemAlloc(sizeof(WaterModel) * MAX_WATER_PATCHES_PER_CHUNK);
                         chunks[cx][cy].waterCount = 0;
                     }
 
                     if (chunks[cx][cy].waterCount < MAX_WATER_PATCHES_PER_CHUNK) {
-                        chunks[cx][cy].water[chunks[cx][cy].waterCount] = model;
-                        chunks[cx][cy].water[chunks[cx][cy].waterCount].materials[0].shader = shader;
-                        chunks[cx][cy].water[chunks[cx][cy].waterCount].materials[0].maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 0, 100, 255, 255 }; // semi-transparent blue;
+                        chunks[cx][cy].water[chunks[cx][cy].waterCount].model = model;
+                        chunks[cx][cy].water[chunks[cx][cy].waterCount].model.materials[0].shader = shader;
+                        chunks[cx][cy].water[chunks[cx][cy].waterCount].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 0, 100, 255, 255 }; // semi-transparent blue;
+                        chunks[cx][cy].water[chunks[cx][cy].waterCount].box = GetModelBoundingBox(chunks[cx][cy].water[chunks[cx][cy].waterCount].model); //absolute object position so no need to update box
                         chunks[cx][cy].waterCount++;
                         TraceLog(LOG_INFO, "Loaded water model: %s", path);
                         chunks[cx][cy].waterReady = true;

@@ -1265,7 +1265,7 @@ int main(void) {
                     MUTEX_LOCK(mutex);
                     for (int w = 0; w < chunks[cx][cy].waterCount; w++)
                     {
-                        UploadMesh(&chunks[cx][cy].water[w].meshes[0], false);
+                        UploadMesh(&chunks[cx][cy].water[w].model.meshes[0], false);
                     }
                     chunks[cx][cy].waterLoaded = true;
                     MUTEX_UNLOCK(mutex);
@@ -3012,28 +3012,6 @@ int main(void) {
                             EndShaderMode();
                             if(onLoad)//only once we have fully loaded everything
                             {
-                                //handle water first
-                                for (int w=0; w<chunks[cx][cy].waterCount; w++)
-                                {
-                                    glEnable(GL_POLYGON_OFFSET_FILL);
-                                    glPolygonOffset(-1.0f, -1.0f); // Push water slightly forward in Z-buffer
-                                    rlDisableBackfaceCulling();
-                                    Vector3 cameraPos = camera.position;
-                                    Vector3 waterPos = { 0, WATER_Y_OFFSET, 0 };
-                                    // Get direction from patch to camera
-                                    Vector3 toCamera = Vector3Subtract(waterPos, cameraPos);
-                                    // Scale it down to something subtle, like 5%
-                                    Vector3 shift = Vector3Scale(toCamera, 0.05f);
-                                    // Final draw position is nudged toward the player
-                                    Vector3 drawPos = Vector3Add(waterPos, shift);
-                                    Vector2 offset = (Vector2){ w * cx, w * cy };
-                                    SetShaderValue(waterShader, offsetLoc, &offset, SHADER_UNIFORM_VEC2);
-                                    BeginShaderMode(waterShader);
-                                    DrawModel(chunks[cx][cy].water[w], drawPos, 1.0f, (Color){ 0, 100, 253, 232 });
-                                    EndShaderMode();
-                                    rlEnableBackfaceCulling();
-                                    glDisable(GL_POLYGON_OFFSET_FILL);
-                                }
                                 if(USE_GPU_INSTANCING) //GPU INSTANCING FOR CLOSE STATIC PROPS
                                 {
                                     int counter[MODEL_TOTAL_COUNT] = {0,0};
@@ -3086,31 +3064,6 @@ int main(void) {
                             BeginShaderMode(heightShaderLight);
                             DrawModel(chunks[cx][cy].model32, chunks[cx][cy].position, MAP_SCALE, displayLod?BLUE:WHITE);
                             EndShaderMode();
-                            for (int w=0; w<chunks[cx][cy].waterCount; w++)
-                            {
-                                glEnable(GL_POLYGON_OFFSET_FILL);
-                                glPolygonOffset(-1.0f, -1.0f); // Push water slightly forward in Z-buffer
-                                rlDisableBackfaceCulling();
-                                //rlDisableDepthMask();
-                                //BeginBlendMode(BLEND_ALPHA);
-                                Vector3 cameraPos = camera.position;
-                                Vector3 waterPos = { 0, WATER_Y_OFFSET, 0 };
-                                // Get direction from patch to camera
-                                Vector3 toCamera = Vector3Subtract(waterPos, cameraPos);
-                                // Scale it down to something subtle, like 5%
-                                Vector3 shift = Vector3Scale(toCamera, 0.05f);
-                                // Final draw position is nudged toward the player
-                                Vector3 drawPos = Vector3Add(waterPos, shift);
-                                Vector2 offset = (Vector2){ w * cx, w * cy };
-                                SetShaderValue(waterShader, offsetLoc, &offset, SHADER_UNIFORM_VEC2);
-                                BeginShaderMode(waterShader);
-                                DrawModel(chunks[cx][cy].water[w], drawPos, 1.0f, (Color){ 0, 100, 254, 180 });
-                                EndShaderMode();
-                                //EndBlendMode();
-                                //rlEnableDepthMask();
-                                rlEnableBackfaceCulling();
-                                glDisable(GL_POLYGON_OFFSET_FILL);
-                            }
                         }
                         else if(chunks[cx][cy].lod == LOD_16 && IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8) && cx!=0 && cx!=15 && cy!=0 && cy!=15) {
                             chunkBcCount++;
@@ -3125,6 +3078,41 @@ int main(void) {
                         if(displayBoxes){DrawBoundingBox(chunks[cx][cy].box,YELLOW);}
                     }
                     else {loadedEem = false;}
+                }
+            }
+            if (onLoad) //handle water last because of its transparency, only draw once loaded
+            {
+                //water
+                for (int cy = 0; cy < CHUNK_COUNT; cy++) {
+                    for (int cx = 0; cx < CHUNK_COUNT; cx++) {
+                        if (chunks[cx][cy].isLoaded)
+                        {
+                            //handle water last
+                            for (int w = 0; w < chunks[cx][cy].waterCount; w++)
+                            {
+                                if (chunks[cx][cy].lod!=LOD_64 && !IsBoxInFrustum(chunks[cx][cy].water[w].box, frustumChunk8)) { continue; }
+                                glEnable(GL_POLYGON_OFFSET_FILL);
+                                glPolygonOffset(-1.0f, -1.0f); // Push water slightly forward in Z-buffer
+                                rlDisableBackfaceCulling();
+                                Vector3 cameraPos = camera.position;
+                                Vector3 waterPos = { 0, WATER_Y_OFFSET, 0 };
+                                // Get direction from patch to camera
+                                Vector3 toCamera = Vector3Subtract(waterPos, cameraPos);
+                                // Scale it down to something subtle, like 5%
+                                Vector3 shift = Vector3Scale(toCamera, 0.05f);
+                                // Final draw position is nudged toward the player
+                                Vector3 drawPos = Vector3Add(waterPos, shift);
+                                Vector2 offset = (Vector2){ w * cx, w * cy };
+                                SetShaderValue(waterShader, offsetLoc, &offset, SHADER_UNIFORM_VEC2);
+                                BeginShaderMode(waterShader);
+                                DrawModel(chunks[cx][cy].water[w].model, drawPos, 1.0f, (Color) { 0, 100, 253, 232 });
+                                EndShaderMode();
+                                rlEnableBackfaceCulling();
+                                glDisable(GL_POLYGON_OFFSET_FILL);
+                                if (displayBoxes) { DrawBoundingBox(chunks[cx][cy].water[w].box, VIOLET); }
+                            }
+                        }
+                    }
                 }
             }
             //rlEnableBackfaceCulling();
