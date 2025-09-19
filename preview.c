@@ -789,7 +789,7 @@ int main(void) {
             int dLeft = gpad.dpad_left > 0;
             int dRight = gpad.dpad_right > 0;
 
-            if (Menu_IsOpen(&gGame))
+            if (!Menu_IsOpen(&gGame))
             {
                 // Rising edges = single press
                 if (dUp && !prevDpadUp)    Audio_SelectAlbumRelative(-1); // previous album
