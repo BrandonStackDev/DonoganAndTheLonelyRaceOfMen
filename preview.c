@@ -300,6 +300,7 @@ int main(void) {
     float moveMag = 0.0f;
     // --- Third-person orbit camera state (around don.pos) ---
     float yaw = 0.0f, pitch = 0.25f, radius = 14.0f;
+    int oldLevel = 0;
     //day-night timer
     Timer nightTimer = CreateTimer(128); //128 seconds, just above 2 minutes
 
@@ -730,7 +731,14 @@ int main(void) {
             missions[MISSION_KILL_YETI].complete = true;
         }
         //handle health and mana re-gen, xp to level conversion as well
+        oldLevel = don.level;
         don.level = (int)(don.xp / 100) + 1;
+        if (don.level != oldLevel && don.level%5==0) {
+            don.maxHealth += 2;
+            don.maxMana += 2;
+            if (don.maxHealth > 160) { don.maxHealth = 160; }//cap em
+            if (don.maxMana > 160) { don.maxMana = 160; }//cap em
+        } //we just raised up, and then level is divisable by five, increase our health
         if (loop_counter % 999 == 0)
         {
             don.health += 1;
