@@ -781,7 +781,8 @@ int main(void) {
             gpad.normRY = s_ry;
         }
         else if (HasTimerElapsed(&gGame.menuTimer) && gpad.btnStart) { Menu_Toggle(&gGame); StartTimer(&gGame.menuTimer); } //toggle the menu
-
+        if (gGame.invY) { gpad.ry = -gpad.ry;  gpad.normRY = -gpad.normRY;}
+        if (gGame.invX) { gpad.rx = -gpad.rx;  gpad.normRX = -gpad.normRX; }
         //music/start menu selection
         if (onLoad)
         {
@@ -983,9 +984,7 @@ int main(void) {
                         npcs[NPC_LUCY].state = LUCY_STATE_HELLO;
                     }
                 }
-                //end else if//the rest can happen all at once with something else
-                //clarence the chicken mission
-                if (!missions[MISSION_CLARENCE_CHICKEN].complete
+                else if (!missions[MISSION_CLARENCE_CHICKEN].complete //clarence the chicken mission
                     && HasTimerElapsed(&don.interactionLimitTimer) 
                     && (npcs[NPC_CHICKEN].state == CHICKEN_STATE_FOLLOW || Vector3Distance(*InteractivePoints[POI_TYPE_CHICKEN].pos, don.pos) < 12.0f))
                 {
@@ -999,7 +998,8 @@ int main(void) {
                     }
                     else //exit follow mode
                     {
-                        toast = "Clarence is no longer following you...";
+                        toast = "Clarence is no longer following you";
+                        StartTimer(&toastTimer);
                         npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
                         npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos;
                         TraceLog(LOG_INFO, "Chicken tenders .... mmmm");
