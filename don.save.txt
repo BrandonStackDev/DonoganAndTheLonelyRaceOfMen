@@ -1,12 +1,12 @@
 DON_SAVE_V1
-don_pos = -3796.662 331.294 1377.962
-don_bow = 1
+don_pos = 3027.000 316.235 4047.420
+don_bow = 0
 don_health = 100
 don_mana   = 100
 don_starthealth = 100
 don_startmana   = 100
-don_level  = 17
-don_xp     = 1665
+don_level  = 2
+don_xp     = 112
 invY = 0
 invX = 0
 musicVol = 1.0000
@@ -14,11 +14,13 @@ soundVol = 1.0000
 difficulty = 1
 --FIREPLACES-BEGIN--
 FIRE[0] = 1
+FIRE[1] = 0
+FIRE[2] = 0
 --FIREPLACES-END--
 --MISSIONS-BEGIN--
 MISSION[0] = 1
-MISSION[1] = 1
-MISSION[2] = 1
-MISSION[3] = 1
-MISSION[4] = 1
+MISSION[1] = 0
+MISSION[2] = 0
+MISSION[3] = 0
+MISSION[4] = 0
 --MISSIONS-END--

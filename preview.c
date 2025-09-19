@@ -286,7 +286,7 @@ int main(void) {
     MUTEX_INIT(mutex);
     bool displayBoxes = false;
     bool displayLod = false;
-    bool dopped_firepits = false;
+    bool dropped_firepits = false;
     LightningBug *bugs;
     Star *stars;
     bool vehicleMode = false;
@@ -624,10 +624,16 @@ int main(void) {
     // }
     //fireplaces
     Model firepit = LoadModel("models/firepit.obj");
-    firepit.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/firepit.png");;
+    firepit.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/firepit.png");
     fires[FIREPIT_HOME].location = FIREPIT_HOME;
     fires[FIREPIT_HOME].pos = (Vector3){ 3022.00f, 319.00f, 4042.42f };
     fires[FIREPIT_HOME].name = "Home";
+    fires[FIREPIT_CASTLE].location = FIREPIT_CASTLE;
+    fires[FIREPIT_CASTLE].pos = (Vector3){ 2619.73f, 481, 1385 };
+    fires[FIREPIT_CASTLE].name = "Castle";
+    fires[FIREPIT_VILLAGE].location = FIREPIT_VILLAGE;
+    fires[FIREPIT_VILLAGE].pos = (Vector3){ -3743, 327, 1069 };
+    fires[FIREPIT_VILLAGE].name = "Village";
     // INIT INTERACTIVE POINTS OF INTEREST
     InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
     InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
@@ -706,7 +712,7 @@ int main(void) {
     StartTimer(&don.hitTimer);
     long loop_counter = 0;
     while (!WindowShouldClose()) {
-        //detect general missions for completion (the non talking triggered missions)
+        //detect general missions for completion (the non talking/interaction triggered missions)
         if (!missions[MISSION_KILL_GHOST].complete && ghostKillCount >= 10)
         {
             toast = "Completed mission! You killed ten Ghosts!";
@@ -801,6 +807,8 @@ int main(void) {
         else if (HasTimerElapsed(&gGame.menuTimer) && gpad.btnStart) { Menu_Toggle(&gGame); StartTimer(&gGame.menuTimer); } //toggle the menu
         if (gGame.invY) { gpad.ry = -gpad.ry;  gpad.normRY = -gpad.normRY;}
         if (gGame.invX) { gpad.rx = -gpad.rx;  gpad.normRX = -gpad.normRX; }
+        int tri = gpad.btnTriangle > 0;
+        int cross = gpad.btnCross > 0;
         //music/start menu selection
         if (onLoad)
         {
@@ -809,7 +817,6 @@ int main(void) {
             int dDown = gpad.dpad_down > 0;
             int dLeft = gpad.dpad_left > 0;
             int dRight = gpad.dpad_right > 0;
-
             if (!Menu_IsOpen(&gGame))
             {
                 // Rising edges = single press
@@ -820,21 +827,12 @@ int main(void) {
             }
             else
             {
-                // Route D-pad + Cross/Triangle to the menu (edge-triggered)
-                int cross = gpad.btnCross > 0;
-                int tri = gpad.btnTriangle > 0;
-
                 if (dUp && !prevDpadUp)    Menu_OnUp(&gGame);
                 if (dDown && !prevDpadDown)  Menu_OnDown(&gGame);
                 if (dLeft && !prevDpadLeft)  Menu_OnLeft(&gGame);
                 if (dRight && !prevDpadRight) Menu_OnRight(&gGame);
-
                 if (cross && !prevCross)      Menu_OnCross(&gGame, &don);
                 if (tri && !prevTri)        Menu_OnTriangle(&gGame);
-
-                // remember button states for next frame
-                prevCross = cross;
-                prevTri = tri;
                 StartTimer(&truckInteractTimer);
             }
             prevDpadUp = dUp; prevDpadDown = dDown; prevDpadLeft = dLeft; prevDpadRight = dRight;
@@ -926,7 +924,7 @@ int main(void) {
             camera.position.y = camera.target.y + radius * sinf(pitch);
             camera.position.z = camera.target.z + radius * cosf(pitch) * cosf(yaw);
 
-            if (gpad.btnTriangle > 0 && !Menu_IsOpen(&gGame))//handle triangle interactions here, dont debounce here incase we want a cumulative feel, like a lawn mower that doesnt want to start right away sort of thing
+            if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
             {
                 if (!don.isTalking 
                     && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
@@ -1153,6 +1151,7 @@ int main(void) {
                 don.pos = Vector3Add(truckPosition, (Vector3) {6,1,-5});//todo: why did I put a one here for y?
             }
         }
+        prevCross = cross; prevTri = tri; //set after this large block
         // --->>> SUMMON (autopilot)
         if (truckSummonActive && !vehicleMode) {
             float dt = GetFrameTime();
@@ -2693,11 +2692,11 @@ int main(void) {
             {
                 for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++)
                 {
-                    if (Vector3Distance(don.pos, fires[i].pos) > 800) { continue; }
-                    if (!dopped_firepits)
+                    if (!dropped_firepits)
                     {
                         fires[i].pos.y = GetTerrainHeightFromMeshXZ(fires[i].pos.x, fires[i].pos.z) + 0.8f;//+offset
                     }
+                    if (Vector3Distance(don.pos, fires[i].pos) > 800) { continue; }
                     DrawModel(firepit,fires[i].pos, 3, WHITE);
                     if (fires[i].lit)//if its lit, draw flame
                     {
@@ -2740,7 +2739,7 @@ int main(void) {
 
                     }
                 }
-                dopped_firepits = true;
+                dropped_firepits = true;
             }
             //homes
             if (onLoad)

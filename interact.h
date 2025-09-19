@@ -156,19 +156,14 @@ typedef enum {
     MISSION_TOTAL_COUNT
 } MissionType;
 
-// Type Definitions
 typedef struct {
     MissionType type;
     bool complete;
     char* name;
     char* desc;
 } Mission;
-//points of interest, for tri interact
-typedef enum {
-    FIREPIT_HOME = 0,
-    FIREPIT_TOTAL_COUNT
-} FirepitLocation;
 
+//points of interest, for tri interact
 typedef enum {
     POI_TYPE_NONE = -1,
     POI_TYPE_TRUCK,
@@ -180,13 +175,19 @@ typedef enum {
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
-// Type Definitions
 typedef struct {
     POI_Type type;
     Vector3* pos;
 } POI;
 
-// Type Definitions
+//fireplaces
+typedef enum {
+    FIREPIT_HOME = 0,
+    FIREPIT_CASTLE,
+    FIREPIT_VILLAGE,
+    FIREPIT_TOTAL_COUNT
+} FirepitLocation;
+
 typedef struct {
     FirepitLocation location;
     Vector3 pos;
