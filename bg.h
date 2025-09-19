@@ -19,12 +19,14 @@ typedef enum {
     BG_NONE = -1,//probably do not use
     BG_GHOST,
     BG_YETI,
+    BG_ROBO,
     BG_TYPE_COUNT
 } BadGuyType;
 
 //kill counters (sum for total)
 int ghostKillCount;
 int yetiKillCount;
+int roboKillCount;
 
 typedef enum {
     ATTACK_PUNCH,
@@ -144,6 +146,17 @@ typedef enum {
     //for the yeti
 } YetiState;
 
+typedef enum {
+    ROBO_STATE_SPAWN,
+    ROBO_STATE_PLAN,
+    ROBO_STATE_SPIN,
+    ROBO_STATE_ZIP,
+    ROBO_STATE_SHOOT,
+    ROBO_STATE_DYING,
+    ROBO_STATE_DEAD,
+    //for the robot orb
+} RoboState;
+
 typedef struct {
     bool isInUse;
     BadGuyType type;
@@ -210,6 +223,8 @@ void InitBadGuyModels(Shader ghostShader)
     Texture ghost_tex = LoadTexture("textures/ghost.png");
     int yeti_animCount = 0;
     ModelAnimation* yeti_anims = LoadModelAnimations("models/yeti_anim_2.glb", &yeti_animCount);
+    Model robo_model = LoadModel("models/robo.obj");
+    Texture robo_tex = LoadTexture("textures/robo.png");
     for (int bg_t = 0; bg_t < BG_TYPE_COUNT; bg_t++)
     {
         for (int i = 0; i < MAX_BG_PER_TYPE_AT_ONCE; i++)
@@ -235,10 +250,22 @@ void InitBadGuyModels(Shader ghostShader)
                 bgModelBorrower[index].anims = yeti_anims;
                 bgModelBorrower[index].animCount = yeti_animCount;
             }
+            else if (bg_t == BG_ROBO)
+            {
+                bgModelBorrower[index].model = robo_model;
+                bgModelBorrower[index].tex = robo_tex;
+                bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
+                bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
+            }
         }
     }
 }
 
+// === NEW: helper for ground
+static inline float BG_GroundY(Vector3 p) {
+    float g = GetTerrainHeightFromMeshXZ(p.x, p.z);
+    return (g < -9000.0f) ? p.y : g;
+}
 //anim helpers
 // === NEW: general animation helpers =========================================
 static inline void BG_SetAnim(BadGuy* b, int animIndex, bool forceRestart) {
@@ -463,11 +490,6 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     b->pitch = Lerp(b->pitch, b->targetPitch, dt);
     b->roll = Lerp(b->roll, b->targetRoll, dt);
 }
-// === NEW: helper for ground
-static inline float BG_GroundY(Vector3 p) {
-    float g = GetTerrainHeightFromMeshXZ(p.x, p.z);
-    return (g < -9000.0f) ? p.y : g;
-}
 
 // === NEW: Yeti state update ================================================
 static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
@@ -635,6 +657,126 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
 }
 
+static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
+{
+    //start
+    float groundY = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
+    //switch
+    switch (b->state)
+    {
+    case ROBO_STATE_SPAWN: {
+        b->pos.y = groundY + 8; //spawn above the ground and then enter planning phase
+        b->state = ROBO_STATE_PLAN;
+    } break;
+    case ROBO_STATE_PLAN: {
+        b->aware = Vector3Distance(d->pos,b->pos)<b->awareRadius;
+        if (b->aware)
+        {
+            if (GetRandomValue(0, 3) == 3)
+            {
+                float a = (float)GetRandomValue(0, 359) * DEG2RAD;
+                float r = (float)GetRandomValue(8, (int)b->tetherRadius);
+                Vector3 p = (Vector3){ d->pos.x + sinf(a) * r, 0, d->pos.z + cosf(a) * r };
+                p.y = BG_GroundY(p);
+                p.y += (float)GetRandomValue(3, 10);
+                b->targetPos = p;
+                b->state = ROBO_STATE_ZIP;
+            }
+            else
+            {
+                b->targetPos = b->pos;
+                b->targetYaw = (float)GetRandomValue(0, 1080);
+                b->targetPitch = (float)GetRandomValue(0, 1080);
+                b->targetRoll = (float)GetRandomValue(0, 1080);
+                b->state = ROBO_STATE_SPIN;
+            }
+        }
+        else
+        {
+            b->targetPos = b->pos;
+            b->targetYaw = (float)GetRandomValue(0, 1080);
+            b->targetPitch = (float)GetRandomValue(0, 1080);
+            b->targetRoll = (float)GetRandomValue(0, 1080);
+            b->state = ROBO_STATE_SPIN;
+        }
+    } break;
+    case ROBO_STATE_SPIN: {
+        if (fabsf(b->targetYaw - b->yaw) < 10) 
+        { 
+            if (GetRandomValue(0, 4) == 4)
+            {
+                b->state = ROBO_STATE_SHOOT;
+            }
+            else
+            {
+                b->state = ROBO_STATE_PLAN;
+            }
+        }
+    } break;
+    case ROBO_STATE_ZIP: {
+        if (Vector3Distance(b->pos, b->targetPos) < 3.4f){b->state = ROBO_STATE_PLAN;}
+    } break;
+    case ROBO_STATE_SHOOT: {
+        // Spawn an instant beam aimed at Don’s torso (no collision tests)
+        Vector3 from = (Vector3){ b->pos.x, b->pos.y + 0.4f, b->pos.z };   // slight vertical offset
+        Vector3 to = (Vector3){ d->pos.x, d->pos.y + 1.2f, d->pos.z };   // Don chest-ish
+
+        FireLaser(from, to, 0.16f);  // short flash; fades automatically
+
+        // Immediate hit feedback & damage (simple gate via hitTimer)
+        if (HasTimerElapsed(&d->hitTimer))
+        {
+            d->health -= 8;                          // tune damage to taste
+            DonSetState(d, DONOGAN_STATE_HIT);
+            StartTimer(&d->hitTimer);
+
+            d->shook = fmaxf(d->shook, 0.22f);       // kick the camera a bit
+        }
+
+        // Return to planning
+        b->state = ROBO_STATE_PLAN;
+
+    } break;
+    case ROBO_STATE_DYING: {
+        // Simple gravity + one-or-two tiny bounces, then settle → DEAD
+        const float gy = BG_GroundY(b->pos);
+        if (b->vel.y == 0.0f && b->pos.y > gy + 0.02f) b->vel.y = -6.0f; // give it a push if stationary
+
+        b->vel.y += -24.0f * dt;                  // gravity
+        b->pos.y += b->vel.y * dt;
+
+        if (b->pos.y <= gy)
+        {
+            b->pos.y = gy;
+            if (fabsf(b->vel.y) > 2.0f)           // bounce threshold
+            {
+                b->vel.y = -b->vel.y * 0.35f;     // damped bounce
+            }
+            else
+            {
+                b->vel = (Vector3){ 0 };
+                b->state = ROBO_STATE_DEAD;
+            }
+        }
+
+    } break;
+    case ROBO_STATE_DEAD: {
+        b->active = false;
+        b->dead = true;
+        if (b->gbm_index >= 0) { bgModelBorrower[b->gbm_index].isInUse = false; }
+        b->gbm_index = -1;
+        StartTimer(&b->respawnTimer);
+        ResetTimer(&b->interactionTimer);
+        d->xp += 25;
+    } break;
+    default: break;
+    }
+    //end routine
+    b->pos = Vector3Lerp(b->pos, b->targetPos, dt * b->speed);
+    b->yaw = Lerp(b->yaw, b->targetYaw, dt * b->speed);
+    b->pitch = Lerp(b->pitch, b->targetPitch, dt * b->speed);
+    b->roll = Lerp(b->roll, b->targetRoll, dt * b->speed);
+}
 
 //create functions
 BadGuy CreateGhost(Vector3 pos)
@@ -682,12 +824,35 @@ BadGuy CreateYeti(Vector3 pos)
     return b;
 }
 
+BadGuy CreateRobo(Vector3 pos)
+{
+    BadGuy b = { 0 };
+    b.type = BG_ROBO;
+    b.spawnPoint = pos;
+    b.spawnRadius = 110;
+    b.awareRadius = 95;
+    b.tetherRadius = 25;
+    b.gbm_index = -1;
+    b.active = false;
+    b.dead = false;
+    b.aware = false;
+    b.startHealth = 20;   // === NEW: give the big guy some HP
+    b.health = b.startHealth;
+    b.pos = pos;
+    b.targetPos = pos;
+    b.scale = 1;
+    b.speed = 3.2111;
+    b.respawnTimer = CreateTimer(360);//6 minutes
+    b.interactionTimer = CreateTimer(120);//2 minutes
+    b.drawColor = WHITE;
+    return b;
+}
 
 //end of the file stuff, important!
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 43; //increment this, every time, you add, a bg...
+    bg_count = 44; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -732,11 +897,12 @@ void InitBadGuys(Shader ghostShader)
     bg[40] = CreateYeti((Vector3) { -249, 921, 2183 });
     bg[41] = CreateYeti((Vector3) { -274, 874, 2470 });
     bg[42] = CreateYeti((Vector3) { -625, 864, 2476 });
+    bg[43] = CreateRobo((Vector3) { 3022.00f, 322.00f, 4042.42f });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
 {
-    for (int b = 0; b < act_bg_count; ++b) {
+    for (int b = 0; b < act_bg_count; b++) {
         int i = act_bg[b];
         if (!bg[i].active) { continue; }
         if (Vector3Distance(d->pos, bg[i].pos) > 800) //general guard to help enforce that when don is far away, bad guys get put away
@@ -833,6 +999,10 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             BG_Update_Yeti(d, &bg[i], dt);
             BG_UpdateAnim(&bg[i], dt);
         }
+        else if (bg[i].type == BG_ROBO)
+        {
+            BG_Update_Robo(d, &bg[i], dt);
+        }
         //update general stuff
         bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);
         if (bg[i].type == BG_YETI) {//im sick of these mfn snakes on this mfn plane!
@@ -859,7 +1029,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
 {
     for (int b = 0; b < bg_count; b++)
     {
-        if (bg[b].active) { continue; }//if its turned on, dont run it on again
+        if (bg[b].active) { continue; }//if its turned on, dont turn it on again
         else 
         {
             if (Vector3Distance(pos, bg[b].spawnPoint) < bg[b].spawnRadius && (!bg[b].respawnTimer.running || HasTimerElapsed(&bg[b].respawnTimer)))

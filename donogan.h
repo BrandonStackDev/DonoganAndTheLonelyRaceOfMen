@@ -508,6 +508,79 @@ static const char* PNG = "textures/donogan.png";
 static const char* BOW_GLB = "models/bow.glb";
 static const char* BOW_PNG = "textures/bow.png";
 
+//lasers
+// ===== Robo Lasers ===========================================================
+#ifndef DON_LASERS_H
+#define DON_LASERS_H
+
+#ifndef MAX_LASERS
+#define MAX_LASERS 24
+#endif
+
+typedef struct {
+    int alive;
+    Vector3 a, b;       // beam endpoints (spawn time “from” and “to”)
+    float life, maxLife;
+    float width;
+} Laser;
+
+static Laser gLasers[MAX_LASERS];
+static int   gLaserHead = 0;
+
+static inline void LasersInit(void) {
+    for (int i = 0; i < MAX_LASERS; ++i) gLasers[i].alive = 0;
+    gLaserHead = 0;
+}
+
+// Short-lived flash beam; damage is handled by the shooter (Robo) on fire.
+static inline void FireLaser(Vector3 from, Vector3 to, float flashLife) {
+    Laser* L = &gLasers[gLaserHead++ % MAX_LASERS];
+    L->alive = 1;
+    L->a = from;
+    L->b = to;
+    L->life = flashLife;
+    L->maxLife = flashLife;
+    L->width = 0.06f;         // tweak visual thickness
+}
+
+static inline void UpdateLasers(float dt) {
+    for (int i = 0; i < MAX_LASERS; ++i) {
+        Laser* L = &gLasers[i];
+        if (!L->alive) continue;
+        L->life -= dt;
+        if (L->life <= 0.0f) L->alive = 0;
+    }
+}
+
+static inline void DrawLasers(void) {
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (int i = 0; i < MAX_LASERS; ++i) {
+        Laser* L = &gLasers[i];
+        if (!L->alive) continue;
+
+        float t = (L->maxLife > 0.0f) ? (L->life / L->maxLife) : 0.0f;
+        float w = L->width * (0.65f + 0.35f * t); // small shrink over time
+
+        // soft outer pass (cheap glow)
+        Color halo = (Color){ 40, 60, 200, (unsigned char)(90.0f * t) };
+        DrawCylinderEx(L->a, L->b, w * 2.2f, w * 2.2f, 8, halo);
+
+        // bright core
+        Color core = (Color){ 220, 240, 255, (unsigned char)(220.0f * t) };
+        DrawCylinderEx(L->a, L->b, w, w, 10, core);
+
+        // end caps
+        DrawSphere(L->a, w * 0.9f, (Color) { 120, 180, 255, (unsigned char)(180.0f * t) });
+        DrawSphere(L->b, w * 1.2f, core);
+    }
+    EndBlendMode();
+}
+
+#endif // DON_LASERS_H
+// ============================================================================
+
+//end lasers
+
 // Feet world Y using model-space BB (only Y-rotation on model transform, so Y extent is stable)
 static inline float DonFeetWorldY(const Donogan* d) {
     return d->pos.y + d->firstBB.min.y * d->scale;
@@ -2422,6 +2495,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     if (d->bowReleaseCamHold > 0.0f) d->bowReleaseCamHold -= dt;
     DonUpdateArrows(d, dt);
     UpdateBalls(dt);
+    UpdateLasers(dt);
     d->box = UpdateBoundingBox(d->origBB, (Vector3) {d->pos.x, d->pos.y + 2.22f, d->pos.z});
     d->innerBox = UpdateBoundingBox(d->origInnerBB, (Vector3) { d->pos.x, d->pos.y + 2.22f, d->pos.z });
     d->outerBox = UpdateBoundingBox(d->origOuterBB, (Vector3) { d->pos.x, d->pos.y + 2.22f, d->pos.z });

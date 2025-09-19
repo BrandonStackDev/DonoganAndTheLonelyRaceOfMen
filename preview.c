@@ -356,6 +356,8 @@ int main(void) {
     InitTalkingInteractions();
     //missions
     InitMissions();
+    //lasers
+    LasersInit();
     //env bounding boxes, duct tape
     GoGoGadgetDuctTape();
     Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
@@ -2683,6 +2685,7 @@ int main(void) {
                 }
                 DonDrawArrows(&don);
                 DrawBalls(camera, ball, lightningBall);
+                DrawLasers();
                 //bubbles
                 if (don.inWater) { DonDrawBubbles(&don); }
             }
