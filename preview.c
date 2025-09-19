@@ -2395,6 +2395,11 @@ int main(void) {
                         bg[b].state = YETI_STATE_HIT;
                         BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
                     }
+                    else if (bg[b].type == BG_ROBO)
+                    {
+                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
+                        bg[b].state = ROBO_STATE_PLAN;
+                    }
                 }
             }
         }
@@ -2419,6 +2424,12 @@ int main(void) {
                     balls[i].alive = false;
                     bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
                 }
+                else if (bg[b].type == BG_ROBO && CheckCollisionBoxSphere(bg[b].box, balls[i].pos, balls[i].radius))
+                {
+                    bg[b].state = ROBO_STATE_PLAN;
+                    balls[i].alive = false;
+                    bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type); // I think this will kill it, low health on these guys...
+                }
             }
         }
         //donny collision with bg
@@ -2429,6 +2440,10 @@ int main(void) {
                 int b = act_bg[i];
                 if (!bg[b].active) { continue; }
                 if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
+                bool punching = (don.state == DONOGAN_STATE_PUNCH_CROSS_ENTER
+                    || don.state == DONOGAN_STATE_PUNCH_JAB_ENTER
+                    || don.state == DONOGAN_STATE_PUNCH_CROSS
+                    || don.state == DONOGAN_STATE_PUNCH_JAB);
                 if (bg[b].type == BG_GHOST && HasTimerElapsed(&don.hitTimer))
                 {
                     //hit don
@@ -2439,11 +2454,6 @@ int main(void) {
                 }
                 else if (bg[b].type == BG_YETI) 
                 {
-                    bool punching = (don.state == DONOGAN_STATE_PUNCH_CROSS_ENTER
-                        || don.state == DONOGAN_STATE_PUNCH_JAB_ENTER
-                        || don.state == DONOGAN_STATE_PUNCH_CROSS
-                        || don.state == DONOGAN_STATE_PUNCH_JAB);
-
                     if (punching) {
                         // punched a yeti!
                         TraceLog(LOG_INFO, "punched a yeti!");
@@ -2458,6 +2468,18 @@ int main(void) {
                         don.health -= 10;
                         DonSetState(&don, DONOGAN_STATE_HIT);
                         StartTimer(&don.hitTimer);
+                    }
+                }
+                else if (bg[b].type == BG_ROBO)
+                {
+                    if (punching)
+                    {
+                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
+                    }
+                    else
+                    {
+                        bg[b].health -= 1;
+                        bg[b].state = ROBO_STATE_PLAN;
                     }
                 }
             }

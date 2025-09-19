@@ -206,6 +206,8 @@ typedef struct {
     Color drawColor;
     bool     throwing;
     Vector3  throwVel;
+
+    bool bounced;
 } BadGuy;
 //instance of a bad guy, will borrow its model
 
@@ -659,6 +661,25 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
 
 static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
 {
+    //pre guard stuff
+    if (Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
+    {
+        StartTimer(&b->interactionTimer);
+    }
+    else if (HasTimerElapsed(&b->interactionTimer) && Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius)//if it expires and donny is still outisde the radius, kill him
+    {
+        b->targetPitch = 0;
+        b->targetPos = b->pos;
+        b->state = ROBO_STATE_DEAD;
+    }
+    else
+    {
+        ResetTimer(&b->interactionTimer);
+    }
+    if (b->health <= 0 && b->state != ROBO_STATE_DEAD)
+    {
+        b->state = ROBO_STATE_DYING;
+    }
     //start
     float groundY = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
     //switch
@@ -740,7 +761,7 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
     case ROBO_STATE_DYING: {
         // Simple gravity + one-or-two tiny bounces, then settle → DEAD
         const float gy = BG_GroundY(b->pos);
-        if (b->vel.y == 0.0f && b->pos.y > gy + 0.02f) b->vel.y = -6.0f; // give it a push if stationary
+        //if (b->vel.y == 0.0f && b->pos.y > gy + 0.02f) b->vel.y = -6.0f; // give it a push if stationary
 
         b->vel.y += -24.0f * dt;                  // gravity
         b->pos.y += b->vel.y * dt;
@@ -748,9 +769,10 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
         if (b->pos.y <= gy)
         {
             b->pos.y = gy;
-            if (fabsf(b->vel.y) > 2.0f)           // bounce threshold
+            if (fabsf(b->vel.y) > 2.0f && !b->bounced)           // bounce threshold
             {
-                b->vel.y = -b->vel.y * 0.35f;     // damped bounce
+                b->vel.y = -b->vel.y * 0.33f;     // damped bounce
+                b->bounced = true;
             }
             else
             {
@@ -758,11 +780,11 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
                 b->state = ROBO_STATE_DEAD;
             }
         }
-
     } break;
     case ROBO_STATE_DEAD: {
         b->active = false;
         b->dead = true;
+        b->bounced = false;
         if (b->gbm_index >= 0) { bgModelBorrower[b->gbm_index].isInUse = false; }
         b->gbm_index = -1;
         StartTimer(&b->respawnTimer);
@@ -771,11 +793,14 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
     } break;
     default: break;
     }
-    //end routine
-    b->pos = Vector3Lerp(b->pos, b->targetPos, dt * b->speed);
-    b->yaw = Lerp(b->yaw, b->targetYaw, dt * b->speed);
-    b->pitch = Lerp(b->pitch, b->targetPitch, dt * b->speed);
-    b->roll = Lerp(b->roll, b->targetRoll, dt * b->speed);
+    if (b->state != ROBO_STATE_DYING && b->state != ROBO_STATE_DEAD)
+    {
+        //end routine
+        b->pos = Vector3Lerp(b->pos, b->targetPos, dt * b->speed);
+        b->yaw = Lerp(b->yaw, b->targetYaw, dt * b->speed);
+        b->pitch = Lerp(b->pitch, b->targetPitch, dt * b->speed);
+        b->roll = Lerp(b->roll, b->targetRoll, dt * b->speed);
+    }
 }
 
 //create functions
