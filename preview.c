@@ -817,7 +817,7 @@ int main(void) {
                 // remember button states for next frame
                 prevCross = cross;
                 prevTri = tri;
-
+                StartTimer(&truckInteractTimer);
             }
             prevDpadUp = dUp; prevDpadDown = dDown; prevDpadLeft = dLeft; prevDpadRight = dRight;
         }
