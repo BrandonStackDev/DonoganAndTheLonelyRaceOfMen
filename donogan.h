@@ -510,12 +510,7 @@ static const char* BOW_PNG = "textures/bow.png";
 
 //lasers
 // ===== Robo Lasers ===========================================================
-#ifndef DON_LASERS_H
-#define DON_LASERS_H
-
-#ifndef MAX_LASERS
-#define MAX_LASERS 24
-#endif
+#define MAX_LASERS 16
 
 typedef struct {
     int alive;
@@ -576,7 +571,6 @@ static inline void DrawLasers(void) {
     EndBlendMode();
 }
 
-#endif // DON_LASERS_H
 // ============================================================================
 
 //end lasers
