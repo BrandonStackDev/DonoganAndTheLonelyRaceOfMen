@@ -736,6 +736,15 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
 {
     for (int i = 0; i < bg_count; ++i) {
         if (!bg[i].active) { continue; }
+        if (Vector3Distance(d->pos, bg[i].pos) > 800) //general guard to help enforce that when don is far away, bad guys get put away
+        {
+            bg[i].active = false;
+            bg[i].dead = true;
+            bgModelBorrower[bg[i].gbm_index].isInUse = false;
+            bg[i].gbm_index = -1;
+            d->xp += 1; //give don a point for it I guess
+            continue;
+        }
         //handle square spell
         if (d->squareThrowRequest && bg[i].frozen)
         {

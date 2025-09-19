@@ -149,7 +149,7 @@ static inline bool GM_LoadCurrent(GameState* gs, const GameMusic* lib) {
         return false;
     }
 
-    const int maxAttempts = 7;
+    const int maxAttempts = 3;
     for (int attempt = 0; attempt < maxAttempts; ++attempt) {
         gs->currentMusic = LoadMusicStream(s->file);
         if (gs->currentMusic.frameCount > 0) {
