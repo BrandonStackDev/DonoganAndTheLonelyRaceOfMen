@@ -207,6 +207,7 @@ static inline void Platform_UpdateFaller(Platform* p, float dt)
 
     if (HasTimerElapsed(&p->t_fellDelay))
     {
+        ResetTimer(&p->t_fallDelay);//need this one too
         ResetTimer(&p->t_fellDelay);
         p->pos = p->origPos;
     }
