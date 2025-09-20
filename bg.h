@@ -878,7 +878,7 @@ BadGuy CreateRobo(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 65; //increment this, every time, you add, a bg...
+    bg_count = 67; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -943,13 +943,15 @@ void InitBadGuys(Shader ghostShader)
     bg[57] = CreateRobo((Vector3) { 2230, 489, 1593 });
 
     //mountain top
-    bg[58] = CreateYeti((Vector3) { -2201, 880, -592 });
-    bg[59] = CreateYeti((Vector3) { -2083, 740, -374 });
-    bg[60] = CreateYeti((Vector3) { -2092, 830, -497 });
-    bg[61] = CreateYeti((Vector3) { -2040, 782, -646 });
-    bg[62] = CreateRobo((Vector3) { -2026, 453, -600 });
-    bg[63] = CreateRobo((Vector3) { -2007, 481, -573 });
-    bg[64] = CreateRobo((Vector3) { -2094, 489, -515 });
+    bg[58] = CreateYeti((Vector3) { -2201, 895, -592 });
+    bg[59] = CreateYeti((Vector3) { -2083, 934, -374 });
+    bg[60] = CreateYeti((Vector3) { -2092, 918, -497 });
+    bg[61] = CreateYeti((Vector3) { -2040, 913, -646 });
+    bg[62] = CreateRobo((Vector3) { -2026, 918, -600 });
+    bg[63] = CreateRobo((Vector3) { -2007, 914, -573 });
+    bg[64] = CreateRobo((Vector3) { -2094, 918, -515 });
+    bg[65] = CreateGhost((Vector3) { -2094, 918, -646 });
+    bg[66] = CreateGhost((Vector3) { -2007, 918, -497 });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
