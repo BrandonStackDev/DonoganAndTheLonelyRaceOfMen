@@ -32,6 +32,10 @@ Not yet even close to ready. Release date will be 1-2 years in the future.
 
 [![TreeOfLife](readme_assets/tol.png)](readme_assets/tol.png)
 
+[![Fire1](readme_assets/fire_night_1.png)](readme_assets/fire_night_1.png)
+
+[![Fire2](readme_assets/fire_night_2.png)](readme_assets/fire_night_2.png)
+
 
 
 
