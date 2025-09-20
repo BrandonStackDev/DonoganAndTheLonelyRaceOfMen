@@ -1092,7 +1092,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                     bg[b].health = bg[b].startHealth;
                     bg[b].pos = bg[b].spawnPoint;
                     bg[b].targetPos = bg[b].spawnPoint;
-                    BG_AttachBorrowed(&bg[b]);   // <-- add this
+                    BG_AttachBorrowed(&bg[b]);
                     if (bg[b].type == BG_GHOST) 
                     { 
                         bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z) - 30;
@@ -1103,6 +1103,10 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                         bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z);
                         bg[b].state = YETI_STATE_SPAWN;
                         BG_SetAnim(&bg[b], ANIM_YETI_ROAR, true); // default roar on spawn
+                    }
+                    else if (bg[b].type == BG_ROBO)
+                    {
+                        bg[b].state = ROBO_STATE_SPAWN;
                     }
                     return true;
                 }
