@@ -377,6 +377,32 @@ int main(void) {
     plats[1] = Platform_MakeMover((Vector3) { 2190, 525, 605 }, (Vector3) { 2191, 545, 604 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
     plats[2] = Platform_MakeMover((Vector3) { 2200, 545, 605 }, (Vector3) { 2275, 545, 604 }, (Vector3) {6, 1, 6}, 4.0f, tex_plat, WHITE);
     plats[3] = Platform_MakeStill((Vector3) { 2250, 545, 615 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[4] = Platform_MakeStill((Vector3) { 2255, 545, 625 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[5] = Platform_MakeStill((Vector3) { 2260, 545, 635 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    //clover of death
+    plats[6] = Platform_MakeMover((Vector3) { 2270, 545, 650 }, (Vector3) { 2270, 545, 700 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[7] = Platform_MakeMover((Vector3) { 2270, 545, 700 }, (Vector3) { 2320, 545, 700 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[8] = Platform_MakeMover((Vector3) { 2320, 545, 700 }, (Vector3) { 2320, 545, 650 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[9] = Platform_MakeMover((Vector3) { 2320, 545, 650 }, (Vector3) { 2270, 545, 650 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    //pairs
+    plats[10] = Platform_MakeFaller((Vector3) { 2330, 550, 700 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
+    plats[11] = Platform_MakeStill((Vector3) { 2340, 555, 700 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[12] = Platform_MakeFaller((Vector3) { 2340, 560, 710 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
+    plats[13] = Platform_MakeStill((Vector3) { 2340, 565, 720 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    //end phase 1
+    plats[14] = Platform_MakeStill((Vector3) { 2345, 570, 735 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[15] = Platform_MakeStill((Vector3) { 2350, 575, 750 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[16] = Platform_MakeStill((Vector3) { 2365, 575, 750 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[17] = Platform_MakeMover((Vector3) { 2365, 575, 760 }, (Vector3) { 2365, 510, 760 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE); //testing
+    //plats[17] = Platform_MakeMover((Vector3) { 2365, 520, 760 }, (Vector3) { 2365, 500, 760 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE); //for real
+    //faller mover pair
+    plats[18] = Platform_MakeFaller((Vector3) { 2400, 575, 925 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
+    plats[19] = Platform_MakeMover((Vector3) { 2400, 575, 935 }, (Vector3) { 2400, 620, 935 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
+    //phase 3, in which, Doris gets her oats
+    plats[20] = Platform_MakeMover((Vector3) { 2170, 590, 950 }, (Vector3) { 2170, 700, 950 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    //plats[21] = Platform_MakeMover((Vector3) { 2170, 590, 960 }, (Vector3) { 2100, 700, 960 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    //plats[22] = Platform_MakeMover((Vector3) { 2110, 700, 960 }, (Vector3) { 2170, 800, 950 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+
     ////whales---------------------------------------------------
     int numWhales = 9; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
