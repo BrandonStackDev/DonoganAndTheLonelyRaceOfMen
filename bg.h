@@ -782,6 +782,7 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
         }
     } break;
     case ROBO_STATE_DEAD: {
+        roboKillCount++;
         b->active = false;
         b->dead = true;
         b->bounced = false;

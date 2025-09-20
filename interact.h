@@ -153,6 +153,7 @@ typedef enum {
     MISSION_FIND_TOL,
     MISSION_KILL_GHOST,
     MISSION_KILL_YETI,
+    MISSION_KILL_ROBO,
     MISSION_TOTAL_COUNT
 } MissionType;
 
@@ -345,6 +346,11 @@ void InitMissions()
     missions[MISSION_KILL_YETI].type = MISSION_KILL_YETI;
     missions[MISSION_KILL_YETI].name = "Kill 10 Yetis";
     missions[MISSION_KILL_YETI].desc = "Kill 10 Yetis.";
+    //kill robo
+    missions[MISSION_KILL_ROBO].complete = false;
+    missions[MISSION_KILL_ROBO].type = MISSION_KILL_YETI;
+    missions[MISSION_KILL_ROBO].name = "Kill 10 Robot Orbs";
+    missions[MISSION_KILL_ROBO].desc = "Kill 10 Robot Orbs.";
 }
 
 // Draw text using font inside rectangle limits with support for text selection

@@ -730,6 +730,13 @@ int main(void) {
             don.xp += 150;
             missions[MISSION_KILL_YETI].complete = true;
         }
+        if (!missions[MISSION_KILL_ROBO].complete && roboKillCount >= 10)
+        {
+            toast = "Completed mission! You killed ten Robot Orbs!";
+            StartTimer(&toastTimer);
+            don.xp += 200;
+            missions[MISSION_KILL_ROBO].complete = true;
+        }
         //handle health and mana re-gen, xp to level conversion as well
         oldLevel = don.level;
         don.level = (int)(don.xp / 100) + 1;
