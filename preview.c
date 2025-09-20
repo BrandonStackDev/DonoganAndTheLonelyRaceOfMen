@@ -24,6 +24,7 @@
 #include "bg.h"
 #include "npc.h"
 #include "menu.h"
+#include "platform.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -366,6 +367,13 @@ int main(void) {
     Font default_font = GetFontDefault();
     Font req_font = LoadFontEx("res/Tangerine/Tangerine-Bold.ttf", 32, 0, 250);
     Font res_font = LoadFontEx("res/Lexend/static/Lexend-SemiBold.ttf", 15, 0, 250);
+    ////PLATS-----------------------------------------------------
+    Texture tex_plat = LoadTexture("textures/wood2.png");
+    Texture tex_fall = LoadTexture("textures/wood1.png");
+    Platform plats[NUM_PLATS]; //testing 3022.00f, 322.00f, 4042.42f
+    plats[0] = Platform_MakeStill((Vector3) { 3022, 319, 4042 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[1] = Platform_MakeFaller((Vector3) { 3032, 319, 4052 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
+    plats[2] = Platform_MakeMover((Vector3) { 3042, 319, 4062 }, (Vector3) { 3042, 322, 4072 }, (Vector3) {6, 1, 6}, 4.0f, tex_plat, WHITE);
     ////whales---------------------------------------------------
     int numWhales = 9; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
@@ -2392,6 +2400,15 @@ int main(void) {
                 }
             }
         }
+        //platforms
+        if (onLoad && donnyMode)
+        {
+            for (int i = 0; i < NUM_PLATS; i++)
+            {
+                if (Vector3Distance(plats[i].pos, don.pos) > 600) { continue; }
+                Platform_CollideAndRide(&plats[i], &don, dt);
+            }
+        }
         //collision for bad guys and attacks
         // //arrows
         for (int a = 0; a < MAX_ARROWS; a++)
@@ -2836,6 +2853,15 @@ int main(void) {
                     if (displayBoxes) { DrawBoundingBox(Scenes[i].box, PURPLE); }
                 }
                 rlEnableBackfaceCulling();
+            }
+            //plats
+            if (onLoad)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    if (Vector3Distance(don.pos,plats[i].pos) > 600 || !IsBoxInFrustum(plats[i].box, frustum)) { continue; }
+                    Platform_Draw(&plats[i]);
+                }
             }
             //bg
             if (onLoad)
