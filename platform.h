@@ -46,7 +46,7 @@ typedef struct {
 // Main platform object
 typedef struct {
     PlatformType type;
-    Vector3 pos;            // center position
+    Vector3 pos, origPos;            // center position
     Vector3 dim;            // dimensions (x,y,z)
     BoundingBox origBox;    // unit box at origin for UpdateBoundingBox
     BoundingBox box;        // world box
@@ -61,6 +61,7 @@ typedef struct {
 
     // Faller payload (used if type==FALLER)
     Timer   t_fallDelay;    // delay before falling once stepped on
+    Timer   t_fellDelay;    // delay before falling once stepped on
     bool    falling;        // currently falling?
     float   vy;             // vertical velocity when falling
 
@@ -76,7 +77,7 @@ typedef struct {
 #define PLATFORM_FALL_MAX_SPEED (-70.0f)
 #endif
 #ifndef PLATFORM_FALL_DELAY_SEC
-#define PLATFORM_FALL_DELAY_SEC (0.6f)     // seconds standing before it drops
+#define PLATFORM_FALL_DELAY_SEC (0.9999f)     // seconds standing before it drops
 #endif
 #ifndef PLATFORM_WAIT_SEC
 #define PLATFORM_WAIT_SEC       (1.2f)     // pause at A/B ends
@@ -146,6 +147,8 @@ static inline Platform Platform_MakeFaller(Vector3 pos, Vector3 dim, Texture2D t
     Platform p = Platform_MakeStill(pos, dim, tex, color);
     p.type = PLATFORM_FALLER;
     p.t_fallDelay = CreateTimer(PLATFORM_FALL_DELAY_SEC);
+    p.t_fellDelay = CreateTimer(30);
+    p.origPos = pos;
     p.falling = false; p.vy = 0.0f;
     return p;
 }
@@ -202,6 +205,11 @@ static inline void Platform_UpdateFaller(Platform* p, float dt)
 {
     if (!p || p->type != PLATFORM_FALLER) return;
 
+    if (HasTimerElapsed(&p->t_fellDelay))
+    {
+        ResetTimer(&p->t_fellDelay);
+        p->pos = p->origPos;
+    }
     // If falling, just integrate
     if (p->falling) {
         p->vy += PLATFORM_FALL_GRAVITY * dt;
@@ -215,6 +223,7 @@ static inline void Platform_UpdateFaller(Platform* p, float dt)
             float offset = p->dim.y * 0.5f;
             p->pos.y = gy + offset; // rest on ground
             p->vy = 0.0f; p->falling = false; // done
+            StartTimer(&p->t_fellDelay);
         }
         p->box = UpdateBoundingBox(p->origBox, p->pos);
         return;
