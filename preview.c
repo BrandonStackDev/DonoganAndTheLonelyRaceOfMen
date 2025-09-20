@@ -2860,7 +2860,7 @@ int main(void) {
                 for (int i = 0; i < 3; i++)
                 {
                     if (Vector3Distance(don.pos,plats[i].pos) > 600 || !IsBoxInFrustum(plats[i].box, frustum)) { continue; }
-                    Platform_Draw(&plats[i]);
+                    Platform_Draw(&plats[i], displayBoxes);
                 }
             }
             //bg

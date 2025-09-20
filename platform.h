@@ -235,14 +235,25 @@ static inline void Platform_Update(Platform* p, float dt)
 // ------------------------------------------------------------
 // Collision (character ↔ top surface + ride movers)
 // ------------------------------------------------------------
-static inline bool Platform_LandableTopOverlapXZ(const Platform* p, const Donogan* d)
-{
-    // Build a very thin slab on the top face so we ignore side hits.
-    const float slab = 0.2f; // meters of thickness used for the test
-    Vector3 topCenter = p->pos; topCenter.y += (p->dim.y * 0.5f) - (slab * 0.5f);
-    BoundingBox topBB = BoxFromPlatformProps(topCenter, (Vector3) { p->dim.x, slab, p->dim.z });
-    return CheckCollisionBoxes(d->outerBox, topBB);
-}
+////static inline bool Platform_LandableTopOverlapXZ(const Platform* p, const Donogan* d)
+////{
+////    // Build a very thin slab on the top face so we ignore side hits.
+////    const float slab = 0.2f; // meters of thickness used for the test
+////    Vector3 topCenter = p->pos; topCenter.y += (p->dim.y * 0.5f) - (slab * 0.5f);
+////    BoundingBox topBB = BoxFromPlatformProps(topCenter, (Vector3) { p->dim.x, slab, p->dim.z });
+////    return CheckCollisionBoxes(d->outerBox, topBB);
+////}
+//static inline bool Overlap1D(float a0, float a1, float b0, float b1) {
+//    return (a1 >= b0) && (b1 >= a0);
+//}
+//
+//// Replace the whole function body:
+//static inline bool Platform_LandableTopOverlapXZ(const Platform* p, const Donogan* d)
+//{
+//    const float skin = 0.05f; // small forgiveness for fast movers/jumps
+//    return Overlap1D(d->outerBox.min.x, d->outerBox.max.x, p->box.min.x - skin, p->box.max.x + skin) &&
+//        Overlap1D(d->outerBox.min.z, d->outerBox.max.z, p->box.min.z - skin, p->box.max.z + skin);
+//}
 
 //cool name, no idea what it does...
 static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt)
@@ -256,14 +267,14 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt)
     if (!CheckCollisionBoxes(d->outerBox, p->box)) return;
 
     // Consider only landings from above (feet cross the top plane)
-    const float topY = p->pos.y + p->dim.y * 0.5f;
-    const float feetOld = d->oldPos.y + d->firstBB.min.y * d->scale;
-    const float feetNew = DonFeetWorldY(d);
+    const float topY = p->box.max.y;
+    /*const float feetOld = d->oldPos.y + d->firstBB.min.y * d->scale;
+    const float feetNew = DonFeetWorldY(d);*/
 
-    bool crossedDown = (feetOld >= topY) && (feetNew <= topY + d->groundEps) && (d->velY <= 0.0f);
-    if (!crossedDown) return; // side hit or rising up: ignore here, your world collider handles walls
+    //bool crossedDown = (feetOld >= topY) && (feetNew <= topY + d->groundEps) && (d->velY <= 0.0f);
+    //if (!crossedDown) return; // side hit or rising up: ignore here, your world collider handles walls
 
-    if (!Platform_LandableTopOverlapXZ(p, d)) return;
+    //if (!Platform_LandableTopOverlapXZ(p, d)) return;
 
     // LAND: set Don’s ground to the platform top and snap.
     d->groundY = topY;       // DonSnapToGround uses groundY as feet plane
@@ -287,7 +298,7 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt)
 // ------------------------------------------------------------
 // Draw (optional helpers)
 // ------------------------------------------------------------
-static inline void Platform_Draw(const Platform* p)
+static inline void Platform_Draw(const Platform* p, bool bb)
 {
     if (!p) return;
     // If you loaded cubeModel, draw it; otherwise draw a simple cube
@@ -298,7 +309,7 @@ static inline void Platform_Draw(const Platform* p)
         DrawCubeV(p->pos, p->dim, p->color.a ? p->color : GRAY);
     }
     // Bounding box for debugging
-    //DrawBoundingBox(p->box, (Color) { 200, 255, 180, 180 });
+    if (bb) { DrawBoundingBox(p->box, (Color) { 200, 255, 180, 180 }); }
 }
 
 #endif // PLATFORM_H
