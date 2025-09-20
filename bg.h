@@ -999,7 +999,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         }
         else
         {
-            if (Vector3Distance(d->pos, bg[i].pos) < 60)
+            if (Vector3Distance(d->pos, bg[i].pos) < (9+d->level)) //freeze radius grows with level
             {
                 if (!d->spellTimer.running) { bg[i].frozen = false; }
                 else if (HasTimerElapsed(&d->spellTimer))

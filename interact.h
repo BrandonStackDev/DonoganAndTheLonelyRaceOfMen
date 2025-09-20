@@ -340,17 +340,17 @@ void InitMissions()
     missions[MISSION_KILL_GHOST].complete = false;
     missions[MISSION_KILL_GHOST].type = MISSION_KILL_GHOST;
     missions[MISSION_KILL_GHOST].name = "Kill 10 Ghosts";
-    missions[MISSION_KILL_GHOST].desc = "Kill 10 Ghosts.";
+    missions[MISSION_KILL_GHOST].desc = "Kill 10 Ghosts in a single session.";
     //MISSION_KILL_YETI,
     missions[MISSION_KILL_YETI].complete = false;
     missions[MISSION_KILL_YETI].type = MISSION_KILL_YETI;
     missions[MISSION_KILL_YETI].name = "Kill 10 Yetis";
-    missions[MISSION_KILL_YETI].desc = "Kill 10 Yetis.";
+    missions[MISSION_KILL_YETI].desc = "Kill 10 Yetis in a single session.";
     //kill robo
     missions[MISSION_KILL_ROBO].complete = false;
     missions[MISSION_KILL_ROBO].type = MISSION_KILL_YETI;
     missions[MISSION_KILL_ROBO].name = "Kill 10 Robot Orbs";
-    missions[MISSION_KILL_ROBO].desc = "Kill 10 Robot Orbs.";
+    missions[MISSION_KILL_ROBO].desc = "Kill 10 Robot Orbs in a single session.";
 }
 
 // Draw text using font inside rectangle limits with support for text selection
