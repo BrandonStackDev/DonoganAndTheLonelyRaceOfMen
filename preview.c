@@ -393,8 +393,8 @@ int main(void) {
     plats[14] = Platform_MakeStill((Vector3) { 2345, 570, 735 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[15] = Platform_MakeStill((Vector3) { 2350, 575, 750 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[16] = Platform_MakeStill((Vector3) { 2365, 575, 750 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[17] = Platform_MakeMover((Vector3) { 2365, 575, 760 }, (Vector3) { 2365, 510, 760 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE); //testing
-    //plats[17] = Platform_MakeMover((Vector3) { 2365, 520, 760 }, (Vector3) { 2365, 500, 760 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE); //for real
+    //plats[17] = Platform_MakeMover((Vector3) { 2365, 575, 760 }, (Vector3) { 2365, 510, 760 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE); //testing
+    plats[17] = Platform_MakeMover((Vector3) { 2365, 520, 760 }, (Vector3) { 2365, 500, 760 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE); //for real
     //faller mover pair
     plats[18] = Platform_MakeFaller((Vector3) { 2400, 575, 925 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
     plats[19] = Platform_MakeMover((Vector3) { 2400, 575, 935 }, (Vector3) { 2400, 620, 935 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
