@@ -14,7 +14,7 @@
 #include "donogan.h"    // DonFeetWorldY/DonSnapToGround + Donogan fields
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 
-#define NUM_PLATS 3
+#define NUM_PLATS 4
 // ------------------------------------------------------------
 // Platform types/states
 // ------------------------------------------------------------

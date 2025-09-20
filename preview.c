@@ -371,9 +371,12 @@ int main(void) {
     Texture tex_plat = LoadTexture("textures/wood2.png");
     Texture tex_fall = LoadTexture("textures/wood1.png");
     Platform plats[NUM_PLATS]; //testing 3022.00f, 322.00f, 4042.42f
-    plats[0] = Platform_MakeStill((Vector3) { 3022, 319, 4042 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[1] = Platform_MakeFaller((Vector3) { 3032, 319, 4052 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
-    plats[2] = Platform_MakeMover((Vector3) { 3042, 319, 4062 }, (Vector3) { 3042, 322, 4072 }, (Vector3) {6, 1, 6}, 4.0f, tex_plat, WHITE);
+    //plats[0] = Platform_MakeStill((Vector3) { 3022, 319, 4042 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    //plats[1] = Platform_MakeFaller((Vector3) { 3032, 319, 4052 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
+    plats[0] = Platform_MakeMover((Vector3) { 2408, 509, 936 }, (Vector3) { 2408, 521, 936 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
+    plats[1] = Platform_MakeMover((Vector3) { 2190, 525, 605 }, (Vector3) { 2191, 545, 604 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
+    plats[2] = Platform_MakeMover((Vector3) { 2200, 545, 605 }, (Vector3) { 2275, 545, 604 }, (Vector3) {6, 1, 6}, 4.0f, tex_plat, WHITE);
+    plats[3] = Platform_MakeStill((Vector3) { 2250, 545, 615 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     ////whales---------------------------------------------------
     int numWhales = 9; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
@@ -2857,7 +2860,7 @@ int main(void) {
             //plats
             if (onLoad)
             {
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < NUM_PLATS; i++)
                 {
                     if (Vector3Distance(don.pos,plats[i].pos) > 600 || !IsBoxInFrustum(plats[i].box, frustum)) { continue; }
                     Platform_Draw(&plats[i], displayBoxes);
