@@ -742,7 +742,7 @@ int main(void) {
         }
         //handle health and mana re-gen, xp to level conversion as well
         oldLevel = don.level;
-        don.level = (int)(don.xp / 100) + 1;
+        don.level = (int)(don.xp / 500) + 1;
         if (don.level != oldLevel && don.level%5==0) {
             don.maxHealth += 2;
             don.maxMana += 2;
@@ -751,11 +751,11 @@ int main(void) {
         } //we just raised up, and then level is divisable by five, increase our health
         if (loop_counter % 999 == 0)
         {
-            don.health += 1;
+            don.health += 1; //regen
         }
         if (loop_counter % 107 == 0)
         {
-            don.mana += 1;
+            don.mana += 1; //regen
         }
         if (don.health > don.maxHealth) { don.health = don.maxHealth; }
         if (don.health < 0) { don.health = 0; }

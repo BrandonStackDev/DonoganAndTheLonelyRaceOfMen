@@ -16,7 +16,7 @@
 
 #define TRUCK_BOX_HALF        1.0f   // half-size for the 4 body boxes  (-1..+1 local)
 #define TIRE_BOX_HALF         1.0f   // half-size for each tire box     (-1..+1 local)
-#define TRUCK_Y_OFFSET_DRAW   1.62f  // same baseline you use when drawing
+#define TRUCK_Y_OFFSET_DRAW   1.62f  //
 
 typedef enum {
     GROUND,
