@@ -879,6 +879,7 @@ int main(void) {
             gpad.normRY = s_ry;
         }
         else if (HasTimerElapsed(&gGame.menuTimer) && gpad.btnStart) { Menu_Toggle(&gGame); StartTimer(&gGame.menuTimer); } //toggle the menu
+        else if (HasTimerElapsed(&gGame.menuTimer) && gpad.btnSelect) { RecordPositionForPlacement(&don); StartTimer(&gGame.menuTimer); } //toggle the menu
         if (gGame.invY) { gpad.ry = -gpad.ry;  gpad.normRY = -gpad.normRY;}
         if (gGame.invX) { gpad.rx = -gpad.rx;  gpad.normRX = -gpad.normRX; }
         int tri = gpad.btnTriangle > 0;

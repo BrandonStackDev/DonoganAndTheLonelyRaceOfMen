@@ -97,6 +97,17 @@ static inline void  Menu_ScrollClamp(int count, int* sel, int* scroll) {
     if (*scroll > (count > vis ? count - vis : 0)) *scroll = (count > vis ? count - vis : 0);
 }
 
+//write position for placing things to file:
+bool RecordPositionForPlacement(Donogan* d)
+{
+    FILE* f = fopen("placement.txt", "a"); //create if doesnt exist, append
+    if (!f) return false;
+    // Donogan pos to file, so we can place things easier...
+    fprintf(f, "don_pos = %.2f %.2f %.2f\n", d->pos.x, d->pos.y, d->pos.z);
+    fclose(f);
+    PlaySoundVol(menuSaveOrLoad);
+    return true;
+}
 // ---------------- Save / Load (text) ----------------
 // Format: simple key=val lines + section markers for fireplaces & missions.
 // Overwrites file completely on Save (as requested).
