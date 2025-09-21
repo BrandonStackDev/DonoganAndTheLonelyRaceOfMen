@@ -2,7 +2,10 @@
 
 An open world raylib game!
 
-Not yet even close to ready. Release date will be 1-2 years in the future.
+Still in Active Development, right now the plan is to finish by Feb. 2026, but who knows...
+
+Check out the previews on itch - https://fiver-156.itch.io/donogan-light-preview
+ - only the light weight map is available right now
 
 [![Map](readme_assets/treasure_map.png)](readme_assets/treasure_map.png)
 
