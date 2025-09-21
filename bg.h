@@ -724,7 +724,7 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
     case ROBO_STATE_SPIN: {
         if (fabsf(b->targetYaw - b->yaw) < 10) 
         { 
-            if (GetRandomValue(0, 4) == 4)
+            if (b->aware && GetRandomValue(0, 4) == 4 && Vector3Distance(d->pos, b->pos) < 50) //they need to be close to shoot, other wise you can spawn one and get shot really far away...
             {
                 b->state = ROBO_STATE_SHOOT;
             }
@@ -878,7 +878,7 @@ BadGuy CreateRobo(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 94; //increment this, every time, you add, a bg...
+    bg_count = 136; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -985,6 +985,56 @@ void InitBadGuys(Shader ghostShader)
     bg[91] = CreateGhost((Vector3) { -2486.79, 871.82, -243.77 });
     bg[92] = CreateGhost((Vector3) { -2633.73, 847.06, -217.27 });
     bg[93] = CreateGhost((Vector3) { -2662.45, 835.76, -489.27 });
+
+    //near dons home (the first few ghosts...) and then lots of stuff in the forest outside the castle
+    //GHOSTS
+    bg[94] = CreateGhost((Vector3) { 2300.10, 376.70, 4527.03 });
+    bg[95] = CreateGhost((Vector3) { 2180.39, 395.35, 4479.77 });
+    bg[96] = CreateGhost((Vector3) { 2101.70, 377.21, 4620.84 });
+    bg[97] = CreateGhost((Vector3) { 1717.42, 404.10, 4447.05 });
+    //above is on start island, below is near the castle
+    bg[98] = CreateGhost((Vector3) { 2877.78, 349.78, 207.21 });
+    bg[99] = CreateGhost((Vector3) { 2799.20, 334.87, 266.73 });
+    bg[100] = CreateGhost((Vector3) { 2740.46, 324.81, 260.23 });
+    bg[101] = CreateGhost((Vector3) { 2691.21, 316.24, 120.75 });
+    bg[102] = CreateGhost((Vector3) { 2619.31, 318.90, -216.24 });
+    //ORBS
+    bg[103] = CreateRobo((Vector3) { 2410.49, 312.47, -748.57 });
+    bg[104] = CreateRobo((Vector3) { 2376.40, 312.47, -739.90 });
+    bg[105] = CreateRobo((Vector3) { 2321.68, 312.47, -735.42 });
+    bg[106] = CreateRobo((Vector3) { 2261.02, 316.24, -775.67 });
+    bg[107] = CreateRobo((Vector3) { 2231.89, 316.24, -830.51 });
+    bg[108] = CreateRobo((Vector3) { 2224.96, 320.00, -902.57 });
+    bg[109] = CreateRobo((Vector3) { 2228.61, 320.00, -949.82 });
+    bg[110] = CreateRobo((Vector3) { 2213.15, 320.00, -1000.84 });
+    bg[111] = CreateRobo((Vector3) { 2220.57, 318.51, -1122.92 });
+    bg[112] = CreateRobo((Vector3) { 2210.55, 316.24, -1155.30 });
+    bg[113] = CreateRobo((Vector3) { 2219.12, 316.24, -1191.33 });
+    //not sure exactly, but somewhere in here is orb island
+    bg[114] = CreateRobo((Vector3) { 2238.47, 312.47, -1233.92 });
+    bg[115] = CreateRobo((Vector3) { 2214.56, 312.47, -1285.44 });
+    bg[116] = CreateRobo((Vector3) { 2248.70, 307.30, -1349.97 });
+    bg[117] = CreateRobo((Vector3) { 2218.14, 308.71, -1380.00 });
+    bg[118] = CreateRobo((Vector3) { 2220.10, 316.24, -1198.31 });
+    bg[119] = CreateRobo((Vector3) { 2248.10, 320.00, -1017.31 });
+    bg[120] = CreateRobo((Vector3) { 2313.92, 320.00, -882.06 });
+    bg[121] = CreateRobo((Vector3) { 3207.65, 412.32, 305.29 });
+    bg[122] = CreateRobo((Vector3) { 3207.43, 416.60, 222.02 });
+    bg[123] = CreateRobo((Vector3) { 3344.50, 430.69, 121.06 });
+    bg[124] = CreateRobo((Vector3) { 3364.01, 432.94, 55.04 });
+    bg[125] = CreateRobo((Vector3) { 3344.18, 436.66, 6.49 });
+    bg[126] = CreateRobo((Vector3) { 3612.64, 399.57, 146.15 });
+    bg[127] = CreateRobo((Vector3) { 3670.18, 390.08, 176.65 });
+    //ghosts
+    bg[128] = CreateGhost((Vector3) { 3603.21, 402.07, 180.25 });
+    bg[129] = CreateGhost((Vector3) { 3477.33, 417.88, 208.81 });
+    bg[130] = CreateGhost((Vector3) { 3443.21, 420.89, 231.83 });
+    bg[131] = CreateGhost((Vector3) { 3416.24, 421.65, 416.51 });
+    //orbs
+    bg[132] = CreateRobo((Vector3) { 3170.54, 418.48, 169.34 });
+    bg[133] = CreateRobo((Vector3) { 2814.29, 345.95, 71.14 });
+    bg[134] = CreateRobo((Vector3) { 2652.73, 324.56, -134.66 });
+    bg[135] = CreateRobo((Vector3) { 2733.59, 352.75, -238.67 });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
