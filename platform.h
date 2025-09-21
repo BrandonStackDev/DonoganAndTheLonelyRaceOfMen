@@ -222,12 +222,6 @@ static inline void Platform_UpdateFaller(Platform* p, float dt)
 {
     if (!p || p->type != PLATFORM_FALLER) return;
 
-    if (HasTimerElapsed(&p->t_fellDelay))
-    {
-        ResetTimer(&p->t_fallDelay);//need this one too
-        ResetTimer(&p->t_fellDelay);
-        p->pos = p->origPos;
-    }
     // If falling, just integrate
     if (p->falling) {
         p->vy += PLATFORM_FALL_GRAVITY * dt;
@@ -287,6 +281,14 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
 {
     if (!p || !d) return;
 
+    if (HasTimerElapsed(&p->t_fellDelay))
+    {
+        ResetTimer(&p->t_fallDelay);//need this one too
+        ResetTimer(&p->t_fellDelay);
+        p->pos = p->origPos;
+        p->falling = false;
+    }
+
     // Update first so p->box and mover deltas are valid
     Platform_Update(p, dt, all);
 
@@ -295,13 +297,6 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
 
     // Consider only landings from above (feet cross the top plane)
     const float topY = p->box.max.y;
-    /*const float feetOld = d->oldPos.y + d->firstBB.min.y * d->scale;
-    const float feetNew = DonFeetWorldY(d);*/
-
-    //bool crossedDown = (feetOld >= topY) && (feetNew <= topY + d->groundEps) && (d->velY <= 0.0f);
-    //if (!crossedDown) return; // side hit or rising up: ignore here, your world collider handles walls
-
-    //if (!Platform_LandableTopOverlapXZ(p, d)) return;
 
     // LAND: set Don’s ground to the platform top and snap.
     d->groundY = topY;       // DonSnapToGround uses groundY as feet plane
@@ -309,8 +304,8 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
 
     // If it’s a faller, arm the delay timer once we step on it
     if (p->type == PLATFORM_FALLER && !p->falling) {
-        StartTimer(&p->t_fallDelay); // if (!p->t_fallDelay.running) {}
-        if (HasTimerElapsed(&p->t_fallDelay)) { p->falling = true; p->vy = 0.0f; }
+        if (!p->t_fallDelay.running) { StartTimer(&p->t_fallDelay); }
+        else if (HasTimerElapsed(&p->t_fallDelay)) { p->falling = true; p->vy = 0.0f; }
     }
 
     // If it’s a mover, carry Don by the platform delta this frame
