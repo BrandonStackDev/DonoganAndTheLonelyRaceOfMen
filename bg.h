@@ -878,7 +878,7 @@ BadGuy CreateRobo(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 67; //increment this, every time, you add, a bg...
+    bg_count = 94; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -942,7 +942,7 @@ void InitBadGuys(Shader ghostShader)
     bg[56] = CreateRobo((Vector3) { 2306, 481, 1591 });
     bg[57] = CreateRobo((Vector3) { 2230, 489, 1593 });
 
-    //mountain top
+    //mountain top, yeti moutnain 2, part 1
     bg[58] = CreateYeti((Vector3) { -2201, 895, -592 });
     bg[59] = CreateYeti((Vector3) { -2083, 934, -374 });
     bg[60] = CreateYeti((Vector3) { -2092, 918, -497 });
@@ -952,6 +952,39 @@ void InitBadGuys(Shader ghostShader)
     bg[64] = CreateRobo((Vector3) { -2094, 918, -515 });
     bg[65] = CreateGhost((Vector3) { -2094, 918, -646 });
     bg[66] = CreateGhost((Vector3) { -2007, 918, -497 });
+    //yeti mountain 2 part 2, this will be hard
+    //yetis
+    bg[67] = CreateYeti((Vector3) { -2007.34, 948.71, -225.76 });
+    bg[68] = CreateYeti((Vector3) { -2176.13, 922.35, -102.69 });
+    bg[69] = CreateYeti((Vector3) { -2213.31, 914.82, -297.31 });
+    bg[70] = CreateYeti((Vector3) { -2341.10, 896.00, -188.42 });
+    bg[71] = CreateYeti((Vector3) { -2375.00, 892.24, -49.96 });
+    bg[72] = CreateYeti((Vector3) { -2545.86, 862.12, -135.83 });
+    bg[73] = CreateYeti((Vector3) { -2562.40, 857.79, -270.36 });
+    bg[74] = CreateYeti((Vector3) { -2658.05, 835.76, -480.35 });
+    bg[75] = CreateYeti((Vector3) { -2807.65, 813.18, -394.54 });
+    bg[76] = CreateYeti((Vector3) { -3063.90, 752.17, -364.72 });
+    bg[77] = CreateYeti((Vector3) { -3131.19, 752.94, -382.41 });
+
+    //orbs
+    bg[78] = CreateRobo((Vector3) { -3086.85, 752.94, -392.37 });
+    bg[79] = CreateRobo((Vector3) { -2866.50, 801.29, -418.90 });
+    bg[80] = CreateRobo((Vector3) { -2794.91, 816.94, -353.48 });
+    bg[81] = CreateRobo((Vector3) { -2585.83, 852.27, -405.81 });
+    bg[82] = CreateRobo((Vector3) { -2477.21, 806.41, -479.55 });
+    bg[83] = CreateRobo((Vector3) { -2440.65, 811.14, -469.48 });
+    bg[84] = CreateRobo((Vector3) { -2360.18, 822.55, -436.84 });
+    bg[85] = CreateRobo((Vector3) { -2380.15, 825.39, -480.06 });
+    bg[86] = CreateRobo((Vector3) { -2369.83, 891.80, -185.46 });
+    bg[87] = CreateRobo((Vector3) { -2285.83, 904.04, -273.57 });
+    bg[88] = CreateRobo((Vector3) { -2140.60, 929.88, -112.58 });
+
+    //ghosts
+    bg[89] = CreateGhost((Vector3) { -2122.75, 931.12, -260.41 });
+    bg[90] = CreateGhost((Vector3) { -2367.44, 892.37, -110.10 });
+    bg[91] = CreateGhost((Vector3) { -2486.79, 871.82, -243.77 });
+    bg[92] = CreateGhost((Vector3) { -2633.73, 847.06, -217.27 });
+    bg[93] = CreateGhost((Vector3) { -2662.45, 835.76, -489.27 });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)

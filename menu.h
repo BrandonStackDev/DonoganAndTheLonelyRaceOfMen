@@ -103,7 +103,7 @@ bool RecordPositionForPlacement(Donogan* d)
     FILE* f = fopen("placement.txt", "a"); //create if doesnt exist, append
     if (!f) return false;
     // Donogan pos to file, so we can place things easier...
-    fprintf(f, "don_pos = %.2f %.2f %.2f\n", d->pos.x, d->pos.y, d->pos.z);
+    fprintf(f, "don_pos = %.2f, %.2f, %.2f\n", d->pos.x, d->pos.y, d->pos.z);
     fclose(f);
     PlaySoundVol(menuSaveOrLoad);
     return true;
