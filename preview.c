@@ -368,46 +368,7 @@ int main(void) {
     Font req_font = LoadFontEx("res/Tangerine/Tangerine-Bold.ttf", 32, 0, 250);
     Font res_font = LoadFontEx("res/Lexend/static/Lexend-SemiBold.ttf", 15, 0, 250);
     ////PLATS-----------------------------------------------------
-    Texture tex_plat = LoadTexture("textures/wood2.png");
-    Texture tex_fall = LoadTexture("textures/wood1.png");
-    Platform plats[NUM_PLATS]; //testing 3022.00f, 322.00f, 4042.42f
-    //plats[0] = Platform_MakeStill((Vector3) { 3022, 319, 4042 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    //plats[1] = Platform_MakeFaller((Vector3) { 3032, 319, 4052 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
-    plats[0] = Platform_MakeMover((Vector3) { 2408, 509, 936 }, (Vector3) { 2408, 521, 936 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
-    plats[1] = Platform_MakeMover((Vector3) { 2190, 525, 605 }, (Vector3) { 2191, 545, 604 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
-    plats[2] = Platform_MakeMover((Vector3) { 2200, 545, 605 }, (Vector3) { 2275, 545, 604 }, (Vector3) {6, 1, 6}, 4.0f, tex_plat, WHITE);
-    plats[3] = Platform_MakeStill((Vector3) { 2250, 545, 615 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[4] = Platform_MakeStill((Vector3) { 2255, 545, 625 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[5] = Platform_MakeStill((Vector3) { 2260, 545, 635 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    //clover of death
-    plats[6] = Platform_MakeMover((Vector3) { 2270, 545, 650 }, (Vector3) { 2270, 545, 700 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
-    plats[7] = Platform_MakeMover((Vector3) { 2270, 545, 700 }, (Vector3) { 2320, 545, 700 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
-    plats[8] = Platform_MakeMover((Vector3) { 2320, 545, 700 }, (Vector3) { 2320, 545, 650 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
-    plats[9] = Platform_MakeMover((Vector3) { 2320, 545, 650 }, (Vector3) { 2270, 545, 650 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
-    plats[6].mover.clover = true; plats[7].mover.clover = true; plats[8].mover.clover = true; plats[9].mover.clover = true;
-    plats[6].mover.boundTo[0] = 7; plats[6].mover.boundTo[1] = 8; plats[6].mover.boundTo[2] = 9;
-    plats[7].mover.boundTo[0] = 8; plats[7].mover.boundTo[1] = 9; plats[7].mover.boundTo[2] = 6;
-    plats[8].mover.boundTo[0] = 9; plats[8].mover.boundTo[1] = 6; plats[8].mover.boundTo[2] = 7;
-    plats[9].mover.boundTo[0] = 6; plats[9].mover.boundTo[1] = 7; plats[9].mover.boundTo[2] = 8;
-    //pairs
-    plats[10] = Platform_MakeFaller((Vector3) { 2330, 550, 700 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
-    plats[11] = Platform_MakeStill((Vector3) { 2340, 555, 700 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[12] = Platform_MakeFaller((Vector3) { 2340, 560, 710 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
-    plats[13] = Platform_MakeStill((Vector3) { 2340, 565, 720 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    //end phase 1
-    plats[14] = Platform_MakeStill((Vector3) { 2345, 570, 735 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[15] = Platform_MakeStill((Vector3) { 2350, 575, 750 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[16] = Platform_MakeStill((Vector3) { 2365, 575, 750 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    //plats[17] = Platform_MakeMover((Vector3) { 2365, 575, 760 }, (Vector3) { 2365, 510, 760 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE); //testing
-    plats[17] = Platform_MakeMover((Vector3) { 2365, 520, 760 }, (Vector3) { 2365, 500, 760 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE); //for real
-    //faller mover pair
-    plats[18] = Platform_MakeFaller((Vector3) { 2400, 575, 925 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
-    plats[19] = Platform_MakeMover((Vector3) { 2400, 575, 935 }, (Vector3) { 2400, 620, 935 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
-    //phase 3, in which, Doris gets her oats
-    plats[20] = Platform_MakeMover((Vector3) { 2170, 590, 950 }, (Vector3) { 2170, 700, 950 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
-    //plats[21] = Platform_MakeMover((Vector3) { 2170, 590, 960 }, (Vector3) { 2100, 700, 960 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
-    //plats[22] = Platform_MakeMover((Vector3) { 2110, 700, 960 }, (Vector3) { 2170, 800, 950 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
-
+    InitPlats();
     ////whales---------------------------------------------------
     int numWhales = 9; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
