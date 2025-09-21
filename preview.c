@@ -384,6 +384,11 @@ int main(void) {
     plats[7] = Platform_MakeMover((Vector3) { 2270, 545, 700 }, (Vector3) { 2320, 545, 700 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
     plats[8] = Platform_MakeMover((Vector3) { 2320, 545, 700 }, (Vector3) { 2320, 545, 650 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
     plats[9] = Platform_MakeMover((Vector3) { 2320, 545, 650 }, (Vector3) { 2270, 545, 650 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[6].mover.clover = true; plats[7].mover.clover = true; plats[8].mover.clover = true; plats[9].mover.clover = true;
+    plats[6].mover.boundTo[0] = 7; plats[6].mover.boundTo[1] = 8; plats[6].mover.boundTo[2] = 9;
+    plats[7].mover.boundTo[0] = 8; plats[7].mover.boundTo[1] = 9; plats[7].mover.boundTo[2] = 6;
+    plats[8].mover.boundTo[0] = 9; plats[8].mover.boundTo[1] = 6; plats[8].mover.boundTo[2] = 7;
+    plats[9].mover.boundTo[0] = 6; plats[9].mover.boundTo[1] = 7; plats[9].mover.boundTo[2] = 8;
     //pairs
     plats[10] = Platform_MakeFaller((Vector3) { 2330, 550, 700 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
     plats[11] = Platform_MakeStill((Vector3) { 2340, 555, 700 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
@@ -2435,7 +2440,7 @@ int main(void) {
             for (int i = 0; i < NUM_PLATS; i++)
             {
                 if (Vector3Distance(plats[i].pos, don.pos) > 600) { continue; }
-                Platform_CollideAndRide(&plats[i], &don, dt);
+                Platform_CollideAndRide(&plats[i], &don, dt, plats);
             }
         }
         //collision for bad guys and attacks

@@ -41,6 +41,8 @@ typedef struct {
     float   speed;          // meters / second
     bool    justSnapped;    // true only on the frame we clamp to endpoint
     Timer   t_wait;         // pause between trips
+    bool clover; // do we need to stay exactly in sync
+    int boundTo [3];
 } Mover;
 
 // Main platform object
@@ -125,7 +127,10 @@ static inline Mover Mover_Make(Vector3 posA, Vector3 posB, float speed)
 {
     Vector3 d = Vector3Subtract(posB, posA);
     float L = Vector3Length(d); if (L < 1e-6f) L = 1.0f;
-    Mover m; m.state = MOVER_FWD; m.posA = posA; m.posB = posB;
+    Mover m = {0};
+    m.clover = false;              // explicit
+    m.boundTo[0] = m.boundTo[1] = m.boundTo[2] = -1;   // INVALID until you wire it up
+    m.state = MOVER_FWD; m.posA = posA; m.posB = posB;
     m.dir = Vector3Scale(d, 1.0f / L); m.oldPos = posA; m.speed = fmaxf(speed, 0.0f);
     m.justSnapped = false; m.t_wait = CreateTimer(PLATFORM_WAIT_SEC); StartTimer(&m.t_wait); // start with a tiny settle if you want
     return m;
@@ -156,7 +161,7 @@ static inline Platform Platform_MakeFaller(Vector3 pos, Vector3 dim, Texture2D t
 // ------------------------------------------------------------
 // Update
 // ------------------------------------------------------------
-static inline void Platform_UpdateMover(Platform* p, float dt)
+static inline void Platform_UpdateMover( Platform* p, float dt, Platform* all)
 {
     if (!p || p->type != PLATFORM_MOVER) return;
 
@@ -186,7 +191,19 @@ static inline void Platform_UpdateMover(Platform* p, float dt)
     }
     else if (p->mover.state == MOVER_WAIT_A || p->mover.state == MOVER_WAIT_B)
     {
-        if (HasTimerElapsed(&p->mover.t_wait)) {
+        bool unlocked = true;
+        if (p->mover.clover && p->mover.state == MOVER_WAIT_A)
+        {
+            for (int i = 0; i < 3; i++) 
+            { 
+                MoverState s = all[p->mover.boundTo[i]].mover.state;
+                if (s== MOVER_FWD)
+                { 
+                    unlocked = false; 
+                } 
+            } //lock to stay in sync, just once every now and aagain would be fine, so this wshould work...
+        }
+        if (unlocked && HasTimerElapsed(&p->mover.t_wait)) {
             // flip direction
             p->mover.state = (p->mover.state == MOVER_WAIT_A) ? MOVER_BACK : MOVER_FWD;
             Vector3 d = (p->mover.state == MOVER_FWD)
@@ -234,10 +251,10 @@ static inline void Platform_UpdateFaller(Platform* p, float dt)
     p->box = UpdateBoundingBox(p->origBox, p->pos);
 }
 
-static inline void Platform_Update(Platform* p, float dt)
+static inline void Platform_Update(Platform* p, float dt, Platform* all)
 {
     if (!p) return;
-    if (p->type == PLATFORM_MOVER) Platform_UpdateMover(p, dt);
+    if (p->type == PLATFORM_MOVER) Platform_UpdateMover(p, dt, all);
     else if (p->type == PLATFORM_FALLER) Platform_UpdateFaller(p, dt);
     else p->box = UpdateBoundingBox(p->origBox, p->pos);
 }
@@ -266,12 +283,12 @@ static inline void Platform_Update(Platform* p, float dt)
 //}
 
 //cool name, no idea what it does...
-static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt)
+static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Platform* all)
 {
     if (!p || !d) return;
 
     // Update first so p->box and mover deltas are valid
-    Platform_Update(p, dt);
+    Platform_Update(p, dt, all);
 
     // Fast reject: AABB test against full box
     if (!CheckCollisionBoxes(d->outerBox, p->box)) return;
@@ -292,7 +309,7 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt)
 
     // If it’s a faller, arm the delay timer once we step on it
     if (p->type == PLATFORM_FALLER && !p->falling) {
-        if (!p->t_fallDelay.running) { StartTimer(&p->t_fallDelay); }
+        StartTimer(&p->t_fallDelay); // if (!p->t_fallDelay.running) {}
         if (HasTimerElapsed(&p->t_fallDelay)) { p->falling = true; p->vy = 0.0f; }
     }
 
