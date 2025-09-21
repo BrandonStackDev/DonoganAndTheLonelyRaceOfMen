@@ -102,7 +102,6 @@ static inline void  Menu_ScrollClamp(int count, int* sel, int* scroll) {
 // Overwrites file completely on Save (as requested).
 bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
 {
-    PlaySoundVol(menuSaveOrLoad);
     FILE* f = fopen(path ? path : "don.save.txt", "wb");
     if (!f) return false;
 
@@ -141,12 +140,12 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     fprintf(f, "--MISSIONS-END--\n");
 
     fclose(f);
+    PlaySoundVol(menuSaveOrLoad);
     return true;
 }
 
 static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
 {
-    PlaySoundVol(menuSaveOrLoad);
     FILE* f = fopen(path ? path : "don.save.txt", "rb");
     if (!f) return false;
 
@@ -220,8 +219,9 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
 
     // snap to ground after warps/loads
     d->groundY = GetTerrainHeightFromMeshXZ(d->pos.x, d->pos.z);
-    DonSnapToGround(d); // :contentReference[oaicite:7]{index=7}
+    DonSnapToGround(d);
     Menu_ApplyVolumes(gs);
+    PlaySoundVol(menuSaveOrLoad);
     return true;
 }
 
