@@ -12,10 +12,11 @@
 
 // your stuff
 #include "game.h"       // GameState gGame (invY, invX, musicVol, soundVol, diff, currentMusic, etc.)
-//#include "donogan.h"    // Donogan (pos, health/mana/max, level, xp)  :contentReference[oaicite:0]{index=0}
-#include "interact.h"   // missions[], fires[], counts, names, desc   :contentReference[oaicite:1]{index=1}
+#include "donogan.h"    // Donogan (pos, health/mana/max, level, xp)
+#include "interact.h"   // missions[], fires[], counts, names, desc  
 #include "collision.h"
 #include "core.h"
+#include "items.h"
 
 // --- config ---
 #ifndef MENU_VISIBLE_ROWS
@@ -138,17 +139,24 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
 
     // Fireplaces (with explicit section markers so list can grow)
     fprintf(f, "--FIREPLACES-BEGIN--\n");
-    for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++) {                // :contentReference[oaicite:3]{index=3}
-        fprintf(f, "FIRE[%d] = %d\n", i, fires[i].lit ? 1 : 0);    // :contentReference[oaicite:4]{index=4}
+    for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++) {                //
+        fprintf(f, "FIRE[%d] = %d\n", i, fires[i].lit ? 1 : 0);    //
     }
     fprintf(f, "--FIREPLACES-END--\n");
 
     // Missions
     fprintf(f, "--MISSIONS-BEGIN--\n");
-    for (int i = 0; i < MISSION_TOTAL_COUNT; i++) {                // :contentReference[oaicite:5]{index=5}
-        fprintf(f, "MISSION[%d] = %d\n", i, missions[i].complete ? 1 : 0);  // :contentReference[oaicite:6]{index=6}
+    for (int i = 0; i < MISSION_TOTAL_COUNT; i++) {                //
+        fprintf(f, "MISSION[%d] = %d\n", i, missions[i].complete ? 1 : 0);  //
     }
     fprintf(f, "--MISSIONS-END--\n");
+
+    //tracked items
+    fprintf(f, "--ITEMS-BEGIN--\n");
+    for (int i = 0; i < NUM_TRACKED_ITEMS; i++) {                //
+        fprintf(f, "ITEM[%d] = %d\n", i, map_tracked_items[i].collected ? 1 : 0);  //
+    }
+    fprintf(f, "--ITEM-END--\n");
 
     fclose(f);
     PlaySoundVol(menuSaveOrLoad);
@@ -160,17 +168,19 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
     FILE* f = fopen(path ? path : "don.save.txt", "rb");
     if (!f) return false;
 
-    char line[512]; bool inFires = false, inMissions = false;
+    char line[512]; bool inFires = false, inMissions = false, inItems = false;
     while (fgets(line, sizeof(line), f)) {
         // strip
         char* s = line;
         while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n') ++s;
         if (!*s) continue;
 
-        if (!strncmp(s, "--FIREPLACES-BEGIN--", 20)) { inFires = true;  inMissions = false; continue; }
+        if (!strncmp(s, "--FIREPLACES-BEGIN--", 20)) { inFires = true;  inMissions = false; inItems = false; continue; }
         if (!strncmp(s, "--FIREPLACES-END--", 18)) { inFires = false; continue; }
-        if (!strncmp(s, "--MISSIONS-BEGIN--", 18)) { inMissions = true; inFires = false;  continue; }
+        if (!strncmp(s, "--MISSIONS-BEGIN--", 18)) { inMissions = true; inFires = false;  inItems = false; continue; }
         if (!strncmp(s, "--MISSIONS-END--", 16)) { inMissions = false; continue; }
+        if (!strncmp(s, "--ITEMS-BEGIN--", 20)) { inItems = true;  inMissions = false; inFires = false; continue; }
+        if (!strncmp(s, "--ITEMS-END--", 18)) { inItems = false; continue; }
 
         if (inFires) {
             int idx = 0, val = 0;
@@ -183,6 +193,13 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
             int idx = 0, val = 0;
             if (sscanf(s, "MISSION[%d] = %d", &idx, &val) == 2) {
                 if (idx >= 0 && idx < MISSION_TOTAL_COUNT) missions[idx].complete = (val != 0);
+            }
+            continue;
+        }
+        if (inMissions) {
+            int idx = 0, val = 0;
+            if (sscanf(s, "ITEM[%d] = %d", &idx, &val) == 2) {
+                if (idx >= 0 && idx < NUM_TRACKED_ITEMS) map_tracked_items[idx].collected = (val != 0);
             }
             continue;
         }
