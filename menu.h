@@ -363,13 +363,9 @@ static void Menu_OnCross(GameState* gs, Donogan* d)
             InventoryItem* it = &inventory[i];
             if (it->count > 0 && it->type != INV_BOOK && it->type != INV_EVIL_BOOK) {
                 it->count--;                 // consume one
-                PlaySoundVol(menuSelect);    // reuse your select sfx
+                PlaySoundVol(menuSaveOrLoad);    // reuse your select sfx
                 // TODO:  trigger actual effects here based on it->type (heal, mana, etc.)
                 // e.g., if (it->type == INV_HEALTH) { d->health = Min(d->health + 20, d->maxHealth); }
-            }
-            else {
-                // TODO: tiny “nope” sound or toast if you want feedback for 0-count
-                // PlaySoundVol(menuBack);
             }
         }
         return;
@@ -416,7 +412,7 @@ static void _DrawInventory(GameState* gs) {
 
         // Selected row color vs. dim if zero-count
         bool isSelected = (visRow == (gs->menuSel - gs->menuScroll));
-        Color leftColor = isSelected ? MENU_SELECT : (c > 0 ? MENU_TEXT : MENU_DIM);
+        Color leftColor = isSelected ? MENU_SELECT : (inventory[i].type == INV_BOOK || inventory[i].type == INV_EVIL_BOOK) ? (Color) { 100, 100, 200, 200 } : (c > 0 ? MENU_TEXT : MENU_DIM); //worst, thing, ever...(in the voice of comic book guy from the simpsons)
         Color rightColor = leftColor;
 
         // Name (left)
