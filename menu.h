@@ -16,7 +16,7 @@
 #include "interact.h"   // missions[], fires[], counts, names, desc  
 #include "collision.h"
 #include "core.h"
-#include "items.h"
+#include "items.h" //items[]
 
 // --- config ---
 #ifndef MENU_VISIBLE_ROWS
@@ -352,7 +352,8 @@ static void Menu_OnCross(GameState* gs, Donogan* d)
         return;
     }
 
-    // OPTIONS & INVENTORY & MISSION_DETAIL have no Cross action (Options changes on Left/Right).
+    // OPTIONS && MISSION_DETAIL have no Cross action (Options changes on Left/Right).
+    //INVENTORY
 }
 
 // ---------------- Drawing ----------------
