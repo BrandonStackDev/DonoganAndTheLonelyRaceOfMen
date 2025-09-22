@@ -28,4 +28,6 @@ MISSION[5] = 0
 --ITEMS-BEGIN--
 ITEM[0] = 0
 ITEM[1] = 0
+ITEM[2] = 0
+ITEM[3] = 0
 --ITEM-END--
