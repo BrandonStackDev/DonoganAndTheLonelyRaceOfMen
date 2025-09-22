@@ -25,6 +25,7 @@
 #include "npc.h"
 #include "menu.h"
 #include "platform.h"
+#include "items.h"
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -369,6 +370,8 @@ int main(void) {
     Font res_font = LoadFontEx("res/Lexend/static/Lexend-SemiBold.ttf", 15, 0, 250);
     ////PLATS-----------------------------------------------------
     InitPlats();
+    //items
+    InitItems();
     ////whales---------------------------------------------------
     int numWhales = 9; // six whales right now
     Whale* whales = (Whale*)malloc(sizeof(Whale) * numWhales);
@@ -765,6 +768,8 @@ int main(void) {
         loop_counter++;
         rotorSpin += GetFrameTime() * 128;
         int numCloseProps = 0;
+        //
+        DocumentCloseItems(&don);
         //document close props
         if (onLoad)//tweak modulus and total size
         {
@@ -812,6 +817,7 @@ int main(void) {
         {
             TraceLog(LOG_INFO,"numCloseProps = %d", numCloseProps);
             TraceLog(LOG_INFO, "act_bg_count = %d", act_bg_count);
+            TraceLog(LOG_INFO, "num_close_map_items = %d", num_close_map_items);
         }
         // init disable roll (if we touch a wall, do not allow roll)
         bool disableRoll = false;
