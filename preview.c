@@ -770,6 +770,11 @@ int main(void) {
         int numCloseProps = 0;
         //
         DocumentCloseItems(&don);
+        if (onLoad)
+        {
+            ConsumeSimpleItems(&don);
+            ConsumeTrackedItems(&don);
+        }
         //document close props
         if (onLoad)//tweak modulus and total size
         {
@@ -2811,13 +2816,13 @@ int main(void) {
                                 1.5f, 1.1f, 1.5f
                             }, WHITE);
                         }
-
                         EndBlendMode();
-
                     }
                 }
                 dropped_firepits = true;
             }
+            //items
+            if (onLoad) { DrawItems(displayBoxes); }
             //homes
             if (onLoad)
             {

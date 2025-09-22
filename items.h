@@ -1,4 +1,4 @@
-#ifndef ITEMS_H
+﻿#ifndef ITEMS_H
 #define ITEMS_H
 
 // Includes
@@ -25,7 +25,7 @@ typedef enum {
     //INV_FART_POWDER, //very rare, when consumed will play a fart sound and immediately kill all bad guys in a 100 foot radius. when in water, should also produce some bubbles
     //INV_KEY, //very rare, will only be like 5 max in the game, used to open locked things, the number of these should match the number of locked things (like buildings with doors and chests), the rule will be you need a key in inventory to open the thing, it consumes one key and then its permanently opened
     INV_BOOK, //most important item in the game, these are what you look for....should be like 10 - 20 on the map (todo: Alistair stuff also)
-    INV_EVIL_BOOK //the ones that are hidden inside buildings, the shadow books
+    INV_EVIL_BOOK, //the ones that are hidden inside buildings, the shadow books
     INV_TOTAL_TYPES,
 } InventoryType;
 
@@ -39,6 +39,7 @@ typedef struct {
 InventoryItem inventory[INV_TOTAL_TYPES];
 
 typedef struct {
+    int id;
     InventoryType type;
     Vector3 pos;
     BoundingBox box;
@@ -64,66 +65,101 @@ Item map_items[NUM_ITEMS];
 TrackedItem map_tracked_items[NUM_TRACKED_ITEMS];
 
 int num_close_map_items = 0; //todo: if I need this...?
-Item close_map_items[MAX_CLOSE_ITEMS];
+Item* close_map_items[MAX_CLOSE_ITEMS];
 
 //fill close_map_items and set num_close_map_items, reset the spawn timers
 void DocumentCloseItems(Donogan* d)
 {
     num_close_map_items = 0;
-    for (int i = 0; i < NUM_ITEMS && num_close_map_items < MAX_CLOSE_ITEMS; i++)
+
+    for (int i = 0; i < NUM_ITEMS; i++)
     {
-        if (map_items[i].collected)
+        Item* it = &map_items[i];
+
+        // Handle respawn timing on the SOURCE item
+        if (it->collected)
         {
-            if (map_items[i].respawnTimer.running && HasTimerElapsed(&map_items[i].respawnTimer))
-            {
-                map_items[i].collected = false;
-                ResetTimer(&map_items[i].respawnTimer);
+            if (it->respawnTimer.running && HasTimerElapsed(&it->respawnTimer)) {
+                it->collected = false;
+                ResetTimer(&it->respawnTimer);
             }
-            else { continue; }
+            else {
+                continue; // still collected and not ready → skip
+            }
         }
-        if (!map_items[i].collected && Vector3Distance(d->pos, map_items[i].pos)<500)//probably redundant but good to have
+
+        // Proximity cull → add pointer to the close list
+        if (Vector3Distance(d->pos, it->pos) < 500.0f)   // tune radius
         {
-            close_map_items[num_close_map_items] = map_items[i];
-            num_close_map_items++;
+            if (num_close_map_items < MAX_CLOSE_ITEMS) {
+                close_map_items[num_close_map_items++] = it;  // <-- store pointer
+            }
+            else {
+                break;
+            }
         }
     }
 }
 
+
 //for the ones that respawn
-void ConsumeSimpleItems(Donogan *d)
+void ConsumeSimpleItems(Donogan* d)
 {
-    for (int i = 0; i < num_close_map_items; i++)
+    for (int k = 0; k < num_close_map_items; k++)
     {
+        Item* it = close_map_items[k];            // pointer to SOURCE
+        if (it->collected) continue;
+
+        if (CheckCollisionBoxes(it->box, d->outerBox))
+        {
+            it->collected = true;             // mutate SOURCE
+            inventory[it->type].count++;      // credit the right slot
+            StartTimer(&it->respawnTimer);    // start SOURCE timer
+            // TODO: Play pickup SFX, spawn VFX
+        }
     }
 }
+
 
 //for the ones that do not respawn
 void ConsumeTrackedItems(Donogan* d)
 {
     for (int i = 0; i < NUM_TRACKED_ITEMS; i++)
     {
+        if (map_tracked_items[i].collected) { continue; }
+        if (CheckCollisionBoxes(map_tracked_items[i].box, d->outerBox))
+        {
+            map_tracked_items[i].collected = true;
+            inventory[map_tracked_items[i].type].count++;
+            //todo: play sound here
+        }
     }
 }
 
 //Draw Items
-void DrawItems()
+void DrawItems(bool drawBoxes)
 {
-    for (int i = 0; i < num_close_map_items; i++)
+    for (int k = 0; k < num_close_map_items; k++)
     {
-        if (map_items[i].collected) { continue; }
-        DrawModel(close_map_items[i].model, close_map_items[i].pos, close_map_items[i].scale, WHITE);
+        Item* it = close_map_items[k];
+        if (it->collected) continue;
+
+        DrawModel(it->model, it->pos, it->scale, WHITE);
+        if (drawBoxes) DrawBoundingBox(it->box, PURPLE);
     }
     for (int i = 0; i < NUM_TRACKED_ITEMS; i++)
     {
         if (map_tracked_items[i].collected) { continue; }
         DrawModel(map_tracked_items[i].model, map_tracked_items[i].pos, map_tracked_items[i].scale, WHITE);
+        if (drawBoxes) { DrawBoundingBox(map_tracked_items[i].box, PINK); }
     }
 }
 
 //create
-CreateRegularItem(Model model, Vector3 pos, InventoryType type, float scale)
+Item CreateRegularItem(Model model, Vector3 pos, InventoryType type, float scale, int id)
 {
     Item i = { 0 };
+    i.id = id;
     i.type = type;
     i.model = model;
     i.box = UpdateBoundingBox(GetModelBoundingBox(model),pos);
@@ -131,16 +167,18 @@ CreateRegularItem(Model model, Vector3 pos, InventoryType type, float scale)
     i.scale = scale;
     i.collected = false;
     i.respawnTimer = CreateTimer(360);
+    return i;
 }
-CreateTrackedItem(Model model, Vector3 pos, InventoryType type, float scale)
+TrackedItem CreateTrackedItem(Model model, Vector3 pos, InventoryType type, float scale)
 {
-    Item i = { 0 };
+    TrackedItem i = { 0 };
     i.type = type;
     i.model = model;
     i.box = UpdateBoundingBox(GetModelBoundingBox(model), pos);
     i.pos = pos;
     i.scale = scale;
     i.collected = false;
+    return i;
 }
 //init all of the stuff
 void InitItems()
@@ -169,13 +207,13 @@ void InitItems()
     inventory[INV_EVIL_BOOK] = (InventoryItem){ INV_HEALTH, "Book of Shadows", "hmmm, one of the many book of shadows?", 0 };
     //setup map items
     //for testing: 3022.00f, 322.00f, 4042.42f
-    CreateRegularItem(health_model, (Vector3) { 3020, 322, 4040 }, INV_HEALTH, 1);
-    CreateRegularItem(health_model, (Vector3) { 3025, 322, 4045 }, INV_HEALTH_FULL, 1);
-    CreateRegularItem(health_model, (Vector3) { 3030, 322, 4050 }, INV_POTION, 1);
+    map_items[0] = CreateRegularItem(health_model, (Vector3) { 3020, 322, 4040 }, INV_HEALTH, 1, 0);
+    map_items[1] = CreateRegularItem(health_full_model, (Vector3) { 3025, 322, 4045 }, INV_HEALTH_FULL, 1, 1);
+    map_items[2] = CreateRegularItem(mana_model, (Vector3) { 3030, 322, 4050 }, INV_POTION, 1, 2);
     //setup tracked map items
     //for testing: 3022.00f, 322.00f, 4042.42f
-    CreateTrackedItem(health_model, (Vector3) { 3010, 322, 4010 }, INV_BOOK, 1);
-    CreateTrackedItem(health_model, (Vector3) { 3015, 322, 4015 }, INV_EVIL_BOOK, 1);
+    map_tracked_items[0] = CreateTrackedItem(book_model, (Vector3) { 3010, 322, 4010 }, INV_BOOK, 1);
+    map_tracked_items[1] = CreateTrackedItem(evil_book_model, (Vector3) { 3015, 322, 4015 }, INV_EVIL_BOOK, 1);
 }
 
 #endif // ITEMS_H
