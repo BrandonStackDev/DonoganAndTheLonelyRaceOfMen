@@ -59,4 +59,9 @@ static inline void PlaySoundVol(Sound s) {
     }
 }
 
+static inline void PlaySoundVolContinuousAllowed(Sound s) {
+    SetSoundVolume(s, gGame.soundVol);
+    PlaySound(s);
+}
+
 #endif // GAME_H

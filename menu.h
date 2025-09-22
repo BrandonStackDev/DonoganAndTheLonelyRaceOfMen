@@ -363,7 +363,7 @@ static void Menu_OnCross(GameState* gs, Donogan* d)
             InventoryItem* it = &inventory[i];
             if (it->count > 0 && it->type != INV_BOOK && it->type != INV_EVIL_BOOK) {
                 it->count--;                 // consume one
-                PlaySoundVol(menuSaveOrLoad);    // reuse your select sfx
+                PlaySoundVolContinuousAllowed(menuSaveOrLoad);    // reuse your select sfx, dont check if the sound is playing, I always want to feel that I consumed an item
                 // TODO:  trigger actual effects here based on it->type (heal, mana, etc.)
                 // e.g., if (it->type == INV_HEALTH) { d->health = Min(d->health + 20, d->maxHealth); }
             }
