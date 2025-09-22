@@ -8,6 +8,7 @@
 #include <stdio.h> 
 #include <stdbool.h>
 #include "timer.h"
+#include "donogan.h"
 
 // Type Definitions
 typedef enum {
@@ -24,6 +25,7 @@ typedef enum {
     //INV_FART_POWDER, //very rare, when consumed will play a fart sound and immediately kill all bad guys in a 100 foot radius. when in water, should also produce some bubbles
     //INV_KEY, //very rare, will only be like 5 max in the game, used to open locked things, the number of these should match the number of locked things (like buildings with doors and chests), the rule will be you need a key in inventory to open the thing, it consumes one key and then its permanently opened
     //INV_BOOK, most important item in the game, these are what you look for....should be like 10 - 20 on the map (todo: Alistair stuff also)
+    //INV_EVIL_BOOK
     INV_TOTAL_TYPES,
 } InventoryType;
 
@@ -39,7 +41,7 @@ InventoryItem inventory[INV_TOTAL_TYPES];
 typedef struct {
     InventoryType type;
     Vector3 pos;
-    BoundingBox origBox, box;
+    BoundingBox box;
     float scale;
     Model model;
     bool collected;//this one means collected until the spawn timer expires
@@ -49,7 +51,7 @@ typedef struct {
 typedef struct {
     InventoryType type;
     Vector3 pos;
-    BoundingBox origBox, box;
+    BoundingBox box;
     float scale;
     Model model;
     bool collected; //this one means collected forever
@@ -60,25 +62,77 @@ typedef struct {
 Item map_items[NUM_ITEMS];
 TrackedItem map_tracked_items[NUM_TRACKED_ITEMS];
 
-//int num_close_map_items = 0; //todo: if I need this...?
-//Item close_map_items[32];
-//
-////fill close_map_items and set num_close_map_items
-//void DocumentCloseItems()
-//{
-//
-//}
+int num_close_map_items = 0; //todo: if I need this...?
+Item close_map_items[32];
 
-void ConsumeItems()
+//fill close_map_items and set num_close_map_items, reset the spawn timers
+void DocumentCloseItems()
+{
+    for (int i = 0; i < NUM_ITEMS)
+    {
+        if (map_items[i].collected)
+        {
+            if (map_items[i].respawnTimer.running && HasTimerElapsed(&map_items[i].respawnTimer))
+            {
+                map_items[i].collected = false;
+                ResetTimer(&map_items[i].respawnTimer);
+            }
+            else { continue; }
+        }
+        if (!map_items[i].collected)//probably redundant but good to have
+        {
+
+        }
+    }
+}
+
+//for the ones that respawn
+void ConsumeSimpleItems(Donogan *d)
 {
 
 }
 
-void ConsumeTrackedItems()
+//for the ones that do not respawn
+void ConsumeTrackedItems(Donogan* d)
 {
 
 }
 
+//Draw Items
+void DrawItems()
+{
+    for (int i = 0; i < NUM_ITEMS)
+    {
+        DrawModel(map_items[i].model, map_items[i].pos, map_items[i].scale, WHITE);
+    }
+    for (int i = 0; i < NUM_TRACKED_ITEMS)
+    {
+        DrawModel(map_tracked_items[i].model, map_tracked_items[i].pos, map_tracked_items[i].scale, WHITE);
+    }
+}
+
+//create
+CreateRegularItem(Model model, Vector3 pos, InventoryType type, float scale)
+{
+    Item i = { 0 };
+    i.type = type;
+    i.model = model;
+    i.box = UpdateBoundingBox(GetModelBoundingBox(model),pos);
+    i.pos = pos;
+    i.scale = scale;
+    i.collected = false;
+    i.respawnTimer = CreateTimer(360);
+}
+CreateTrackedItem(Model model, Vector3 pos, InventoryType type, float scale)
+{
+    Item i = { 0 };
+    i.type = type;
+    i.model = model;
+    i.box = UpdateBoundingBox(GetModelBoundingBox(model), pos);
+    i.pos = pos;
+    i.scale = scale;
+    i.collected = false;
+}
 //init all of the stuff
 void InitItems()
 {
