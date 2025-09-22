@@ -59,16 +59,18 @@ typedef struct {
 
 #define NUM_ITEMS 3
 #define NUM_TRACKED_ITEMS 1
+#define MAX_CLOSE_ITEMS 32
 Item map_items[NUM_ITEMS];
 TrackedItem map_tracked_items[NUM_TRACKED_ITEMS];
 
 int num_close_map_items = 0; //todo: if I need this...?
-Item close_map_items[32];
+Item close_map_items[MAX_CLOSE_ITEMS];
 
 //fill close_map_items and set num_close_map_items, reset the spawn timers
 void DocumentCloseItems()
 {
-    for (int i = 0; i < NUM_ITEMS)
+    num_close_map_items = 0
+    for (int i = 0; i < NUM_ITEMS && num_close_map_items < MAX_CLOSE_ITEMS; i++)
     {
         if (map_items[i].collected)
         {
@@ -79,9 +81,10 @@ void DocumentCloseItems()
             }
             else { continue; }
         }
-        if (!map_items[i].collected)//probably redundant but good to have
+        if (!map_items[i].collected && Vector3Distance(d->pos, map_items[i].pos)<500)//probably redundant but good to have
         {
-
+            close_map_items[num_close_map_items] = map_items[i];
+            num_close_map_items++;
         }
     }
 }
@@ -89,23 +92,27 @@ void DocumentCloseItems()
 //for the ones that respawn
 void ConsumeSimpleItems(Donogan *d)
 {
-
+    for (int i = 0; i < num_close_map_items; i++)
+    {
+    }
 }
 
 //for the ones that do not respawn
 void ConsumeTrackedItems(Donogan* d)
 {
-
+    for (int i = 0; i < NUM_TRACKED_ITEMS; i++)
+    {
+    }
 }
 
 //Draw Items
 void DrawItems()
 {
-    for (int i = 0; i < NUM_ITEMS)
+    for (int i = 0; i < num_close_map_items; i++)
     {
-        DrawModel(map_items[i].model, map_items[i].pos, map_items[i].scale, WHITE);
+        DrawModel(close_map_items[i].model, close_map_items[i].pos, close_map_items[i].scale, WHITE);
     }
-    for (int i = 0; i < NUM_TRACKED_ITEMS)
+    for (int i = 0; i < NUM_TRACKED_ITEMS; i++)
     {
         DrawModel(map_tracked_items[i].model, map_tracked_items[i].pos, map_tracked_items[i].scale, WHITE);
     }
