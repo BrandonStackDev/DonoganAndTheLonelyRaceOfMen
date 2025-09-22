@@ -7,14 +7,18 @@
 #include "rlgl.h"
 #include <stdio.h> 
 #include <stdbool.h>
+#include "timer.h"
 
 // Type Definitions
 typedef enum {
     //normal
-    //INV_HEALTH,  //small amount of health, like 20, common
+    INV_HEALTH,  //small amount of health, like 20, common
     INV_HEALTH_FULL, //full health, all the way to max health, somewhat rare
-    //INV_POTION, //full mana, common
+    INV_POTION, //full mana, common
     //special - all rare or special in someway
+    //INV_CLOAK, //bad guys dont spawn for 120 seconds
+    //INV_NO_DAMAGE, //bad guys cannot hurt you when this is used for 60 seconds
+    //INV_MEDICINE, //for the Adriana mission
     //INV_FLAME_TONIC, //sets a timer for like 60 seconds, that we have flaming arrows, flaming arrows will explode on impact and do more damage, this will be hard
     //INV_BERRY, //give 5 health, will be spawned from berries that grow on tree 2, if you press square, every pump, will spawn a berry on the closest tree 2 in the active list
     //INV_FART_POWDER, //very rare, when consumed will play a fart sound and immediately kill all bad guys in a 100 foot radius. when in water, should also produce some bubbles
@@ -38,7 +42,7 @@ typedef struct {
     BoundingBox origBox, box;
     float scale;
     Model model;
-    boo
+    bool collected;//this one means collected until the spawn timer expires
     Timer respawnTimer;
 } Item; //for items on the map that respawn
 
@@ -48,7 +52,7 @@ typedef struct {
     BoundingBox origBox, box;
     float scale;
     Model model;
-    Timer respawnTimer;
+    bool collected; //this one means collected forever
 } TrackedItem; //for items on the map that do not respawn and are kept in the save file
 
 

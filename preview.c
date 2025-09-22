@@ -742,7 +742,7 @@ int main(void) {
         }
         //handle health and mana re-gen, xp to level conversion as well
         oldLevel = don.level;
-        don.level = (int)(don.xp / 500) + 1;
+        don.level = (int)(don.xp / 400) + 1;
         if (don.level != oldLevel && don.level%5==0) {
             don.maxHealth += 2;
             don.maxMana += 2;
