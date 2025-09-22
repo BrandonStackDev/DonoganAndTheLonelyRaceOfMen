@@ -303,7 +303,7 @@ static void Menu_OnTriangle(GameState* gs) {
 typedef struct { int idx; } _LitIdx;
 static int _BuildLitFires(_LitIdx* out, int cap) {
     int n = 0;
-    for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++) if (fires[i].lit) { if (n < cap) out[n].idx = i; n++; }  // :contentReference[oaicite:8]{index=8}
+    for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++) if (fires[i].lit) { if (n < cap) out[n].idx = i; n++; }
     return n;
 }
 
@@ -327,7 +327,7 @@ static void Menu_OnCross(GameState* gs, Donogan* d)
 
     if (gs->menuPage == MENU_PAGE_MISSIONS) {
         // enter detail for selected mission
-        const int count = MISSION_TOTAL_COUNT;                                             // :contentReference[oaicite:9]{index=9}
+        const int count = MISSION_TOTAL_COUNT;                                             //
         Menu_ScrollClamp(count, &gs->menuSel, &gs->menuScroll);
         gs->menuDetailIndex = gs->menuSel;
         gs->menuPage = MENU_PAGE_MISSION_DETAIL;
@@ -343,17 +343,37 @@ static void Menu_OnCross(GameState* gs, Donogan* d)
         int fireIdx = tmp[gs->menuSel].idx;
         // +5 X/Z away from center so we don't land ON the pit
         d->pos.x = fires[fireIdx].pos.x + 5.0f;
-        d->pos.z = fires[fireIdx].pos.z + 5.0f;                                           // :contentReference[oaicite:10]{index=10}
+        d->pos.z = fires[fireIdx].pos.z + 5.0f;                                           //
 #ifdef GetTerrainHeightFromMeshXZ
         d->groundY = GetTerrainHeightFromMeshXZ(d->pos.x, d->pos.z);
 #endif
-        DonSnapToGround(d);                                                               // :contentReference[oaicite:11]{index=11}
+        DonSnapToGround(d);                                                               //
         Menu_Close(gs);
         return;
     }
 
     // OPTIONS && MISSION_DETAIL have no Cross action (Options changes on Left/Right).
     //INVENTORY
+    if (gs->menuPage == MENU_PAGE_INVENTORY) {
+        const int total_type = INV_TOTAL_TYPES;
+        Menu_ScrollClamp(total_type, &gs->menuSel, &gs->menuScroll);
+
+        int i = gs->menuSel;
+        if (i >= 0 && i < total_type) {
+            InventoryItem* it = &inventory[i];
+            if (it->count > 0 && it->type != INV_BOOK && it->type != INV_EVIL_BOOK) {
+                it->count--;                 // consume one
+                PlaySoundVol(menuSelect);    // reuse your select sfx
+                // TODO:  trigger actual effects here based on it->type (heal, mana, etc.)
+                // e.g., if (it->type == INV_HEALTH) { d->health = Min(d->health + 20, d->maxHealth); }
+            }
+            else {
+                // TODO: tiny “nope” sound or toast if you want feedback for 0-count
+                // PlaySoundVol(menuBack);
+            }
+        }
+        return;
+    }
 }
 
 // ---------------- Drawing ----------------
@@ -376,8 +396,49 @@ static void _DrawInventory(GameState* gs) {
     Rectangle panel = MenuPanelRect();
     Menu_DrawHeader("Inventory", panel);
     Menu_DrawBox(panel);
-    DrawTextEx(GetFontDefault(), "work in progress", (Vector2) { panel.x + 12, panel.y + 12 }, 24.0f, 1.0f, MENU_DIM);
+
+    // show all known item types
+    const int count = INV_TOTAL_TYPES;
+    Menu_ScrollClamp(count, &gs->menuSel, &gs->menuScroll);
+
+    // row layout (mirror Menu_DrawRow spacing)
+    const float lh = 28.0f; // keep in sync with Menu_DrawRow 24pt text
+    const float textSize = 24.0f;
+    const float leftPad = 12.0f;
+    const float rightPad = 12.0f;
+
+    int visRow = 0;
+    for (int i = gs->menuScroll; i < count && visRow < MENU_VISIBLE_ROWS; ++i, ++visRow) {
+        float y = panel.y + 8 + visRow * lh;
+
+        const char* nm = inventory[i].name ? inventory[i].name : "(unnamed)";
+        int c = inventory[i].count;
+
+        // Selected row color vs. dim if zero-count
+        bool isSelected = (visRow == (gs->menuSel - gs->menuScroll));
+        Color leftColor = isSelected ? MENU_SELECT : (c > 0 ? MENU_TEXT : MENU_DIM);
+        Color rightColor = leftColor;
+
+        // Name (left)
+        DrawTextEx(GetFontDefault(), nm, (Vector2) { panel.x + leftPad, y }, textSize, 1.0f, leftColor);
+
+        // Count (right, aligned)
+        char buf[32];
+        // you can do just "%d" or add an "x ": pick your style
+        snprintf(buf, sizeof(buf), "%d", c);
+        Vector2 m = MeasureTextEx(GetFontDefault(), buf, textSize, 1.0f);
+        float rightX = panel.x + panel.width - rightPad - m.x;
+        DrawTextEx(GetFontDefault(), buf, (Vector2) { rightX, y }, textSize, 1.0f, rightColor);
+    }
+
+    DrawTextEx(GetFontDefault(),
+        "Cross: use  |  Triangle: back",
+        (Vector2) {
+        panel.x + 12, panel.y + panel.height - 28
+    },
+        20.0f, 1.0f, MENU_DIM);
 }
+
 
 static const char* _DiffName(Difficulty d) {
     switch (d) { case DIFF_EASY: return "Easy"; case DIFF_NORMAL: return "Normal"; default: return "Hard"; }
