@@ -210,23 +210,23 @@ void InitItems()
     //full health pack
     map_items[0] = CreateRegularItem(health_full_model, (Vector3) { 2968.16, 321.85, 4048.35 }, INV_HEALTH_FULL, 1);
     //health pack
-    map_items[1] = CreateRegularItem(health_model, (Vector3) { 2914.42, 326.96, 4445.58 }, INV_HEALTH, 1);
-    map_items[2] = CreateRegularItem(health_model, (Vector3) { 2643.51, 333.73, 4501.64 }, INV_HEALTH, 1);
-    map_items[3] = CreateRegularItem(health_model, (Vector3) { 2643.43, 331.46, 4511.29 }, INV_HEALTH, 1);
-    map_items[4] = CreateRegularItem(health_model, (Vector3) { 2639.51, 331.29, 4526.07 }, INV_HEALTH, 1);
+    map_items[1] = CreateRegularItem(health_model, (Vector3) { 2914.42, 329.96, 4445.58 }, INV_HEALTH, 1);
+    map_items[2] = CreateRegularItem(health_model, (Vector3) { 2643.51, 336.73, 4501.64 }, INV_HEALTH, 1);
+    map_items[3] = CreateRegularItem(health_model, (Vector3) { 2643.43, 334.46, 4511.29 }, INV_HEALTH, 1);
+    map_items[4] = CreateRegularItem(health_model, (Vector3) { 2639.51, 334.29, 4526.07 }, INV_HEALTH, 1);
     //mana
-    map_items[5] = CreateRegularItem(mana_model, (Vector3) { 2796.42, 329.17, 4537.03 }, INV_POTION, 1);
-    map_items[6] = CreateRegularItem(mana_model, (Vector3) { 2736.30, 331.34, 4511.80 }, INV_POTION, 1);
-    map_items[7] = CreateRegularItem(mana_model, (Vector3) { 2737.35, 333.66, 4501.95 }, INV_POTION, 1);
-    map_items[8] = CreateRegularItem(mana_model, (Vector3) { 2699.88, 331.29, 4502.28 }, INV_POTION, 1);
+    map_items[5] = CreateRegularItem(mana_model, (Vector3) { 2796.42, 332.17, 4537.03 }, INV_POTION, 1);
+    map_items[6] = CreateRegularItem(mana_model, (Vector3) { 2736.30, 334.34, 4511.80 }, INV_POTION, 1);
+    map_items[7] = CreateRegularItem(mana_model, (Vector3) { 2737.35, 337.66, 4501.95 }, INV_POTION, 1);
+    map_items[8] = CreateRegularItem(mana_model, (Vector3) { 2699.88, 334.29, 4502.28 }, INV_POTION, 1);
     ////setup tracked map items
     ////for testing: 3022.00f, 322.00f, 4042.42f
     //good book
-    map_tracked_items[0] = CreateTrackedItem(book_model, (Vector3) { 2688.86, 327.53, 4529.79 }, INV_BOOK, 1);
-    map_tracked_items[1] = CreateTrackedItem(book_model, (Vector3) { 2170, 700, 950 }, INV_BOOK, 1);
+    map_tracked_items[0] = CreateTrackedItem(book_model, (Vector3) { 2688.86, 330.53, 4529.79 }, INV_BOOK, 1);//temple
+    map_tracked_items[1] = CreateTrackedItem(book_model, (Vector3) { 2170, 702, 950 }, INV_BOOK, 1); //castle
     //book of shadows
-    map_tracked_items[2] = CreateTrackedItem(evil_book_model, (Vector3) { 2126.62, 545.88, 834.43 }, INV_EVIL_BOOK, 1);
-    map_tracked_items[3] = CreateTrackedItem(evil_book_model, (Vector3) { 2711.45, 362.51, 4524.31 }, INV_EVIL_BOOK, 1);
+    map_tracked_items[2] = CreateTrackedItem(evil_book_model, (Vector3) { 2126.62, 545.88, 834.43 }, INV_EVIL_BOOK, 1); //castle
+    map_tracked_items[3] = CreateTrackedItem(evil_book_model, (Vector3) { 2711.45, 362.51, 4524.31 }, INV_EVIL_BOOK, 1); //temple
 }
 
 #endif // ITEMS_H
