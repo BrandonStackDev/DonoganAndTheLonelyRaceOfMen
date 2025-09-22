@@ -364,8 +364,10 @@ static void Menu_OnCross(GameState* gs, Donogan* d)
             if (it->count > 0 && it->type != INV_BOOK && it->type != INV_EVIL_BOOK) {
                 it->count--;                 // consume one
                 PlaySoundVolContinuousAllowed(menuSaveOrLoad);    // reuse your select sfx, dont check if the sound is playing, I always want to feel that I consumed an item
-                // TODO:  trigger actual effects here based on it->type (heal, mana, etc.)
-                // e.g., if (it->type == INV_HEALTH) { d->health = Min(d->health + 20, d->maxHealth); }
+                // trigger actual effects here based on it->type (heal, mana, etc.)
+                if (it->type == INV_HEALTH) { d->health = d->health + 20 > d->maxHealth ? d->maxHealth : d->health + 20; }
+                else if (it->type == INV_HEALTH_FULL) { d->health = d->maxHealth; }
+                else if (it->type == INV_POTION) { d->mana = d->maxMana; }
             }
         }
         return;
