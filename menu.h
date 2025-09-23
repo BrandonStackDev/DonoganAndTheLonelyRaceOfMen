@@ -140,23 +140,30 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     // Fireplaces (with explicit section markers so list can grow)
     fprintf(f, "--FIREPLACES-BEGIN--\n");
     for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++) {                //
-        fprintf(f, "FIRE[%d] = %d\n", i, fires[i].lit ? 1 : 0);    //
+        fprintf(f, "FIRE[%d] = %d\n", i, fires[i].lit);    //
     }
     fprintf(f, "--FIREPLACES-END--\n");
 
     // Missions
     fprintf(f, "--MISSIONS-BEGIN--\n");
     for (int i = 0; i < MISSION_TOTAL_COUNT; i++) {                //
-        fprintf(f, "MISSION[%d] = %d\n", i, missions[i].complete ? 1 : 0);  //
+        fprintf(f, "MISSION[%d] = %d\n", i, missions[i].complete);  //
     }
     fprintf(f, "--MISSIONS-END--\n");
 
     //tracked items
     fprintf(f, "--ITEMS-BEGIN--\n");
     for (int i = 0; i < NUM_TRACKED_ITEMS; i++) {                //
-        fprintf(f, "ITEM[%d] = %d\n", i, map_tracked_items[i].collected ? 1 : 0);  //
+        fprintf(f, "ITEM[%d] = %d\n", i, map_tracked_items[i].collected);  //
     }
-    fprintf(f, "--ITEM-END--\n");
+    fprintf(f, "--ITEMS-END--\n");
+
+    //inventory
+    fprintf(f, "--INV-BEGIN--\n");
+    for (int i = 0; i < INV_TOTAL_TYPES; i++) {                //
+        fprintf(f, "INV[%d] = %d\n", i, inventory[i].count);  //
+    }
+    fprintf(f, "--INV-END--\n");
 
     fclose(f);
     PlaySoundVol(menuSaveOrLoad);
@@ -168,38 +175,47 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
     FILE* f = fopen(path ? path : "don.save.txt", "rb");
     if (!f) return false;
 
-    char line[512]; bool inFires = false, inMissions = false, inItems = false;
+    char line[512]; bool inFires = false, inMissions = false, inItems = false, inInv = false;;
     while (fgets(line, sizeof(line), f)) {
         // strip
         char* s = line;
         while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n') ++s;
         if (!*s) continue;
 
-        if (!strncmp(s, "--FIREPLACES-BEGIN--", 20)) { inFires = true;  inMissions = false; inItems = false; continue; }
+        if (!strncmp(s, "--FIREPLACES-BEGIN--", 20)) { inFires = true;  inMissions = false; inItems = false; inInv = false; continue; }
         if (!strncmp(s, "--FIREPLACES-END--", 18)) { inFires = false; continue; }
-        if (!strncmp(s, "--MISSIONS-BEGIN--", 18)) { inMissions = true; inFires = false;  inItems = false; continue; }
+        if (!strncmp(s, "--MISSIONS-BEGIN--", 18)) { inMissions = true; inFires = false;  inItems = false; inInv = false; continue; }
         if (!strncmp(s, "--MISSIONS-END--", 16)) { inMissions = false; continue; }
-        if (!strncmp(s, "--ITEMS-BEGIN--", 20)) { inItems = true;  inMissions = false; inFires = false; continue; }
+        if (!strncmp(s, "--ITEMS-BEGIN--", 20)) { inItems = true;  inMissions = false; inFires = false; inInv = false; continue; }
         if (!strncmp(s, "--ITEMS-END--", 18)) { inItems = false; continue; }
+        if (!strncmp(s, "--INV-BEGIN--", 20)) { inInv = true;  inItems = false; inMissions = false; inFires = false; continue; }
+        if (!strncmp(s, "--INV-END--", 18)) { inInv = false; continue; }
 
         if (inFires) {
             int idx = 0, val = 0;
             if (sscanf(s, "FIRE[%d] = %d", &idx, &val) == 2) {
-                if (idx >= 0 && idx < FIREPIT_TOTAL_COUNT) fires[idx].lit = (val != 0);
+                if (idx >= 0 && idx < FIREPIT_TOTAL_COUNT) fires[idx].lit = val;
             }
             continue;
         }
         if (inMissions) {
             int idx = 0, val = 0;
             if (sscanf(s, "MISSION[%d] = %d", &idx, &val) == 2) {
-                if (idx >= 0 && idx < MISSION_TOTAL_COUNT) missions[idx].complete = (val != 0);
+                if (idx >= 0 && idx < MISSION_TOTAL_COUNT) missions[idx].complete = val;
             }
             continue;
         }
         if (inItems) {
             int idx = 0, val = 0;
             if (sscanf(s, "ITEM[%d] = %d", &idx, &val) == 2) {
-                if (idx >= 0 && idx < NUM_TRACKED_ITEMS) map_tracked_items[idx].collected = (val != 0);
+                if (idx >= 0 && idx < NUM_TRACKED_ITEMS) map_tracked_items[idx].collected = val;
+            }
+            continue;
+        }
+        if (inInv) {
+            int idx = 0, val = 0;
+            if (sscanf(s, "INV[%d] = %d", &idx, &val) == 2) {
+                if (idx >= 0 && idx < INV_TOTAL_TYPES) inventory[idx].count = val;
             }
             continue;
         }
