@@ -21,7 +21,7 @@ typedef enum {
     //INV_NO_DAMAGE, //bad guys cannot hurt you when this is used for 60 seconds
     //INV_MEDICINE, //for the Adriana mission
     //INV_FLAME_TONIC, //sets a timer for like 60 seconds, that we have flaming arrows, flaming arrows will explode on impact and do more damage, this will be hard
-    //INV_BERRY, //give 5 health, will be spawned from berries that grow on tree 2, if you press square, every pump, will spawn a berry on the closest tree 2 in the active list
+    INV_BERRY, //give 5 health, will be spawned from berries that grow on tree 2, if you press square, every pump, will spawn a berry on the closest tree 2 in the active list
     //INV_FART_POWDER, //very rare, when consumed will play a fart sound and immediately kill all bad guys in a 100 foot radius. when in water, should also produce some bubbles
     //INV_KEY, //very rare, will only be like 5 max in the game, used to open locked things, the number of these should match the number of locked things (like buildings with doors and chests), the rule will be you need a key in inventory to open the thing, it consumes one key and then its permanently opened
     INV_BOOK, //most important item in the game, these are what you look for....should be like 10 - 20 on the map (todo: Alistair stuff also)
@@ -200,9 +200,10 @@ void InitItems()
     Texture evil_book_tex = LoadTexture("textures/shadow_book.png");
     evil_book_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = evil_book_tex;
     //setup inventory system
-    inventory[INV_HEALTH] = (InventoryItem){ INV_HEALTH, "Health Pack", "gives 20 health", 0};
+    inventory[INV_HEALTH] = (InventoryItem){ INV_HEALTH, "Health Pack", "gives +20 health", 0};
     inventory[INV_HEALTH_FULL] = (InventoryItem){ INV_HEALTH_FULL, "Health Pack (Full)", "gives full health", 0 };
     inventory[INV_POTION] = (InventoryItem){ INV_POTION, "Potion", "gives full mana", 0 };
+    inventory[INV_BERRY] = (InventoryItem){ INV_POTION, "Berry", "gives +5 health", 0 };
     inventory[INV_BOOK] = (InventoryItem){ INV_BOOK, "Book", "collect these, they might be useful.", 0 };
     inventory[INV_EVIL_BOOK] = (InventoryItem){ INV_EVIL_BOOK, "Book of Shadows", "hmmm, one of the many book of shadows?", 0 };
     //setup map items

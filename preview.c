@@ -1093,6 +1093,16 @@ int main(void) {
                         fires[i].lit = true;
                     }
                 }
+                for (int i = 0; i < numCloseProps; i++)
+                {
+                    if (Vector3Distance(don.pos, CloseProps[i]->pos) < 12)
+                    {
+                        CloseProps[i]->berriesSpawned = false;
+                        CloseProps[i]->berryCount = 0;
+                        CloseProps[i]->hasBerries = 0;
+                        inventory[INV_BERRY].count++;
+                    }
+                }
             }
             // --->>> SUMMON (R3 press to start/cancel)
             {

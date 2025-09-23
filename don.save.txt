@@ -1,8 +1,8 @@
 DON_SAVE_V1
-don_pos = -3738.000 327.529 1074.000
+don_pos = -3691.402 323.765 1062.903
 don_bow = 1
 don_health = 200
-don_mana   = 200
+don_mana   = 171
 don_starthealth = 200
 don_startmana   = 200
 don_level  = 1667
@@ -26,8 +26,8 @@ MISSION[4] = 0
 MISSION[5] = 0
 --MISSIONS-END--
 --ITEMS-BEGIN--
-ITEM[0] = 1
-ITEM[1] = 1
+ITEM[0] = 0
+ITEM[1] = 0
 ITEM[2] = 0
-ITEM[3] = 1
+ITEM[3] = 0
 --ITEM-END--
