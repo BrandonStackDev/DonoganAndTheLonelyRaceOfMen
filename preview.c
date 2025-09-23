@@ -795,7 +795,7 @@ int main(void) {
                         //test closeness
                         if (Vector3Distance(ps, tree.pos) < MAX_CLOSE_PROPS_DISTANCE)
                         {
-                            CloseProps[j] = tree;
+                            CloseProps[j] = &chunks[cx][cy].props[i];
                             j++;
                         }
                     }
@@ -1946,7 +1946,7 @@ int main(void) {
                 //truck static props collision
                 for (int i = 0; i < numCloseProps; i++)
                 {
-                    StaticGameObject tree = CloseProps[i];
+                    StaticGameObject tree = (*CloseProps[i]);
                     if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) { continue; }
                     // keep boxes fresh (we rely on tire/body world AABBs)
 
@@ -2338,7 +2338,7 @@ int main(void) {
             // --- static prop collision donny---
             for (int i = 0; i < numCloseProps; i++)
             {
-                StaticGameObject tree = CloseProps[i];
+                StaticGameObject tree = (*CloseProps[i]);
                 // broad-phase: ignore grass + outerBox cull
                 if (tree.type == MODEL_GRASS || tree.type == MODEL_GRASS_THICK || tree.type == MODEL_GRASS_LARGE) { continue; }
                 for (int a = 0; a < MAX_ARROWS; a++)
@@ -3224,7 +3224,7 @@ int main(void) {
             if (onLoad)
             {
                 for (int i = 0; i < numCloseProps; ++i) {
-                    StaticGameObject* g = &CloseProps[i];
+                    StaticGameObject* g = CloseProps[i];
                     if (g->hasBerries && !g->berriesSpawned) {
                         SpawnBerriesForProp(g);
                     }

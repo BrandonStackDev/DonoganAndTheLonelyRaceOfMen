@@ -228,7 +228,7 @@ Color lightTileColor = { 254, 254, 254, 254 };
 #define MAX_CLOSE_PROPS_DISTANCE 321 
 
 int numCloseProps = 0;
-StaticGameObject CloseProps[MAX_CLOSE_PROPS];
+StaticGameObject *CloseProps[MAX_CLOSE_PROPS];
 
 BoundingBox UpdateBoundingBox(BoundingBox box, Vector3 pos)
 {
