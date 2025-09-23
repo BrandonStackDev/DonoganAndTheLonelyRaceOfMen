@@ -1159,7 +1159,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         for (int i = 0; i < numCloseProps; i++)//berries, should not be here but...this was easiest...?
         {
             if ((*CloseProps[i]).type != MODEL_TREE_2) { continue; }
-            if (!(*CloseProps[i]).hasBerries && Vector3Distance((*CloseProps[i]).pos, d->pos) < 7)
+            if (!(*CloseProps[i]).hasBerries && Vector3Distance((*CloseProps[i]).pos, d->pos) < 12)
             {
                 (*CloseProps[i]).hasBerries = true;
             }

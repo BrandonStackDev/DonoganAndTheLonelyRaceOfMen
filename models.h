@@ -281,30 +281,35 @@ static inline void SpawnBerriesForProp(StaticGameObject* g) {
     Matrix T = MatrixTranslate(g->pos.x, g->pos.y, g->pos.z);
     Matrix M = MatrixMultiply(SR, T);                                  // (S*R) * T
 
-    const float minAbove = 2.8f;
+    const float minAbove = 2.7f;
     Vector3 cand[256];
     int candCount = 0;
 
     const int vc = mesh->vertexCount;
     const float* v = mesh->vertices; // xyz interleaved
 
-    for (int i = 0; i < vc; ++i) {
+    for (int i = 0; i < vc; i++) {
         Vector3 p = (Vector3){ v[i * 3 + 0], v[i * 3 + 1], v[i * 3 + 2] };
         Vector3 w = Vector3Transform(p, M);                             // local->world
 
-        if (w.y >= g->pos.y + minAbove) {
+        if (w.y >= g->pos.y + (minAbove * g->scale)) {
             if (candCount < (int)(sizeof(cand) / sizeof(cand[0]))) {
-                cand[candCount++] = w;
+                cand[candCount] = w;
+                candCount++;
             }
         }
     }
-    if (candCount == 0) return;
+    if (candCount == 0)
+    {
+        TraceLog(LOG_WARNING, "berry spawn failed? no candidate vertices?");
+        return;
+    }
 
     g->berriesSpawned = true;
 
-    int want = 3 + GetRandomValue(0, 2); // 3..5
-    if (want > MAX_BERRIES_PER_TREE) want = MAX_BERRIES_PER_TREE;
-    if (want > candCount)            want = candCount;
+    int want = 4 + GetRandomValue(0, 8); // 3..5
+    if (want > MAX_BERRIES_PER_TREE) { want = MAX_BERRIES_PER_TREE; }
+    if (want > candCount) { want = candCount; }
     g->berryCount = want;
 
     // Pick a random subset if needed
