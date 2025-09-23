@@ -186,10 +186,10 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
         if (!strncmp(s, "--FIREPLACES-END--", 18)) { inFires = false; continue; }
         if (!strncmp(s, "--MISSIONS-BEGIN--", 18)) { inMissions = true; inFires = false;  inItems = false; inInv = false; continue; }
         if (!strncmp(s, "--MISSIONS-END--", 16)) { inMissions = false; continue; }
-        if (!strncmp(s, "--ITEMS-BEGIN--", 20)) { inItems = true;  inMissions = false; inFires = false; inInv = false; continue; }
-        if (!strncmp(s, "--ITEMS-END--", 18)) { inItems = false; continue; }
-        if (!strncmp(s, "--INV-BEGIN--", 20)) { inInv = true;  inItems = false; inMissions = false; inFires = false; continue; }
-        if (!strncmp(s, "--INV-END--", 18)) { inInv = false; continue; }
+        if (!strncmp(s, "--ITEMS-BEGIN--", 15)) { inItems = true;  inMissions = false; inFires = false; inInv = false; continue; }
+        if (!strncmp(s, "--ITEMS-END--", 13)) { inItems = false; continue; }
+        if (!strncmp(s, "--INV-BEGIN--", 13)) { inInv = true;  inItems = false; inMissions = false; inFires = false; continue; }
+        if (!strncmp(s, "--INV-END--", 11)) { inInv = false; continue; }
 
         if (inFires) {
             int idx = 0, val = 0;
