@@ -42,7 +42,7 @@ typedef enum {
     BIOME_TOTAL_COUNT
 } Biome_Type;
 
-#define MAX_BERRIES_PER_TREE 5
+#define MAX_BERRIES_PER_TREE 12
 typedef struct {
     Model_Type type;
     Vector3 pos;
@@ -237,27 +237,94 @@ void InitStaticGameProps(Shader shader, Shader grass_s) {
 
 // models.h — below InitStaticGameProps() or near other inlines
 
+//static inline void SpawnBerriesForProp(StaticGameObject* g) {
+//    if (!g || g->berriesSpawned) return;
+//    // Only trees 2 grow berries (for now)
+//    if (g->type != MODEL_TREE_2) return;
+//    Model m = HighFiStaticObjectModels[g->type];
+//    g->berriesSpawned = true;
+//    g->berryCount = 3 + (GetRandomValue(0, 2)); // 3..5
+//
+//    for (int i = 0; i < g->berryCount; ++i) {
+//        float a = ((float)GetRandomValue(0, 359)) * DEG2RAD;
+//        float r = 0.5f + ((float)GetRandomValue(0, 50) * 0.01f); // 0.5..1.0m
+//        float yJitter = ((float)GetRandomValue(-10, 20)) * 0.01f; // -0.10..+0.20m
+//
+//        g->berryPos[i] = (Vector3){
+//            g->pos.x + cosf(a) * r,
+//            g->pos.y + 1.2f + yJitter,  // up a bit from base
+//            g->pos.z + sinf(a) * r
+//        };
+//        g->berryScale[i] = 0.09f + ((float)GetRandomValue(0, 8) * 0.005f); // ~0.09..0.13
+//    }
+//}
+// models.h
+// models.h
 static inline void SpawnBerriesForProp(StaticGameObject* g) {
     if (!g || g->berriesSpawned) return;
-    // Only trees 2 grow berries (for now)
     if (g->type != MODEL_TREE_2) return;
 
+    Model m = HighFiStaticObjectModels[g->type];
+    if (m.meshCount <= 0) return;
+
+    Mesh* mesh = &m.meshes[0];
+    if (!mesh || mesh->vertexCount <= 0 || !mesh->vertices) return;
+
+    // ---- MATCH THE RENDER PATH EXACTLY ----
+    // Angles in your draw are used as RADIANS, not degrees.
+    Matrix S = MatrixScale(g->scale, g->scale, g->scale);
+    Matrix Rx = MatrixRotateX(g->pitch);
+    Matrix Ry = MatrixRotateY(g->yaw);
+    Matrix Rz = MatrixRotateZ(g->roll);
+    Matrix R = MatrixMultiply(MatrixMultiply(Rx, Ry), Rz);            // Rx * Ry * Rz
+    Matrix SR = MatrixMultiply(S, R);                                   // S * R
+    Matrix T = MatrixTranslate(g->pos.x, g->pos.y, g->pos.z);
+    Matrix M = MatrixMultiply(SR, T);                                  // (S*R) * T
+
+    const float minAbove = 2.8f;
+    Vector3 cand[256];
+    int candCount = 0;
+
+    const int vc = mesh->vertexCount;
+    const float* v = mesh->vertices; // xyz interleaved
+
+    for (int i = 0; i < vc; ++i) {
+        Vector3 p = (Vector3){ v[i * 3 + 0], v[i * 3 + 1], v[i * 3 + 2] };
+        Vector3 w = Vector3Transform(p, M);                             // local->world
+
+        if (w.y >= g->pos.y + minAbove) {
+            if (candCount < (int)(sizeof(cand) / sizeof(cand[0]))) {
+                cand[candCount++] = w;
+            }
+        }
+    }
+    if (candCount == 0) return;
+
     g->berriesSpawned = true;
-    g->berryCount = 3 + (GetRandomValue(0, 2)); // 3..5
 
-    for (int i = 0; i < g->berryCount; ++i) {
-        float a = ((float)GetRandomValue(0, 359)) * DEG2RAD;
-        float r = 0.5f + ((float)GetRandomValue(0, 50) * 0.01f); // 0.5..1.0m
-        float yJitter = ((float)GetRandomValue(-10, 20)) * 0.01f; // -0.10..+0.20m
+    int want = 3 + GetRandomValue(0, 2); // 3..5
+    if (want > MAX_BERRIES_PER_TREE) want = MAX_BERRIES_PER_TREE;
+    if (want > candCount)            want = candCount;
+    g->berryCount = want;
 
-        g->berryPos[i] = (Vector3){
-            g->pos.x + cosf(a) * r,
-            g->pos.y + 1.2f + yJitter,  // up a bit from base
-            g->pos.z + sinf(a) * r
-        };
-        g->berryScale[i] = 0.09f + ((float)GetRandomValue(0, 8) * 0.005f); // ~0.09..0.13
+    // Pick a random subset if needed
+    if (candCount <= want) {
+        for (int i = 0; i < want; ++i) {
+            g->berryPos[i] = cand[i];
+            g->berryScale[i] = 0.10f * g->scale + (GetRandomValue(0, 8) * 0.0025f);
+        }
+    }
+    else {
+        int idx[256]; for (int i = 0; i < candCount; ++i) idx[i] = i;
+        for (int i = 0; i < want; ++i) {
+            int j = i + GetRandomValue(0, candCount - 1 - i);
+            int t = idx[i]; idx[i] = idx[j]; idx[j] = t;
+            g->berryPos[i] = cand[idx[i]];
+            g->berryScale[i] = 0.10f * g->scale + (GetRandomValue(0, 8) * 0.0025f);
+        }
     }
 }
+
 
 // Draw simple spheres (you can swap to a mesh later)
 static inline void DrawBerriesForProp(const StaticGameObject* g) {

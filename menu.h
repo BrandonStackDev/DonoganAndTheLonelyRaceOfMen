@@ -432,9 +432,7 @@ static void _DrawInventory(GameState* gs) {
 
     DrawTextEx(GetFontDefault(),
         "Cross: use  |  Triangle: back",
-        (Vector2) {
-        panel.x + 12, panel.y + panel.height - 28
-    },
+        (Vector2) {panel.x + 12, panel.y + panel.height - 28},
         20.0f, 1.0f, MENU_DIM);
 }
 
