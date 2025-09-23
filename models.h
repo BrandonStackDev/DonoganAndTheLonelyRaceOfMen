@@ -42,6 +42,7 @@ typedef enum {
     BIOME_TOTAL_COUNT
 } Biome_Type;
 
+#define MAX_BERRIES_PER_TREE 5
 typedef struct {
     Model_Type type;
     Vector3 pos;
@@ -49,6 +50,13 @@ typedef struct {
     //below this line, only use in preview.c
     BoundingBox origBox, box;
     BoundingBox origOuterBox, outerBox;
+
+    //berries for tree_02
+    bool hasBerries;
+    bool  berriesSpawned;
+    int   berryCount;                // 0..MAX_BERRIES_PER_TREE
+    Vector3 berryPos[MAX_BERRIES_PER_TREE];
+    float   berryScale[MAX_BERRIES_PER_TREE];
 } StaticGameObject;
 
 // Optional: Array of model names, useful for debugging or file loading
@@ -224,6 +232,43 @@ void InitStaticGameProps(Shader shader, Shader grass_s) {
 
         // Assign clean material to model
         HighFiStaticObjectModels[i].materials[0] = HighFiStaticObjectMaterials[i];
+    }
+}
+
+// models.h — below InitStaticGameProps() or near other inlines
+
+static inline void SpawnBerriesForProp(StaticGameObject* g) {
+    if (!g || g->berriesSpawned) return;
+    // Only trees 2 grow berries (for now)
+    if (g->type != MODEL_TREE_2) return;
+
+    g->berriesSpawned = true;
+    g->berryCount = 3 + (GetRandomValue(0, 2)); // 3..5
+
+    for (int i = 0; i < g->berryCount; ++i) {
+        float a = ((float)GetRandomValue(0, 359)) * DEG2RAD;
+        float r = 0.5f + ((float)GetRandomValue(0, 50) * 0.01f); // 0.5..1.0m
+        float yJitter = ((float)GetRandomValue(-10, 20)) * 0.01f; // -0.10..+0.20m
+
+        g->berryPos[i] = (Vector3){
+            g->pos.x + cosf(a) * r,
+            g->pos.y + 1.2f + yJitter,  // up a bit from base
+            g->pos.z + sinf(a) * r
+        };
+        g->berryScale[i] = 0.09f + ((float)GetRandomValue(0, 8) * 0.005f); // ~0.09..0.13
+    }
+}
+
+// Draw simple spheres (you can swap to a mesh later)
+static inline void DrawBerriesForProp(const StaticGameObject* g) {
+    if (!g || !g->hasBerries || !g->berriesSpawned || g->berryCount <= 0) return;
+
+    for (int i = 0; i < g->berryCount; ++i) {
+        DrawSphereEx(g->berryPos[i], g->berryScale[i], 8, 8, (Color) { 200, 30, 60, 255 });
+        // Optional little stem:
+        // DrawCylinderEx(Vector3Add(g->berryPos[i], (Vector3){0,-g->berryScale[i]*0.6f,0}),
+        //                Vector3Add(g->berryPos[i], (Vector3){0,-g->berryScale[i]*1.2f,0}),
+        //                g->berryScale[i]*0.15f, g->berryScale[i]*0.05f, 6, (Color){80,50,20,255});
     }
 }
 

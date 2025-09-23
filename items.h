@@ -210,8 +210,8 @@ void InitItems()
     // /////NOTE: when you record a position with select, it records the floor, add 3 to all y positions, also label the tracked items as you go
     //full health pack
     int mi_init = 0; //this is a good idea, need to do this more often
-    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { 2968.16, 324.85, 4048.35 }, INV_HEALTH_FULL, 1);
-    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { 2968.16, 324.85, 4048.35 }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { 2968.16, 324.85, 4048.35 }, INV_HEALTH_FULL, 1); //home
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { 2587.84, 587.29, 595.96 }, INV_HEALTH_FULL, 1); //castle
     //health pack
     map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { 2914.42, 329.96, 4445.58 }, INV_HEALTH, 1);
     map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { 2643.51, 336.73, 4501.64 }, INV_HEALTH, 1);

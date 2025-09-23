@@ -196,7 +196,7 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
             }
             continue;
         }
-        if (inMissions) {
+        if (inItems) {
             int idx = 0, val = 0;
             if (sscanf(s, "ITEM[%d] = %d", &idx, &val) == 2) {
                 if (idx >= 0 && idx < NUM_TRACKED_ITEMS) map_tracked_items[idx].collected = (val != 0);

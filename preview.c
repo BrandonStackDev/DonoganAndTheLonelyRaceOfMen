@@ -767,7 +767,6 @@ int main(void) {
         //increment loop counter and rotor spin
         loop_counter++;
         rotorSpin += GetFrameTime() * 128;
-        int numCloseProps = 0;
         //
         DocumentCloseItems(&don);
         if (onLoad)
@@ -3221,6 +3220,16 @@ int main(void) {
                 printf("Estimated TOTAL triangles this frame :  %d\n", totalTriCount);
                 printf("Estimated TOTAL batch calls          :  %d\n", totalBcCount);
                 printf("Current FPS (so you can document)    :  %d\n", GetFPS());
+            }
+            if (onLoad)
+            {
+                for (int i = 0; i < numCloseProps; ++i) {
+                    StaticGameObject* g = &CloseProps[i];
+                    if (g->hasBerries && !g->berriesSpawned) {
+                        SpawnBerriesForProp(g);
+                    }
+                    DrawBerriesForProp(g);
+                }
             }
             //DrawGrid(256, 1.0f);
         EndMode3D();
