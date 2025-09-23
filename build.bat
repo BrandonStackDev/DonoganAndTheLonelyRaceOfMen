@@ -4,6 +4,11 @@
 @echo off
 setlocal
 
+@REM WC
+find /c /v "" *.c *.h
+
+
+@REM BUILD
 set RL=C:\raylib
 
 if exist build rmdir /s /q build
