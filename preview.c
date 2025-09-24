@@ -1093,6 +1093,7 @@ int main(void) {
                         fires[i].lit = true;
                     }
                 }
+                //berries pick
                 for (int i = 0; i < numCloseProps; i++)
                 {
                     if (Vector3Distance(don.pos, CloseProps[i]->pos) < 12)
