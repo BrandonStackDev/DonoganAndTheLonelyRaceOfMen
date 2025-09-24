@@ -59,7 +59,7 @@ typedef struct {
 } TrackedItem; //for items on the map that do not respawn and are kept in the save file
 
 #define NUM_ITEMS 14
-#define NUM_TRACKED_ITEMS 4
+#define NUM_TRACKED_ITEMS 6
 #define MAX_CLOSE_ITEMS 32
 Item map_items[NUM_ITEMS];
 TrackedItem map_tracked_items[NUM_TRACKED_ITEMS];
@@ -232,10 +232,12 @@ void InitItems()
     //good book
     int mti_init = 0;
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 2170, 702, 950 }, INV_BOOK, 1); //castle
-    map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 2688.86, 330.53, 4529.79 }, INV_BOOK, 1);//temple
+    map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 2688.86, 330.53, 4529.79 }, INV_BOOK, 1);//temple on start island
+    map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { -2238.10, 336.00, 3441.12 }, INV_BOOK, 1);//greek white temple
     //book of shadows
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2126.62, 545.88, 834.43 }, INV_EVIL_BOOK, 1); //castle
-    map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2711.45, 362.51, 4524.31 }, INV_EVIL_BOOK, 1); //temple
+    map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2711.45, 362.51, 4524.31 }, INV_EVIL_BOOK, 1); //temple on start island
+    map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -2243.00, 336.00, 3468.78 }, INV_EVIL_BOOK, 1); //greek white temple
 }
 
 #endif // ITEMS_H
