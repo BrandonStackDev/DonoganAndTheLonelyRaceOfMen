@@ -21,13 +21,13 @@ Check out the previews on itch - https://fiver-156.itch.io/donogan-light-preview
 
 how to play...
 
-For Donogan, you need a keyboard and a controller. The controller will need the typical "psx" buttons, so analog sticks, d-pad, start button is on the right of the middle, L&R 1,2,&3. 
+For Donogan, you need a keyboard and a controller. The controller will need the typical "psx" buttons, so analog sticks, d-pad, start button is on the right of the middle, L&R 1,2,&3, and the 4 important buttons (like A and B and stuff, or X, Square, Circle..., that stuff). 
 
 64 bit only. You will want a modern and decent GPU so you can run Ollama locally. (you dont have to run ollama, but the conversations are lame without it.) You probably will want 16GB RAM on your system as well.
 
 you will probably need to install the provided c++ redistributable for some random DLL I couldn't remove from dependency. Reboot after.
 
-On start up, the load bar is broken in this version.
+On start up, the load bar is broken in this version in the light version.
 
 Also, what makes it light weight is that I removed the tiling system for distant objects (to make the installer much smaller and the resource use lower).
 
