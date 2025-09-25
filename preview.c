@@ -271,9 +271,6 @@ static void Audio_SelectSongRelative(int delta)
     }
 }
 
-char* toast;
-Timer toastTimer;
-
 
 /// @brief main!
 /// @param  

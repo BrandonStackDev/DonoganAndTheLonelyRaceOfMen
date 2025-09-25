@@ -1036,4 +1036,11 @@ Sound donScream;
 Sound menuSelect;
 Sound menuBack;
 Sound menuSaveOrLoad;
+
+
+char* toast;
+Timer toastTimer;
+
+
+
 #endif // CORE_H

@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "timer.h"
 #include "donogan.h"
+#include "core.h"
 
 // Type Definitions
 typedef enum {
@@ -115,7 +116,7 @@ void ConsumeSimpleItems(Donogan* d)
             it->collected = true;             // mutate SOURCE
             inventory[it->type].count++;      // credit the right slot
             StartTimer(&it->respawnTimer);    // start SOURCE timer
-            // TODO: Play pickup SFX, spawn VFX
+            PlaySoundVol(menuSaveOrLoad);//todo: original sound for this
         }
     }
 }
@@ -131,7 +132,10 @@ void ConsumeTrackedItems(Donogan* d)
         {
             map_tracked_items[i].collected = true;
             inventory[map_tracked_items[i].type].count++;
-            //todo: play sound here
+            PlaySoundVol(menuSaveOrLoad);//todo: original sound for this
+            if (map_tracked_items[i].type == INV_BOOK) { toast = "Found a Good Book!"; }
+            else if (map_tracked_items[i].type == INV_EVIL_BOOK) { toast = "Found a Book of Shadows!"; }
+            StartTimer(&toastTimer);
         }
     }
 }
