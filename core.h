@@ -1036,6 +1036,8 @@ Sound donScream;
 Sound menuSelect;
 Sound menuBack;
 Sound menuSaveOrLoad;
+Sound grow;
+Sound pick;
 
 
 char* toast;

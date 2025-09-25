@@ -341,6 +341,8 @@ int main(void) {
     menuSelect = LoadSound("sounds/select.mp3");
     menuBack = LoadSound("sounds/back.mp3");
     menuSaveOrLoad = LoadSound("sounds/save.mp3");
+    grow = LoadSound("sounds/grow.mp3");
+    pick = LoadSound("sounds/pick.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -1096,9 +1098,18 @@ int main(void) {
                     if (Vector3Distance(don.pos, CloseProps[i]->pos) < 12)
                     {
                         CloseProps[i]->berriesSpawned = false;
+                        if (gGame.diff == DIFF_EASY)
+                        {
+                            inventory[INV_BERRY].count += CloseProps[i]->berryCount;
+                        }
+                        else
+                        {
+                            inventory[INV_BERRY].count++; //if berries
+                        }
+                        
                         CloseProps[i]->berryCount = 0;
                         CloseProps[i]->hasBerries = 0;
-                        inventory[INV_BERRY].count++;
+                        PlaySoundVol(pick);
                     }
                 }
             }

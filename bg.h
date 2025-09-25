@@ -1162,6 +1162,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             if (!(*CloseProps[i]).hasBerries && Vector3Distance((*CloseProps[i]).pos, d->pos) < 12)
             {
                 (*CloseProps[i]).hasBerries = true;
+                PlaySoundVol(grow);
             }
         }
     }
