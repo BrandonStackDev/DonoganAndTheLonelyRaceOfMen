@@ -6,7 +6,7 @@
 #include "raymath.h"
 #include "rlgl.h"
 
-#define RLIGHTS_IMPLEMENTATION    // <— add this line, or dont, it wouldnt change the fact I have to bum rides off of people!
+#define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
 //fairly standard things
