@@ -568,6 +568,9 @@ int main(void) {
     Model atreyu = LoadModel("models/atreyu.obj");
     atreyu.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/atreyu.png");
     Vector3 atreyuPos = { -2167.0f, 816.0f, 1416.00f };
+    Model canoe = LoadModel("models/canoe.obj");
+    canoe.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/canoe.png");
+    Vector3 canoePos = { -1419.90f, 306.32f, 1718.38f };
     //heads
     Texture don_head = LoadTexture("textures/don_head.png");
     Texture tol_head = LoadTexture("textures/tol_head.png");
@@ -1140,7 +1143,7 @@ int main(void) {
                 truckPosition.y -= GetFrameTime() * GRAVITY * gravityCollected;
                 gravityCollected += GetFrameTime() * GRAVITY;
                 truckForward.y = Lerp(truckForward.y, 0, GetFrameTime() * GRAVITY * gravityCollected);
-                //update tricks - dont shut them off here, just upadte them
+                //update tricks - dont shut them off here, just update them
                 if (doing360) { truckTrickYaw += GetFrameTime() * 16.0f; }
                 if (doingFlip) { truckTrickPitch += GetFrameTime() * 7.6f; }
                 if (doingRoll) { truckTrickRoll += GetFrameTime() * 13.666f; }
@@ -2768,23 +2771,31 @@ int main(void) {
                 //bubbles
                 if (don.inWater) { DonDrawBubbles(&don); }
             }
-            //tree of life
-            if (IsPointInFrustum(tolPos, frustumChunk8))
-            {
-                DrawModel(tol, tolPos, 8.0f, WHITE); //(Color) {160,100,220,255}//purple lol!
-            }
-            //atreyu
-            if (IsPointInFrustum(atreyuPos, frustumChunk8))
-            {
-                DrawModel(atreyu, atreyuPos, 2.8f, WHITE);
-            }
-            //npcs
             if (onLoad)
             {
-                for (int i = 0; i < NPC_TOTAL; i++)
+                //tree of life
+                if (IsPointInFrustum(tolPos, frustumChunk8))
                 {
-                    if (Vector3Distance(don.pos, npcs[i].pos) > 600.0f) { continue; } //todo: add frustum culling here also
-                    NPC_Draw(&npcs[i]);
+                    DrawModel(tol, tolPos, 8.0f, WHITE); //(Color) {160,100,220,255}//purple lol!
+                }
+                //atreyu
+                if (IsPointInFrustum(atreyuPos, frustumChunk8))
+                {
+                    DrawModel(atreyu, atreyuPos, 2.8f, WHITE);
+                }
+                //atreyu's canoe
+                if (IsPointInFrustum(canoePos, frustumChunk8))
+                {
+                    DrawModel(canoe, canoePos, 9.0f, WHITE);
+                }
+                //npcs
+                if (onLoad)
+                {
+                    for (int i = 0; i < NPC_TOTAL; i++)
+                    {
+                        if (Vector3Distance(don.pos, npcs[i].pos) > 600.0f) { continue; } //todo: add frustum culling here also
+                        NPC_Draw(&npcs[i]);
+                    }
                 }
             }
             //fireplaces
