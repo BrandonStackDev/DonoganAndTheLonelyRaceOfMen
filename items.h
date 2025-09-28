@@ -9,7 +9,6 @@
 #include <stdbool.h>
 #include "timer.h"
 #include "donogan.h"
-#include "core.h"
 
 // Type Definitions
 typedef enum {

@@ -6,7 +6,6 @@
 //#define RLIGHTS_IMPLEMENTATION    // <— add this line, or dont, it wouldnt change the fact I have to bum rides off of people!
 #include "rlights.h"
 //me
-#include "models.h"
 #include "whale.h"
 #include "truck.h"
 #include "control.h"
@@ -18,6 +17,7 @@
 #include "interact.h"
 #include "collision.h"
 #include "core.h"
+#include "models.h"
 #include "music.h"   // song/album structs + helpers
 #include "duct_tape.h"
 #include "game.h"
@@ -1115,6 +1115,18 @@ int main(void) {
                         PlaySoundVol(pick);
                     }
                 }
+                // On Triangle press:
+                for (int i = 0; i < MAX_APPLES_TOTAL; ++i) {
+                    Apple* a = &apples[i];
+                    if (!a->spawned || !a->fallen) continue;
+                    if (Vector3Distance(don.pos, a->pos) < 7.3f) {
+                        inventory[INV_APPLE].count++;   // apple exists in your enum
+                        a->spawned = false;             // free slot
+                        PlaySoundVol(pick);
+                        // optional toast
+                    }
+                }
+
             }
             // --->>> SUMMON (R3 press to start/cancel)
             {
@@ -2357,6 +2369,20 @@ int main(void) {
             prevBox.min.y -= deltaFrame.y; prevBox.max.y -= deltaFrame.y;
             prevBox.min.z -= deltaFrame.z; prevBox.max.z -= deltaFrame.z;
 
+            //arrows and apples
+            for (int a = 0; a < MAX_ARROWS; a++)
+            {
+                if (!don.arrows[a].alive || don.arrows[a].stuck) { continue; }
+                for (int i = 0; i < MAX_APPLES_TOTAL; i++) {
+                    if (!apples[i].spawned || apples[i].falling || apples[i].fallen) { continue; }
+                    if (CheckCollisionBoxes(don.arrows[a].box, apples[i].box)) {
+                        apples[i].falling = true;
+                        apples[i].vel = (Vector3){ 0, -0.1f, 0 }; // initial drop
+                        // Optionally nudge sideways from arrow direction
+                    }
+                }
+            }
+            
             // --- static prop collision donny---
             for (int i = 0; i < numCloseProps; i++)
             {
@@ -2628,6 +2654,7 @@ int main(void) {
         don.drawColor = LerpColor(don.drawColor,!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
+        UpdateApples(dt);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
@@ -3260,6 +3287,7 @@ int main(void) {
                     }
                     DrawBerriesForProp(g);
                 }
+                DrawApples();
             }
             //DrawGrid(256, 1.0f);
         EndMode3D();

@@ -20,6 +20,7 @@
 #include <inttypes.h>
 //me
 #include "util.h"
+#include "models.h"
 
 //float   GetTerrainHeightFromMeshXZ(float x, float z);//todo: 
 //Vector3 GetTerrainNormalFromMeshXZ(float x, float z);
