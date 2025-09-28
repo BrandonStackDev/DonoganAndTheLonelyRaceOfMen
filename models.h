@@ -346,33 +346,33 @@ static inline int AcquireAppleSlot(void) {
     return idx;
 }
 
-static inline void SpawnAppleOnTree(StaticGameObject* g, float minBand, float maxBand) {
-    if (!g || g->type != MODEL_TREE) return;
+// models.h
+static inline bool SpawnAppleOnTree(StaticGameObject* g, float minBand, float maxBand) {
+    if (!g || g->type != MODEL_TREE) return false;
 
     Vector3 p;
-    if (!FindAppleVertexInBand(g, minBand, maxBand, &p)) return;
+    if (!FindAppleVertexInBand(g, minBand, maxBand, &p)) return false;
 
     int globalIdx = AcquireAppleSlot();
     Apple* a = &apples[globalIdx];
 
-    // (Intentionally overwrite if it was in-use—this implements the “keep growing, replace oldest” behavior.)
     a->spawned = true;
     a->falling = false;
     a->fallen = false;
     a->vel = (Vector3){ 0 };
     a->pos = p;
-    a->scale = 0.12f * g->scale;
+    a->scale = 1;
     a->yaw = a->pitch = a->roll = 0;
 
     a->origBox = GetModelBoundingBox(apple);
     a->box = UpdateModelBoundingBox(a->origBox, a->pos);
+    return true;
 }
-
 
 static inline void UpdateApples(float dt) {
     for (int i = 0; i < MAX_APPLES_TOTAL; ++i) {
         Apple* a = &apples[i];
-        if (!a->spawned) continue;
+        if (!a->spawned) { continue; }
 
         if (a->falling && !a->fallen) {
             a->vel.y -= 9.8f * dt * 0.35f;        // light gravity
@@ -479,7 +479,8 @@ static inline void DrawBerriesForProp(const StaticGameObject* g) {
 
 static inline void DrawApples(void) {
     for (int i = 0; i < MAX_APPLES_TOTAL; ++i) {
-        if (!apples[i].spawned) continue;
+        if (!apples[i].spawned) { continue; }
+        //TraceLog(LOG_INFO, "drawing spawned apple...%d", i);
         DrawModel(apple, apples[i].pos, apples[i].scale, WHITE);
         // optional debug
         // DrawBoundingBox(apples[i].box, RED);

@@ -1,12 +1,12 @@
 DON_SAVE_V1
-don_pos = 2190.877 531.710 605.932
+don_pos = 3027.000 316.235 4047.420
 don_bow = 1
 don_health = 200
 don_mana   = 200
 don_starthealth = 200
 don_startmana   = 200
 don_level  = 2501
-don_xp     = 1000256
+don_xp     = 1000257
 invY = 0
 invX = 0
 musicVol = 0.3500
@@ -40,4 +40,5 @@ INV[2] = 1
 INV[3] = 17
 INV[4] = 1
 INV[5] = 1
+INV[6] = 0
 --INV-END--

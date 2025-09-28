@@ -1159,7 +1159,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         for (int i = 0; i < numCloseProps; i++)//berries, should not be here but...this was easiest...?
         {
             if ((*CloseProps[i]).type != MODEL_TREE_2 && (*CloseProps[i]).type != MODEL_TREE) { continue; }
-            if ((*CloseProps[i]).type != MODEL_TREE_2)
+            if ((*CloseProps[i]).type == MODEL_TREE_2)
             {
                 if (!(*CloseProps[i]).hasBerries && Vector3Distance((*CloseProps[i]).pos, d->pos) < 12)
                 {
@@ -1170,9 +1170,12 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             else //tree regular, single apple
             {
                 if ((*CloseProps[i]).type == MODEL_TREE && Vector3Distance((*CloseProps[i]).pos, d->pos) < 12) {
-                    // 6..8 band as you suggested (tweak to taste)
-                    SpawnAppleOnTree(CloseProps[i], 6.0f, 8.0f);
-                    PlaySoundVol(grow);
+                    if (SpawnAppleOnTree(CloseProps[i], 1.5f, 8.0f)) {
+                        PlaySoundVol(grow);
+                    }
+                    else {
+                        TraceLog(LOG_INFO, "SpawnAppleOnTree: no candidate verts in band");
+                    }
                 }
             }
         }
