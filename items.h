@@ -23,6 +23,7 @@ typedef enum {
     //INV_MEDICINE, //for the Adriana mission
     //INV_FLAME_TONIC, //sets a timer for like 60 seconds, that we have flaming arrows, flaming arrows will explode on impact and do more damage, this will be hard
     INV_BERRY, //give 5 health, will be spawned from berries that grow on tree 2, if you press square, every pump, will spawn a berry on the closest tree 2 in the active list
+    INV_APPLE, //gives +50 health, must be shot down with an arrow from a tree
     //INV_FART_POWDER, //very rare, when consumed will play a fart sound and immediately kill all bad guys in a 100 foot radius. when in water, should also produce some bubbles
     //INV_KEY, //very rare, will only be like 5 max in the game, used to open locked things, the number of these should match the number of locked things (like buildings with doors and chests), the rule will be you need a key in inventory to open the thing, it consumes one key and then its permanently opened
     INV_BOOK, //most important item in the game, these are what you look for....should be like 10 - 20 on the map (todo: Alistair stuff also)

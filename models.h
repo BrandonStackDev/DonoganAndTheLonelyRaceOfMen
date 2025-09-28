@@ -43,6 +43,9 @@ typedef enum {
 } Biome_Type;
 
 #define MAX_BERRIES_PER_TREE 12
+#define MAX_APPLES_PER_TREE 1
+#define MAX_APPLES_TOTAL 8
+
 typedef struct {
     Model_Type type;
     Vector3 pos;
@@ -58,6 +61,18 @@ typedef struct {
     Vector3 berryPos[MAX_BERRIES_PER_TREE];
     float   berryScale[MAX_BERRIES_PER_TREE];
 } StaticGameObject;
+
+typedef struct {
+    bool spawned;
+    Vector3 pos;
+    float yaw, pitch, roll, scale;
+    //below this line, only use in preview.c
+    BoundingBox origBox, box;
+} Apple;
+
+Model apple;
+Texture appleTex;
+Apple apples[MAX_APPLES_TOTAL];
 
 // Optional: Array of model names, useful for debugging or file loading
 static const char *ModelNames[MODEL_TOTAL_COUNT] = {
@@ -217,6 +232,11 @@ Model_Type GetModelTypeFromColor(Color c, float heightEst) {
 
 
 void InitStaticGameProps(Shader shader, Shader grass_s) {
+    //apples
+    apple = LoadModel("models/apple.obj");
+    appleTex = LoadTexture("textures/apple.png");
+    apple.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = appleTex;
+    //static props
     for (int i = 0; i < MODEL_TOTAL_COUNT; i++) {
         // Load base model and texture
         StaticObjectModels[i] = LoadModel(ModelPaths[i]);
