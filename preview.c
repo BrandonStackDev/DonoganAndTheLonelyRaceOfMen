@@ -26,6 +26,8 @@
 #include "menu.h"
 #include "platform.h"
 #include "items.h"
+#include "apples.h"
+
 //fairly standard things
 #include <float.h>
 #include <stdio.h>
@@ -360,6 +362,8 @@ int main(void) {
     InitMissions();
     //lasers
     LasersInit();
+    //apples
+    InitApples();
     //env bounding boxes, duct tape
     GoGoGadgetDuctTape();
     Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
@@ -1118,15 +1122,16 @@ int main(void) {
                 // On Triangle press:
                 for (int i = 0; i < MAX_APPLES_TOTAL; ++i) {
                     Apple* a = &apples[i];
-                    if (!a->spawned || !a->fallen) continue;
+                    if (!a->spawned || !a->fallen) { continue; }
                     if (Vector3Distance(don.pos, a->pos) < 7.3f) {
                         inventory[INV_APPLE].count++;   // apple exists in your enum
                         a->spawned = false;             // free slot
+                        a->fallen = false;
+                        a->falling = false; // to be safe
                         PlaySoundVol(pick);
                         // optional toast
                     }
                 }
-
             }
             // --->>> SUMMON (R3 press to start/cancel)
             {
@@ -2376,6 +2381,8 @@ int main(void) {
                 for (int i = 0; i < MAX_APPLES_TOTAL; i++) {
                     if (!apples[i].spawned || apples[i].falling || apples[i].fallen) { continue; }
                     if (CheckCollisionBoxes(don.arrows[a].box, apples[i].box)) {
+                        TraceLog(LOG_INFO, "Arrow hit apple %d -> falling", i);
+                        don.arrows[a].stuck = true;
                         apples[i].falling = true;
                         apples[i].vel = (Vector3){ 0, -0.1f, 0 }; // initial drop
                         // Optionally nudge sideways from arrow direction

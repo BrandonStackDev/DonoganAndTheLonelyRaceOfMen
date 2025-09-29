@@ -12,6 +12,7 @@
 #include "timer.h"
 #include "game.h"
 #include "util.h"
+#include "apples.h"
 
 #define MAX_BG_PER_TYPE_AT_ONCE 12
 
@@ -1167,7 +1168,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                     PlaySoundVol(grow);
                 }
             }
-            else //tree regular, single apple
+            else if((*CloseProps[i]).type != MODEL_TREE)//tree regular, single apple
             {
                 if ((*CloseProps[i]).type == MODEL_TREE && Vector3Distance((*CloseProps[i]).pos, d->pos) < 12) {
                     if (SpawnAppleOnTree(CloseProps[i], 1.5f, 8.0f)) {

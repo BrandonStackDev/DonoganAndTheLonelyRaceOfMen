@@ -10,7 +10,7 @@ don_xp     = 1000257
 invY = 0
 invX = 0
 musicVol = 0.3500
-soundVol = 1.0000
+soundVol = 0.6000
 difficulty = 1
 --FIREPLACES-BEGIN--
 FIRE[0] = 1

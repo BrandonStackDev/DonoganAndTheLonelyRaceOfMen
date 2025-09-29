@@ -208,6 +208,7 @@ void InitItems()
     inventory[INV_HEALTH_FULL] = (InventoryItem){ INV_HEALTH_FULL, "Health Pack (Full)", "gives full health", 0 };
     inventory[INV_POTION] = (InventoryItem){ INV_POTION, "Potion", "gives full mana", 0 };
     inventory[INV_BERRY] = (InventoryItem){ INV_BERRY, "Berry", "gives +5 health", 0 };
+    inventory[INV_APPLE] = (InventoryItem){ INV_BERRY, "Apple", "gives +50 health", 0 };
     inventory[INV_BOOK] = (InventoryItem){ INV_BOOK, "Book", "collect these, they might be useful.", 0 };
     inventory[INV_EVIL_BOOK] = (InventoryItem){ INV_EVIL_BOOK, "Book of Shadows", "hmmm, one of the many book of shadows?", 0 };
     //setup map items
