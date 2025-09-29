@@ -385,6 +385,7 @@ static void Menu_OnCross(GameState* gs, Donogan* d)
                 else if (it->type == INV_HEALTH_FULL) { d->health = d->maxHealth; }
                 else if (it->type == INV_POTION) { d->mana = d->maxMana; }
                 else if (it->type == INV_BERRY) { d->health = (d->health + 5 > d->maxHealth ? d->maxHealth : d->health + 5); }
+                else if (it->type == INV_APPLE) { d->health = (d->health + 50 > d->maxHealth ? d->maxHealth : d->health + 50); }
             }
         }
         return;
