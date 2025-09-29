@@ -12,7 +12,6 @@ typedef struct {
     bool spawned;
     Vector3 pos;
     float yaw, pitch, roll, scale;
-    //below this line, only use in preview.c
     BoundingBox origBox, box;
     bool  falling;
     bool  fallen;      // eligible for triangle pickup when true

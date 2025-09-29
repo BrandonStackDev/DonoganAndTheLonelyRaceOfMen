@@ -1102,7 +1102,10 @@ int main(void) {
                 //berries pick
                 for (int i = 0; i < numCloseProps; i++)
                 {
-                    if (Vector3Distance(don.pos, CloseProps[i]->pos) < 12)
+                    if (CloseProps[i]->type == MODEL_TREE_2                      // gate by tree type
+                        && CloseProps[i]->hasBerries                             // must be enabled
+                        && CloseProps[i]->berryCount > 0                         // must have some to collect
+                        && Vector3Distance(don.pos, CloseProps[i]->pos) < 12.0f) // in range
                     {
                         CloseProps[i]->berriesSpawned = false;
                         if (gGame.diff == DIFF_EASY)
@@ -1119,7 +1122,7 @@ int main(void) {
                         PlaySoundVol(pick);
                     }
                 }
-                // On Triangle press:
+                // apples
                 for (int i = 0; i < MAX_APPLES_TOTAL; ++i) {
                     Apple* a = &apples[i];
                     if (!a->spawned || !a->fallen) { continue; }

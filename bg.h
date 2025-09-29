@@ -1168,10 +1168,10 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                     PlaySoundVol(grow);
                 }
             }
-            else if((*CloseProps[i]).type != MODEL_TREE)//tree regular, single apple
+            else if((*CloseProps[i]).type == MODEL_TREE)//tree regular, single apple
             {
                 if ((*CloseProps[i]).type == MODEL_TREE && Vector3Distance((*CloseProps[i]).pos, d->pos) < 12) {
-                    if (SpawnAppleOnTree(CloseProps[i], 1.5f, 8.0f)) {
+                    if (SpawnAppleOnTree(CloseProps[i], 4.0f, 8.0f)) {
                         PlaySoundVol(grow);
                     }
                     else {
