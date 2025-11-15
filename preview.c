@@ -656,6 +656,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_DARREL] = (POI){ POI_TYPE_DARREL , &npcs[NPC_DARREL].pos};
     InteractivePoints[POI_TYPE_CHICKEN] = (POI){ POI_TYPE_CHICKEN , &npcs[NPC_CHICKEN].pos };
     InteractivePoints[POI_TYPE_LUCY] = (POI){ POI_TYPE_LUCY , &npcs[NPC_LUCY].pos };
+    InteractivePoints[POI_TYPE_NICK] = (POI){ POI_TYPE_NICK , &npcs[NPC_NICK].pos }; //rescue mission
     //init the stuff before launching thread launcher
     InitMenu();//just for some color stuff
     //INIT
@@ -1026,6 +1027,21 @@ int main(void) {
                     don.who = TALK_TYPE_DARREL;
                     npcs[NPC_DARREL].state = DARREL_STATE_TALK;
                     StartTimer(&don.talkStartTimer);
+                }
+                else if (Vector3Distance(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 12.00f)
+                {
+                    if (npcs[NPC_NICK].r_state == RESCUE_STATE_SCARED) //begin run
+                    {
+                        npcs[NPC_NICK].r_state = RESCUE_STATE_RUN;
+                        npcs[NPC_NICK].state = DARREL_STATE_RUN;
+                        npcs[NPC_NICK].targetPos = (Vector3){ 2846.52, 323.76, -615.60 };
+                    }
+                    else if (npcs[NPC_NICK].r_state == RESCUE_STATE_SAFE //talk
+                        && !don.isTalking 
+                        && HasTimerElapsed(&don.talkStartTimer))
+                    {
+                        //todo: interact talk stuff for nick
+                    }
                 }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_LUCY].pos, don.pos) < 12.00f

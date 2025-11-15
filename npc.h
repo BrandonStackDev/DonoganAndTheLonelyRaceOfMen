@@ -21,8 +21,15 @@ typedef enum {
     NPC_DARREL = 0, //a few npc's will use the darrel model, but only one darrel record
     NPC_CHICKEN,
     NPC_LUCY,
+    NPC_NICK, //NPC_MODEL_TYPE_DARREL - mark repeats this way for yourself
     NPC_TOTAL,
 } NPC_Type;
+
+typedef enum {
+    RESCUE_STATE_SCARED = 0,
+    RESCUE_STATE_RUN,
+    RESCUE_STATE_SAFE,
+} RescueState;
 
 typedef enum {
     CHICKEN_STATE_PLAN = 0,
@@ -72,6 +79,10 @@ typedef struct {
     float   speed, targetSpeed, minSpeed, maxSpeed, accel;
     float   targetYaw;
     Vector3 targetPos;
+
+    //rescue missions stuff
+    bool isRescue;
+    RescueState r_state;
 } NPC;
 
 NPC npcs[NPC_TOTAL];
@@ -173,6 +184,26 @@ void InitAllNPC()
     npcs[NPC_LUCY].animFPS = 60.0f;
     npcs[NPC_LUCY].animFrame = 0.0f;
     NPC_AnimSet(&npcs[NPC_LUCY], npcs[NPC_LUCY].curAnim, true, npcs[NPC_LUCY].animFPS); // start correct clip
+    //setup nick
+    npcs[NPC_NICK].type = NPC_NICK;
+    npcs[NPC_NICK].modelType = NPC_MODEL_TYPE_DARREL; //repeat for rescue mission
+    npcs[NPC_NICK].model = darrel_model; //models with animations have to have a unique model instance in raylib, otherwise they all display the same animation at the same time
+    npcs[NPC_NICK].tex = darrel_tex;
+    npcs[NPC_NICK].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = darrel_tex;
+    npcs[NPC_NICK].anims = darrel_anims;
+    npcs[NPC_NICK].animCount = darrel_animCount;
+    npcs[NPC_NICK].pos = (Vector3){ 2280.08, 320.00, -892.53 }; //test pos = (Vector3){ 3022.00f, 322.00f, 4042.42f }; //rescued at 2846.52, 323.76, -615.60
+    npcs[NPC_NICK].targetPos = npcs[NPC_NICK].pos;
+    npcs[NPC_NICK].scale = 3.8f;
+    npcs[NPC_NICK].yaw = 0.0f;
+    npcs[NPC_NICK].speed = 5.6f;
+    npcs[NPC_NICK].isRescue = TRUE;
+    npcs[NPC_NICK].r_state = RESCUE_STATE_SCARED;
+    npcs[NPC_NICK].state = DARREL_STATE_CONFUSED;
+    npcs[NPC_NICK].curAnim = npcs[NPC_NICK].state;
+    npcs[NPC_NICK].animFPS = 24.0f;
+    npcs[NPC_NICK].animFrame = 0.0f;
+    NPC_AnimSet(&npcs[NPC_NICK], npcs[NPC_NICK].curAnim, true, npcs[NPC_NICK].animFPS); // start correct clip
 }
 
 bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
@@ -225,7 +256,30 @@ static inline void NPC_Update_Simple(NPC* n, const Donogan* d, float dt, bool lo
     // Face Donogan
     float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
     n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
-    ModelAnimation* a = &n->anims[n->curAnim];
+    ModelAnimation* a = &n->anims[n->curAnim]; //todo: I think I can get rid of this...
+    if (looped)
+    {
+        n->curAnim = n->state;
+        NPC_AnimSet(n, n->curAnim, true, n->animFPS);
+    }
+}
+
+static inline void NPC_Update_Rescue(NPC* n, const Donogan* d, float dt, bool looped)
+{
+    if (n->r_state == RESCUE_STATE_RUN)
+    {
+        // Face target
+        float targetYaw = atan2f(n->targetPos.x - n->pos.x, n->targetPos.z - n->pos.z);
+        n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
+        n->pos = Vector3Lerp(n->pos, n->targetPos, dt * n->speed);
+        n->pos.y = NPC_GroundY(n->pos);
+    }
+    else
+    {
+        float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
+        n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
+    }
+    
     if (looped)
     {
         n->curAnim = n->state;
@@ -286,6 +340,7 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     case NPC_DARREL: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_CHICKEN: NPC_Update_Chicken(n, d, dt, looped); break;
     case NPC_LUCY: NPC_Update_Simple(n, d, dt, looped); break;
+    case NPC_NICK: NPC_Update_Rescue(n, d, dt, looped); break;
     default: break;
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);

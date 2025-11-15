@@ -173,6 +173,7 @@ typedef enum {
     POI_TYPE_DARREL,
     POI_TYPE_CHICKEN,
     POI_TYPE_LUCY,
+    POI_TYPE_NICK,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
