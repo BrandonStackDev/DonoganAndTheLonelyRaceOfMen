@@ -196,7 +196,7 @@ void InitAllNPC()
     npcs[NPC_NICK].targetPos = npcs[NPC_NICK].pos;
     npcs[NPC_NICK].scale = 3.8f;
     npcs[NPC_NICK].yaw = 0.0f;
-    npcs[NPC_NICK].speed = 5.6f;
+    npcs[NPC_NICK].speed = 18.0f;
     npcs[NPC_NICK].isRescue = TRUE;
     npcs[NPC_NICK].r_state = RESCUE_STATE_SCARED;
     npcs[NPC_NICK].state = DARREL_STATE_CONFUSED;
@@ -271,8 +271,24 @@ static inline void NPC_Update_Rescue(NPC* n, const Donogan* d, float dt, bool lo
         // Face target
         float targetYaw = atan2f(n->targetPos.x - n->pos.x, n->targetPos.z - n->pos.z);
         n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
-        n->pos = Vector3Lerp(n->pos, n->targetPos, dt * n->speed);
+        //smooth speed move
+        Vector3 d = { n->targetPos.x - n->pos.x, 0.0f, n->targetPos.z - n->pos.z };
+        float len = sqrtf(d.x * d.x + d.z * d.z);
+        if (len > 0.0001f) {
+            float step = fminf(n->speed * dt, len) / len; // normalize & clamp
+            n->pos.x += d.x * step;
+            n->pos.z += d.z * step;
+        }
+        //set ground for y
         n->pos.y = NPC_GroundY(n->pos);
+        if (Vector3Distance(n->pos, n->targetPos) < 8.0f)
+        {
+            n->r_state = RESCUE_STATE_SAFE;
+            if (n->type == NPC_NICK)
+            {
+                n->state = DARREL_STATE_HELLO;
+            }
+        }
     }
     else
     {

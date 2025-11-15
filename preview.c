@@ -1035,6 +1035,11 @@ int main(void) {
                         npcs[NPC_NICK].r_state = RESCUE_STATE_RUN;
                         npcs[NPC_NICK].state = DARREL_STATE_RUN;
                         npcs[NPC_NICK].targetPos = (Vector3){ 2846.52, 323.76, -615.60 };
+                        //mission stuff for rescusing nick
+                        toast = "Completed mission! You Rescued Nick!";
+                        StartTimer(&toastTimer);
+                        don.xp += 100;
+                        missions[MISSION_RESCUE_NICK].complete = true;
                     }
                     else if (npcs[NPC_NICK].r_state == RESCUE_STATE_SAFE //talk
                         && !don.isTalking 
