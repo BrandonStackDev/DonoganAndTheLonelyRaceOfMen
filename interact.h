@@ -106,6 +106,12 @@ static const char* SHEET_LUCY_TWO =
 "Stay in character. Do not mention being an AI or models. Keep responses brief.\n";
 static const char* SHEET_LUCY_TWO_DEFAULT = "Thank you for finding Clarence! The tree of Life is near the center of the mainland in a large gorge.\n";
 
+static const char* SHEET_NICK =
+"You are Nick, A man of 33. Donogan Just rescued you from robotic orbs that shoot lasers.\n"
+"You speak in simple sentences. You are grateful for being rescued.\n"
+"Tone: Very thankful.\n";
+static const char* SHEET_NICK_DEFAULT = "Thank you for rescuing me from those robotic orbs!\n";
+
 typedef enum {
     TALK_TYPE_TOL,
     TALK_TYPE_ATREYU,
@@ -114,6 +120,7 @@ typedef enum {
     TALK_TYPE_DARREL,
     TALK_TYPE_LUCY_ONE,
     TALK_TYPE_LUCY_TWO,
+    TALK_TYPE_NICK,
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
 
@@ -127,6 +134,7 @@ static inline const char* GetCharacterSheet(TALK_TYPE who)
     case TALK_TYPE_DARREL:         return SHEET_DARREL;
     case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE;
     case TALK_TYPE_LUCY_TWO:         return SHEET_LUCY_TWO;
+    case TALK_TYPE_NICK:         return SHEET_NICK;
     default:              return "?";
     }
 }
@@ -141,6 +149,7 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
     case TALK_TYPE_DARREL:         return SHEET_DARREL_DEFAULT;
     case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE_DEFAULT;
     case TALK_TYPE_LUCY_TWO:         return SHEET_LUCY_TWO_DEFAULT;
+    case TALK_TYPE_NICK:         return SHEET_NICK_DEFAULT;
     default:              return "?";
     }
 }

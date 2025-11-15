@@ -1035,6 +1035,9 @@ int main(void) {
                         npcs[NPC_NICK].r_state = RESCUE_STATE_RUN;
                         npcs[NPC_NICK].state = DARREL_STATE_RUN;
                         npcs[NPC_NICK].targetPos = (Vector3){ 2846.52, 323.76, -615.60 };
+                        //jump right to the run start frame
+                        npcs[NPC_NICK].curAnim = npcs[NPC_NICK].state;
+                        npcs[NPC_NICK].animFrame = 0.0f;
                         //mission stuff for rescusing nick
                         toast = "Completed mission! You Rescued Nick!";
                         StartTimer(&toastTimer);
@@ -1045,7 +1048,11 @@ int main(void) {
                         && !don.isTalking 
                         && HasTimerElapsed(&don.talkStartTimer))
                     {
-                        //todo: interact talk stuff for nick
+                        //interact talk stuff for nick
+                        don.isTalking = true;
+                        don.who = TALK_TYPE_NICK;
+                        npcs[NPC_NICK].state = DARREL_STATE_TALK;
+                        StartTimer(&don.talkStartTimer);
                     }
                 }
                 else if (!don.isTalking
