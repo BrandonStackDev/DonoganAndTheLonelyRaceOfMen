@@ -1028,7 +1028,8 @@ int main(void) {
                     npcs[NPC_DARREL].state = DARREL_STATE_TALK;
                     StartTimer(&don.talkStartTimer);
                 }
-                else if (Vector3Distance(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 12.00f)
+                else if (Vector3Distance(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 12.00f
+                    && !don.isTalking) //check !isTalking because we want to make sure we hit the exit talk routine if don is talking
                 {
                     if (npcs[NPC_NICK].r_state == RESCUE_STATE_SCARED) //begin run
                     {
@@ -1094,6 +1095,10 @@ int main(void) {
                     else if (don.who == TALK_TYPE_LUCY_ONE || don.who == TALK_TYPE_LUCY_TWO)
                     {
                         npcs[NPC_LUCY].state = LUCY_STATE_HELLO;
+                    }
+                    else if (don.who == TALK_TYPE_NICK)
+                    {
+                        npcs[NPC_NICK].state = DARREL_STATE_CONFUSED;
                     }
                 }
                 else if (!missions[MISSION_CLARENCE_CHICKEN].complete //clarence the chicken mission
@@ -3465,7 +3470,7 @@ int main(void) {
             DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
             Texture2D talkee = tol_head;
             if (don.who == TALK_TYPE_ATREYU || don.who == TALK_TYPE_ATREYU_CAR_HORN || don.who == TALK_TYPE_ATREYU_BOW) { talkee = atreyu_head; }
-            else if (don.who == TALK_TYPE_DARREL) { talkee = darrel_head; }
+            else if (don.who == TALK_TYPE_DARREL || don.who == TALK_TYPE_NICK) { talkee = darrel_head; }
             else if (don.who == TALK_TYPE_LUCY_ONE || don.who == TALK_TYPE_LUCY_TWO) { talkee = lucy_head; }
             src = (Rectangle){ 0, 0, talkee.width, talkee.height };
             dest = (Rectangle){ (res_contain.x + res_contain.width) - 66, (res_contain.y + res_contain.height) - 66, 64, 64 }; //64x64
