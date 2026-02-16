@@ -2,7 +2,7 @@
 
 An open world raylib game!
 
-Still in Active Development, right now the plan is to finish by Feb. 2026, but who knows...
+paused dev for now, Im not happy with a lot of the design decisions I made and i think I am going to work on other things for a while...
 
 Checkout the latest full version here - https://drive.google.com/file/d/1zo9r_9xbS6t6JQanSdSZKrK40O-gNuxb/view?usp=drive_link
 
