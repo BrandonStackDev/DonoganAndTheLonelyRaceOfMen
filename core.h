@@ -1270,6 +1270,14 @@ static unsigned __stdcall FileManagerThread(void* arg)
                         processed++;
                     }
                 }
+                else if (t->state == TS_UNCOMP_RAM)
+                {
+                    if (OpenTileModelFromUncompData(t, te))
+                    {
+                        //TraceLog(LOG_INFO, "tile opened on CPU: %d", te);
+                        processed++;
+                    }
+                }
             }
             else if (lod == LOD_32 || lod == LOD_16 || lod == LOD_8)
             {

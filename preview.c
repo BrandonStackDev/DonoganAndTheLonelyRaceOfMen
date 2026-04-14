@@ -1345,7 +1345,7 @@ int main(void) {
         {
             int gx, gy;
             int processed = 0;
-            const int MAX_TO_PROCESS = 20;
+            const int MAX_TO_PROCESS = 37;
 
             float time = GetTime();
             SetShaderValue(starShader, GetShaderLocation(starShader, "u_time"), &time, SHADER_UNIFORM_FLOAT);
@@ -1359,17 +1359,18 @@ int main(void) {
 
                 MUTEX_LOCK(mutex);
 
-                // Stage 1: decompressed OBJ text in RAM -> CPU-side Model
-                if (needed && t->state == TS_UNCOMP_RAM)
-                {
-                    if (OpenTileModelFromUncompData(t, te))
-                    {
-                        TraceLog(LOG_INFO, "tile opened on CPU: %d", te);
-                        processed++;
-                    }
-                }
+                //// Stage 1: decompressed OBJ text in RAM -> CPU-side Model
+                //if (needed && t->state == TS_UNCOMP_RAM)
+                //{
+                //    if (OpenTileModelFromUncompData(t, te))
+                //    {
+                //        TraceLog(LOG_INFO, "tile opened on CPU: %d", te);
+                //        processed++;
+                //    }
+                //}
                 // Stage 2: CPU-side Model -> GPU
-                else if (needed && t->state == TS_OPENED_NOT_GPU)
+                //else if (needed && t->state == TS_OPENED_NOT_GPU)
+                if (needed && t->state == TS_OPENED_NOT_GPU)
                 {
                     TraceLog(LOG_INFO, "uploading tile to GPU: %d", te);
 
