@@ -65,6 +65,33 @@ static void sleep_s(unsigned s) { Sleep(s * 1000u); }
 #define GL_POLYGON_OFFSET_FILL 0x8037
 #endif
 
+//stuff from compress
+typedef struct StackHeader
+{
+    char magic[8];
+    uint32_t version;
+    int32_t chunkX;
+    int32_t chunkY;
+    int32_t tileJ;
+    int32_t tileK;
+    int32_t foliageType;
+    uint32_t entryCount;
+} StackHeader;
+
+typedef struct StackEntry
+{
+    uint32_t model_type;
+    uint32_t rawSize;
+    uint32_t compSize;
+    uint32_t dataOffset;
+} StackEntry;
+
+typedef struct PackedObj
+{
+    StackEntry entry;
+    unsigned char* compData;
+} PackedObj;
+
 /////end windows section
 typedef enum {
     LOD_64,
@@ -116,6 +143,21 @@ typedef struct {
 } Chunk;
 
 //tiles-------------------------------------------------------------------------
+//background thread at start up -> open and load file, turninto ModelObject and create TileEntry
+//  TS_FILE -[open into RAM]-> TS_COMP_RAM <-[keep a copy of all in this state]-> TS_UNCOMP_RAM <-[ready for model]-> TS_OPENED_NOT_GPU <-[has model and cheeseburger]-> TS_IN_GPU (actually ready)
+//  TS_COMP_RAM is the base level after start, should add about 4GB to RAM, but is worth it for speed and install size
+// all active tiles must have TS_IN_GPU but will need if not ready to start from TS_COMP_RAM
+//          TS_COMP_RAM --> TS_UNCOMP_RAM --> TS_OPENED_NOT_GPU --> TS_IN_GPU
+// if its no longer active reverse: TS_IN_GPU -> TS_OPENED_NOT_GPU -> TS_UNCOMP_RAM -> TS_COMP_RAM
+//  unload from gpu and get somehow we need to free the models, we will need to re-compress later, 
+typedef enum { 
+    TS_FILE = 0,        //for the loading sequence
+    TS_COMP_RAM = 3,    //raw compressed file is in ram (everything after startup)
+    TS_UNCOMP_RAM = 5,  //inflated but not yet ready
+    TS_OPENED_NOT_GPU = 7, //turned into model for raylib
+    TS_IN_GPU = 11      //in gpu
+} TileState;
+
 typedef struct {
     int cx, cy;
     int tx, ty;
@@ -124,8 +166,16 @@ typedef struct {
     //Model_Type type; eventually it might be nice so we could tell what we are drawing if we desire
     Model model;
     BoundingBox box;
-    bool isReady, isLoaded; //is ready but !isloaded means needs gpu upload
+    TileState state;
+    //bool isReady, isLoaded; //is ready but !isloaded means needs gpu upload
     Model_Type type;
+    //for compression
+    unsigned char* compData;   // whole .stack file in RAM
+    uint32_t compLen;          // size of whole .stack file
+    StackHeader *header;        // copied stack header, pointer readonly
+    StackEntry stackEntry;     // JUST THIS OBJECT'S entry
+    unsigned char* uncompData; // just this entry decompressed
+    uint32_t uncompLen;
 } TileEntry;
 
 typedef struct {
@@ -330,7 +380,7 @@ void MemoryReport()
     printf("(found tiles %d)\n", foundTileCount);
     int64_t tileGpuTri = 0, tileGpuVert = 0;
     int64_t tileTotalTri = 0, tileTotalVert = 0;
-    for (int i = 0; i < foundTileCount; i++)
+    /*for (int i = 0; i < foundTileCount; i++) //todo: put this back
     {
         if (!foundTiles[i].isReady) { continue; }
         tileTotalTri += foundTiles[i].model.meshes[0].triangleCount;
@@ -338,7 +388,7 @@ void MemoryReport()
         if (!foundTiles[i].isLoaded) { continue; }
         tileGpuTri += foundTiles[i].model.meshes[0].triangleCount;
         tileGpuVert += foundTiles[i].model.meshes[0].vertexCount;
-    }
+    }*/
     printf("GPU   Tile Triangles           : %" PRId64 "\n", tileGpuTri);
     printf("GPU   Tile Vertices            : %" PRId64 "\n", tileGpuVert);
     printf("Total Tile Triangles           : %" PRId64 "\n", tileTotalTri);
@@ -374,10 +424,9 @@ void GridTileReport()
             {
                 if (foundTiles[i].cx == cx && foundTiles[i].cy == cy)
                 {
-                    printf("(%d,%d) - [%d,%d] - {%d,%d} - %s\n",
+                    printf("(%d,%d) - {%d,%d} - %s\n",
                         cx, cy,
                         foundTiles[i].tx, foundTiles[i].ty,
-                        foundTiles[i].isReady, foundTiles[i].isLoaded,
                         GetModelName(foundTiles[i].type)
                     );
                 }
@@ -401,44 +450,163 @@ void UnloadMeshGPU(Mesh* mesh) {
     if (mesh != NULL) { mesh->vaoId = 0; }
 }
 
-int loadTileCnt = 0; //-- need this counter to be global, counted in these functions
-void OpenTiles()
+//helper funct
+static unsigned char* ReadEntireBinaryFile(const char* path, uint32_t* outLen)
 {
-    FILE* f = fopen("map/manifest.txt", "r"); // Open for read
-    if (f != NULL) {
-        char line[512];  // Adjust size based on expected path lengths
-        while (fgets(line, sizeof(line), f)) {
-            // Remove newline if present
-            //char *newline = strchr(line, '\n');
-            //if (newline) *newline = '\0';
-            int cx, cy, tx, ty, type;
-            char path[256];
-            if (sscanf(line, "%d %d %d %d %d %255[^\n]", &cx, &cy, &tx, &ty, &type, path) == 6)
+    FILE* f = fopen(path, "rb");
+    if (!f) return NULL;
+
+    fseek(f, 0, SEEK_END);
+    long len = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    if (len <= 0) {
+        fclose(f);
+        return NULL;
+    }
+
+    unsigned char* data = (unsigned char*)malloc((size_t)len);
+    if (!data) {
+        fclose(f);
+        return NULL;
+    }
+
+    if (fread(data, 1, (size_t)len, f) != (size_t)len) {
+        fclose(f);
+        free(data);
+        return NULL;
+    }
+
+    fclose(f);
+    *outLen = (uint32_t)len;
+    return data;
+}
+
+//open tiles at start
+int loadTileCnt = 0; //-- need this counter to be global, counted in these functions
+
+/// <summary>
+/// open the tiles at start up, they are compressed
+/// </summary>
+void OpenTiles(void)
+{
+    FILE* f = fopen("map/compress_manifest.txt", "r");
+    if (!f) {
+        TraceLog(LOG_WARNING, "Failed to open map/compress_manifest.txt");
+        return;
+    }
+
+    char line[512];
+
+    while (fgets(line, sizeof(line), f))
+    {
+        int cx, cy, tx, ty;
+        char path[256];
+
+        if (sscanf(line, "%d %d %d %d %255[^\n]", &cx, &cy, &tx, &ty, path) == 5)
+        {
+            uint32_t stackLen = 0;
+            unsigned char* stackData = ReadEntireBinaryFile(path, &stackLen);
+            if (!stackData) {
+                TraceLog(LOG_WARNING, "Could not open stack file: %s", path);
+                continue;
+            }
+
+            if (stackLen < sizeof(StackHeader)) {
+                TraceLog(LOG_WARNING, "Stack file too small: %s", path);
+                free(stackData);
+                continue;
+            }
+
+            StackHeader header = { 0 };
+            memcpy(&header, stackData, sizeof(StackHeader));
+
+            uint32_t entryCount = header.entryCount;
+            uint32_t tableBytes = entryCount * (uint32_t)sizeof(StackEntry);
+            uint32_t minBytes = (uint32_t)sizeof(StackHeader) + tableBytes;
+
+            if (stackLen < minBytes) {
+                TraceLog(LOG_WARNING, "Corrupt stack table: %s", path);
+                free(stackData);
+                continue;
+            }
+
+            StackEntry* entries = (StackEntry*)(stackData + sizeof(StackHeader));
+
+            for (uint32_t i = 0; i < entryCount; i++)
             {
-                // Save entry
-                TileEntry entry = { cx, cy, tx, ty };
-                strcpy(entry.path, path);
-                if (chunks[cx][cy].lod == LOD_64 || chunks[cx][cy].lod == LOD_64)//only get ready close enough tiles
-                {
-                    entry.model = LoadModel(entry.path);
-                    entry.mesh = entry.model.meshes[0];
-                    entry.isReady = true;
-                }
-                entry.type = (Model_Type)type;
+                TileEntry entry = { 0 };
+                entry.cx = cx;
+                entry.cy = cy;
+                entry.tx = tx;
+                entry.ty = ty;
+                strncpy(entry.path, path, sizeof(entry.path) - 1);
+
+                entry.compData = stackData;
+                entry.compLen = stackLen;
+                entry.header = &header; //dont want to waste memory with this, lots of these things
+                entry.stackEntry = entries[i];
+                entry.type = (Model_Type)entries[i].model_type;
+                entry.state = TS_COMP_RAM;
+
                 MUTEX_LOCK(mutex);
                 EnsureFoundTilesCapacity(foundTileCount + 1);
                 foundTiles[foundTileCount++] = entry;
                 MUTEX_UNLOCK(mutex);
-                TraceLog(LOG_INFO, "manifest entry: %s", path);
+
                 loadTileCnt++;
             }
-            else {
-                printf("Malformed line: %s\n", line);
-            }
+
+            // IMPORTANT:
+            // do NOT free(stackData) here,
+            // because all TileEntries from this stack point to it.
         }
-        fclose(f);
+        else
+        {
+            TraceLog(LOG_WARNING, "Malformed line: %s", line);
+        }
     }
+
+    fclose(f);
 }
+
+//void OpenTiles()
+//{
+//    FILE* f = fopen("map/compress_manifest.txt", "r"); // Open for read
+//    if (f != NULL) {
+//        char line[512];  // Adjust size based on expected path lengths
+//        while (fgets(line, sizeof(line), f)) {
+//            // Remove newline if present
+//            //char *newline = strchr(line, '\n');
+//            //if (newline) *newline = '\0';
+//            int cx, cy, tx, ty, type;
+//            char path[256];
+//            if (sscanf(line, "%d %d %d %d %d %255[^\n]", &cx, &cy, &tx, &ty, &type, path) == 6)
+//            {
+//                // Save entry
+//                TileEntry entry = { cx, cy, tx, ty };
+//                strcpy(entry.path, path);
+//                if (chunks[cx][cy].lod == LOD_64 || chunks[cx][cy].lod == LOD_64)//only get ready close enough tiles
+//                {
+//                    entry.model = LoadModel(entry.path);
+//                    entry.mesh = entry.model.meshes[0];
+//                    entry.isReady = true;
+//                }
+//                entry.type = (Model_Type)type;
+//                MUTEX_LOCK(mutex);
+//                EnsureFoundTilesCapacity(foundTileCount + 1);
+//                foundTiles[foundTileCount++] = entry;
+//                MUTEX_UNLOCK(mutex);
+//                TraceLog(LOG_INFO, "manifest entry: %s", path);
+//                loadTileCnt++;
+//            }
+//            else {
+//                printf("Malformed line: %s\n", line);
+//            }
+//        }
+//        fclose(f);
+//    }
+//}
 
 //why, raylib does this already, doesnt it?, well thats AI for you...
 Color LerpColor(Color from, Color to, float t)
@@ -952,38 +1120,201 @@ void LoadChunk(int cx, int cy)
     TraceLog(LOG_INFO, "Chunk [%02d, %02d] loaded at position (%.1f, %.1f, %.1f)",
         cx, cy, position.x, position.y, position.z);
 }
+static bool DecompressTileEntry(TileEntry* t)
+{
+    if (!t || !t->compData) return false;
+
+    if (t->stackEntry.dataOffset + t->stackEntry.compSize > t->compLen)
+    {
+        TraceLog(LOG_WARNING, "Bad stack entry bounds for %s", t->path);
+        return false;
+    }
+
+    int outLen = 0;
+    unsigned char* src = t->compData + t->stackEntry.dataOffset;
+
+    unsigned char* out = DecompressData(src, (int)t->stackEntry.compSize, &outLen);
+    if (!out || outLen <= 0)
+    {
+        TraceLog(LOG_WARNING, "DecompressData failed for %s", t->path);
+        return false;
+    }
+
+    t->uncompData = out;
+    t->uncompLen = (uint32_t)outLen;
+    t->state = TS_UNCOMP_RAM;
+    return true;
+}
+
+static void FreeTileUncompressed(TileEntry* t)
+{
+    if (!t) return;
+
+    if (t->uncompData)
+    {
+        MemFree(t->uncompData);
+        t->uncompData = NULL;
+    }
+
+    t->uncompLen = 0;
+
+    if (t->state == TS_UNCOMP_RAM)
+        t->state = TS_COMP_RAM;
+}
 
 bool quitFileManager = false;
+
+//static unsigned __stdcall FileManagerThread(void* arg)
+//{
+//    while (!quitFileManager)
+//    {
+//        sleep_s(1);
+//
+//        for (int te = 0; te < foundTileCount; te++)
+//        {
+//            if (te % 666 == 0) sleep_ms(4);
+//            if (quitFileManager) break;
+//            if (!wasTilesDocumented) continue;
+//
+//            TileEntry* t = &foundTiles[te];
+//            TypeLOD lod = chunks[t->cx][t->cy].lod;
+//
+//            // close enough: inflate this packed object into RAM
+//            if (lod == LOD_64)
+//            {
+//                if (t->state == TS_COMP_RAM)
+//                {
+//                    if (quitFileManager) break;
+//
+//                    if (DecompressTileEntry(t))
+//                    {
+//                        TraceLog(LOG_INFO,
+//                            "Tile inflated to TS_UNCOMP_RAM: chunk(%d,%d) tile(%d,%d) type=%d",
+//                            t->cx, t->cy, t->tx, t->ty, (int)t->type);
+//                    }
+//                }
+//            }
+//            // far away: drop inflated RAM, keep only compressed stack in RAM
+//            else if (lod == LOD_32 || lod == LOD_16 || lod == LOD_8)
+//            {
+//                if (t->state == TS_UNCOMP_RAM)
+//                {
+//                    FreeTileUncompressed(t);
+//
+//                    TraceLog(LOG_INFO,
+//                        "Tile dropped back to TS_COMP_RAM: chunk(%d,%d) tile(%d,%d) type=%d",
+//                        t->cx, t->cy, t->tx, t->ty, (int)t->type);
+//                }
+//            }
+//        }
+//    }
+//
+//    return 0;
+//}
+
+static bool OpenTileModelFromUncompData(TileEntry* t, int teIndex)
+{
+    if (!t || !t->uncompData || t->uncompLen == 0) return false;
+
+    char tempPath[256];
+    snprintf(tempPath, sizeof(tempPath),
+        "map/__tiletmp_%d_%d_%d_%d_%d.obj",
+        t->cx, t->cy, t->tx, t->ty, teIndex);
+
+    FILE* fp = fopen(tempPath, "wb");
+    if (!fp) {
+        TraceLog(LOG_WARNING, "Failed to write temp tile obj: %s", tempPath);
+        return false;
+    }
+
+    fwrite(t->uncompData, 1, t->uncompLen, fp);
+    fclose(fp);
+
+    Model m = LoadModel(tempPath);
+    remove(tempPath);
+
+    if (m.meshCount <= 0 || m.meshes == NULL) {
+        TraceLog(LOG_WARNING, "LoadModel failed from temp obj for tile %d", teIndex);
+        return false;
+    }
+
+    t->model = m;
+    t->mesh = m.meshes[0];
+    t->state = TS_OPENED_NOT_GPU;
+    return true;
+}
+
 static unsigned __stdcall FileManagerThread(void* arg)
 {
     while (!quitFileManager)
     {
-        sleep_s(1);
-        for (int te = 0; te < foundTileCount; te++)
+        sleep_ms(50);
+
+        int processed = 0;
+        const int MAX_DECOMPRESS_PER_PASS = 2;
+
+        for (int te = 0; te < foundTileCount && processed < MAX_DECOMPRESS_PER_PASS; te++)
         {
-            if (te % 666 == 0) { sleep_ms(4); }
-            if (quitFileManager) { break; }
-            if (!wasTilesDocumented) { continue; }
-            if (!foundTiles[te].isReady && chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64)
+            if (quitFileManager) break;
+            if (!wasTilesDocumented) continue;
+
+            TileEntry* t = &foundTiles[te];
+            TypeLOD lod = chunks[t->cx][t->cy].lod;
+
+            if (lod == LOD_64)
             {
-                if (quitFileManager) { break; }
-                foundTiles[te].model = LoadModel(foundTiles[te].path);
-                if (quitFileManager) { break; }
-                foundTiles[te].mesh = foundTiles[te].model.meshes[0];
-                if (quitFileManager) { break; }
-                foundTiles[te].isReady = true;
+                if (t->state == TS_COMP_RAM)
+                {
+                    if (DecompressTileEntry(t))
+                    {
+                        processed++;
+                    }
+                }
             }
-            else if (foundTiles[te].isReady &&
-                (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_32 ||
-                    chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_16 ||
-                    chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_8))
+            else if (lod == LOD_32 || lod == LOD_16 || lod == LOD_8)
             {
-                if (quitFileManager) { break; }
-                foundTiles[te].isReady = false;
+                if (t->state == TS_UNCOMP_RAM)
+                {
+                    FreeTileUncompressed(t);
+                    processed++;
+                }
             }
         }
     }
+
+    return 0;
 }
+
+//static unsigned __stdcall FileManagerThread(void* arg)
+//{
+//    while (!quitFileManager)
+//    {
+//        sleep_s(1);
+//        for (int te = 0; te < foundTileCount; te++)
+//        {
+//            if (te % 666 == 0) { sleep_ms(4); }
+//            if (quitFileManager) { break; }
+//            if (!wasTilesDocumented) { continue; }
+//            if (!foundTiles[te].isReady && chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64)
+//            {
+//                if (quitFileManager) { break; }
+//                foundTiles[te].model = LoadModel(foundTiles[te].path);
+//                if (quitFileManager) { break; }
+//                foundTiles[te].mesh = foundTiles[te].model.meshes[0];
+//                if (quitFileManager) { break; }
+//                foundTiles[te].isReady = true;
+//            }
+//            else if (foundTiles[te].isReady &&
+//                (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_32 ||
+//                    chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_16 ||
+//                    chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_8))
+//            {
+//                if (quitFileManager) { break; }
+//                foundTiles[te].isReady = false;
+//            }
+//        }
+//    }
+//}
 
 static unsigned __stdcall ChunkLoaderThread(void* arg)
 {

@@ -1341,46 +1341,104 @@ int main(void) {
         // SetShaderValue(starShader, starShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPosVecF, SHADER_UNIFORM_VEC3);
       
         //main thread of the file management system, needed for GPU operations
-        if(wasTilesDocumented)
+        if (wasTilesDocumented)
         {
             int gx, gy;
             int processed = 0;
-            int MAX_TO_PROCESS = 20;
-            float time = GetTime(); // or your own time tracker
+            const int MAX_TO_PROCESS = 20;
+
+            float time = GetTime();
             SetShaderValue(starShader, GetShaderLocation(starShader, "u_time"), &time, SHADER_UNIFORM_FLOAT);
+
             GetGlobalTileCoords(camera.position, &gx, &gy);
-            int playerTileX  = gx % TILE_GRID_SIZE;
-            int playerTileY  = gy % TILE_GRID_SIZE;
+
             for (int te = 0; te < foundTileCount && processed < MAX_TO_PROCESS; te++)
             {
-                bool needed = (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64);
+                TileEntry* t = &foundTiles[te];
+                bool needed = (chunks[t->cx][t->cy].lod == LOD_64);
+
                 MUTEX_LOCK(mutex);
-                if(foundTiles[te].isReady && !foundTiles[te].isLoaded && needed)
+
+                // Stage 1: decompressed OBJ text in RAM -> CPU-side Model
+                if (needed && t->state == TS_UNCOMP_RAM)
                 {
-                    TraceLog(LOG_INFO, "loading tiles: %d", te);
-                    // Upload meshes to GPU
-                    UploadMesh(&foundTiles[te].model.meshes[0], false);
-                    // Load GPU models
-                    //foundTiles[te].model = LoadModelFromMesh(foundTiles[te].model.meshes[0]);
-                    foundTiles[te].box = GetModelBoundingBox(foundTiles[te].model);
-                    // Apply textures
-                    foundTiles[te].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = HighFiStaticObjectModelTextures[foundTiles[te].type];
-                    //mark work done
-                    foundTiles[te].isLoaded = true;
-                    //and now its safe to unlock
+                    if (OpenTileModelFromUncompData(t, te))
+                    {
+                        TraceLog(LOG_INFO, "tile opened on CPU: %d", te);
+                        processed++;
+                    }
+                }
+                // Stage 2: CPU-side Model -> GPU
+                else if (needed && t->state == TS_OPENED_NOT_GPU)
+                {
+                    TraceLog(LOG_INFO, "uploading tile to GPU: %d", te);
+
+                    UploadMesh(&t->model.meshes[0], false);
+                    t->box = GetModelBoundingBox(t->model);
+                    t->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture =
+                        HighFiStaticObjectModelTextures[t->type];
+
+                    t->state = TS_IN_GPU;
                     processed++;
                 }
-                else if(foundTiles[te].isLoaded && !needed)
+                // Reverse stage: GPU -> CPU only
+                else if (!needed && t->state == TS_IN_GPU)
                 {
-                    foundTiles[te].isLoaded = false;
-                    foundTiles[te].isReady = false;
-                    UnloadModel(foundTiles[te].model);
+                    UnloadModel(t->model);
+                    memset(&t->model, 0, sizeof(Model));
+                    memset(&t->mesh, 0, sizeof(Mesh));
+                    t->state = TS_UNCOMP_RAM;
                     processed++;
                 }
+
                 MUTEX_UNLOCK(mutex);
             }
-            if (processed > 0) { TraceLog(LOG_INFO, "processed %d tiles this loop", processed); }
+
+            if (processed > 0)
+            {
+                TraceLog(LOG_INFO, "processed %d tiles this loop", processed);
+            }
         }
+        //if(wasTilesDocumented)
+        //{
+        //    int gx, gy;
+        //    int processed = 0;
+        //    int MAX_TO_PROCESS = 20;
+        //    float time = GetTime(); // or your own time tracker
+        //    SetShaderValue(starShader, GetShaderLocation(starShader, "u_time"), &time, SHADER_UNIFORM_FLOAT);
+        //    GetGlobalTileCoords(camera.position, &gx, &gy);
+        //    int playerTileX  = gx % TILE_GRID_SIZE;
+        //    int playerTileY  = gy % TILE_GRID_SIZE;
+        //    for (int te = 0; te < foundTileCount && processed < MAX_TO_PROCESS; te++)
+        //    {
+        //        bool needed = (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64);
+        //        MUTEX_LOCK(mutex);
+        //        if(foundTiles[te].isReady && !foundTiles[te].isLoaded && needed)
+        //        {
+        //            TraceLog(LOG_INFO, "loading tiles: %d", te);
+        //            // Upload meshes to GPU
+        //            UploadMesh(&foundTiles[te].model.meshes[0], false);
+        //            // Load GPU models
+        //            //foundTiles[te].model = LoadModelFromMesh(foundTiles[te].model.meshes[0]);
+        //            foundTiles[te].box = GetModelBoundingBox(foundTiles[te].model);
+        //            // Apply textures
+        //            foundTiles[te].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = HighFiStaticObjectModelTextures[foundTiles[te].type];
+        //            //mark work done
+        //            foundTiles[te].isLoaded = true;
+        //            //and now its safe to unlock
+        //            processed++;
+        //        }
+        //        else if(foundTiles[te].isLoaded && !needed)
+        //        {
+        //            foundTiles[te].isLoaded = false;
+        //            foundTiles[te].isReady = false;
+        //            UnloadModel(foundTiles[te].model);
+        //            processed++;
+        //        }
+        //        MUTEX_UNLOCK(mutex);
+        //    }
+        //    if (processed > 0) { TraceLog(LOG_INFO, "processed %d tiles this loop", processed); }
+        //}
         for (int cy = 0; cy < CHUNK_COUNT; cy++) {
             for (int cx = 0; cx < CHUNK_COUNT; cx++) {
                 if (chunks[cx][cy].isReady && !chunks[cx][cy].waterLoaded)//water
@@ -3167,8 +3225,7 @@ int main(void) {
             for(int te = 0; te < foundTileCount; te++)
             {
                 if (!wasTilesDocumented) { break; }
-                if(!foundTiles[te].isReady){continue;}
-                if(!foundTiles[te].isLoaded){continue;}
+                if(foundTiles[te].state!=TS_IN_GPU){continue;}
                 //TraceLog(LOG_INFO, "TEST - Maybe - Drawing tile model: chunk %02d_%02d, tile %02d_%02d", foundTiles[te].cx, foundTiles[te].cy, foundTiles[te].tx, foundTiles[te].ty);
                 if(chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64 //this one first because its quick, although it might get removed later
                     && (!IsTileActive(foundTiles[te].cx,foundTiles[te].cy,foundTiles[te].tx,foundTiles[te].ty, gx, gy) || USE_TILES_ONLY) 

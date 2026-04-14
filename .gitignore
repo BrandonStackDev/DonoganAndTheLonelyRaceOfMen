@@ -47,6 +47,7 @@ map/*.png
 map/manifest.txt
 map/water_manifest.txt
 new_baked_asset/
+*.stack
 
 # VSCode settings
 .vscode/
