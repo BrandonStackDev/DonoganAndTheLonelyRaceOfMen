@@ -752,7 +752,8 @@ int main(void) {
         }
         //handle health and mana re-gen, xp to level conversion as well
         oldLevel = don.level;
-        don.level = (int)(don.xp / 400) + 1;
+        //don.level = (int)(120.0 * log(1.0 + don.xp / 200.0));
+        don.level = (int)(110.0 * (1.0 - exp(-don.xp / 12000.0)));
         if (don.level != oldLevel && don.level%5==0) {
             don.maxHealth += 2;
             don.maxMana += 2;
@@ -1160,7 +1161,7 @@ int main(void) {
                     Apple* a = &apples[i];
                     if (!a->spawned || !a->fallen) { continue; }
                     if (Vector3Distance(don.pos, a->pos) < 7.3f) {
-                        inventory[INV_APPLE].count++;   // apple exists in your enum
+                        inventory[INV_APPLE].count++;   // apple exists ready to consume baby!
                         a->spawned = false;             // free slot
                         a->fallen = false;
                         a->falling = false; // to be safe
@@ -1338,6 +1339,7 @@ int main(void) {
         // float cameraPosVecF[3] = {camera.position.x, camera.position.y, camera.position.z};
         // SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPosVecF, SHADER_UNIFORM_VEC3);
         // SetShaderValue(starShader, starShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPosVecF, SHADER_UNIFORM_VEC3);
+      
         //main thread of the file management system, needed for GPU operations
         if(wasTilesDocumented)
         {

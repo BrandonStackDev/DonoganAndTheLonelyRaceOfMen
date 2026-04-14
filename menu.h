@@ -323,7 +323,7 @@ static int _BuildLitFires(_LitIdx* out, int cap) {
     return n;
 }
 
-static void Menu_OnCross(GameState* gs, Donogan* d)
+void Menu_OnCross(GameState* gs, Donogan* d)
 {
     PlaySoundVol(menuSelect);
     if (gs->menuPage == MENU_PAGE_MAIN) {
@@ -359,11 +359,8 @@ static void Menu_OnCross(GameState* gs, Donogan* d)
         int fireIdx = tmp[gs->menuSel].idx;
         // +5 X/Z away from center so we don't land ON the pit
         d->pos.x = fires[fireIdx].pos.x + 5.0f;
-        d->pos.z = fires[fireIdx].pos.z + 5.0f;                                           //
-#ifdef GetTerrainHeightFromMeshXZ
-        d->groundY = GetTerrainHeightFromMeshXZ(d->pos.x, d->pos.z);
-#endif
-        DonSnapToGround(d);                                                               //
+        d->pos.z = fires[fireIdx].pos.z + 5.0f;
+        DonSnapToGround(d);
         Menu_Close(gs);
         return;
     }
@@ -385,7 +382,11 @@ static void Menu_OnCross(GameState* gs, Donogan* d)
                 else if (it->type == INV_HEALTH_FULL) { d->health = d->maxHealth; }
                 else if (it->type == INV_POTION) { d->mana = d->maxMana; }
                 else if (it->type == INV_BERRY) { d->health = (d->health + 5 > d->maxHealth ? d->maxHealth : d->health + 5); }
-                else if (it->type == INV_APPLE) { d->health = (d->health + 50 > d->maxHealth ? d->maxHealth : d->health + 50); }
+                else if (it->type == INV_APPLE) 
+                { 
+                    d->health = (d->health + 30 > d->maxHealth ? d->maxHealth : d->health + 30);
+                    d->xp += 40;  //TODO: does not seem to work?
+                }
             }
         }
         return;
