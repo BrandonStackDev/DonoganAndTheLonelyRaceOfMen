@@ -6,6 +6,7 @@
 #include "raymath.h"
 #include "rlgl.h"
 
+
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
@@ -21,6 +22,7 @@
 //me
 #include "util.h"
 #include "models.h"
+#include "objMemParse.h"
 
 //float   GetTerrainHeightFromMeshXZ(float x, float z);//todo: 
 //Vector3 GetTerrainNormalFromMeshXZ(float x, float z);
@@ -172,7 +174,7 @@ typedef struct {
     //for compression
     unsigned char* compData;   // whole .stack file in RAM
     uint32_t compLen;          // size of whole .stack file
-    StackHeader *header;        // copied stack header, pointer readonly
+    StackHeader header;        // copied stack header, pointer readonly
     StackEntry stackEntry;     // JUST THIS OBJECT'S entry
     unsigned char* uncompData; // just this entry decompressed
     uint32_t uncompLen;
@@ -544,7 +546,7 @@ void OpenTiles(void)
 
                 entry.compData = stackData;
                 entry.compLen = stackLen;
-                entry.header = &header; //dont want to waste memory with this, lots of these things
+                entry.header = header; //just doing this the lazy way
                 entry.stackEntry = entries[i];
                 entry.type = (Model_Type)entries[i].model_type;
                 entry.state = TS_COMP_RAM;
@@ -1212,36 +1214,23 @@ bool quitFileManager = false;
 //    return 0;
 //}
 
+
+
 static bool OpenTileModelFromUncompData(TileEntry* t, int teIndex)
 {
     if (!t || !t->uncompData || t->uncompLen == 0) return false;
 
-    char tempPath[256];
-    snprintf(tempPath, sizeof(tempPath),
-        "map/__tiletmp_%d_%d_%d_%d_%d.obj",
-        t->cx, t->cy, t->tx, t->ty, teIndex);
-
-    FILE* fp = fopen(tempPath, "wb");
-    if (!fp) {
-        TraceLog(LOG_WARNING, "Failed to write temp tile obj: %s", tempPath);
-        return false;
+    Mesh mesh = LoadObjMeshFromMemory(t->uncompData, t->uncompLen);
+    
+    if (mesh.vertexCount > 0)
+    {
+        t->mesh = mesh;
+        t->model = LoadModelFromMesh(mesh);   // CPU-side wrapper around mesh
+        t->state = TS_OPENED_NOT_GPU;
+        return true;
     }
 
-    fwrite(t->uncompData, 1, t->uncompLen, fp);
-    fclose(fp);
-
-    Model m = LoadModel(tempPath);
-    remove(tempPath);
-
-    if (m.meshCount <= 0 || m.meshes == NULL) {
-        TraceLog(LOG_WARNING, "LoadModel failed from temp obj for tile %d", teIndex);
-        return false;
-    }
-
-    t->model = m;
-    t->mesh = m.meshes[0];
-    t->state = TS_OPENED_NOT_GPU;
-    return true;
+    return false;
 }
 
 static unsigned __stdcall FileManagerThread(void* arg)
