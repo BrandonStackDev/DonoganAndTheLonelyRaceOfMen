@@ -1240,7 +1240,7 @@ static unsigned __stdcall FileManagerThread(void* arg)
         sleep_ms(50);
 
         int processed = 0;
-        const int MAX_DECOMPRESS_PER_PASS = 2;
+        const int MAX_DECOMPRESS_PER_PASS = 5;
 
         for (int te = 0; te < foundTileCount && processed < MAX_DECOMPRESS_PER_PASS; te++)
         {

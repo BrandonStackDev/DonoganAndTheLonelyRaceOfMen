@@ -1345,7 +1345,7 @@ int main(void) {
         {
             int gx, gy;
             int processed = 0;
-            const int MAX_TO_PROCESS = 37;
+            const int MAX_TO_PROCESS = 13;
 
             float time = GetTime();
             SetShaderValue(starShader, GetShaderLocation(starShader, "u_time"), &time, SHADER_UNIFORM_FLOAT);
