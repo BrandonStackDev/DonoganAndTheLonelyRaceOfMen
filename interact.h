@@ -505,167 +505,171 @@ static void DrawTextBoxed(Font font, const char* text, Rectangle rec, float font
     DrawTextBoxedSelectable(font, text, rec, fontSize, spacing, wordWrap, tint, 0, 0, WHITE, WHITE);
 }
 
-// Minimal JSON escaper for prompt -> JSON string value
-static size_t JsonEscape(const char* in, char* out, size_t cap) {
-    size_t i = 0;
-    for (const unsigned char* p = (const unsigned char*)in; *p && i < cap - 1; ++p) {
-        unsigned char c = *p;
-        if (c == '\"' || c == '\\') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = (char)c; }
-        else if (c == '\n') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 'n'; }
-        else if (c == '\r') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 'r'; }
-        else if (c == '\t') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 't'; }
-        else if (c < 0x20) { // control -> \u00XX
-            if (i + 6 >= cap) break;
-            i += (size_t)snprintf(out + i, cap - i, "\\u%04x", c);
-        }
-        else out[i++] = (char)c;
-    }
-    out[i] = 0;
-    return i;
-}
+//// Minimal JSON escaper for prompt -> JSON string value
+//static size_t JsonEscape(const char* in, char* out, size_t cap) {
+//    size_t i = 0;
+//    for (const unsigned char* p = (const unsigned char*)in; *p && i < cap - 1; ++p) {
+//        unsigned char c = *p;
+//        if (c == '\"' || c == '\\') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = (char)c; }
+//        else if (c == '\n') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 'n'; }
+//        else if (c == '\r') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 'r'; }
+//        else if (c == '\t') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 't'; }
+//        else if (c < 0x20) { // control -> \u00XX
+//            if (i + 6 >= cap) break;
+//            i += (size_t)snprintf(out + i, cap - i, "\\u%04x", c);
+//        }
+//        else out[i++] = (char)c;
+//    }
+//    out[i] = 0;
+//    return i;
+//}
+//
+//// Pull "response": "..." out of Ollama's JSON (stream:false)
+//static void ExtractResponseText(const char* json, char* out, size_t cap) {
+//    const char* p = strstr(json, "\"response\"");
+//    if (!p) { // fallback: dump raw json (truncated) if format surprises us
+//        strncpy(out, json, cap - 1); out[cap - 1] = 0; return;
+//    }
+//    p = strchr(p, ':'); if (!p) { out[0] = 0; return; }
+//    p++;
+//    while (*p == ' ' || *p == '\t') p++;
+//    if (*p == '\"') p++;
+//
+//    size_t i = 0;
+//    int esc = 0;
+//    for (; *p && i < cap - 1; ++p) {
+//        char c = *p;
+//        if (esc) {
+//            switch (c) {
+//            case 'n': out[i++] = '\n'; break;
+//            case 'r': out[i++] = '\r'; break;
+//            case 't': out[i++] = '\t'; break;
+//            case '\\': out[i++] = '\\'; break;
+//            case '"': out[i++] = '"'; break;
+//            case 'u': /* naive: skip \uXXXX */ p += 4; break;
+//            default: out[i++] = c; break;
+//            }
+//            esc = 0;
+//        }
+//        else if (c == '\\') esc = 1;
+//        else if (c == '\"') break;
+//        else out[i++] = c;
+//    }
+//    out[i] = 0;
+//}
+//
+//static inline bool IsBlankStr(const char* s) {
+//    if (!s) return true;
+//    while (*s) { if (*s > ' ') return false; ++s; }
+//    return true;
+//}
 
-// Pull "response": "..." out of Ollama's JSON (stream:false)
-static void ExtractResponseText(const char* json, char* out, size_t cap) {
-    const char* p = strstr(json, "\"response\"");
-    if (!p) { // fallback: dump raw json (truncated) if format surprises us
-        strncpy(out, json, cap - 1); out[cap - 1] = 0; return;
-    }
-    p = strchr(p, ':'); if (!p) { out[0] = 0; return; }
-    p++;
-    while (*p == ' ' || *p == '\t') p++;
-    if (*p == '\"') p++;
-
-    size_t i = 0;
-    int esc = 0;
-    for (; *p && i < cap - 1; ++p) {
-        char c = *p;
-        if (esc) {
-            switch (c) {
-            case 'n': out[i++] = '\n'; break;
-            case 'r': out[i++] = '\r'; break;
-            case 't': out[i++] = '\t'; break;
-            case '\\': out[i++] = '\\'; break;
-            case '"': out[i++] = '"'; break;
-            case 'u': /* naive: skip \uXXXX */ p += 4; break;
-            default: out[i++] = c; break;
-            }
-            esc = 0;
-        }
-        else if (c == '\\') esc = 1;
-        else if (c == '\"') break;
-        else out[i++] = c;
-    }
-    out[i] = 0;
-}
-
-static inline bool IsBlankStr(const char* s) {
-    if (!s) return true;
-    while (*s) { if (*s > ' ') return false; ++s; }
-    return true;
-}
-
-BOOL hadError = FALSE;
-#ifdef _WIN32
 static DWORD WINAPI OllamaThreadProc(LPVOID lp) {
-    /////this section is a hack to remove the ollama stuff
-    // if you wired the 'who' we discussed earlier, use that:
-    const char* def = GetCharacterDefaultSheet(g_currentTalkWho);
-    if (!def) def = "?";
-
-    strncpy(g_ollamaResponse, def, sizeof(g_ollamaResponse) - 1);
-    g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
     return 0;
-    /////////////////////////////////////////////////////////////////
-//    char* heapPrompt = (char*)lp;
-//    InterlockedExchange(&g_ollamaDone, 0);
-//    g_ollamaResponse[0] = '\0';
-//
-//    // Wide host
-//    wchar_t whost[64];
-//    MultiByteToWideChar(CP_UTF8, 0, g_ollamaHost, -1, whost, (int)(sizeof(whost) / sizeof(wchar_t)));
-//
-//    // Session / connect / request
-//    HINTERNET hSession = WinHttpOpen(L"Donogan/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, NULL, NULL, 0);
-//    if (!hSession) { hadError = TRUE;  goto cleanup; }
-//
-//    HINTERNET hConnect = WinHttpConnect(hSession, whost, (INTERNET_PORT)g_ollamaPort, 0);
-//    if (!hConnect) { hadError = TRUE;  goto cleanup; }
-//
-//    HINTERNET hRequest = WinHttpOpenRequest(
-//        hConnect, L"POST", L"/api/generate", NULL, WINHTTP_NO_REFERER,
-//        WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
-//    if (!hRequest) { hadError = TRUE;  goto cleanup; }
-//
-//    // Header
-//    const wchar_t* hdr = L"Content-Type: application/json\r\n";
-//    WinHttpAddRequestHeaders(hRequest, hdr, (ULONG)-1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
-//
-//    // Body
-//    char esc[OLLAMA_MAX_REQ / 2];
-//    JsonEscape(heapPrompt ? heapPrompt : "", esc, sizeof(esc));
-//
-//    char body[OLLAMA_MAX_REQ];
-//    int bodyLen = snprintf(body, sizeof(body),
-//        "{"
-//        "\"model\":\"%s\","
-//        "\"prompt\":\"%s\","
-//        "\"stream\":false"
-//        "}",
-//        g_ollamaModel, esc);
-//
-//    BOOL ok = WinHttpSendRequest(
-//        hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-//        (LPVOID)body, (DWORD)bodyLen, (DWORD)bodyLen, 0);
-//    if (!ok) { hadError = TRUE;  goto cleanup; }
-//
-//    ok = WinHttpReceiveResponse(hRequest, NULL);
-//    if (!ok) { hadError = TRUE;  goto cleanup; }
-//
-//    // Read response
-//    DWORD avail = 0, read = 0;
-//    size_t wr = 0;
-//    g_ollamaResponse[0] = '\0';
-//    do {
-//        if (!WinHttpQueryDataAvailable(hRequest, &avail)) break;
-//        if (avail == 0) break;
-//        char tmp[4096];
-//        DWORD toRead = (avail > sizeof(tmp)) ? (DWORD)sizeof(tmp) : avail;
-//        if (!WinHttpReadData(hRequest, tmp, toRead, &read)) break;
-//        if (read == 0) break;
-//        size_t left = (OLLAMA_MAX_RESP - 1) - wr;
-//        size_t copy = (read < left) ? read : left;
-//        if (copy > 0) { memcpy(g_ollamaResponse + wr, tmp, copy); wr += copy; g_ollamaResponse[wr] = 0; }
-//    } while (read > 0);
-//
-//    // Extract just the "response" text into the same buffer
-//    {
-//        char extracted[OLLAMA_MAX_RESP];
-//        ExtractResponseText(g_ollamaResponse, extracted, sizeof(extracted));
-//        strncpy(g_ollamaResponse, extracted, sizeof(g_ollamaResponse) - 1);
-//        g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
-//    }
-//
-//cleanup:
-//    if (IsBlankStr(g_ollamaResponse) || hadError) {
-//        // if you wired the 'who' we discussed earlier, use that:
-//        const char* def = GetCharacterDefaultSheet(g_currentTalkWho);
-//        if (!def) def = "?";
-//
-//        strncpy(g_ollamaResponse, def, sizeof(g_ollamaResponse) - 1);
-//        g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
-//    }
-//    if (hRequest)  WinHttpCloseHandle(hRequest);
-//    if (hConnect)  WinHttpCloseHandle(hConnect);
-//    if (hSession)  WinHttpCloseHandle(hSession);
-//    if (heapPrompt) free(heapPrompt);
-//
-//    InterlockedExchange(&g_ollamaBusy, 0);
-//    InterlockedExchange(&g_ollamaDone, 1);
-//    return 0;
 }
-#endif
 
-// API you call from game code:
+//BOOL hadError = TRUE;
+//#ifdef _WIN32
+//static DWORD WINAPI OllamaThreadProc(LPVOID lp) {
+//    /////this section is a hack to remove the ollama stuff
+//    // if you wired the 'who' we discussed earlier, use that:
+//    const char* def = GetCharacterDefaultSheet(g_currentTalkWho);
+//    if (!def) def = "?";
+//
+//    strncpy(g_ollamaResponse, def, sizeof(g_ollamaResponse) - 1);
+//    g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
+//    return 0;
+//    /////////////////////////////////////////////////////////////////
+////    char* heapPrompt = (char*)lp;
+////    InterlockedExchange(&g_ollamaDone, 0);
+////    g_ollamaResponse[0] = '\0';
+////
+////    // Wide host
+////    wchar_t whost[64];
+////    MultiByteToWideChar(CP_UTF8, 0, g_ollamaHost, -1, whost, (int)(sizeof(whost) / sizeof(wchar_t)));
+////
+////    // Session / connect / request
+////    HINTERNET hSession = WinHttpOpen(L"Donogan/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, NULL, NULL, 0);
+////    if (!hSession) { hadError = TRUE;  goto cleanup; }
+////
+////    HINTERNET hConnect = WinHttpConnect(hSession, whost, (INTERNET_PORT)g_ollamaPort, 0);
+////    if (!hConnect) { hadError = TRUE;  goto cleanup; }
+////
+////    HINTERNET hRequest = WinHttpOpenRequest(
+////        hConnect, L"POST", L"/api/generate", NULL, WINHTTP_NO_REFERER,
+////        WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
+////    if (!hRequest) { hadError = TRUE;  goto cleanup; }
+////
+////    // Header
+////    const wchar_t* hdr = L"Content-Type: application/json\r\n";
+////    WinHttpAddRequestHeaders(hRequest, hdr, (ULONG)-1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+////
+////    // Body
+////    char esc[OLLAMA_MAX_REQ / 2];
+////    JsonEscape(heapPrompt ? heapPrompt : "", esc, sizeof(esc));
+////
+////    char body[OLLAMA_MAX_REQ];
+////    int bodyLen = snprintf(body, sizeof(body),
+////        "{"
+////        "\"model\":\"%s\","
+////        "\"prompt\":\"%s\","
+////        "\"stream\":false"
+////        "}",
+////        g_ollamaModel, esc);
+////
+////    BOOL ok = WinHttpSendRequest(
+////        hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+////        (LPVOID)body, (DWORD)bodyLen, (DWORD)bodyLen, 0);
+////    if (!ok) { hadError = TRUE;  goto cleanup; }
+////
+////    ok = WinHttpReceiveResponse(hRequest, NULL);
+////    if (!ok) { hadError = TRUE;  goto cleanup; }
+////
+////    // Read response
+////    DWORD avail = 0, read = 0;
+////    size_t wr = 0;
+////    g_ollamaResponse[0] = '\0';
+////    do {
+////        if (!WinHttpQueryDataAvailable(hRequest, &avail)) break;
+////        if (avail == 0) break;
+////        char tmp[4096];
+////        DWORD toRead = (avail > sizeof(tmp)) ? (DWORD)sizeof(tmp) : avail;
+////        if (!WinHttpReadData(hRequest, tmp, toRead, &read)) break;
+////        if (read == 0) break;
+////        size_t left = (OLLAMA_MAX_RESP - 1) - wr;
+////        size_t copy = (read < left) ? read : left;
+////        if (copy > 0) { memcpy(g_ollamaResponse + wr, tmp, copy); wr += copy; g_ollamaResponse[wr] = 0; }
+////    } while (read > 0);
+////
+////    // Extract just the "response" text into the same buffer
+////    {
+////        char extracted[OLLAMA_MAX_RESP];
+////        ExtractResponseText(g_ollamaResponse, extracted, sizeof(extracted));
+////        strncpy(g_ollamaResponse, extracted, sizeof(g_ollamaResponse) - 1);
+////        g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
+////    }
+////
+////cleanup:
+////    if (IsBlankStr(g_ollamaResponse) || hadError) {
+////        // if you wired the 'who' we discussed earlier, use that:
+////        const char* def = GetCharacterDefaultSheet(g_currentTalkWho);
+////        if (!def) def = "?";
+////
+////        strncpy(g_ollamaResponse, def, sizeof(g_ollamaResponse) - 1);
+////        g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
+////    }
+////    if (hRequest)  WinHttpCloseHandle(hRequest);
+////    if (hConnect)  WinHttpCloseHandle(hConnect);
+////    if (hSession)  WinHttpCloseHandle(hSession);
+////    if (heapPrompt) free(heapPrompt);
+////
+////    InterlockedExchange(&g_ollamaBusy, 0);
+////    InterlockedExchange(&g_ollamaDone, 1);
+////    return 0;
+//}
+//#endif
+//
+//// API you call from game code:
 static bool StartOllamaGenerate(const char* prompt) {
 #ifdef _WIN32
     if (InterlockedCompareExchange(&g_ollamaBusy, 1, 0) != 0) return false; // already running
@@ -679,26 +683,27 @@ static bool StartOllamaGenerate(const char* prompt) {
     (void)prompt; return false;
 #endif
 }
-
+//
 static bool OllamaIsBusy(void) {
+    return true;
 #ifdef _WIN32
     return InterlockedCompareExchange(&g_ollamaBusy, 0, 0) != 0;
 #else
     return false;
 #endif
 }
-
-static bool OllamaHasReply(void) {
-#ifdef _WIN32
-    return InterlockedCompareExchange(&g_ollamaDone, 0, 0) != 0;
-#else
-    return false;
-#endif
-}
-
-static const char* OllamaGetReply(void) { return g_ollamaResponse; }
-
-// Drop from the beginning up to and including the first '\n'
+//
+//static bool OllamaHasReply(void) {
+//#ifdef _WIN32
+//    return InterlockedCompareExchange(&g_ollamaDone, 0, 0) != 0;
+//#else
+//    return false;
+//#endif
+//}
+//
+static const char* OllamaGetReply(void) { return GetCharacterDefaultSheet(g_currentTalkWho); }
+//
+//// Drop from the beginning up to and including the first '\n'
 static inline void Conv_DropOldestLine(void) {
     if (g_convLen == 0) return;
     char* nl = memchr(g_convBuf, '\n', g_convLen);
@@ -754,7 +759,7 @@ static inline void BuildPromptWithHistory(TALK_TYPE who, const char* userText,
 
 // Call this every frame during talk mode; once reply arrives, append to history
 static inline void Conv_PollAndAppendReply(void) {
-    if (!g_replyConsumed && OllamaHasReply()) {
+    if (true) { //!g_replyConsumed && OllamaHasReply()
         const char* r = OllamaGetReply();
         Conv_AppendLine("Response", r ? r : "");
         g_replyConsumed = 1;

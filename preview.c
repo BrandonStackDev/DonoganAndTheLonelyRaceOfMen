@@ -3536,10 +3536,10 @@ int main(void) {
             dest = (Rectangle){ (res_contain.x + res_contain.width) - 66, (res_contain.y + res_contain.height) - 66, 64, 64 }; //64x64
             DrawTexturePro(talkee, src, dest, (Vector2) { 0, 0 }, 0.0f, WHITE);
             //draw the response
-            if (OllamaIsBusy()) {
+            if (false) { //OllamaIsBusy()
                 DrawTextBoxed(res_font, "...", (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 15.0f, 2.0f, true, BLACK);
             }
-            else if (OllamaHasReply()) {
+            else if (true) { //OllamaHasReply()
                 DrawTextBoxed(res_font, OllamaGetReply(), (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 15.0f, 2.0f, true, BLACK);
             }
         }
