@@ -2,15 +2,14 @@
 
 An open world raylib game!
 
-paused dev for now, Im not happy with a lot of the design decisions I made and i think I am going to work on other things for a while...
-
-Checkout the latest full version here - https://drive.google.com/file/d/1zo9r_9xbS6t6JQanSdSZKrK40O-gNuxb/view?usp=drive_link
+Back to this, aiming for May 2027 for something close to the final version.
 
 Check out the previews on itch - https://fiver-156.itch.io/donogan-light-preview
 
 
- - you will need to download the map folder from either the light version on itch, or the google drive full version, and place its contents in DonoganAndTheLonelyRaceOfMen/map
+ - you will need to download the map folder from itch and place its contents in DonoganAndTheLonelyRaceOfMen/map
 	- if done correctly you will see lots of folders like map/chunk_10_10/ and some images and other things directly in the map folder
+		- lots of .stack files under tile_64	
 	- if you have trouble trying to get setup reach out on itch, (leave a comment or whatever)
 
 [![Map](readme_assets/treasure_map.png)](readme_assets/treasure_map.png)
@@ -109,23 +108,8 @@ CTRL - (Possibly Left only I cant remember...) - toggle between donogan and came
 
  - if you get stuck in a building, use V to jump to the truck.
 
-Ollama Setup (really fun to play with)
-
-Should be as easy as installing Ollama from the website and then on the command line running "ollama run llama3", or whatever model you choose
-
-  - "ollama run llama3" should install llama3 if you dont have it. its about 8GB I think?
-
-  - If you need a smaller model try phi,
-
-  - and if you want snappier shorter responses try gemma3
-
- - Edit ollama.config.txt if you install a different model (model name has to be correct), is on another computer or uses a different port
-
 To talk to NPC's, press triangle when near them.
 
-*note, the way it should really work, is to have a model trained on the game.
-
-*you will notice the conversations are good with ollama, but as you dig...well yeah, there can be mistakes with it.
 
 Lots of (mostly small I hope) bugs, and lots of stuff to add (inventory, more badguys. more npcs, more missions, etc)
 
