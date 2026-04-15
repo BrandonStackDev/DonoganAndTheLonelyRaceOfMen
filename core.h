@@ -211,7 +211,15 @@ typedef struct Arrow {
     Vector3 dir;       // NEW: last flight/impact direction, tip-forward (unit)
     BoundingBox origBox, box;
 } Arrow;
+//helper fun
+static int TileChunkDistSq(const TileEntry* t, int ccx, int ccy)
+{
+    int dx = t->cx - ccx;
+    int dy = t->cy - ccy;
+    return dx * dx + dy * dy;
+}
 //////////////////////IMPORTANT GLOBAL VARIABLES///////////////////////////////
+// 
 //very very important
 float scaleNightTransition = 0.0989f;
 float gravityCollected = 0.0f;
@@ -1163,8 +1171,278 @@ static void FreeTileUncompressed(TileEntry* t)
     if (t->state == TS_UNCOMP_RAM)
         t->state = TS_COMP_RAM;
 }
+static bool OpenTileModelFromUncompData(TileEntry* t, int teIndex)
+{
+    if (!t || !t->uncompData || t->uncompLen == 0) return false;
 
+    Mesh mesh = LoadObjMeshFromMemory(t->uncompData, t->uncompLen);
+
+    if (mesh.vertexCount > 0)
+    {
+        t->mesh = mesh;
+        t->model = LoadModelFromMesh(mesh);   // CPU-side wrapper around mesh
+        t->state = TS_OPENED_NOT_GPU;
+        return true;
+    }
+
+    return false;
+}
 bool quitFileManager = false;
+bool quitCloseTileWorker = false;
+//static unsigned __stdcall CloseTileWorkerThread(void* arg)
+//{
+//    while (!quitFileManager)
+//    {
+//        sleep_ms(25);
+//
+//        if (!wasTilesDocumented) continue;
+//
+//        int processed = 0;
+//
+//        const int MAX_CLOSE_DECOMP_PER_PASS = 2;
+//        const int MAX_CLOSE_OPEN_PER_PASS = 1;
+//
+//        int decompDone = 0;
+//        int openDone = 0;
+//
+//        while (!quitFileManager)
+//        {
+//            if (decompDone >= MAX_CLOSE_DECOMP_PER_PASS &&
+//                openDone >= MAX_CLOSE_OPEN_PER_PASS)
+//            {
+//                break;
+//            }
+//
+//            int bestIdx = -1;
+//            int bestDist = 0x7fffffff;
+//
+//            MUTEX_LOCK(mutex);
+//
+//            for (int te = 0; te < foundTileCount; te++)
+//            {
+//                TileEntry* t = &foundTiles[te];
+//
+//                if (chunks[t->cx][t->cy].lod != LOD_64) continue;
+//
+//                int d2 = TileChunkDistSq(t, closestCX, closestCY);
+//
+//                // only consider nearby chunks for the close-worker
+//                if (d2 > 9) continue;   // radius ~3 chunks
+//
+//                // only tiles that still need CPU-side work
+//                if (t->state != TS_COMP_RAM && t->state != TS_UNCOMP_RAM) continue;
+//
+//                // respect separate budgets
+//                if (t->state == TS_COMP_RAM && decompDone >= MAX_CLOSE_DECOMP_PER_PASS) continue;
+//                if (t->state == TS_UNCOMP_RAM && openDone >= MAX_CLOSE_OPEN_PER_PASS) continue;
+//
+//                if (d2 < bestDist)
+//                {
+//                    bestDist = d2;
+//                    bestIdx = te;
+//                }
+//            }
+//
+//            MUTEX_UNLOCK(mutex);
+//
+//            if (bestIdx < 0) break; // nothing close enough / actionable
+//
+//            MUTEX_LOCK(mutex);
+//
+//            TileEntry* t = &foundTiles[bestIdx];
+//
+//            // re-check after lock in case another thread touched it
+//            if (chunks[t->cx][t->cy].lod == LOD_64)
+//            {
+//                int d2 = TileChunkDistSq(t, closestCX, closestCY);
+//
+//                if (d2 <= 9)
+//                {
+//                    if (t->state == TS_COMP_RAM && decompDone < MAX_CLOSE_DECOMP_PER_PASS)
+//                    {
+//                        if (DecompressTileEntry(t))
+//                        {
+//                            decompDone++;
+//                            processed++;
+//                        }
+//                    }
+//                    else if (t->state == TS_UNCOMP_RAM && openDone < MAX_CLOSE_OPEN_PER_PASS)
+//                    {
+//                        if (OpenTileModelFromUncompData(t, bestIdx))
+//                        {
+//                            openDone++;
+//                            processed++;
+//                        }
+//                    }
+//                }
+//            }
+//
+//            MUTEX_UNLOCK(mutex);
+//        }
+//
+//        // optional debug
+//        // if (processed > 0) TraceLog(LOG_INFO, "close worker processed %d", processed);
+//    }
+//
+//    return 0;
+//}
+static unsigned __stdcall CloseTileWorkerThread(void* arg)
+{
+    int root = 1;               // start tight
+    int square = root * root;
+    int lastCX = -9999;
+    int lastCY = -9999;
+
+    while (!quitFileManager)
+    {
+        sleep_ms(35);
+
+        if (!wasTilesDocumented) continue;
+
+        // player / active center changed? start tight again
+        if (closestCX != lastCX || closestCY != lastCY)
+        {
+            lastCX = closestCX;
+            lastCY = closestCY;
+            root = 1;
+            square = root * root;
+        }
+
+        int processed = 0;
+        const int MAX_CLOSE_JOBS_PER_PASS = 6;
+
+        for (int te = 0; te < foundTileCount && processed < MAX_CLOSE_JOBS_PER_PASS; te++)
+        {
+            if (quitFileManager) break;
+
+            TileEntry* t = &foundTiles[te];
+            TypeLOD lod = chunks[t->cx][t->cy].lod;
+
+            int d2 = TileChunkDistSq(t, closestCX, closestCY);
+
+            // outside current working radius? skip for now
+            if (d2 > square) continue;
+
+            if (lod == LOD_64)
+            {
+                if (t->state == TS_COMP_RAM)
+                {
+                    if (DecompressTileEntry(t))
+                    {
+                        processed++;
+                    }
+                }
+                else if (t->state == TS_UNCOMP_RAM)
+                {
+                    if (OpenTileModelFromUncompData(t, te))
+                    {
+                        processed++;
+                    }
+                }
+            }
+            else if (lod == LOD_32 || lod == LOD_16 || lod == LOD_8)
+            {
+                // put away inflated stuff if no longer needed
+                if (t->state == TS_UNCOMP_RAM)
+                {
+                    FreeTileUncompressed(t);
+                    processed++;
+                }
+            }
+        }
+
+        // if nothing happened, widen the search radius
+        if (processed == 0)
+        {
+            if (root < 6) root++;   // 6 is already a lot on a 16x16 chunk map
+        }
+        else
+        {
+            // keep it from growing too wide while useful work exists nearby
+            if (root > 2) root--;
+        }
+
+        square = root * root;
+
+        // optional debug
+        // TraceLog(LOG_INFO, "close worker root=%d square=%d processed=%d", root, square, processed);
+    }
+
+    return 0;
+}
+//funname{    while (!quitCloseTileWorker)
+//    {
+//        sleep_ms(25);
+//
+//        if (!wasTilesDocumented) continue;
+//
+//        int ccx = closestCX;
+//        int ccy = closestCY;
+//
+//        int processed = 0;
+//        const int MAX_CLOSE_JOBS_PER_PASS = 2;
+//
+//        while (processed < MAX_CLOSE_JOBS_PER_PASS && !quitCloseTileWorker)
+//        {
+//            int bestIdx = -1;
+//            int bestDist = 0x7fffffff;
+//
+//            MUTEX_LOCK(mutex);
+//
+//            for (int te = 0; te < foundTileCount; te++)
+//            {
+//                TileEntry* t = &foundTiles[te];
+//
+//                if (chunks[t->cx][t->cy].lod != LOD_64) continue;
+//
+//                 only care about tiles that still need CPU-side work
+//                if (!(t->state == TS_COMP_RAM || t->state == TS_UNCOMP_RAM)) continue;
+//
+//                int d2 = TileChunkDistSq(t, ccx, ccy);
+//                if (d2 < bestDist)
+//                {
+//                    bestDist = d2;
+//                    bestIdx = te;
+//                }
+//            }
+//
+//            MUTEX_UNLOCK(mutex);
+//
+//            if (bestIdx < 0) break; // nothing close to do
+//
+//            TileEntry* t = &foundTiles[bestIdx];
+//
+//            MUTEX_LOCK(mutex);
+//
+//             re-check after lock because state may have changed
+//            if (chunks[t->cx][t->cy].lod == LOD_64)
+//            {
+//                if (t->state == TS_COMP_RAM)
+//                {
+//                    if (DecompressTileEntry(t))
+//                    {
+//                        processed++;
+//                    }
+//                }
+//                else if (t->state == TS_UNCOMP_RAM)
+//                {
+//                     this assumes your memory OBJ parser fills t->mesh and/or t->model CPU-side
+//                    Mesh m = LoadObjMeshFromMemory(t->uncompData, t->uncompLen);
+//                    if (m.vertexCount > 0)
+//                    {
+//                        t->mesh = m;
+//                        t->state = TS_OPENED_NOT_GPU;
+//                        processed++;
+//                    }
+//                }
+//            }
+//
+//            MUTEX_UNLOCK(mutex);
+//        }
+//    }
+//
+//    return 0;
+//}
 
 //static unsigned __stdcall FileManagerThread(void* arg)
 //{
@@ -1215,24 +1493,6 @@ bool quitFileManager = false;
 //}
 
 
-
-static bool OpenTileModelFromUncompData(TileEntry* t, int teIndex)
-{
-    if (!t || !t->uncompData || t->uncompLen == 0) return false;
-
-    Mesh mesh = LoadObjMeshFromMemory(t->uncompData, t->uncompLen);
-    
-    if (mesh.vertexCount > 0)
-    {
-        t->mesh = mesh;
-        t->model = LoadModelFromMesh(mesh);   // CPU-side wrapper around mesh
-        t->state = TS_OPENED_NOT_GPU;
-        return true;
-    }
-
-    return false;
-}
-
 static unsigned __stdcall FileManagerThread(void* arg)
 {
     while (!quitFileManager)
@@ -1240,7 +1500,7 @@ static unsigned __stdcall FileManagerThread(void* arg)
         sleep_ms(50);
 
         int processed = 0;
-        const int MAX_DECOMPRESS_PER_PASS = 5;
+        const int MAX_DECOMPRESS_PER_PASS = 3;
 
         for (int te = 0; te < foundTileCount && processed < MAX_DECOMPRESS_PER_PASS; te++)
         {
@@ -1359,6 +1619,7 @@ static void StartWaterLoader(void)
 
 void StartChunkLoader() { thread_start_detached(ChunkLoaderThread, NULL); }
 void StartFileManger() { thread_start_detached(FileManagerThread, NULL); }
+void StartCloseTileWorker() { thread_start_detached(CloseTileWorkerThread, NULL); }
 
 Sound carHorn;
 Sound donScream;

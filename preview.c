@@ -709,7 +709,8 @@ int main(void) {
     //TODO: loop through each chunk, then each water feature for that chunk, set the sahder of the model
     //launch the initial loading background threads
     StartChunkLoader();
-    StartFileManger();
+    //StartFileManger();
+    StartCloseTileWorker();
 
     Camera3D camera = {
         .position = (Vector3){ 0.0f, 2000.0f, 0.0f },  // Higher if needed,
