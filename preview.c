@@ -1019,7 +1019,6 @@ int main(void) {
                         don.xp += 150;
                         missions[MISSION_FIND_ATREYU].complete = true;
                     }
-                    else if (!HasTimerElapsed(&gGame.HonkedHornRecently)) { don.who = TALK_TYPE_ATREYU_CAR_HORN; }
                     StartTimer(&don.talkStartTimer);
                 }
                 else if (!don.isTalking
@@ -3520,7 +3519,7 @@ int main(void) {
             
             DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
             Texture2D talkee = tol_head;
-            if (don.who == TALK_TYPE_ATREYU || don.who == TALK_TYPE_ATREYU_CAR_HORN || don.who == TALK_TYPE_ATREYU_BOW) { talkee = atreyu_head; }
+            if (don.who == TALK_TYPE_ATREYU || don.who == TALK_TYPE_ATREYU_BOW) { talkee = atreyu_head; }
             else if (don.who == TALK_TYPE_DARREL || don.who == TALK_TYPE_NICK) { talkee = darrel_head; }
             else if (don.who == TALK_TYPE_LUCY_ONE || don.who == TALK_TYPE_LUCY_TWO) { talkee = lucy_head; }
             src = (Rectangle){ 0, 0, talkee.width, talkee.height };

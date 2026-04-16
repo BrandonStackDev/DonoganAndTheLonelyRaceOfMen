@@ -70,13 +70,6 @@ static const char* SHEET_ATREYU =
 "Stay in character. Do not mention being an AI or models.\n";
 static const char* SHEET_ATREYU_DEFAULT = "(uhg!) Hello, I am Atreyu. Please be quiet, I am trying to meditate...\n";
 
-static const char* SHEET_ATREYU_HORN =
-"You are the Indian Warrior Atreyu, the last of the Lenape.\n"
-"You speak in simple sentences. You are trying to meditating on a high peak. Donogan just blew the truck horn and it was loud!\n"
-"Tone: Wise, but very rude because you are trying to meditate, but Donogan keeps blowing the truck horn!\n"
-"Stay in character. Do not mention being an AI or models.\n";
-static const char* SHEET_ATREYU_HORN_DEFAULT = "Donogan! Dont blow the truck horn... Please be quiet, I am trying to meditate...\n";
-
 static const char* SHEET_ATREYU_BOW =
 "You are the Indian Warrior Atreyu, the last of the Lenape.\n"
 "You speak in simple sentences. You are trying to meditating on a high peak. You are meeting Donogan for the first time. You give him your bow and arrows. The player holds L2 to use the bow, and R2 to fire.\n"
@@ -115,7 +108,6 @@ static const char* SHEET_NICK_DEFAULT = "Thank you for rescuing me from those ro
 typedef enum {
     TALK_TYPE_TOL,
     TALK_TYPE_ATREYU,
-    TALK_TYPE_ATREYU_CAR_HORN,
     TALK_TYPE_ATREYU_BOW,
     TALK_TYPE_DARREL,
     TALK_TYPE_LUCY_ONE,
@@ -129,7 +121,6 @@ static inline const char* GetCharacterSheet(TALK_TYPE who)
     switch (who) {
     case TALK_TYPE_TOL:         return SHEET_TOL;
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU;
-    case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN;
     case TALK_TYPE_ATREYU_BOW:         return SHEET_ATREYU_BOW;
     case TALK_TYPE_DARREL:         return SHEET_DARREL;
     case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE;
@@ -144,7 +135,6 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
     switch (who) {
     case TALK_TYPE_TOL:         return SHEET_TOL_DEFAULT;
     case TALK_TYPE_ATREYU:         return SHEET_ATREYU_DEFAULT;
-    case TALK_TYPE_ATREYU_CAR_HORN:         return SHEET_ATREYU_HORN_DEFAULT;
     case TALK_TYPE_ATREYU_BOW:         return SHEET_ATREYU_BOW_DEFAULT;
     case TALK_TYPE_DARREL:         return SHEET_DARREL_DEFAULT;
     case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE_DEFAULT;
