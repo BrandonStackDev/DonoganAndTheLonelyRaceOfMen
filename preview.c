@@ -1368,8 +1368,7 @@ int main(void) {
 
                     UploadMesh(&t->model.meshes[0], false);
                     t->box = GetModelBoundingBox(t->model);
-                    t->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture =
-                        HighFiStaticObjectModelTextures[t->type];
+                    t->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LowFiStaticObjectModelTextures[t->type];
 
                     t->state = TS_IN_GPU;
                     processed++;

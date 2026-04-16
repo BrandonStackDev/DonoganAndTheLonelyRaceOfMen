@@ -141,6 +141,7 @@ static const char *ModelPathsFullTextures[MODEL_TOTAL_COUNT] = {
 Model StaticObjectModels[MODEL_TOTAL_COUNT];
 Model HighFiStaticObjectModels[MODEL_TOTAL_COUNT];
 Texture HighFiStaticObjectModelTextures[MODEL_TOTAL_COUNT];
+Texture LowFiStaticObjectModelTextures[MODEL_TOTAL_COUNT];
 Material HighFiStaticObjectMaterials[MODEL_TOTAL_COUNT];
 Matrix HighFiTransforms[MODEL_TOTAL_COUNT][MAX_PROPS_UPPER_BOUND];//meant to be set per draw loop, and then completely overwritten, dynamic so over estimate and test
 
@@ -224,7 +225,8 @@ void InitStaticGameProps(Shader shader, Shader grass_s) {
         // Load base model and texture
         StaticObjectModels[i] = LoadModel(ModelPaths[i]);
         HighFiStaticObjectModels[i] = LoadModel(ModelPathsFull[i]);
-        HighFiStaticObjectModelTextures[i] = LoadMyTexture(ModelPathsFullTextures[i]); 
+        HighFiStaticObjectModelTextures[i] = LoadMyTexture(ModelPathsFullTextures[i]);
+        LowFiStaticObjectModelTextures[i] = LoadTexture(ModelPathsFullTextures[i]); //for batched objects, do not use mipmaps or youll crush the system
 
         // Deep copy material
         Material mat = LoadMaterialDefault();
