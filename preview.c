@@ -906,10 +906,16 @@ int main(void) {
         }//just make sure this is always exlusive or, one or the other, never both, and update his position for npc culling, so they appear
         if (!vehicleMode && donnyMode)
         {
-            if (CheckCollisionBoxes(wrenchBox,don.outerBox)) { don.hasWrench = true; }//get the wrench
+            if (CheckCollisionBoxes(wrenchBox,don.outerBox)) //get the wrench
+            { 
+                don.hasWrench = true;
+                toast = "Got the Wrench!";
+                StartTimer(&toastTimer);
+                //todo: ratchet sound effect
+            }
             bool inBowCam = (don.bowMode || (don.bowReleaseCamHold > 0.0f)) && don.state != DONOGAN_STATE_BOW_EXIT;
             float dt = GetFrameTime();
-            //;//as soon as we have dt, increment rotor spin
+            //as soon as we have dt, increment rotor spin
             // Right stick controls camera orbit (mouse RMB fallback also works)
             float rsx = havePad ? gpad.normRX : 0.0f;
             float rsy = havePad ? gpad.normRY : 0.0f;
