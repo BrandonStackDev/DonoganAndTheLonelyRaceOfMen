@@ -768,6 +768,7 @@ static inline void Conv_PollAndAppendReply(void) {
 
 void GetKeyBoardInput(TALK_TYPE who)
 {
+    g_currentTalkWho = who;
     //handle response concat to history here
     Conv_PollAndAppendReply();
     // Get char pressed (unicode character) on the queue

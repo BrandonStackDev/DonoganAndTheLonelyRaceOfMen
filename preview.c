@@ -1622,15 +1622,15 @@ int main(void) {
             {
                 doing360 = true;
             }
-            if(gpad.btnR2 > 0 && truckAirState==AIRBORNE) //one trick at a time? NO! Lots of tricks at once!!!! Except sometimes I guess, maybe for more advanced things
+            if(gpad.btnR2 > 0 && truckAirState==AIRBORNE) //one trick at a time? NO! Lots of tricks at once!!!
             {
                 doingFlip = true;
             }
-            if(gpad.btnL1 > 0 && truckAirState==AIRBORNE) //one trick at a time? NO! Lots of tricks at once!!!! Except sometimes I guess, maybe for more advanced things
+            if(gpad.btnL1 > 0 && truckAirState==AIRBORNE) //one trick at a time? NO! Lots of tricks at once!!
             {
                 doingRoll = true;
             }
-            if(gpad.btnL2 > 0 && truckAirState==AIRBORNE) //one trick at a time? NO! Lots of tricks at once!!!! Except sometimes I guess, maybe for more advanced things
+            if(gpad.btnL2 > 0 && truckAirState==AIRBORNE) //one trick at a time? NO! Lots of tricks at once!!!!
             {
                 doingBonkers = true;
             }

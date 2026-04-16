@@ -1,8 +1,8 @@
 DON_SAVE_V1
-don_pos = -3767.209 327.529 1076.854
+don_pos = -3930.678 306.272 3770.346
 don_bow = 1
 don_health = 100
-don_mana   = 100
+don_mana   = 93
 don_starthealth = 100
 don_startmana   = 100
 don_level  = 1
@@ -38,8 +38,8 @@ ITEM[5] = 1
 INV[0] = 0
 INV[1] = 0
 INV[2] = 0
-INV[3] = 0
-INV[4] = 0
+INV[3] = 7
+INV[4] = 7
 INV[5] = 1
 INV[6] = 1
 --INV-END--
