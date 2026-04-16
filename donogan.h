@@ -17,6 +17,7 @@
 #include "collision.h"
 #include "interact.h"
 #include "game.h"
+#include "texture.h"
 //bubbles
 #define DON_MAX_BUBBLES 128
 
@@ -1448,7 +1449,7 @@ static Donogan InitDonogan(void)
         return d;
     }
 
-    d.tex = LoadTexture(PNG);
+    d.tex = LoadMyTexture(PNG);
     if (d.tex.id != 0) {
         for (int i = 0; i < d.model.materialCount; i++)
             SetMaterialTexture(&d.model.materials[i], MATERIAL_MAP_ALBEDO, d.tex);
@@ -1457,7 +1458,7 @@ static Donogan InitDonogan(void)
     //bow
     d.bowModel = LoadModel(BOW_GLB);
     d.bowAnimsRaw = LoadModelAnimations(BOW_GLB, &d.bowAnimCount);
-    d.bowTex = LoadTexture(BOW_PNG);
+    d.bowTex = LoadMyTexture(BOW_PNG);
     SetMaterialTexture(&d.bowModel.materials[0], MATERIAL_MAP_ALBEDO, d.bowTex);
     d.bowOffset = (Vector3){ 1.8f, 2.92f, 0.1f };  // start at exact Donogan origin
     d.bowEulerDeg = (Vector3){ 0, 180, 0 };
@@ -1621,7 +1622,7 @@ static void FreeDonogan(Donogan* d)
     }
     if (d->animsRaw && d->animCount > 0) UnloadModelAnimations(d->animsRaw, d->animCount);
     if (d->bowAnimsRaw && d->bowAnimCount > 0) UnloadModelAnimations(d->bowAnimsRaw, d->bowAnimCount);
-    if (d->tex.id) UnloadTexture(d->tex);
+    if (d->tex.id) UnLoadTexture(d->tex);
     if (d->model.meshCount) UnloadModel(d->model);
 }
 

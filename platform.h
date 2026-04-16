@@ -13,6 +13,7 @@
 #include "timer.h"      // CreateTimer/StartTimer/HasTimerElapsed
 #include "donogan.h"    // DonFeetWorldY/DonSnapToGround + Donogan fields
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
+#include "texture.h"
 
 #define NUM_PLATS 21
 
@@ -338,8 +339,8 @@ static inline void Platform_Draw(const Platform* p, bool bb)
 
 void InitPlats()
 {
-    Texture tex_plat = LoadTexture("textures/wood2.png");
-    Texture tex_fall = LoadTexture("textures/wood1.png");
+    Texture tex_plat = LoadMyTexture("textures/wood2.png");
+    Texture tex_fall = LoadMyTexture("textures/wood1.png");
     //testing 3022.00f, 322.00f, 4042.42f
     //plats[0] = Platform_MakeStill((Vector3) { 3022, 319, 4042 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     //plats[1] = Platform_MakeFaller((Vector3) { 3032, 319, 4052 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);

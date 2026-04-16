@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include <stdlib.h>
 #include "core.h"
+#include "texture.h"
 
 #define MAX_APPLES_TOTAL 128
 
@@ -28,7 +29,7 @@ void InitApples()
 {
     //apples
     apple = LoadModel("models/apple.obj");
-    appleTex = LoadTexture("textures/apple.png");
+    appleTex = LoadMyTexture("textures/apple.png");
     apple.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = appleTex;
     for (int i = 0; i < MAX_APPLES_TOTAL; ++i) {
         apples[i].spawned = false;

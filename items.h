@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "timer.h"
 #include "donogan.h"
+#include "texture.h"
 
 // Type Definitions
 typedef enum {
@@ -189,19 +190,19 @@ void InitItems()
 {
     //models
     Model health_model = LoadModel("models/health.obj");
-    Texture health_tex = LoadTexture("textures/health.png");
+    Texture health_tex = LoadMyTexture("textures/health.png");
     health_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = health_tex;
     Model health_full_model = LoadModel("models/health_full.obj");
-    Texture health_full_tex = LoadTexture("textures/health_full.png");
+    Texture health_full_tex = LoadMyTexture("textures/health_full.png");
     health_full_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = health_full_tex;
     Model mana_model = LoadModel("models/mana.obj");
-    Texture mana_tex = LoadTexture("textures/mana.png");
+    Texture mana_tex = LoadMyTexture("textures/mana.png");
     mana_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = mana_tex;
     Model book_model = LoadModel("models/book.obj");
-    Texture book_tex = LoadTexture("textures/book.png");
+    Texture book_tex = LoadMyTexture("textures/book.png");
     book_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = book_tex;
     Model evil_book_model = LoadModel("models/shadow_book.obj");
-    Texture evil_book_tex = LoadTexture("textures/shadow_book.png");
+    Texture evil_book_tex = LoadMyTexture("textures/shadow_book.png");
     evil_book_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = evil_book_tex;
     //setup inventory system
     inventory[INV_HEALTH] = (InventoryItem){ INV_HEALTH, "Health Pack", "gives +20 health", 0};

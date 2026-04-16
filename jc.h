@@ -10,6 +10,7 @@
 
 //me
 #include "core.h"
+#include "texture.h"
 
 typedef enum {
     MODEL_HOME_NONE = -1,
@@ -65,25 +66,25 @@ Model HomeModels[MODEL_HOME_TOTAL_COUNT];
 void InitHomes() {
     // Load the models
     Model home001 = LoadModel("models/home_001.obj");
-    home001.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_001.png");
+    home001.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/home_001.png");
     HomeModels[MODEL_HOME_CABIN] = home001;
     Model home002 = LoadModel("models/home_002.obj");
-    home002.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_002.png");
+    home002.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/home_002.png");
     HomeModels[MODEL_HOME_BRICK] = home002;
     Model home003 = LoadModel("models/home_003.obj");
-    home003.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_003.png");
+    home003.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/home_003.png");
     HomeModels[MODEL_HOME_NICE] = home003;
     Model home004 = LoadModel("models/home_004.obj");
-    home004.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_004.png");
+    home004.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/home_004.png");
     HomeModels[MODEL_HOME_TENT] = home004;
     Model home005 = LoadModel("models/home_005.obj");
-    home005.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_005.png");
+    home005.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/home_005.png");
     HomeModels[MODEL_HOME_TEMPLE] = home005;
     Model home006 = LoadModel("models/home_006.obj");
-    home006.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_006.png");
+    home006.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/home_006.png");
     HomeModels[MODEL_HOME_CASTLE] = home006;
     Model home007 = LoadModel("models/home_007.obj");
-    home007.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/home_007.png");
+    home007.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/home_007.png");
     HomeModels[MODEL_HOME_WINDMILL] = home007;
 
     // Populate the scene list (the important part)

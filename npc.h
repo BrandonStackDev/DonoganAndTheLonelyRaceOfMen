@@ -9,6 +9,7 @@
 #include "rlgl.h"
 #include <stdio.h> 
 #include <stdbool.h>
+#include "texture.h"
 
 // Type Definitions
 typedef enum {
@@ -120,17 +121,17 @@ void InitAllNPC()
 {
     //darrel
     Model darrel_model = LoadModel("models/darrel.glb");
-    Texture darrel_tex = LoadTexture("textures/darrel.png");
+    Texture darrel_tex = LoadMyTexture("textures/darrel.png");
     int darrel_animCount = 0;
     ModelAnimation * darrel_anims = LoadModelAnimations("models/darrel.glb", &darrel_animCount);
     //chicken
     Model chicken_model = LoadModel("models/chicken_run.glb");
-    Texture chicken_tex = LoadTexture("textures/chicken.png");
+    Texture chicken_tex = LoadMyTexture("textures/chicken.png");
     int chicken_animCount = 0;
     ModelAnimation* chicken_anims = LoadModelAnimations("models/chicken_run.glb", &chicken_animCount);
     //lucy
     Model lucy_model = LoadModel("models/lucy.glb");
-    Texture lucy_tex = LoadTexture("textures/lucy.png");
+    Texture lucy_tex = LoadMyTexture("textures/lucy.png");
     int lucy_animCount = 0;
     ModelAnimation* lucy_anims = LoadModelAnimations("models/lucy.glb", &lucy_animCount);
     //setup darrel

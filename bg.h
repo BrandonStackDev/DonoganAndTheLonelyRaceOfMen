@@ -13,6 +13,7 @@
 #include "game.h"
 #include "util.h"
 #include "apples.h"
+#include "texture.h"
 
 #define MAX_BG_PER_TYPE_AT_ONCE 12
 
@@ -223,11 +224,11 @@ void InitBadGuyModels(Shader ghostShader)
     bgModelBorrower = (BadGuyBorrowModel*)malloc(sizeof(BadGuyBorrowModel) * total_bg_models_all_types);
     //ghost model can be shared
     Model ghost_model = LoadModel("models/ghost.obj");
-    Texture ghost_tex = LoadTexture("textures/ghost.png");
+    Texture ghost_tex = LoadMyTexture("textures/ghost.png");
     int yeti_animCount = 0;
     ModelAnimation* yeti_anims = LoadModelAnimations("models/yeti_anim_2.glb", &yeti_animCount);
     Model robo_model = LoadModel("models/robo.obj");
-    Texture robo_tex = LoadTexture("textures/robo.png");
+    Texture robo_tex = LoadMyTexture("textures/robo.png");
     for (int bg_t = 0; bg_t < BG_TYPE_COUNT; bg_t++)
     {
         for (int i = 0; i < MAX_BG_PER_TYPE_AT_ONCE; i++)
@@ -247,7 +248,7 @@ void InitBadGuyModels(Shader ghostShader)
             else if (bg_t == BG_YETI)
             {
                 bgModelBorrower[index].model = LoadModel("models/yeti_anim_2.glb"); //models with animations have to have a unique model instance in raylib, otherwise they all display the same animation at the same time
-                bgModelBorrower[index].tex = LoadTexture("textures/yeti_skin_2.png");
+                bgModelBorrower[index].tex = LoadMyTexture("textures/yeti_skin_2.png");
                 bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
                 bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model),1.6);
                 bgModelBorrower[index].anims = yeti_anims;

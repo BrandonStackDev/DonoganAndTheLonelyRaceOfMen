@@ -976,7 +976,7 @@ Image LoadSafeImage(const char* filename) {
     return img;
 }
 
-void PreLoadTexture(int cx, int cy)
+void PreLoadMyTexture(int cx, int cy)
 {
     //char colorPath[256];
     //char colorBigPath[256];
@@ -1593,7 +1593,7 @@ static unsigned __stdcall ChunkLoaderThread(void* arg)
     for (int cy = 0; cy < CHUNK_COUNT; cy++) {
         for (int cx = 0; cx < CHUNK_COUNT; cx++) {
             if (!chunks[cx][cy].isLoaded) {
-                PreLoadTexture(cx, cy);
+                PreLoadMyTexture(cx, cy);
                 LoadChunk(cx, cy);
             }
         }

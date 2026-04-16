@@ -27,6 +27,7 @@
 #include "platform.h"
 #include "items.h"
 #include "apples.h"
+#include "texture.h"
 
 //fairly standard things
 #include <float.h>
@@ -411,7 +412,7 @@ int main(void) {
     // --- FISH SETUP --------------------------------------------------------------
     Model fishModel = LoadModel("models/fish.obj");
     fishModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-    fishModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/fish.png");
+    fishModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/fish.png");
 
     // School allocation + seeding
     int numSchools = 15;
@@ -549,7 +550,7 @@ int main(void) {
     bool showMap = true;
     float mapZoom = 1.0f;
     Rectangle mapViewport = { SCREEN_WIDTH - GAME_MAP_SIZE - 10, 10, 128, 128 };  // Map position + size
-    mapTexture = LoadTexture("map/treasure_map.png"); //mapTexture = LoadTexture("map/elevation_color_map.png");
+    mapTexture = LoadMyTexture("map/treasure_map.png"); //mapTexture = LoadMyTexture("map/elevation_color_map.png");
     
     //controller and truck and donny
     // //donny boy
@@ -561,26 +562,26 @@ int main(void) {
     StartTimer(&don.talkStartTimer); //so we can talk right away;
     //windmill Rotor
     Model rotor = LoadModel("models/rotor.obj");
-    rotor.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/rotor.png");
+    rotor.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/rotor.png");
     Vector3 rotorOffset = { 1.0f, 12.0f, 18.0f };
     float rotorSpin = 0; //degrees + dt, then convert to radians
     //tree of Life
     Model tol = LoadModel("models/tree_of_life.obj");
-    tol.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/tree_of_life.png");
+    tol.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/tree_of_life.png");
     Vector3 tolPos = {-334.0f, 564.0f, -497.35f};
     //atreyu
     Model atreyu = LoadModel("models/atreyu.obj");
-    atreyu.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/atreyu.png");
+    atreyu.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/atreyu.png");
     Vector3 atreyuPos = { -2167.0f, 816.0f, 1416.00f };
     Model canoe = LoadModel("models/canoe.obj");
-    canoe.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/canoe.png");
+    canoe.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/canoe.png");
     Vector3 canoePos = { -1419.90f, 306.32f, 1718.38f };
     //heads
-    Texture don_head = LoadTexture("textures/don_head.png");
-    Texture tol_head = LoadTexture("textures/tol_head.png");
-    Texture atreyu_head = LoadTexture("textures/atreyu_head.png");
-    Texture darrel_head = LoadTexture("textures/darrel_head.png");
-    Texture lucy_head = LoadTexture("textures/lucy_head.png");
+    Texture don_head = LoadMyTexture("textures/don_head.png");
+    Texture tol_head = LoadMyTexture("textures/tol_head.png");
+    Texture atreyu_head = LoadMyTexture("textures/atreyu_head.png");
+    Texture darrel_head = LoadMyTexture("textures/darrel_head.png");
+    Texture lucy_head = LoadMyTexture("textures/lucy_head.png");
     //truck
     InitTruck();
     //more lb stuff
@@ -619,11 +620,11 @@ int main(void) {
     skyboxPanelRightModel = LoadModelFromMesh(skyboxPanelMesh);
     skyboxPanelUpModel = LoadModelFromMesh(skyboxPanelMesh);
     Texture2D skyTexFront, skyTexBack, skyTexLeft, skyTexRight, skyTexUp;
-    skyTexFront = LoadTexture("skybox/sky_front_smooth.png");
-    skyTexBack  = LoadTexture("skybox/sky_back_smooth.png");
-    skyTexLeft  = LoadTexture("skybox/sky_left_smooth.png");
-    skyTexRight = LoadTexture("skybox/sky_right_smooth.png");
-    skyTexUp    = LoadTexture("skybox/sky_up_smooth.png");
+    skyTexFront = LoadMyTexture("skybox/sky_front_smooth.png");
+    skyTexBack  = LoadMyTexture("skybox/sky_back_smooth.png");
+    skyTexLeft  = LoadMyTexture("skybox/sky_left_smooth.png");
+    skyTexRight = LoadMyTexture("skybox/sky_right_smooth.png");
+    skyTexUp    = LoadMyTexture("skybox/sky_up_smooth.png");
     skyboxPanelFrontModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = skyTexFront;
     skyboxPanelBackModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = skyTexBack;
     skyboxPanelLeftModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = skyTexLeft;
@@ -632,14 +633,14 @@ int main(void) {
     // for (int cy = 0; cy < CHUNK_COUNT; cy++) {
     //     for (int cx = 0; cx < CHUNK_COUNT; cx++) {
     //         if (!chunks[cx][cy].isLoaded && !chunks[cx][cy].isReady) {
-    //             //PreLoadTexture(cx, cy);
+    //             //PreLoadMyTexture(cx, cy);
     //             //LoadChunk(cx, cy);
     //         }
     //     }
     // }
     //fireplaces
     Model firepit = LoadModel("models/firepit.obj");
-    firepit.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/firepit.png");
+    firepit.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/firepit.png");
     fires[FIREPIT_HOME].location = FIREPIT_HOME;
     fires[FIREPIT_HOME].pos = (Vector3){ 3022.00f, 319.00f, 4042.42f };
     fires[FIREPIT_HOME].name = "Home";
@@ -1353,23 +1354,13 @@ int main(void) {
 
             GetGlobalTileCoords(camera.position, &gx, &gy);
 
-            for (int te = 0; te < foundTileCount && processed < MAX_TO_PROCESS; te++)
+            for (int te = 0; te < foundTileCount && processed < MAX_TO_PROCESS && GetFPS() > 52; te++)
             {
                 TileEntry* t = &foundTiles[te];
                 bool needed = (chunks[t->cx][t->cy].lod == LOD_64);
 
                 MUTEX_LOCK(mutex);
-
-                //// Stage 1: decompressed OBJ text in RAM -> CPU-side Model
-                //if (needed && t->state == TS_UNCOMP_RAM)
-                //{
-                //    if (OpenTileModelFromUncompData(t, te))
-                //    {
-                //        TraceLog(LOG_INFO, "tile opened on CPU: %d", te);
-                //        processed++;
-                //    }
-                //}
-                // Stage 2: CPU-side Model -> GPU
+                // Stage 1:CPU-side Model -> GPU
                 //else if (needed && t->state == TS_OPENED_NOT_GPU)
                 if (needed && t->state == TS_OPENED_NOT_GPU)
                 {
@@ -3594,7 +3585,7 @@ int main(void) {
     UnloadTexture(skyTexLeft);
     UnloadTexture(skyTexRight);
     UnloadTexture(skyTexUp);
-    //unload in game map
+    ////unload in game map
     UnloadTexture(mapTexture);
     //unload tiles
     free(foundTiles);

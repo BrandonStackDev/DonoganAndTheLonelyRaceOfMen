@@ -11,6 +11,7 @@
 #include "timer.h"
 #include "core.h"
 #include "game.h"
+#include "texture.h"
 
 #define MAX_TURN_ANGLE 0.26f //radians
 
@@ -150,11 +151,11 @@ void InitTruck()
 {
     // Load  //todo: move this and most of the truck stuff into truck.h
     truck = LoadModel("models/truck.obj");
-    truck.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
+    truck.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/truck.png");
     truckMaterial = LoadMaterialDefault();
     truckMaterial.shader = LoadShader(0, 0);
     truckMaterial.maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-    truckMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/truck.png");
+    truckMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/truck.png");
     TraceLog(LOG_INFO, "CWD: %s", GetWorkingDirectory());
     TraceLog(LOG_INFO, "Has truck.obj? %d  Has texture? %d",
         FileExists("models/truck.obj"), FileExists("textures/truck.png"));
@@ -165,11 +166,11 @@ void InitTruck()
     }
     // Load tire
     tire = LoadModel("models/tire.obj");
-    tire.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/tire.png");
+    tire.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/tire.png");
     tireMaterial = LoadMaterialDefault();
     tireMaterial.shader = LoadShader(0, 0);
     tireMaterial.maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-    tireMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("textures/tire.png");
+    tireMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/tire.png");
     tires[0] = tire;
     tires[1] = tire;
     tires[2] = tire;

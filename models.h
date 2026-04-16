@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include <stdlib.h>
+#include "texture.h"
 
 #define MAX_PROPS_ALLOWED 2048
 #define MAX_PROPS_UPPER_BOUND (MAX_PROPS_ALLOWED * 2)  // safety cap
@@ -223,7 +224,7 @@ void InitStaticGameProps(Shader shader, Shader grass_s) {
         // Load base model and texture
         StaticObjectModels[i] = LoadModel(ModelPaths[i]);
         HighFiStaticObjectModels[i] = LoadModel(ModelPathsFull[i]);
-        HighFiStaticObjectModelTextures[i] = LoadTexture(ModelPathsFullTextures[i]);
+        HighFiStaticObjectModelTextures[i] = LoadMyTexture(ModelPathsFullTextures[i]); 
 
         // Deep copy material
         Material mat = LoadMaterialDefault();

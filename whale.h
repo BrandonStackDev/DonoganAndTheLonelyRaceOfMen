@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <stdio.h>
+#include "texture.h"
 
 //bones in the whale indexes
 typedef enum {
@@ -125,7 +126,7 @@ static Quaternion BuildWorldQuat(const Whale* A) {
 // ----- Content loading -----
 static bool LoadWhale(Whale* A) {
     A->model = LoadModel("models/whale.glb");
-    A->tex = LoadTexture("textures/whale.png");
+    A->tex = LoadMyTexture("textures/whale.png");
     if (A->tex.id) SetMaterialTexture(&A->model.materials[0], MATERIAL_MAP_ALBEDO, A->tex);
 
     // 1-frame procedural animation
