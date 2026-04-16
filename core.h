@@ -227,6 +227,8 @@ int chosenX = 7;
 int chosenY = 7;
 int closestCX = 7;
 int closestCY = 7;
+int closestTX = 7;
+int closestTY = 7;
 bool onLoad = false;
 Vector3 lastLBSpawnPosition = { 0 };
 TileEntry* foundTiles = NULL; //will be quite large potentially (in reality not as much)
@@ -349,6 +351,16 @@ static inline BoundingBox ScaleBoundingBox(BoundingBox box, float scale)
     out.max.z = center.z + half.z;
 
     return out;
+}
+
+static int TileGlobalDistSq(const TileEntry* t, int ggx, int ggy)
+{
+    int tileGX = t->cx * TILE_GRID_SIZE + t->tx;
+    int tileGY = t->cy * TILE_GRID_SIZE + t->ty;
+
+    int dx = tileGX - ggx;
+    int dy = tileGY - ggy;
+    return dx * dx + dy * dy;
 }
 
 /////////////////////////////////////REPORT FUNCTIONS///////////////////////////////////////////
@@ -820,6 +832,7 @@ void DrawSkyboxPanelFixed(Model model, Vector3 position, float angleDeg, Vector3
 
 void FindClosestChunkAndAssignLod(Vector3 pos)
 {
+    GetGlobalTileCoords(pos, &closestTX, &closestTY);
     bool foundChunkWithBox = false;
     if (!foundChunkWithBox)//compute it directly
     {
@@ -1188,7 +1201,7 @@ static bool OpenTileModelFromUncompData(TileEntry* t, int teIndex)
     return false;
 }
 bool quitFileManager = false;
-bool quitCloseTileWorker = false;
+bool quitCloseTileWorker = false; //not used?
 
 static unsigned __stdcall CloseTileWorkerThread(void* arg)
 {
@@ -1196,6 +1209,8 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
     int square = root * root;
     int lastCX = -9999;
     int lastCY = -9999;
+    int lastTX = -9999;
+    int lastTY = -9999;
 
     while (!quitFileManager)
     {
@@ -1204,10 +1219,12 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
         if (!wasTilesDocumented) continue;
 
         // player / active center changed? start tight again
-        if (closestCX != lastCX || closestCY != lastCY)
+        if (closestCX != lastCX || closestCY != lastCY || closestTX != lastTX || closestTY != lastTY)
         {
             lastCX = closestCX;
             lastCY = closestCY;
+            lastTX = closestTX;
+            lastTY = closestTY;
             root = 1;
             square = root * root;
         }
@@ -1215,7 +1232,7 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
         int processed = 0;
         const int MAX_CLOSE_JOBS_PER_PASS = 6;
 
-        for (int te = 0; te < foundTileCount && processed < MAX_CLOSE_JOBS_PER_PASS; te++)
+        for (int te = 0; te < foundTileCount && processed < MAX_CLOSE_JOBS_PER_PASS && GetFPS() > 55; te++)
         {
             if (quitFileManager) break;
 
@@ -1369,7 +1386,7 @@ static void StartWaterLoader(void)
 }
 
 void StartChunkLoader() { thread_start_detached(ChunkLoaderThread, NULL); }
-void StartFileManger() { thread_start_detached(FileManagerThread, NULL); }
+//void StartFileManger() { thread_start_detached(FileManagerThread, NULL); }
 void StartCloseTileWorker() { thread_start_detached(CloseTileWorkerThread, NULL); }
 
 Sound carHorn;
