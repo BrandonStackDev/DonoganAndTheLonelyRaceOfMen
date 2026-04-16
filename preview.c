@@ -576,6 +576,10 @@ int main(void) {
     Model canoe = LoadModel("models/canoe.obj");
     canoe.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/canoe.png");
     Vector3 canoePos = { -1419.90f, 306.32f, 1718.38f };
+    //wrench before you have it
+    Model wrenchModel = LoadModel("models/wrench.obj");
+    wrenchModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/wrench.png");
+    Vector3 wrenchPos = (Vector3){ 875.34, 357.0, 1353.11 };
     //heads
     Texture don_head = LoadMyTexture("textures/don_head.png");
     Texture tol_head = LoadMyTexture("textures/tol_head.png");
@@ -729,7 +733,8 @@ int main(void) {
 
     StartTimer(&don.hitTimer);
     long loop_counter = 0;
-    while (!WindowShouldClose()) {
+    while (!WindowShouldClose()) 
+    {
         //detect general missions for completion (the non talking/interaction triggered missions)
         if (!missions[MISSION_KILL_GHOST].complete && ghostKillCount >= 10)
         {
@@ -2908,6 +2913,11 @@ int main(void) {
                 if (IsPointInFrustum(canoePos, frustumChunk8))
                 {
                     DrawModel(canoe, canoePos, 9.0f, WHITE);
+                }
+                //wrench if don does not have it yet, in the barn
+                if (!don.hasWrench && IsPointInFrustum(wrenchPos, frustumChunk8))
+                {
+                    DrawModel(wrenchModel, wrenchPos, 1.2f, WHITE);
                 }
                 //npcs
                 if (onLoad)

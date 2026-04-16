@@ -332,7 +332,7 @@ typedef struct {
     // Animation & model
     Model model;
     Texture2D tex;
-
+    //BOW
     Model bowModel;
     Texture2D bowTex;
     // (optional, for later attachment tuning)
@@ -345,7 +345,6 @@ typedef struct {
     float    bowBlend;     // 0..1 simple raise/settle timer if you want later
     bool prevL2;
     bool prevR2;
-
     // Raw animations from GLB and a remapped copy that matches model->bones order
     unsigned int animCount;
     ModelAnimation* animsRaw;
@@ -361,6 +360,11 @@ typedef struct {
     float bowTime;        // seconds
     float bowFps;         // default 24
 
+
+    //WRENCH
+    bool     wrenchMode, hasWrench;
+    Model wrenchModel;
+    Texture2D wrenchTex;
 
     // Playback
     DonoganAnim curAnimId;
@@ -1472,6 +1476,13 @@ static Donogan InitDonogan(void)
     d.hasBow = false;
     d.prevL2Held = false;
     d.bowBlend = 0.0f;
+
+    //wrench load
+    d.wrenchMode = false;
+    d.hasWrench = false; //this will need to persist
+    d.wrenchModel = LoadModel("models/wrench2.obj");
+    d.wrenchTex = LoadMyTexture("textures/wrench.png");
+    SetMaterialTexture(&d.wrenchModel.materials[0], MATERIAL_MAP_ALBEDO, d.wrenchTex);
 
     // Load animations and build remapped copies by bone name
     d.animsRaw = LoadModelAnimations(GLB, &d.animCount);
