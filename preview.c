@@ -615,7 +615,7 @@ int main(void) {
     }
     int idAttribLoc = GetShaderLocationAttrib(starShader, "instanceId");
     SetShaderValueV(starShader, idAttribLoc, instanceIDs, SHADER_ATTRIB_FLOAT, STAR_COUNT);
-
+    
     //END -- lighting bug shader---------AND STARS!------------------------------------------------------------------------------
     skyboxTint = skyboxDay;
     //skybox stuff
@@ -1359,26 +1359,47 @@ int main(void) {
         //main thread of the file management system, needed for GPU operations
         if (wasTilesDocumented)
         {
+            //setup close tiles for start processing
+            for (int f = 0; f < MAX_TO_PROCESS; f++)
+            {
+                closestTiles[f].distance = 999999; //small?
+            }
             int gx, gy;
             int processed = 0;
-            const int MAX_TO_PROCESS = 13;
 
             float time = GetTime();
             SetShaderValue(starShader, GetShaderLocation(starShader, "u_time"), &time, SHADER_UNIFORM_FLOAT);
 
             GetGlobalTileCoords(camera.position, &gx, &gy);
-            //tiles?
-            for (int te = 0; te < foundTileCount && processed < MAX_TO_PROCESS && GetFPS() > 52; te++)
+            //tiles
+            //first pass, just document what needs to get uploaded
+            for (int te = 0; te < foundTileCount; te++)
             {
                 TileEntry* t = &foundTiles[te];
+                if (chunks[t->cx][t->cy].lod == LOD_64 && t->state == TS_OPENED_NOT_GPU) //if we need it at some point as of now
+                {
+                    int dist = TileDistSq(t,closestTX,closestTY);
+                    for (int f = 0; f < MAX_TO_PROCESS; f++)
+                    {
+                        if (closestTiles[f].distance > dist)
+                        {
+                            closestTiles[f].index = te;
+                            closestTiles[f].distance = dist;
+                            break;
+                        }
+                    }
+                }
+            }
+            //second pass, load close things
+            for (int f = 0; f < MAX_TO_PROCESS; f++)
+            {
+                TileEntry* t = &foundTiles[closestTiles[f].index];
                 bool needed = (chunks[t->cx][t->cy].lod == LOD_64);
 
                 MUTEX_LOCK(mutex);
-                // Stage 1:CPU-side Model -> GPU
-                //else if (needed && t->state == TS_OPENED_NOT_GPU)
-                if (needed && t->state == TS_OPENED_NOT_GPU)
+                if (needed && t->state == TS_OPENED_NOT_GPU && processed < MAX_TO_PROCESS)
                 {
-                    TraceLog(LOG_INFO, "uploading tile to GPU: %d", te);
+                    TraceLog(LOG_INFO, "uploading tile to GPU: %d", closestTiles[f].index);
 
                     UploadMesh(&t->model.meshes[0], false);
                     t->box = GetModelBoundingBox(t->model);
@@ -1387,19 +1408,25 @@ int main(void) {
                     t->state = TS_IN_GPU;
                     processed++;
                 }
+                MUTEX_UNLOCK(mutex);
+            }
+            //pass 3, unload
+            for (int te = 0; te < foundTileCount; te++)
+            {
+                TileEntry* t = &foundTiles[te];
+                bool needed = (chunks[t->cx][t->cy].lod == LOD_64);
+
+                MUTEX_LOCK(mutex);
                 // Reverse stage: GPU -> CPU only
-                else if (!needed && t->state == TS_IN_GPU)
+                if (!needed && t->state == TS_IN_GPU)
                 {
                     UnloadModel(t->model);
                     memset(&t->model, 0, sizeof(Model));
                     memset(&t->mesh, 0, sizeof(Mesh));
                     t->state = TS_UNCOMP_RAM;
-                    processed++;
                 }
-
                 MUTEX_UNLOCK(mutex);
             }
-
             if (processed > 0)
             {
                 TraceLog(LOG_INFO, "processed %d tiles this loop", processed);
@@ -2789,6 +2816,7 @@ int main(void) {
             Matrix vpChunk8 = MatrixMultiply(view, projChunk8);
             Frustum frustum = ExtractFrustum(vp);
             Frustum frustumChunk8 = ExtractFrustum(vpChunk8);
+            //IsBoxInFrustum
             FindClosestChunkAndAssignLod(vehicleMode?truckPosition:camera.position);
             int gx, gy;
             GetGlobalTileCoords(vehicleMode?truckPosition:camera.position, &gx, &gy);

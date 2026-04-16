@@ -218,6 +218,16 @@ static int TileChunkDistSq(const TileEntry* t, int ccx, int ccy)
     int dy = t->cy - ccy;
     return dx * dx + dy * dy;
 }
+static int TileDistSq(const TileEntry* t, int tx, int ty)
+{
+    int gx = t->cx * TILE_GRID_SIZE + t->tx;
+    int gy = t->cy * TILE_GRID_SIZE + t->ty;
+
+    int dx = gx - tx;
+    int dy = gy - ty;
+
+    return dx * dx + dy * dy;
+}
 //////////////////////IMPORTANT GLOBAL VARIABLES///////////////////////////////
 // 
 //very very important
@@ -233,6 +243,11 @@ bool onLoad = false;
 Vector3 lastLBSpawnPosition = { 0 };
 TileEntry* foundTiles = NULL; //will be quite large potentially (in reality not as much)
 int foundTileCount = 0;
+#define MAX_TO_PROCESS 13
+typedef struct {
+    int index, distance;
+} TileCheat;
+TileCheat closestTiles[MAX_TO_PROCESS];
 static int foundTilesCap = 0;
 static void EnsureFoundTilesCapacity(int need) //no idea what this does .... but thanks chatGPT
 {
@@ -1200,7 +1215,7 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
             TileEntry* t = &foundTiles[te];
             TypeLOD lod = chunks[t->cx][t->cy].lod;
 
-            int d2 = TileChunkDistSq(t, closestCX, closestCY);
+            int d2 = TileDistSq(t, closestTX, closestTY);
 
             // outside current working radius? skip for now
             if (d2 > square) continue;
@@ -1232,7 +1247,7 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
                 }
             }
         }
-
+        //no cool down attempt here in the background
         // if nothing happened, widen the search radius
         if (processed == 0)
         {
