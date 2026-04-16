@@ -580,6 +580,7 @@ int main(void) {
     Model wrenchModel = LoadModel("models/wrench.obj");
     wrenchModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/wrench.png");
     Vector3 wrenchPos = (Vector3){ 875.34, 357.0, 1353.11 };
+    BoundingBox wrenchBox = UpdateBoundingBox(GetModelBoundingBox(wrenchModel), wrenchPos);
     //heads
     Texture don_head = LoadMyTexture("textures/don_head.png");
     Texture tol_head = LoadMyTexture("textures/tol_head.png");
@@ -905,9 +906,10 @@ int main(void) {
         }//just make sure this is always exlusive or, one or the other, never both, and update his position for npc culling, so they appear
         if (!vehicleMode && donnyMode)
         {
+            if (CheckCollisionBoxes(wrenchBox,don.outerBox)) { don.hasWrench = true; }//get the wrench
             bool inBowCam = (don.bowMode || (don.bowReleaseCamHold > 0.0f)) && don.state != DONOGAN_STATE_BOW_EXIT;
             float dt = GetFrameTime();
-            ;//as soon as we have dt, increment rotor spin
+            //;//as soon as we have dt, increment rotor spin
             // Right stick controls camera orbit (mouse RMB fallback also works)
             float rsx = havePad ? gpad.normRX : 0.0f;
             float rsy = havePad ? gpad.normRY : 0.0f;
@@ -1357,7 +1359,7 @@ int main(void) {
             SetShaderValue(starShader, GetShaderLocation(starShader, "u_time"), &time, SHADER_UNIFORM_FLOAT);
 
             GetGlobalTileCoords(camera.position, &gx, &gy);
-
+            //tiles?
             for (int te = 0; te < foundTileCount && processed < MAX_TO_PROCESS && GetFPS() > 52; te++)
             {
                 TileEntry* t = &foundTiles[te];
@@ -1395,46 +1397,7 @@ int main(void) {
                 TraceLog(LOG_INFO, "processed %d tiles this loop", processed);
             }
         }
-        //if(wasTilesDocumented)
-        //{
-        //    int gx, gy;
-        //    int processed = 0;
-        //    int MAX_TO_PROCESS = 20;
-        //    float time = GetTime(); // or your own time tracker
-        //    SetShaderValue(starShader, GetShaderLocation(starShader, "u_time"), &time, SHADER_UNIFORM_FLOAT);
-        //    GetGlobalTileCoords(camera.position, &gx, &gy);
-        //    int playerTileX  = gx % TILE_GRID_SIZE;
-        //    int playerTileY  = gy % TILE_GRID_SIZE;
-        //    for (int te = 0; te < foundTileCount && processed < MAX_TO_PROCESS; te++)
-        //    {
-        //        bool needed = (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64);
-        //        MUTEX_LOCK(mutex);
-        //        if(foundTiles[te].isReady && !foundTiles[te].isLoaded && needed)
-        //        {
-        //            TraceLog(LOG_INFO, "loading tiles: %d", te);
-        //            // Upload meshes to GPU
-        //            UploadMesh(&foundTiles[te].model.meshes[0], false);
-        //            // Load GPU models
-        //            //foundTiles[te].model = LoadModelFromMesh(foundTiles[te].model.meshes[0]);
-        //            foundTiles[te].box = GetModelBoundingBox(foundTiles[te].model);
-        //            // Apply textures
-        //            foundTiles[te].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = HighFiStaticObjectModelTextures[foundTiles[te].type];
-        //            //mark work done
-        //            foundTiles[te].isLoaded = true;
-        //            //and now its safe to unlock
-        //            processed++;
-        //        }
-        //        else if(foundTiles[te].isLoaded && !needed)
-        //        {
-        //            foundTiles[te].isLoaded = false;
-        //            foundTiles[te].isReady = false;
-        //            UnloadModel(foundTiles[te].model);
-        //            processed++;
-        //        }
-        //        MUTEX_UNLOCK(mutex);
-        //    }
-        //    if (processed > 0) { TraceLog(LOG_INFO, "processed %d tiles this loop", processed); }
-        //}
+        //tiles and chunks?
         for (int cy = 0; cy < CHUNK_COUNT; cy++) {
             for (int cx = 0; cx < CHUNK_COUNT; cx++) {
                 if (chunks[cx][cy].isReady && !chunks[cx][cy].waterLoaded)//water
