@@ -1200,9 +1200,8 @@ static bool OpenTileModelFromUncompData(TileEntry* t, int teIndex)
 
     return false;
 }
-bool quitFileManager = false;
-bool quitCloseTileWorker = false; //not used?
 
+bool quitFileManager = false;
 static unsigned __stdcall CloseTileWorkerThread(void* arg)
 {
     int root = 1;               // start tight
