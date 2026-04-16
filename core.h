@@ -592,45 +592,7 @@ void OpenTiles(void)
     fclose(f);
 }
 
-//void OpenTiles()
-//{
-//    FILE* f = fopen("map/compress_manifest.txt", "r"); // Open for read
-//    if (f != NULL) {
-//        char line[512];  // Adjust size based on expected path lengths
-//        while (fgets(line, sizeof(line), f)) {
-//            // Remove newline if present
-//            //char *newline = strchr(line, '\n');
-//            //if (newline) *newline = '\0';
-//            int cx, cy, tx, ty, type;
-//            char path[256];
-//            if (sscanf(line, "%d %d %d %d %d %255[^\n]", &cx, &cy, &tx, &ty, &type, path) == 6)
-//            {
-//                // Save entry
-//                TileEntry entry = { cx, cy, tx, ty };
-//                strcpy(entry.path, path);
-//                if (chunks[cx][cy].lod == LOD_64 || chunks[cx][cy].lod == LOD_64)//only get ready close enough tiles
-//                {
-//                    entry.model = LoadModel(entry.path);
-//                    entry.mesh = entry.model.meshes[0];
-//                    entry.isReady = true;
-//                }
-//                entry.type = (Model_Type)type;
-//                MUTEX_LOCK(mutex);
-//                EnsureFoundTilesCapacity(foundTileCount + 1);
-//                foundTiles[foundTileCount++] = entry;
-//                MUTEX_UNLOCK(mutex);
-//                TraceLog(LOG_INFO, "manifest entry: %s", path);
-//                loadTileCnt++;
-//            }
-//            else {
-//                printf("Malformed line: %s\n", line);
-//            }
-//        }
-//        fclose(f);
-//    }
-//}
-
-//why, raylib does this already, doesnt it?, well thats AI for you...
+//why, raylib does this already, doesnt it?, well thats AI for you...also me, but wahtev's
 Color LerpColor(Color from, Color to, float t)
 {
     Color result = {
@@ -1181,9 +1143,9 @@ static void FreeTileUncompressed(TileEntry* t)
 
     t->uncompLen = 0;
 
-    if (t->state == TS_UNCOMP_RAM)
-        t->state = TS_COMP_RAM;
+    if (t->state == TS_UNCOMP_RAM) { t->state = TS_COMP_RAM; }
 }
+
 static bool OpenTileModelFromUncompData(TileEntry* t, int teIndex)
 {
     if (!t || !t->uncompData || t->uncompLen == 0) return false;
@@ -1213,7 +1175,7 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
 
     while (!quitFileManager)
     {
-        sleep_ms(35);
+        sleep_ms(38);
 
         if (!wasTilesDocumented) continue;
 
@@ -1395,6 +1357,7 @@ Sound menuBack;
 Sound menuSaveOrLoad;
 Sound grow;
 Sound pick;
+Sound wrenchSound;
 
 
 char* toast;

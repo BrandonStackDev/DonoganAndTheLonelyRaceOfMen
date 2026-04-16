@@ -346,6 +346,7 @@ int main(void) {
     menuSaveOrLoad = LoadSound("sounds/save.mp3");
     grow = LoadSound("sounds/grow.mp3");
     pick = LoadSound("sounds/pick.mp3");
+    wrenchSound = LoadSound("sounds/wrench.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -911,7 +912,8 @@ int main(void) {
                 don.hasWrench = true;
                 toast = "Got the Wrench!";
                 StartTimer(&toastTimer);
-                //todo: ratchet sound effect
+                PlaySoundVol(wrenchSound);
+                don.xp += 50;
             }
             bool inBowCam = (don.bowMode || (don.bowReleaseCamHold > 0.0f)) && don.state != DONOGAN_STATE_BOW_EXIT;
             float dt = GetFrameTime();
