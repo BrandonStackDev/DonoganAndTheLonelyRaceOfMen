@@ -1,5 +1,5 @@
 //adriana's?
 don_pos = 2269.11, 331.29, -3446.53
 
-//?
-
+//good home stead position
+don_pos = 2573.33, 335.06, 2396.03

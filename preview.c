@@ -1362,6 +1362,7 @@ int main(void) {
             //setup close tiles for start processing
             for (int f = 0; f < MAX_TO_PROCESS; f++)
             {
+                closestTiles[f].index = 0;
                 closestTiles[f].distance = 999999; //small?
             }
             int gx, gy;
@@ -1373,7 +1374,7 @@ int main(void) {
             GetGlobalTileCoords(camera.position, &gx, &gy);
             //tiles
             //first pass, just document what needs to get uploaded
-            for (int te = 0; te < foundTileCount; te++)
+            for (int te = 0; te < foundTileCount && GetFPS() > 54; te++)
             {
                 TileEntry* t = &foundTiles[te];
                 if (chunks[t->cx][t->cy].lod == LOD_64 && t->state == TS_OPENED_NOT_GPU) //if we need it at some point as of now
@@ -1393,6 +1394,7 @@ int main(void) {
             //second pass, load close things
             for (int f = 0; f < MAX_TO_PROCESS; f++)
             {
+                if (closestTiles[f].index == 0) { continue; }
                 TileEntry* t = &foundTiles[closestTiles[f].index];
                 bool needed = (chunks[t->cx][t->cy].lod == LOD_64);
 
@@ -1411,7 +1413,7 @@ int main(void) {
                 MUTEX_UNLOCK(mutex);
             }
             //pass 3, unload
-            for (int te = 0; te < foundTileCount; te++)
+            for (int te = 0; te < foundTileCount && GetFPS() > 54; te++)
             {
                 TileEntry* t = &foundTiles[te];
                 bool needed = (chunks[t->cx][t->cy].lod == LOD_64);

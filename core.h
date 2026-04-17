@@ -243,7 +243,7 @@ bool onLoad = false;
 Vector3 lastLBSpawnPosition = { 0 };
 TileEntry* foundTiles = NULL; //will be quite large potentially (in reality not as much)
 int foundTileCount = 0;
-#define MAX_TO_PROCESS 13
+#define MAX_TO_PROCESS 8
 typedef struct {
     int index, distance;
 } TileCheat;
@@ -1208,11 +1208,18 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
         }
 
         int processed = 0;
-        const int MAX_CLOSE_JOBS_PER_PASS = 6;
+        int notProcessed = 0;
+        const int MAX_CLOSE_JOBS_PER_PASS = 8;
+        bool good = GetFPS() > 55;
 
-        for (int te = 0; te < foundTileCount && processed < MAX_CLOSE_JOBS_PER_PASS && GetFPS() > 55; te++)
+        for (int te = 0; te < foundTileCount && good; te++)
         {
             if (quitFileManager) break;
+            if (processed >= MAX_CLOSE_JOBS_PER_PASS)
+            {
+                notProcessed++;
+                break;
+            }
 
             TileEntry* t = &foundTiles[te];
             TypeLOD lod = chunks[t->cx][t->cy].lod;
@@ -1239,7 +1246,39 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
                     }
                 }
             }
-            else if (lod == LOD_32 || lod == LOD_16 || lod == LOD_8)
+        }
+        // if nothing happened, widen the search radius
+        if (processed == 0 && notProcessed == 0)
+        {
+            if (root < 14 && good) { root++; }  // 17 is outside of active chunks
+        }
+        if (root > 12)
+        {
+            root = 1;
+        }
+        //else if(mark < 512) //mark is to make sure if that we are walking down a ton, that we just let go and dont worry about it anymore
+        //{
+        //    // keep it from growing too wide while useful work exists nearby
+        //    if (root > 3)
+        //    {
+        //        mark++;
+        //        root--;
+        //    }
+        //}
+        //else if (mark >= 512)
+        //{
+        //    TraceLog(LOG_WARNING,"tile thread mark > 512");
+        //}
+
+        square = root * root;
+
+        for (int te = 0; te < foundTileCount && GetFPS() > 55; te++)
+        {
+            if (quitFileManager) break;
+            TileEntry* t = &foundTiles[te];
+            TypeLOD lod = chunks[t->cx][t->cy].lod;
+
+            if (lod == LOD_32 || lod == LOD_16 || lod == LOD_8)
             {
                 // put away inflated stuff if no longer needed
                 if (t->state == TS_UNCOMP_RAM)
@@ -1249,24 +1288,6 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
                 }
             }
         }
-        // if nothing happened, widen the search radius
-        if (processed == 0)
-        {
-            if (root < 17) root++;   // 17 is outside of active chunks
-        }
-        else if(mark < 32)
-        {
-            // keep it from growing too wide while useful work exists nearby
-            if (root > 5)
-            {
-                mark++;
-                root--;
-            }
-        }
-
-        square = root * root;
-
-        // optional debug
         // TraceLog(LOG_INFO, "close worker root=%d square=%d processed=%d", root, square, processed);
     }
 
