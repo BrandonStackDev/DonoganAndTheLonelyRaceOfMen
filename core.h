@@ -1187,6 +1187,7 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
     int lastCY = -9999;
     int lastTX = -9999;
     int lastTY = -9999;
+    int mark = 0;
 
     while (!quitFileManager)
     {
@@ -1203,6 +1204,7 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
             lastTY = closestTY;
             root = 1;
             square = root * root;
+            mark = 0;
         }
 
         int processed = 0;
@@ -1247,16 +1249,19 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
                 }
             }
         }
-        //no cool down attempt here in the background
         // if nothing happened, widen the search radius
         if (processed == 0)
         {
-            if (root < 6) root++;   // 6 is already a lot on a 16x16 chunk map
+            if (root < 17) root++;   // 17 is outside of active chunks
         }
-        else
+        else if(mark < 32)
         {
             // keep it from growing too wide while useful work exists nearby
-            if (root > 2) root--;
+            if (root > 5)
+            {
+                mark++;
+                root--;
+            }
         }
 
         square = root * root;
