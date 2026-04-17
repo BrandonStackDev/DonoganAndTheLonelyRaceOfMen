@@ -509,6 +509,7 @@ typedef struct {
 
 // Assets (adjust if needed)
 static const char* GLB = "models/donogan_anim.glb";
+static const char* GLB_ANIM = "models/donogan_anim.glb";
 static const char* PNG = "textures/donogan.png";
 static const char* BOW_GLB = "models/bow.glb";
 static const char* BOW_PNG = "textures/bow.png";
@@ -1485,7 +1486,7 @@ static Donogan InitDonogan(void)
     SetMaterialTexture(&d.wrenchModel.materials[0], MATERIAL_MAP_ALBEDO, d.wrenchTex);
 
     // Load animations and build remapped copies by bone name
-    d.animsRaw = LoadModelAnimations(GLB, &d.animCount);
+    d.animsRaw = LoadModelAnimations(GLB_ANIM, &d.animCount);
     if (d.animCount > 0) {
         d.anims = (ModelAnimation*)MemAlloc(sizeof(ModelAnimation) * d.animCount);
         for (unsigned i = 0; i < d.animCount; ++i) d.anims[i] = BuildRemapped(&d.model, &d.animsRaw[i]);
