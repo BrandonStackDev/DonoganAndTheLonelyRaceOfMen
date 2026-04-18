@@ -911,8 +911,7 @@ int main(void) {
 
             if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
             {
-                int machineHit = Machine_TryInteract(don.pos, don.hasWrench, (tri && !prevTri));
-                if (!don.isTalking && machineHit >= 0)
+                if (!don.isTalking && Machine_TryInteract(don.pos, don.hasWrench, true) >= 0)
                 {
                     // placeholder toast / sound / animation trigger
                     toast = "Machine activated!";
@@ -2906,7 +2905,7 @@ int main(void) {
             }
             //machines
             Machine_DrawAll(camera.position, frustum);
-            Machine_DrawTruckLift(truckPosition, truckAngle, camera.position);
+            Machine_DrawTruckLift();
             //items
             if (onLoad) { DrawItems(displayBoxes); }
             //homes

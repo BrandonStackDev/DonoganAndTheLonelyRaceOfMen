@@ -28,8 +28,8 @@
 #define MACHINE_LIFT_SPEED          2.25f
 
 // Visual offsets
-#define MACHINE_MODEL_SCALE         1.0f
-#define MACHINE_LIFT_MODEL_SCALE    1.0f
+#define MACHINE_MODEL_SCALE         3.0f
+#define MACHINE_LIFT_MODEL_SCALE    5.0f
 
 // Cylinder: from ground up to underside of lift bed
 #define MACHINE_LIFT_CYL_RADIUS     0.28f
@@ -373,11 +373,11 @@ static inline void Machine_DrawAll(Vector3 camPos, Frustum frustum)
 
 // Draws the lift bed model plus a hydraulic cylinder.
 // truckYaw should be in radians.
-static inline void Machine_DrawTruckLift(Vector3 truckPos, float truckYaw, Vector3 camPos)
+static inline void Machine_DrawTruckLift()
 {
     if (!gLiftBedReady) return;
 
-    Vector3 liftBasePos = Machine_GetTruckLiftWorldPos(truckPos, truckYaw);
+    Vector3 liftBasePos = Machine_GetTruckLiftWorldPos((Vector3){ 1281.42, 327.53, 1251.01 }, 0);
     Vector3 liftPos = liftBasePos;
     liftPos.y += gTruckLiftHeight;
 
@@ -388,7 +388,7 @@ static inline void Machine_DrawTruckLift(Vector3 truckPos, float truckYaw, Vecto
         (Vector3) {
         0, 1, 0
     },
-        truckYaw* RAD2DEG,
+        0 * RAD2DEG, //truckYaw initial
         (Vector3) {
         MACHINE_LIFT_MODEL_SCALE, MACHINE_LIFT_MODEL_SCALE, MACHINE_LIFT_MODEL_SCALE
     },
