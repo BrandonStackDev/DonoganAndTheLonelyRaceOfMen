@@ -17,6 +17,7 @@
 #include "collision.h"
 #include "core.h"
 #include "items.h" //items[]
+#include "machine.h"
 
 // --- config ---
 #ifndef MENU_VISIBLE_ROWS
@@ -145,7 +146,12 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
         fprintf(f, "FIRE[%d] = %d\n", i, fires[i].lit);    //
     }
     fprintf(f, "--FIREPLACES-END--\n");
-
+    //machines
+    fprintf(f, "--MACHINES-BEGIN--\n");
+    for (int i = 0; i < MACHINE_COUNT_TOTAL; i++) {                //
+        fprintf(f, "MACHINES[%d] = %d\n", i, gMachines[i].active);  //
+    }
+    fprintf(f, "--MACHINES-END--\n");
     // Missions
     fprintf(f, "--MISSIONS-BEGIN--\n");
     for (int i = 0; i < MISSION_TOTAL_COUNT; i++) {                //
@@ -177,21 +183,23 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
     FILE* f = fopen(path ? path : "don.save.txt", "rb");
     if (!f) return false;
 
-    char line[512]; bool inFires = false, inMissions = false, inItems = false, inInv = false;;
+    char line[512]; bool inFires = false, inMissions = false, inItems = false, inInv = false, inMach = false;
     while (fgets(line, sizeof(line), f)) {
         // strip
         char* s = line;
         while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n') ++s;
         if (!*s) continue;
 
-        if (!strncmp(s, "--FIREPLACES-BEGIN--", 20)) { inFires = true;  inMissions = false; inItems = false; inInv = false; continue; }
+        if (!strncmp(s, "--FIREPLACES-BEGIN--", 20)) { inFires = true;  inMissions = false; inItems = false; inInv = false; inMach = false; continue; }
         if (!strncmp(s, "--FIREPLACES-END--", 18)) { inFires = false; continue; }
-        if (!strncmp(s, "--MISSIONS-BEGIN--", 18)) { inMissions = true; inFires = false;  inItems = false; inInv = false; continue; }
+        if (!strncmp(s, "--MISSIONS-BEGIN--", 18)) { inMissions = true; inFires = false;  inItems = false; inInv = false; inMach = false; continue; }
         if (!strncmp(s, "--MISSIONS-END--", 16)) { inMissions = false; continue; }
-        if (!strncmp(s, "--ITEMS-BEGIN--", 15)) { inItems = true;  inMissions = false; inFires = false; inInv = false; continue; }
+        if (!strncmp(s, "--ITEMS-BEGIN--", 15)) { inItems = true;  inMissions = false; inFires = false; inInv = false; inMach = false; continue; }
         if (!strncmp(s, "--ITEMS-END--", 13)) { inItems = false; continue; }
-        if (!strncmp(s, "--INV-BEGIN--", 13)) { inInv = true;  inItems = false; inMissions = false; inFires = false; continue; }
+        if (!strncmp(s, "--INV-BEGIN--", 13)) { inInv = true;  inItems = false; inMissions = false; inFires = false; inMach = false; continue; }
         if (!strncmp(s, "--INV-END--", 11)) { inInv = false; continue; }
+        if (!strncmp(s, "--MACHINES-BEGIN--", 13)) { inMach = true;  inItems = false; inMissions = false; inFires = false; inInv = false; continue; }
+        if (!strncmp(s, "--MACHINES-END--", 11)) { inMach = false; continue; }
 
         if (inFires) {
             int idx = 0, val = 0;
@@ -204,6 +212,13 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
             int idx = 0, val = 0;
             if (sscanf(s, "MISSION[%d] = %d", &idx, &val) == 2) {
                 if (idx >= 0 && idx < MISSION_TOTAL_COUNT) missions[idx].complete = val;
+            }
+            continue;
+        }
+        if (inMach) {
+            int idx = 0, val = 0;
+            if (sscanf(s, "MACHINES[%d] = %d", &idx, &val) == 2) {
+                if (idx >= 0 && idx < MISSION_TOTAL_COUNT) gMachines[idx].active = val;
             }
             continue;
         }
