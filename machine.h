@@ -207,10 +207,7 @@ static inline void Machine_Init(void)
     Machine_Add(MILL_MACHINE, 10, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
 
     // Truck machine from your placement notes
-    Machine_Add(TRUCK_MACHINE, TRUCK_MACHINE_INDEX,
-        (Vector3) {
-        1263.17f, 327.53f, 1250.56f
-    }, 0.0f, 1.0f);
+    Machine_Add(TRUCK_MACHINE, TRUCK_MACHINE_INDEX, (Vector3) {1263.17f, 330.30f, 1250.56f}, 0.0f, 1.0f);
 
     // lift state
     gTruckLiftHeight = MACHINE_LIFT_MAX_HEIGHT;
@@ -245,8 +242,9 @@ static inline void Machine_Update(float dt, Donogan * d, Vector3 * truckPos)
 {
     if (gTruckLiftLowering)
     {
-        gTruckLiftHeight -= MACHINE_LIFT_SPEED * dt;
-        (*truckPos).y -= MACHINE_LIFT_SPEED * dt;
+        float dty = MACHINE_LIFT_SPEED * dt;
+        gTruckLiftHeight -= dty;
+        (*truckPos).y -= dty;
         if (gTruckLiftHeight <= MACHINE_LIFT_MIN_HEIGHT)
         {
             gTruckLiftHeight = MACHINE_LIFT_MIN_HEIGHT;
@@ -299,6 +297,7 @@ static inline int Machine_TryInteract(Vector3 playerPos, bool hasWrench)
     if (idx < 0) return -1;
 
     Machine* m = &gMachines[idx];
+    if (m->active) { return -1; }
     m->active = true;
 
     if (m->type == TRUCK_MACHINE)

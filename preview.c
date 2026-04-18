@@ -1113,7 +1113,7 @@ int main(void) {
                 int r3 = havePad ? (gpad.btnR3 > 0) : 0;  // ControllerData should already have btnR3 like btnL3
 
                 if (r3 && !prevR3) {
-                    if (!truckSummonActive)
+                    if (don.unlockedTruck && !truckSummonActive)
                     {
                         TruckSummonStart(); StartTimer(&gGame.HonkedHornRecently);//horn honks in summon start
                     }
@@ -1125,7 +1125,7 @@ int main(void) {
                 prevR3 = r3;
             }
         }
-        else if (vehicleMode)
+        else if (don.unlockedTruck && vehicleMode)
         {
             if (truckAirState == AIRBORNE) //gravity
             {
@@ -1704,13 +1704,17 @@ int main(void) {
         }
 
         if (!vehicleMode && !truckSummonActive) { truckSpeed = 0; }
-        truckForward = (Vector3){ sinf(truckAngle), sinf(-truckPitch), cosf(truckAngle) };
-        Vector3 tempTruck = Vector3Scale(truckForward, truckSpeed);
-        if(isTruckSliding)
+        if (don.unlockedTruck)
         {
-            tempTruck = Vector3Add(Vector3Scale(truckForward, truckSpeed), Vector3Scale(truckSlideForward, truckSlideSpeed));
+            truckForward = (Vector3){ sinf(truckAngle), sinf(-truckPitch), cosf(truckAngle) };
+            Vector3 tempTruck = Vector3Scale(truckForward, truckSpeed);
+            if (isTruckSliding)
+            {
+                tempTruck = Vector3Add(Vector3Scale(truckForward, truckSpeed), Vector3Scale(truckSlideForward, truckSlideSpeed));
+            }
+            //ugh!?
+            truckPosition = Vector3Add(truckPosition, tempTruck);
         }
-        truckPosition = Vector3Add(truckPosition, tempTruck);
         truckOrigin = Vector3Add(truckPosition, rearAxleOffset);
 
         if (!vehicleMode && Vector3Length(move) > 0.01f) {
@@ -1818,7 +1822,7 @@ int main(void) {
             bool hitRock[4] = { false , false , false , false };
             bool anyHitRock = false;
             bool hitTree = false;
-            if (vehicleMode)
+            if (don.unlockedTruck && vehicleMode)
             {
                 //building/scene collision for truck
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
@@ -2168,7 +2172,7 @@ int main(void) {
 
                 // 1. Truck vertical position (Y) — we want the max tire value//-average-of-all-tires-
                 //truckPosition.y = Lerp(truckPosition.y , (fl + fr + bl + br) / 4.0f, GetFrameTime()*16.0f);
-                if (!anyHitRock) { truckPosition.y = Lerp(truckPosition.y, maxTireY, GetFrameTime() * 16.0f); }
+                if (don.unlockedTruck && !anyHitRock) { truckPosition.y = Lerp(truckPosition.y, maxTireY, GetFrameTime() * 16.0f); }
 
                 // 2. Pitch (X-axis rotation, nose up/down)
                 // front height vs back height

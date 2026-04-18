@@ -28,7 +28,7 @@ typedef enum {
 Timer truckInteractTimer;
 bool displayTruckPoints = false;
 bool displayTruckForward = false;
-Vector3 truckPosition = { 1279.45f, 338.5f, 1249.00f }; //orig > { 1279.45f, 333.71f, 1249.00f };
+Vector3 truckPosition = { 1281.42, 332.4, 1251.01 }; //orig > { 1279.45f, 333.71f, 1249.00f }; //
 Vector3 truckBedPosition = { 0.0f, 1.362f, 0.0f };
 Vector3 truckForward = { 0.0f, 0.0f, 1.0f };  // Forward is along +Z
 Vector3 rearAxleOffset = { 0, 0, -1.5f }; // adjust Z as needed
