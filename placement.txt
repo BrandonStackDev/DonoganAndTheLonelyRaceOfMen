@@ -7,15 +7,5 @@ don_pos = 2573.33, 335.06, 2396.03
 //good place for a home, large deck over the cliff?
 don_pos = 1883.24, 358.77, -2268.53
 
-//truck and lift/lift-bed positions
-don_pos = 1282.99, 327.53, 1248.14
-don_pos = 1281.42, 327.53, 1251.01
-don_pos = 1281.62, 327.53, 1252.21
-//machine for truck
-don_pos = 1263.17, 327.53, 1250.56
+//new stuff?
 
-
-//windmill near barn? //SCENE_HOME_WINDMILL_10 //Scenes
-don_pos = 917.38, 323.76, 2004.90
-//ground near truck?
-don_pos = 1263.17, 327.53, 1251.05

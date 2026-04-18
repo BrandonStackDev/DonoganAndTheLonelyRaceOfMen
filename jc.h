@@ -211,7 +211,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_WINDMILL_03] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_WINDMILL_03] = (Scene){ ////windmill! --far side of castle first one
         .type = SCENE_HOME_WINDMILL_03,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ 2055.00f, 487.00f, 195.00f }, //started at 472 , y from measured => min +24 - +30 max
@@ -220,7 +220,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_WINDMILL_04] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_WINDMILL_04] = (Scene){ ////windmill! --middle one
         .type = SCENE_HOME_WINDMILL_04,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ 1933.00f, 432.00f, -533.00f }, //started at 472 , y from measured => min +24 - +30 max
@@ -229,7 +229,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_WINDMILL_05] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_WINDMILL_05] = (Scene){ ////windmill! middle 2 castle far side
         .type = SCENE_HOME_WINDMILL_05,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ 1814.00f, 492.40f, -1185.00f }, //started at 472 , y from measured => min +24 - +30 max
@@ -238,7 +238,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_WINDMILL_06] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_WINDMILL_06] = (Scene){ ////windmill! --far side castle second to last
         .type = SCENE_HOME_WINDMILL_06,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ 1785.00f, 534.00f, -1723.00f }, //started at 472 , y from measured => min +24 - +30 max
@@ -247,7 +247,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_WINDMILL_07] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_WINDMILL_07] = (Scene){ ////windmill! --far side castle furthest and turned
         .type = SCENE_HOME_WINDMILL_07,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ 1942.00f, 410.00f, -2710.00f }, //started at 472 , y from measured => min +24 - +30 max
@@ -256,7 +256,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_WINDMILL_08] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_WINDMILL_08] = (Scene){ ////windmill! --far side of TOL further away close to beach
         .type = SCENE_HOME_WINDMILL_08,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ -2666.00f, 435.00f, -2406.00f }, //started at 472 , y from measured => min +24 - +30 max
@@ -265,7 +265,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_WINDMILL_09] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_WINDMILL_09] = (Scene){ ////windmill! --yeti mt 1
         .type = SCENE_HOME_WINDMILL_09,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ -712.00f, 816.00f, 2876.00f }, //started at 472 , y from measured => min +24 - +30 max
@@ -283,7 +283,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_WINDMILL_11] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_WINDMILL_11] = (Scene){ ////windmill! -- windmill past TOL first one
         .type = SCENE_HOME_WINDMILL_11,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ -1696.00f, 465.0f, -1714.00f }, //started at 472 , y from measured => min +24 - +30 max
