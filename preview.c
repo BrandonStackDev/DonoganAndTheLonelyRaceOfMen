@@ -28,6 +28,8 @@
 #include "items.h"
 #include "apples.h"
 #include "texture.h"
+#include "machine.h"
+#include "frustum.h"
 
 //fairly standard things
 #include <float.h>
@@ -41,101 +43,6 @@
 //debugging
 //#include <vld.h>
 
-
-//structs
-typedef struct Plane {
-    Vector3 normal;
-    float d;
-} Plane;
-
-typedef struct Frustum {
-    Plane planes[6]; // left, right, top, bottom, near, far
-} Frustum;
-
-static Plane NormalizePlane(Plane p) {
-    float len = Vector3Length(p.normal);
-    return (Plane) {
-        .normal = Vector3Scale(p.normal, 1.0f / len),
-            .d = p.d / len
-    };
-}
-
-Frustum ExtractFrustum(Matrix mat)
-{
-    Frustum f;
-
-    // LEFT
-    f.planes[0] = NormalizePlane((Plane) {
-        .normal = (Vector3){ mat.m3 + mat.m0, mat.m7 + mat.m4, mat.m11 + mat.m8 },
-            .d = mat.m15 + mat.m12
-    });
-
-    // RIGHT
-    f.planes[1] = NormalizePlane((Plane) {
-        .normal = (Vector3){ mat.m3 - mat.m0, mat.m7 - mat.m4, mat.m11 - mat.m8 },
-            .d = mat.m15 - mat.m12
-    });
-
-    // BOTTOM
-    f.planes[2] = NormalizePlane((Plane) {
-        .normal = (Vector3){ mat.m3 + mat.m1, mat.m7 + mat.m5, mat.m11 + mat.m9 },
-            .d = mat.m15 + mat.m13
-    });
-
-    // TOP
-    f.planes[3] = NormalizePlane((Plane) {
-        .normal = (Vector3){ mat.m3 - mat.m1, mat.m7 - mat.m5, mat.m11 - mat.m9 },
-            .d = mat.m15 - mat.m13
-    });
-
-    // NEAR
-    f.planes[4] = NormalizePlane((Plane) {
-        .normal = (Vector3){ mat.m3 + mat.m2, mat.m7 + mat.m6, mat.m11 + mat.m10 },
-            .d = mat.m15 + mat.m14
-    });
-
-    // FAR
-    f.planes[5] = NormalizePlane((Plane) {
-        .normal = (Vector3){ mat.m3 - mat.m2, mat.m7 - mat.m6, mat.m11 - mat.m10 },
-            .d = mat.m15 - mat.m14
-    });
-
-    return f;
-}
-
-bool IsBoxInFrustum(BoundingBox box, Frustum frustum)
-{
-    for (int i = 0; i < 6; i++)
-    {
-        Plane plane = frustum.planes[i];
-
-        // Find the corner of the AABB that is most *opposite* to the normal
-        Vector3 positive = {
-            (plane.normal.x >= 0) ? box.max.x : box.min.x,
-            (plane.normal.y >= 0) ? box.max.y : box.min.y,
-            (plane.normal.z >= 0) ? box.max.z : box.min.z
-        };
-
-        // If that corner is outside, the box is not visible
-        float distance = Vector3DotProduct(plane.normal, positive) + plane.d;
-        if (distance < 0) { return false; }
-    }
-
-    return true;
-}
-
-// Returns true if point p lies inside (or on) all 6 frustum planes.
-// Assumes the same plane convention as your AABB test: n·x + d >= 0 is inside.
-static inline bool IsPointInFrustum(Vector3 p, Frustum frustum)
-{
-    for (int i = 0; i < 6; ++i)
-    {
-        Plane plane = frustum.planes[i];
-        float distance = Vector3DotProduct(plane.normal, p) + plane.d;
-        if (distance < 0.0f) return false; // outside this plane -> outside frustum
-    }
-    return true;
-}
 
 bool bugGenHappened = false;
 LightningBug* GenerateLightningBugs(Vector3 cameraPos, int count, float maxDistance)
@@ -366,6 +273,8 @@ int main(void) {
     LasersInit();
     //apples
     InitApples();
+    //machines and lift
+    Machine_Init();
     //env bounding boxes, duct tape
     GoGoGadgetDuctTape();
     Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
@@ -1002,6 +911,13 @@ int main(void) {
 
             if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
             {
+                int machineHit = Machine_TryInteract(don.pos, don.hasWrench, (tri && !prevTri));
+                if (!don.isTalking && machineHit >= 0)
+                {
+                    // placeholder toast / sound / animation trigger
+                    toast = "Machine activated!";
+                    StartTimer(&toastTimer);
+                }
                 if (!don.isTalking 
                     && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
                     && HasTimerElapsed(&truckInteractTimer))
@@ -2759,6 +2675,7 @@ int main(void) {
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         UpdateApples(dt);
+        Machine_Update(dt);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
@@ -2987,6 +2904,9 @@ int main(void) {
                 }
                 dropped_firepits = true;
             }
+            //machines
+            Machine_DrawAll(camera.position, frustum);
+            Machine_DrawTruckLift(truckPosition, truckAngle, camera.position);
             //items
             if (onLoad) { DrawItems(displayBoxes); }
             //homes
@@ -3590,6 +3510,8 @@ int main(void) {
         EndDrawing();
     }
     quitFileManager = true;
+    //unload the machines
+    Machine_Unload();
     //VLDReportLeaks();
     UnloadModel(truck);
     UnloadModel(tire);
