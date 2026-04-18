@@ -2897,7 +2897,7 @@ int main(void) {
                     {
                         // Inputs we already have
                         float yaw = Scenes[i].yaw;                 // radians (Scene uses radians)
-                        float spin = rotorSpin * DEG2RAD;           // keep your existing rotorSpin but use radians
+                        float spin = Scenes[i].active ? rotorSpin * DEG2RAD : 0;           // keep your existing rotorSpin but use radians
                         Vector3 pos = Scenes[i].pos;                 // home world position
 
                         // --- Build transforms (no quaternions) ---

@@ -9,6 +9,7 @@
 #include "donogan.h"   // for Donogan if you want to pass don directly
 #include "interact.h"
 #include "frustum.h"
+#include "jc.h"
 #include <stdbool.h>
 #include <string.h>
 
@@ -53,6 +54,7 @@ typedef struct Machine
 {
     MachineType type;
     int index;
+    Scene_Type scene_type;
 
     Vector3 pos;
     float yaw;
@@ -77,6 +79,15 @@ static bool gMachineModelReady = false;
 static Model gLiftBedModel = { 0 };
 static Texture2D gLiftBedTexture = { 0 };
 static bool gLiftBedReady = false;
+//917.38, 323.76, 2004.90
+
+//typedef struct {
+//    Scene_Type stype;
+//    MachineType mtype;
+//    int id;
+//} MachineHomeTie;
+
+
 
 // runtime machine list
 static Machine gMachines[MACHINE_COUNT_TOTAL];
@@ -131,7 +142,7 @@ static inline void Machine_ClearAll(void)
     gMachineCount = 0;
 }
 
-static inline void Machine_Add(MachineType type, int index, Vector3 pos, float yaw, float scale)
+static inline void Machine_Add(MachineType type, int index, Vector3 pos, float yaw, float scale, Scene_Type scene_type)
 {
     if (gMachineCount >= MACHINE_COUNT_TOTAL) return;
 
@@ -140,6 +151,7 @@ static inline void Machine_Add(MachineType type, int index, Vector3 pos, float y
 
     m->type = type;
     m->index = index;
+    m->scene_type = scene_type;
     m->pos = pos;
     m->yaw = yaw;
     m->scale = scale;
@@ -195,20 +207,20 @@ static inline void Machine_Init(void)
     // 11 windmill machines for now.
     // Fill these with real positions when ready.
     // I left them easy to edit.
-    Machine_Add(MILL_MACHINE, 0, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 1, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 2, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 3, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 4, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 5, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 6, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 7, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 8, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 9, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
-    Machine_Add(MILL_MACHINE, 10, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f);
+    Machine_Add(MILL_MACHINE, 0, (Vector3) { 917.38, 326.02, 2004.90 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_10);
+    Machine_Add(MILL_MACHINE, 1, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
+    Machine_Add(MILL_MACHINE, 2, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
+    Machine_Add(MILL_MACHINE, 3, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
+    Machine_Add(MILL_MACHINE, 4, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
+    Machine_Add(MILL_MACHINE, 5, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
+    Machine_Add(MILL_MACHINE, 6, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
+    Machine_Add(MILL_MACHINE, 7, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
+    Machine_Add(MILL_MACHINE, 8, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
+    Machine_Add(MILL_MACHINE, 9, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
+    Machine_Add(MILL_MACHINE, 10, (Vector3) { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
 
     // Truck machine from your placement notes
-    Machine_Add(TRUCK_MACHINE, TRUCK_MACHINE_INDEX, (Vector3) {1263.17f, 330.30f, 1250.56f}, 0.0f, 1.0f);
+    Machine_Add(TRUCK_MACHINE, TRUCK_MACHINE_INDEX, (Vector3) {1263.17f, 330.30f, 1250.56f}, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11); //dummy
 
     // lift state
     gTruckLiftHeight = MACHINE_LIFT_MAX_HEIGHT;
@@ -259,6 +271,7 @@ static inline void Machine_Update(float dt, Donogan * d, Vector3 * truckPos)
     // keep boxes fresh if you later animate machine positions
     for (int i = 0; i < gMachineCount; i++)
     {
+        if (gMachines[i].active) { Scenes[gMachines[i].scene_type].active = true; }
         Machine_RebuildWorldBox(&gMachines[i]);
     }
 }
@@ -311,8 +324,8 @@ static inline int Machine_TryInteract(Vector3 playerPos, bool hasWrench)
     }
     else if (m->type == MILL_MACHINE)
     {
-        // placeholder for windmill behavior
-        // animation / state can go here later
+        // you got that windmill behavior
+        Scenes[m->scene_type].active = true;
     }
 
     return idx;

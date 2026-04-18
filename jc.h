@@ -21,7 +21,7 @@ typedef enum {
     MODEL_HOME_TEMPLE, //temple
     MODEL_HOME_CASTLE, //castle, cool texture!
     MODEL_HOME_WINDMILL, //windmill, will have spinning rotor
-    MODEL_BARN,
+    MODEL_BARN,         //barn that holds da wrench
     MODEL_HOME_TOTAL_COUNT
 } Model_Home_Type;
 
@@ -60,6 +60,7 @@ typedef struct {
     float yaw, scale;//for now just yaw rotations
     //below this line, only use in preview.c
     BoundingBox origBox, box;
+    bool active;
 } Scene;
 
 Scene Scenes[SCENE_TOTAL_COUNT];
@@ -273,7 +274,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_WINDMILL_10] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_WINDMILL_10] = (Scene){ ////windmill! //windmill by the barn
         .type = SCENE_HOME_WINDMILL_10,
         .modelType = MODEL_HOME_WINDMILL,
         .pos = (Vector3){ 922.00f, 353.00f, 1998.00f }, //started at 472 , y from measured => min +24 - +30 max
@@ -291,7 +292,7 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_HOME_BARN_01] = (Scene){ ////windmill!
+    Scenes[SCENE_HOME_BARN_01] = (Scene){ ////barn
         .type = SCENE_HOME_BARN_01,
         .modelType = MODEL_BARN,
         .pos = (Vector3){ 875.34, 374.00, 1353.11 },

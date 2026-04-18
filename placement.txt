@@ -15,7 +15,7 @@ don_pos = 1281.62, 327.53, 1252.21
 don_pos = 1263.17, 327.53, 1250.56
 
 
-//windmill near barn?
+//windmill near barn? //SCENE_HOME_WINDMILL_10 //Scenes
 don_pos = 917.38, 323.76, 2004.90
 //ground near truck?
 don_pos = 1263.17, 327.53, 1251.05
