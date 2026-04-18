@@ -665,6 +665,7 @@ int main(void) {
                 missions[MISSION_START_ALL_MILLS].complete = true;
                 toast = "All Windmills Activated!";
                 StartTimer(&toastTimer);
+                don.xp += 400;
             }
         }
         if (!missions[MISSION_KILL_GHOST].complete && ghostKillCount >= 10)
@@ -931,7 +932,7 @@ int main(void) {
 
             if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
             {
-                if (!don.isTalking && Machine_TryInteract(don.pos, don.hasWrench) >= 0)
+                if (!don.isTalking && Machine_TryInteract(&don, don.pos, don.hasWrench) >= 0)
                 {
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";

@@ -279,6 +279,7 @@ static inline void Machine_Update(float dt, Donogan * d, Vector3 * truckPos)
             gTruckLiftAtFloor = true;
             d->unlockedTruck = true;
             missions[MISSION_GET_TRUCK].complete = true;
+            d->xp += 120;
         }
     }
 
@@ -320,7 +321,7 @@ static inline int Machine_FindInteractable(Vector3 playerPos, float maxDistance,
 
 // Call this on triangle just-pressed.
 // Returns machine index if something triggered, otherwise -1.
-static inline int Machine_TryInteract(Vector3 playerPos, bool hasWrench)
+static inline int Machine_TryInteract(Donogan * d, Vector3 playerPos, bool hasWrench)
 {
     if (!hasWrench) return -1;
 
@@ -342,6 +343,7 @@ static inline int Machine_TryInteract(Vector3 playerPos, bool hasWrench)
     {
         // you got that windmill behavior
         Scenes[m->scene_type].active = true;
+        d->xp += 80;
     }
 
     return idx;
