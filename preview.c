@@ -769,11 +769,11 @@ int main(void) {
             if (don.maxHealth > 160) { don.maxHealth = 160; }//cap em
             if (don.maxMana > 160) { don.maxMana = 160; }//cap em
         } //we just raised up, and then level is divisable by five, increase our health
-        if (loop_counter % 999 == 0)
+        if (loop_counter % 8000 == 0)
         {
             don.health += 1; //regen
         }
-        if (loop_counter % 107 == 0)
+        if (loop_counter % 1000 == 0)
         {
             don.mana += 1; //regen
         }
