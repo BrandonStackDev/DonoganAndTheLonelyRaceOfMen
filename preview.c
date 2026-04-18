@@ -720,8 +720,8 @@ int main(void) {
     StartCloseTileWorker();
 
     Camera3D camera = {
-        .position = (Vector3){ 0.0f, 2000.0f, 0.0f },  // Higher if needed,
-        .target = (Vector3){ 0.0f, 0.0f, 0.0f },  // Centered
+        .position = (Vector3){ 0.0f, 1400.0f, 0.0f },  // Higher if needed,
+        .target = (Vector3){ 5000.0f, 120.0f, 7000.0f },  // Centered
         .up = (Vector3){ 0.0f, 1.0f, 0.0f },
         .fovy = 80.0f,
         .projection = CAMERA_PERSPECTIVE
@@ -905,7 +905,7 @@ int main(void) {
             don.pos = truckPosition;
             donnyMode = false; 
         }//just make sure this is always exlusive or, one or the other, never both, and update his position for npc culling, so they appear
-        if (!vehicleMode && donnyMode)
+        if (!vehicleMode && donnyMode && onLoad)
         {
             if (CheckCollisionBoxes(wrenchBox,don.outerBox)) //get the wrench
             { 
@@ -994,6 +994,11 @@ int main(void) {
             camera.position.x = camera.target.x + radius * cosf(pitch) * sinf(yaw);
             camera.position.y = camera.target.y + radius * sinf(pitch);
             camera.position.z = camera.target.z + radius * cosf(pitch) * cosf(yaw);
+            float camGroundY = GetTerrainHeightFromMeshXZ(camera.position.x, camera.position.z);
+            if (camGroundY + 0.1 > camera.position.y)
+            {
+                camera.position.y = camGroundY + 0.1;
+            }
 
             if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
             {

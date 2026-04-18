@@ -1193,7 +1193,7 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
     {
         sleep_ms(38);
 
-        if (!wasTilesDocumented) continue;
+        if (!wasTilesDocumented) { continue; }
 
         // player / active center changed? start tight again
         if (closestCX != lastCX || closestCY != lastCY || closestTX != lastTX || closestTY != lastTY)
@@ -1214,7 +1214,7 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
 
         for (int te = 0; te < foundTileCount && good; te++)
         {
-            if (quitFileManager) break;
+            if (quitFileManager) { break; }
             if (processed >= MAX_CLOSE_JOBS_PER_PASS)
             {
                 notProcessed++;
@@ -1227,7 +1227,7 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
             int d2 = TileDistSq(t, closestTX, closestTY);
 
             // outside current working radius? skip for now
-            if (d2 > square) continue;
+            if (d2 > square) { continue; }
 
             if (lod == LOD_64)
             {
@@ -1256,19 +1256,6 @@ static unsigned __stdcall CloseTileWorkerThread(void* arg)
         {
             root = 1;
         }
-        //else if(mark < 512) //mark is to make sure if that we are walking down a ton, that we just let go and dont worry about it anymore
-        //{
-        //    // keep it from growing too wide while useful work exists nearby
-        //    if (root > 3)
-        //    {
-        //        mark++;
-        //        root--;
-        //    }
-        //}
-        //else if (mark >= 512)
-        //{
-        //    TraceLog(LOG_WARNING,"tile thread mark > 512");
-        //}
 
         square = root * root;
 
