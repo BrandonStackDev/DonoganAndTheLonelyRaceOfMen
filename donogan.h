@@ -505,6 +505,9 @@ typedef struct {
     float shook;
     bool squareThrowRequest;
     GameState *gs;
+
+    //has things?
+    bool unlockedTruck;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1477,6 +1480,9 @@ static Donogan InitDonogan(void)
     d.hasBow = false;
     d.prevL2Held = false;
     d.bowBlend = 0.0f;
+
+    //things
+    d.unlockedTruck = false;
 
     //wrench load
     d.wrenchMode = false;

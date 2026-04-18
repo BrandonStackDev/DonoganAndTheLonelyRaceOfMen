@@ -241,16 +241,18 @@ static inline void Machine_Unload(void)
 // UPDATE
 // ============================================================
 
-static inline void Machine_Update(float dt)
+static inline void Machine_Update(float dt, Donogan * d, Vector3 * truckPos)
 {
     if (gTruckLiftLowering)
     {
         gTruckLiftHeight -= MACHINE_LIFT_SPEED * dt;
+        (*truckPos).y -= MACHINE_LIFT_SPEED * dt;
         if (gTruckLiftHeight <= MACHINE_LIFT_MIN_HEIGHT)
         {
             gTruckLiftHeight = MACHINE_LIFT_MIN_HEIGHT;
             gTruckLiftLowering = false;
             gTruckLiftAtFloor = true;
+            d->unlockedTruck = true;
         }
     }
 
@@ -289,9 +291,8 @@ static inline int Machine_FindInteractable(Vector3 playerPos, float maxDistance,
 
 // Call this on triangle just-pressed.
 // Returns machine index if something triggered, otherwise -1.
-static inline int Machine_TryInteract(Vector3 playerPos, bool hasWrench, bool triangleJustPressed)
+static inline int Machine_TryInteract(Vector3 playerPos, bool hasWrench)
 {
-    if (!triangleJustPressed) return -1;
     if (!hasWrench) return -1;
 
     int idx = Machine_FindInteractable(playerPos, MACHINE_INTERACT_DISTANCE, true);

@@ -911,13 +911,14 @@ int main(void) {
 
             if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
             {
-                if (!don.isTalking && Machine_TryInteract(don.pos, don.hasWrench, true) >= 0)
+                if (!don.isTalking && Machine_TryInteract(don.pos, don.hasWrench) >= 0)
                 {
                     // placeholder toast / sound / animation trigger
                     toast = "Machine activated!";
                     StartTimer(&toastTimer);
                 }
-                if (!don.isTalking 
+                if (!don.isTalking
+                    && don.unlockedTruck
                     && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
                     && HasTimerElapsed(&truckInteractTimer))
                 {
@@ -1474,10 +1475,10 @@ int main(void) {
             //if (IsKeyDown(KEY_MINUS)) mapZoom -= 0.01f;  // Zoom out (- key)
             //mapZoom = Clamp(mapZoom, 0.5f, 4.0f);
             //end map input
-            if (onLoad && IsKeyPressed(KEY_V)) 
+            if (onLoad && IsKeyPressed(KEY_V) && don.unlockedTruck)
             { 
                 vehicleMode = !vehicleMode; 
-                donnyMode = false;
+                donnyMode = !vehicleMode;
                 if (!vehicleMode)
                 {
                     don.xp += (int)(points / 1000);
@@ -1503,26 +1504,7 @@ int main(void) {
                     SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT); // your preferred windowed size
                 }
             }
-            if (devDisplay && !donnyMode && !vehicleMode && IsKeyPressed(KEY_PAGE_UP)) { chosenX = (chosenX + 1) % CHUNK_COUNT; }
-            if (devDisplay && !donnyMode && !vehicleMode && IsKeyPressed(KEY_PAGE_DOWN)) { chosenY = (chosenY + 1) % CHUNK_COUNT; }
-            if (devDisplay && !donnyMode && !vehicleMode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) { goku = true; move = Vector3Add(move, forward); spd = GOKU_DASH_DIST; TraceLog(LOG_INFO, " --> Instant Transmission -->"); }
-            if (devDisplay && !donnyMode && !vehicleMode && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) { goku = true; move = Vector3Add(move, forward); spd = GOKU_DASH_DIST_SHORT; TraceLog(LOG_INFO, " --> Steady does it -->"); }
-            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_W)) move = Vector3Add(move, forward);
-            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_S)) move = Vector3Subtract(move, forward);
-            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_D)) move = Vector3Add(move, right);
-            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_A)) move = Vector3Subtract(move, right);
             if (IsKeyPressed(KEY_Z)) { dayTime = !dayTime; }
-            if (IsKeyPressed(KEY_LEFT_CONTROL)) 
-            { 
-                donnyMode = !donnyMode; 
-                if (vehicleMode)
-                {
-                    don.xp += (int)(points / 1000);
-                    points = 0;
-                }
-                vehicleMode = false;
-            }
-            if (devDisplay && !donnyMode && !vehicleMode && IsKeyDown(KEY_ENTER)) { chunks[chosenX][chosenY].curTreeIdx = 0; closestCX = chosenX; closestCY = chosenY; camera.position.x = chunks[closestCX][closestCY].center.x; camera.position.z = chunks[closestCX][closestCY].center.z; }
         }
         else if (don.isTalking)
         {
@@ -1785,25 +1767,7 @@ int main(void) {
         }
         //collision section----------------------------------------------------------------
         bool alreadyHandledY = false;
-        if(!vehicleMode && !donnyMode)
-        {
-            camera.target = Vector3Add(camera.position, forward);
-            if(onLoad && camera.position.y > PLAYER_FLOAT_Y_POSITION)//he floats underwater
-            {
-                if (closestCX < 0 || closestCY < 0 || closestCX >= CHUNK_COUNT || closestCY >= CHUNK_COUNT) {
-                    // Outside world bounds
-                    TraceLog(LOG_INFO, "Outside of world bounds: %d,%d", closestCX, closestCY);
-                }
-                else
-                {
-                    float groundY = GetTerrainHeightFromMeshXZ(camera.position.x, camera.position.z);
-                    //TraceLog(LOG_INFO, "setting camera y: (%d,%d){%f,%f,%f}[%f]", closestCX, closestCY, camera.position.x, camera.position.y, camera.position.z, groundY);
-                    if(groundY < -9000.0f){groundY=camera.position.y - PLAYER_HEIGHT;} // if we error, dont change y
-                    camera.position.y = groundY + PLAYER_HEIGHT;  // e.g. +1.8f for standing
-                }
-            }
-        }
-        else if (donnyMode && !vehicleMode)
+        if (donnyMode && !vehicleMode)
         {
             //are we in water?
             //bool inWater = don.pos.y < PLAYER_FLOAT_Y_POSITION;
@@ -2674,7 +2638,7 @@ int main(void) {
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         UpdateApples(dt);
-        Machine_Update(dt);
+        Machine_Update(dt, &don, &truckPosition);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
