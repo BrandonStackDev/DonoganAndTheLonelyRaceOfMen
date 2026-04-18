@@ -136,7 +136,7 @@ Any way, happy adventuring. Put on some FlannelKat and drive the truck around!
 
 [![WhaleDeservedIt](readme_assets/whaleFarts.png)](readme_assets/whaleFarts.png)
 
-[![Snow](readme_assets/snow.png)](readme_assets/snow.png)
+[![Stars](readme_assets/stars.png)](readme_assets/stars.png)
 
 [![TreeOfLife](readme_assets/tol.png)](readme_assets/tol.png)
 

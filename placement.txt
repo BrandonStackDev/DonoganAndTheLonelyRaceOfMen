@@ -3,3 +3,7 @@ don_pos = 2269.11, 331.29, -3446.53
 
 //good home stead position
 don_pos = 2573.33, 335.06, 2396.03
+
+//good place for a home, large deck over the cliff?
+don_pos = 1883.24, 358.77, -2268.53
+
