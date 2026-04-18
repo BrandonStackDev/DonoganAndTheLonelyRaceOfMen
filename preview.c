@@ -937,6 +937,13 @@ int main(void) {
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";
                     StartTimer(&toastTimer);
+                    //trigger animation, also create animation procedurally, and then put the wrench in his hand (not attached to a bone)
+                    DonSetState(&don, DONOGAN_STATE_MACHINE_TURN);
+                    don.velXZ = (Vector3){ 0 };
+                    don.rollVel = (Vector3){ 0 };
+                    don.bowMode = false;
+                    //play sound
+                    PlaySoundVol(wrenchSound);
                 }
                 if (!don.isTalking
                     && don.unlockedTruck
