@@ -7,6 +7,7 @@
 #include "texture.h"   // for LoadMyTexture()
 #include "truck.h"     // for truckPosition / truckAngle if you already expose them
 #include "donogan.h"   // for Donogan if you want to pass don directly
+#include "interact.h"
 #include "frustum.h"
 #include <stdbool.h>
 #include <string.h>
@@ -251,6 +252,7 @@ static inline void Machine_Update(float dt, Donogan * d, Vector3 * truckPos)
             gTruckLiftLowering = false;
             gTruckLiftAtFloor = true;
             d->unlockedTruck = true;
+            missions[MISSION_GET_TRUCK].complete = true;
         }
     }
 

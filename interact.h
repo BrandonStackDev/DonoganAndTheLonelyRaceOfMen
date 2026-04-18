@@ -148,6 +148,7 @@ static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
 typedef enum {
     MISSION_NONE = -1,
     MISSION_CLARENCE_CHICKEN,
+    MISSION_GET_TRUCK,
     MISSION_FIND_ATREYU,
     MISSION_FIND_TOL,
     MISSION_KILL_GHOST,
@@ -332,6 +333,11 @@ void InitMissions()
     missions[MISSION_FIND_ATREYU].type = MISSION_FIND_ATREYU;
     missions[MISSION_FIND_ATREYU].name = "Find and Talk to Atreyu";
     missions[MISSION_FIND_ATREYU].desc = "Find and Talk to Atreyu. He has a gift for you.";
+    //MISSION_GET_TRUCK
+    missions[MISSION_GET_TRUCK].complete = false;
+    missions[MISSION_GET_TRUCK].type = MISSION_GET_TRUCK;
+    missions[MISSION_GET_TRUCK].name = "Get the Truck";
+    missions[MISSION_GET_TRUCK].desc = "Get the wrench so you can lower the truck from the lift.";
     //MISSION_FIND_TOL,
     missions[MISSION_FIND_TOL].complete = false;
     missions[MISSION_FIND_TOL].type = MISSION_FIND_TOL;

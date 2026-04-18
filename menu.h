@@ -124,6 +124,7 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     fprintf(f, "don_pos = %.3f %.3f %.3f\n", d->pos.x, d->pos.y, d->pos.z);
     fprintf(f, "don_bow = %d\n", d->hasBow);
     fprintf(f, "don_wrench = %d\n", d->hasWrench);
+    fprintf(f, "don_unlockedTruck = %d\n", d->unlockedTruck);
     fprintf(f, "don_health = %d\n", d->health);
     fprintf(f, "don_mana   = %d\n", d->mana);
     fprintf(f, "don_starthealth = %d\n", d->maxHealth);
@@ -230,6 +231,9 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
         }
         else if (!strncmp(s, "don_wrench", 10)) {
             sscanf(s, "don_wrench = %d", &d->hasWrench);
+        }
+        else if (!strncmp(s, "don_unlockedTruck", 17)) {
+            sscanf(s, "don_unlockedTruck = %d", &d->unlockedTruck);
         }
         else if (!strncmp(s, "don_health", 10)) {
             sscanf(s, "don_health = %d", &d->health);

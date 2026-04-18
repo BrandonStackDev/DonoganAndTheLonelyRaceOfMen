@@ -646,6 +646,12 @@ int main(void) {
     long loop_counter = 0;
     while (!WindowShouldClose()) 
     {
+        //things that are affected by machines that need save file updates
+        if (don.unlockedTruck) 
+        { 
+            gTruckLiftAtFloor = true;
+            gTruckLiftHeight = -5.0;
+        }
         //detect general missions for completion (the non talking/interaction triggered missions)
         if (!missions[MISSION_KILL_GHOST].complete && ghostKillCount >= 10)
         {
@@ -816,7 +822,7 @@ int main(void) {
         }//just make sure this is always exlusive or, one or the other, never both, and update his position for npc culling, so they appear
         if (!vehicleMode && donnyMode && onLoad)
         {
-            if (CheckCollisionBoxes(wrenchBox,don.outerBox)) //get the wrench
+            if (!don.hasWrench && CheckCollisionBoxes(wrenchBox,don.outerBox)) //get the wrench
             { 
                 don.hasWrench = true;
                 toast = "Got the Wrench!";
