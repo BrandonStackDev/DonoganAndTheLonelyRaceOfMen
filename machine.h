@@ -221,20 +221,20 @@ static inline void Machine_Init(void)
     //        don_pos = 2657.69, 472.62, 1484.53 //castle
     //        don_pos = 2289.40, 338.82, 4761.52 //donogans
     //        don_pos = -717.63, 789.85, 2883.16 //yeti mt 1
-    Machine_Add(MILL_MACHINE, 0, (Vector3) { 917.38, 326.02, 2004.90 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_10);
-    Machine_Add(MILL_MACHINE, 1, (Vector3) { 2060.37, 461.00, 200.41 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_03);
+    Machine_Add(MILL_MACHINE, 0, (Vector3) { 917.38, 326.02, 2004.90 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_10); //barn
+    Machine_Add(MILL_MACHINE, 1, (Vector3) { 2060.37, 461.00, 200.41 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_03);//far side castle
     Machine_Add(MILL_MACHINE, 2, (Vector3) { 1941.82, 410.00, -526.68 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_04);
     Machine_Add(MILL_MACHINE, 3, (Vector3) { 1821.41, 480.00, -1176.68 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_05);
     Machine_Add(MILL_MACHINE, 4, (Vector3) { 1795.21, 509.00, -1717.80 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_06);
     Machine_Add(MILL_MACHINE, 5, (Vector3) { 1938.34, 400.00, -2698.09 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_07);
-    Machine_Add(MILL_MACHINE, 6, (Vector3) { -1700.79, 440.00, -1707.10 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);
-    Machine_Add(MILL_MACHINE, 7, (Vector3) { -2670.76, 410.00, -2397.02 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_08);
+    Machine_Add(MILL_MACHINE, 6, (Vector3) { -1700.79, 440.00, -1707.10 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11);//past TOL
+    Machine_Add(MILL_MACHINE, 7, (Vector3) { -2670.76, 410.00, -2397.02 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_08);//past past TOL
     Machine_Add(MILL_MACHINE, 8, (Vector3) { 2657.69, 475.00, 1484.53 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_01); //castle
     Machine_Add(MILL_MACHINE, 9, (Vector3) { 2289.40, 341.00, 4761.52 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_02);  //by donogans
     Machine_Add(MILL_MACHINE, 10, (Vector3) { -717.63, 792.00, 2883.16 }, 0.0f, 1.0f, SCENE_HOME_WINDMILL_09); //--yeti mt
 
     // Truck machine from your placement notes
-    Machine_Add(TRUCK_MACHINE, TRUCK_MACHINE_INDEX, (Vector3) {1263.17f, 330.30f, 1250.56f}, 0.0f, 1.0f, SCENE_HOME_WINDMILL_11); //dummy
+    Machine_Add(TRUCK_MACHINE, TRUCK_MACHINE_INDEX, (Vector3) {1263.17f, 330.30f, 1250.56f}, 0.0f, 1.0f, -1); //dummy for truck
 
     // lift state
     gTruckLiftHeight = MACHINE_LIFT_MAX_HEIGHT;
@@ -285,8 +285,10 @@ static inline void Machine_Update(float dt, Donogan * d, Vector3 * truckPos)
     // keep boxes fresh if you later animate machine positions
     for (int i = 0; i < gMachineCount; i++)
     {
-        if (gMachines[i].active) { Scenes[gMachines[i].scene_type].active = true; }
-        Machine_RebuildWorldBox(&gMachines[i]);
+        if (gMachines[i].type == MILL_MACHINE && gMachines[i].active) 
+        { 
+            Scenes[gMachines[i].scene_type].active = true; 
+        }
     }
 }
 

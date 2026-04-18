@@ -218,7 +218,7 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
         if (inMach) {
             int idx = 0, val = 0;
             if (sscanf(s, "MACHINES[%d] = %d", &idx, &val) == 2) {
-                if (idx >= 0 && idx < MISSION_TOTAL_COUNT) gMachines[idx].active = val;
+                if (idx >= 0 && idx < MACHINE_COUNT_TOTAL) gMachines[idx].active = val;
             }
             continue;
         }

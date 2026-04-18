@@ -653,6 +653,20 @@ int main(void) {
             gTruckLiftHeight = -5.0;
         }
         //detect general missions for completion (the non talking/interaction triggered missions)
+        if (onLoad && !missions[MISSION_START_ALL_MILLS].complete)
+        {
+            int milCnt = 0;
+            for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
+            {
+                if (Scenes[i].modelType == MODEL_HOME_WINDMILL && Scenes[i].active) { milCnt++; }
+            }
+            if (milCnt >= MACHINE_COUNT_WINDMILL) //number of mills
+            {
+                missions[MISSION_START_ALL_MILLS].complete = true;
+                toast = "All Windmills Activated!";
+                StartTimer(&toastTimer);
+            }
+        }
         if (!missions[MISSION_KILL_GHOST].complete && ghostKillCount >= 10)
         {
             toast = "Completed mission! You killed ten Ghosts!";
@@ -2921,7 +2935,7 @@ int main(void) {
                     if (displayBoxes) { DrawBoundingBox(Scenes[i].box, PURPLE); }
                 }
                 rlEnableBackfaceCulling();
-                if (!missions[MISSION_START_ALL_MILLS].complete && milCnt == 11) //number of mills, sorry future self if you come back here.
+                if (!missions[MISSION_START_ALL_MILLS].complete && milCnt >= MACHINE_COUNT_WINDMILL) //number of mills
                 {
                     missions[MISSION_START_ALL_MILLS].complete = true;
                     toast = "All Windmills Activated!";

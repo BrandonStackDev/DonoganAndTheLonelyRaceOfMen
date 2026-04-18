@@ -1,6 +1,6 @@
 DON_SAVE_V1
-don_pos = -680.502 780.748 2937.822
-don_bow = 0
+don_pos = -702.877 778.428 2947.680
+don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
 don_health = 102
@@ -31,7 +31,7 @@ MACHINES[7] = 1
 MACHINES[8] = 1
 MACHINES[9] = 1
 MACHINES[10] = 1
-MACHINES[11] = 0
+MACHINES[11] = 1
 --MACHINES-END--
 --MISSIONS-BEGIN--
 MISSION[0] = 0
@@ -41,7 +41,7 @@ MISSION[3] = 0
 MISSION[4] = 0
 MISSION[5] = 0
 MISSION[6] = 0
-MISSION[7] = 0
+MISSION[7] = 1
 MISSION[8] = 0
 --MISSIONS-END--
 --ITEMS-BEGIN--
