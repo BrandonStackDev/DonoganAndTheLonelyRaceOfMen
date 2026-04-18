@@ -154,6 +154,7 @@ typedef enum {
     MISSION_KILL_GHOST,
     MISSION_KILL_YETI,
     MISSION_KILL_ROBO,
+    MISSION_START_ALL_MILLS,
     MISSION_RESCUE_NICK,
     MISSION_TOTAL_COUNT
 } MissionType;
@@ -343,6 +344,11 @@ void InitMissions()
     missions[MISSION_FIND_TOL].type = MISSION_FIND_TOL;
     missions[MISSION_FIND_TOL].name = "Find and Talk to the Tree of Life";
     missions[MISSION_FIND_TOL].desc = "Find and Talk to the Tree of Life. It has much wisdom and many poems.";
+    //MISSION_START_ALL_MILLS
+    missions[MISSION_START_ALL_MILLS].complete = false;
+    missions[MISSION_START_ALL_MILLS].type = MISSION_START_ALL_MILLS;
+    missions[MISSION_START_ALL_MILLS].name = "Start all windmills.";
+    missions[MISSION_START_ALL_MILLS].desc = "Start all of the windmills by pressing interact near the machine inside. (requires the wrench)";
     //MISSION_KILL_GHOST,
     missions[MISSION_KILL_GHOST].complete = false;
     missions[MISSION_KILL_GHOST].type = MISSION_KILL_GHOST;

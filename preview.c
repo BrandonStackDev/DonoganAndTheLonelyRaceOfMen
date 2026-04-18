@@ -919,7 +919,7 @@ int main(void) {
             {
                 if (!don.isTalking && Machine_TryInteract(don.pos, don.hasWrench) >= 0)
                 {
-                    // placeholder toast / sound / animation trigger
+                    // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";
                     StartTimer(&toastTimer);
                 }
@@ -2885,6 +2885,7 @@ int main(void) {
             //homes
             if (onLoad)
             {
+                int milCnt = 0;
                 rlDisableBackfaceCulling();
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
                 {
@@ -2895,6 +2896,7 @@ int main(void) {
                         WHITE);
                     if (Scenes[i].modelType == MODEL_HOME_WINDMILL)
                     {
+                        if (Scenes[i].active) { milCnt++; }
                         // Inputs we already have
                         float yaw = Scenes[i].yaw;                 // radians (Scene uses radians)
                         float spin = Scenes[i].active ? rotorSpin * DEG2RAD : 0;           // keep your existing rotorSpin but use radians
@@ -2919,6 +2921,12 @@ int main(void) {
                     if (displayBoxes) { DrawBoundingBox(Scenes[i].box, PURPLE); }
                 }
                 rlEnableBackfaceCulling();
+                if (!missions[MISSION_START_ALL_MILLS].complete && milCnt == 11) //number of mills, sorry future self if you come back here.
+                {
+                    missions[MISSION_START_ALL_MILLS].complete = true;
+                    toast = "All Windmills Activated!";
+                    StartTimer(&toastTimer);
+                }
             }
             //plats
             if (onLoad)
