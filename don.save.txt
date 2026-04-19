@@ -1,5 +1,5 @@
 DON_SAVE_V1
-don_pos = 1266.578 327.529 1255.466
+don_pos = 762.724 327.333 2016.835
 don_bow = 0
 don_wrench = 1
 don_unlockedTruck = 1

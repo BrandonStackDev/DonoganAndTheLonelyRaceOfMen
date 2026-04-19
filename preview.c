@@ -657,7 +657,7 @@ int main(void) {
             if (gMachines[mi].active)
             {
                 if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_01) { plats[1].disabled = false; } //castle close by itself, 1st one
-                else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_10) { plats[21].disabled = false; } //by barn
+                else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_10) { plats[21].disabled = false; plats[36].disabled = false; plats[40].disabled = false;} //by barn
             }
         }
         
@@ -955,7 +955,7 @@ int main(void) {
                         }
                         //section to handle enabling platforms that are disabled or other actions, whatever the mill powers
                         if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_01) { plats[1].disabled = false; } //castle close by itself, 1st one
-                        else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_10) { plats[21].disabled = false; } //by barn
+                        else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_10) { plats[21].disabled = false; plats[36].disabled = false;plats[40].disabled = false;} //by barn
                     }
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";

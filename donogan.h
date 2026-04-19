@@ -511,6 +511,11 @@ typedef struct {
 
     //has things?
     bool unlockedTruck;
+
+    // moving-platform glue
+    bool jumpPressedEdge;   // set each frame from crossPressed
+    bool gluedToPlatform;   // true while mover glue owns Donny
+    int  gluedPlatId;       // plats[] index, -1 when none
 } Donogan;
 
 // Assets (adjust if needed)
@@ -595,6 +600,7 @@ static inline void DonSnapToGround(Donogan* d) {
     d->pos.y = d->groundY - d->firstBB.min.y * d->scale; // place feet exactly on ground
     d->velY = 0.0f;
     d->onGround = true;
+    d->box = UpdateBoundingBox(d->origBB,d->pos);
 }
 //proc anim
 static inline float StepBlend01(float cur, float target, float rate, float dt, InterpolateFunc f)
@@ -1709,6 +1715,10 @@ static Donogan InitDonogan(void)
     d.hitTimer = CreateTimer(2.4f);
     d.drawColor = WHITE;
 
+    d.gluedToPlatform = false;
+    d.gluedPlatId = -1;
+    d.jumpPressedEdge = false;
+
     d.maxHealth = 100;
     d.health = 100;
     d.mana = 100;
@@ -1973,6 +1983,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         // Edge for X (jump)
         bool crossPressed = (cross && !d->prevCross);
         d->prevCross = cross;
+        d->jumpPressedEdge = crossPressed;
         bool circlePressed = (circle && !d->prevCircle);
         d->prevCircle = circle;
 

@@ -240,10 +240,12 @@ void InitItems()
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 2170, 702, 950 }, INV_BOOK, 1); //castle
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 2688.86, 330.53, 4529.79 }, INV_BOOK, 1);//temple on start island
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { -2238.10, 336.00, 3441.12 }, INV_BOOK, 1);//greek white temple
+    map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 585.12, 422, 1874.69 }, INV_BOOK, 1); //plats near barn/windmill
     //book of shadows
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2126.62, 545.88, 834.43 }, INV_EVIL_BOOK, 1); //castle
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2711.45, 362.51, 4524.31 }, INV_EVIL_BOOK, 1); //temple on start island
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -2243.00, 336.00, 3468.78 }, INV_EVIL_BOOK, 1); //greek white temple
+    map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 41.14, 906, 1715.81 }, INV_EVIL_BOOK, 1); //plats near barn/windmill
 }
 
 #endif // ITEMS_H

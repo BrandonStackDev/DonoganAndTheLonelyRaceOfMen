@@ -45,6 +45,7 @@ typedef struct {
     Timer   t_wait;         // pause between trips
     bool clover; // do we need to stay exactly in sync
     int boundTo [3];
+    BoundingBox glue;
 } Mover;
 
 // Main platform object
@@ -119,6 +120,7 @@ static inline Model ModelFromPlatformDims(Vector3 dim, Texture2D texture)
 static inline Platform Platform_MakeStill(Vector3 pos, Vector3 dim, Texture2D tex, Color color)
 {
     Platform p = { 0 };
+    p.disabled = false;
     p.type = PLATFORM_STILL;
     p.pos = pos; p.dim = dim; p.color = color; p.tex = tex;
     p.origBox = BoxFromPlatformProps((Vector3) { 0, 0, 0 }, dim);
@@ -127,7 +129,7 @@ static inline Platform Platform_MakeStill(Vector3 pos, Vector3 dim, Texture2D te
     return p;
 }
 
-static inline Mover Mover_Make(Vector3 posA, Vector3 posB, float speed)
+static inline Mover Mover_Make(Vector3 posA, Vector3 posB, float speed, BoundingBox world)
 {
     Vector3 d = Vector3Subtract(posB, posA);
     float L = Vector3Length(d); if (L < 1e-6f) L = 1.0f;
@@ -137,23 +139,28 @@ static inline Mover Mover_Make(Vector3 posA, Vector3 posB, float speed)
     m.state = MOVER_FWD; m.posA = posA; m.posB = posB;
     m.dir = Vector3Scale(d, 1.0f / L); m.oldPos = posA; m.speed = fmaxf(speed, 0.0f);
     m.justSnapped = false; m.t_wait = CreateTimer(PLATFORM_WAIT_SEC); StartTimer(&m.t_wait); // start with a tiny settle if you want
+    m.glue = world;
+    m.glue.min.y -= 0.3;
+    m.glue.max.y += 1;
     return m;
 }
 
 static inline Platform Platform_MakeMover(Vector3 posA, Vector3 posB, Vector3 dim, float speed, Texture2D tex, Color color)
 {
     Platform p = { 0 };
+    p.disabled = false;
     p.type = PLATFORM_MOVER; p.pos = posA; p.dim = dim; p.color = color; p.tex = tex;
     p.origBox = BoxFromPlatformProps((Vector3) { 0, 0, 0 }, dim);
     p.box = UpdateBoundingBox(p.origBox, posA);
     p.cubeModel = ModelFromPlatformDims(dim, tex);
-    p.mover = Mover_Make(posA, posB, speed);
+    p.mover = Mover_Make(posA, posB, speed, p.box);
     return p;
 }
 
 static inline Platform Platform_MakeFaller(Vector3 pos, Vector3 dim, Texture2D tex, Color color)
 {
     Platform p = Platform_MakeStill(pos, dim, tex, color);
+    p.disabled = false;
     p.type = PLATFORM_FALLER;
     p.t_fallDelay = CreateTimer(PLATFORM_FALL_DELAY_SEC);
     p.t_fellDelay = CreateTimer(30);
@@ -220,6 +227,9 @@ static inline void Platform_UpdateMover( Platform* p, float dt, Platform* all)
 
     // refresh world box
     p->box = UpdateBoundingBox(p->origBox, p->pos);
+    p->mover.glue = UpdateBoundingBox(p->origBox, p->pos);
+    p->mover.glue.min.y -= 0.3f;
+    p->mover.glue.max.y += 1.0f;
 }
 
 static inline void Platform_UpdateFaller(Platform* p, float dt)
@@ -279,47 +289,165 @@ static inline void Platform_Update(Platform* p, float dt, Platform* all)
 //    return Overlap1D(d->outerBox.min.x, d->outerBox.max.x, p->box.min.x - skin, p->box.max.x + skin) &&
 //        Overlap1D(d->outerBox.min.z, d->outerBox.max.z, p->box.min.z - skin, p->box.max.z + skin);
 //}
+static inline bool Overlap1D(float a0, float a1, float b0, float b1)
+{
+    return (a1 >= b0) && (b1 >= a0);
+}
 
+static inline bool Platform_HasTopXZOverlap(const Platform* p, const Donogan* d)
+{
+    const float skin = 0.10f;
+    return
+        Overlap1D(d->outerBox.min.x, d->outerBox.max.x, p->box.min.x - skin, p->box.max.x + skin) &&
+        Overlap1D(d->outerBox.min.z, d->outerBox.max.z, p->box.min.z - skin, p->box.max.z + skin);
+}
 //cool name, no idea what it does...
 static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Platform* all)
 {
     if (!p || !d) return;
-    if (p->disabled) { return; }
-    if (HasTimerElapsed(&p->t_fellDelay))
+    if (p->disabled) return;
+    //if (Vector3Distance(p->pos, d->pos) > 100) { return; } //chatGPT says this is evil
+
+    int platId = (int)(p - all);
+
+    if (p->type == PLATFORM_FALLER && HasTimerElapsed(&p->t_fellDelay))
     {
-        ResetTimer(&p->t_fallDelay);//need this one too
+        ResetTimer(&p->t_fallDelay);
         ResetTimer(&p->t_fellDelay);
         p->pos = p->origPos;
         p->falling = false;
     }
 
-    // Update first so p->box and mover deltas are valid
+    // Update first so mover delta + glue are current
     Platform_Update(p, dt, all);
 
-    // Fast reject: AABB test against full box
-    if (!CheckCollisionBoxes(d->outerBox, p->box)) return;
-
-    // Consider only landings from above (feet cross the top plane)
     const float topY = p->box.max.y;
+    //GLUE
+    if (d->gluedToPlatform && d->gluedPlatId == platId) //keep him captured by glue until jump or faller fall?.
+    {
+        // Jump explicitly releases the glue lock
+        if (d->jumpPressedEdge && (d->state == DONOGAN_STATE_JUMPING || d->state == DONOGAN_STATE_JUMP_START))
+        {
+            d->gluedToPlatform = false;
+            d->gluedPlatId = -1;
+            return;
+        }
+    }
+    // -----------------------------------------------------------------
+    // MOVER GLUE MODE:
+    // If this mover already owns Donny, 
+    // -----------------------------------------------------------------
+    if (p->type == PLATFORM_MOVER &&
+        d->gluedToPlatform &&
+        d->gluedPlatId == platId)
+    {
+        // If still inside glue, carry him no matter what his normal ground logic did
+        if (CheckCollisionBoxes(d->outerBox, p->mover.glue))
+        {
+            Vector3 delta = Vector3Subtract(p->pos, p->mover.oldPos);
+            d->pos = Vector3Add(d->pos, delta);
+
+            d->groundY = topY;
+            d->velY = 0.0f;
+            d->onGround = true;
+            DonSnapToGround(d);
+            return;
+        }
+        else
+        {
+            // Lost the glue volume somehow: release ownership
+            d->gluedToPlatform = false;
+            d->gluedPlatId = -1;
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // Normal landing test
+    // -----------------------------------------------------------------
+    if (!CheckCollisionBoxes(d->outerBox, p->box)) 
+    { 
+        d->gluedToPlatform = false;
+        d->gluedPlatId = -1;
+        return; 
+    }
 
     // LAND: set Don’s ground to the platform top and snap.
-    d->groundY = topY;       // DonSnapToGround uses groundY as feet plane
+    d->groundY = topY;
+    d->velY = 0.0f;
+    d->onGround = true;
     DonSnapToGround(d);
 
     // If it’s a faller, arm the delay timer once we step on it
-    if (p->type == PLATFORM_FALLER && !p->falling) {
+    if (p->type == PLATFORM_FALLER && !p->falling)
+    {
         if (!p->t_fallDelay.running) { StartTimer(&p->t_fallDelay); }
         else if (HasTimerElapsed(&p->t_fallDelay)) { p->falling = true; p->vy = 0.0f; }
     }
 
-    // If it’s a mover, carry Don by the platform delta this frame
-    if (p->type == PLATFORM_MOVER) {
+    // If it’s a mover, carry Don by the platform delta and claim glue ownership
+    if (p->type == PLATFORM_MOVER)
+    {
         Vector3 delta = Vector3Subtract(p->pos, p->mover.oldPos);
-        d->pos = Vector3Add(d->pos, (Vector3) { delta.x, delta.y, delta.z });
-        // keep feet stuck to the top after vertical moves
-        d->groundY = topY; DonSnapToGround(d);
+        d->pos = Vector3Add(d->pos, delta);
+
+        
+        d->velY = 0.0f;
+        d->onGround = true;
+        DonSnapToGround(d);
+        d->gluedToPlatform = true;
+        d->gluedPlatId = platId;
+        return;
     }
+
+    if (CheckCollisionBoxes(d->outerBox, p->box))
+    {
+        d->gluedToPlatform = true;
+        d->gluedPlatId = platId;
+        d->velY = 0.0f;
+        d->onGround = true;
+        d->groundY = topY;
+    }
+    
 }
+//static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Platform* all)
+//{
+//    if (!p || !d) return;
+//    if (p->disabled) { return; }
+//    if (HasTimerElapsed(&p->t_fellDelay))
+//    {
+//        ResetTimer(&p->t_fallDelay);//need this one too
+//        ResetTimer(&p->t_fellDelay);
+//        p->pos = p->origPos;
+//        p->falling = false;
+//    }
+//
+//    // Update first so p->box and mover deltas are valid
+//    Platform_Update(p, dt, all);
+//
+//    // Fast reject: AABB test against full box
+//    if (!CheckCollisionBoxes(d->outerBox, p->box)) return;
+//
+//    // Consider only landings from above (feet cross the top plane)
+//    const float topY = p->box.max.y;
+//
+//    // LAND: set Don’s ground to the platform top and snap.
+//    d->groundY = topY;       // DonSnapToGround uses groundY as feet plane
+//    DonSnapToGround(d);
+//
+//    // If it’s a faller, arm the delay timer once we step on it
+//    if (p->type == PLATFORM_FALLER && !p->falling) {
+//        if (!p->t_fallDelay.running) { StartTimer(&p->t_fallDelay); }
+//        else if (HasTimerElapsed(&p->t_fallDelay)) { p->falling = true; p->vy = 0.0f; }
+//    }
+//
+//    // If it’s a mover, carry Don by the platform delta this frame
+//    if (p->type == PLATFORM_MOVER) {
+//        Vector3 delta = Vector3Subtract(p->pos, p->mover.oldPos);
+//        d->pos = Vector3Add(d->pos, (Vector3) { delta.x, delta.y, delta.z });
+//        // keep feet stuck to the top after vertical moves
+//        d->groundY = topY; DonSnapToGround(d);
+//    }
+//}
 
 // ------------------------------------------------------------
 // Draw (optional helpers)
@@ -398,9 +526,9 @@ void InitPlats()
     plats[24] = Platform_MakeStill((Vector3) { 688, 378, 1964 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[25] = Platform_MakeMover((Vector3) { 670, 384, 1940 }, (Vector3) { 670, 404, 1940 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
     plats[26] = Platform_MakeStill((Vector3) { 650, 398, 1916 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[27] = Platform_MakeStill((Vector3) { 630, 404, 1892 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[28] = Platform_MakeStill((Vector3) { 610, 412, 1868 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-
+    plats[27] = Platform_MakeMover((Vector3) { 630, 405, 1892 }, (Vector3) { 630, 435, 1892 }, (Vector3) { 8, 2, 8 }, 5, tex_plat, WHITE); //this guy is trouble?
+    plats[28] = Platform_MakeMover((Vector3) { 610, 100, 1868 }, (Vector3) { 590, 120, 1840 }, (Vector3) { 6, 1, 6 }, 4, tex_plat, WHITE); //this guy is trouble, but why, oh well, made a mover?
+    plats[28].disabled = true;
     // clover of death 1
     plats[29] = Platform_MakeMover((Vector3) { 585, 420, 1835 }, (Vector3) { 585, 420, 1875 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
     plats[30] = Platform_MakeMover((Vector3) { 585, 420, 1875 }, (Vector3) { 625, 420, 1875 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
@@ -417,12 +545,14 @@ void InitPlats()
     plats[34] = Platform_MakeStill((Vector3) { 545, 436, 1786 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[35] = Platform_MakeMover((Vector3) { 525, 442, 1768 }, (Vector3) { 525, 455, 1768 }, (Vector3) { 6, 1, 6 }, 6.0f, tex_plat, WHITE);
     plats[36] = Platform_MakeMover((Vector3) { 511, 450, 1755 }, (Vector3) { 485, 486, 1751 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[36].disabled = true;
 
     // path from second area to third area - tighter jumps
     plats[37] = Platform_MakeStill((Vector3) { 474, 486, 1748 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[38] = Platform_MakeMover((Vector3) { 468, 486, 1742 }, (Vector3) { 410, 580, 1742 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
     plats[39] = Platform_MakeStill((Vector3) { 396, 576, 1736 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[40] = Platform_MakeMover((Vector3) { 390, 574, 1730 }, (Vector3) { 320, 648, 1728 }, (Vector3) { 6, 1, 6 }, 6.0f, tex_plat, WHITE);
+    plats[40].disabled = true;
 
     // clover of death 2
     plats[41] = Platform_MakeMover((Vector3) { 314, 648, 1722 }, (Vector3) { 314, 648, 1762 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
