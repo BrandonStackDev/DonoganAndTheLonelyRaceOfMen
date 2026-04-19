@@ -68,6 +68,7 @@ typedef struct {
     Timer   t_fellDelay;    // delay before falling once stepped on
     bool    falling;        // currently falling?
     float   vy;             // vertical velocity when falling
+    bool disabled;
 
 } Platform;
 
@@ -283,7 +284,7 @@ static inline void Platform_Update(Platform* p, float dt, Platform* all)
 static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Platform* all)
 {
     if (!p || !d) return;
-
+    if (p->disabled) { return; }
     if (HasTimerElapsed(&p->t_fellDelay))
     {
         ResetTimer(&p->t_fallDelay);//need this one too
@@ -341,11 +342,13 @@ void InitPlats()
 {
     Texture tex_plat = LoadMyTexture("textures/wood2.png");
     Texture tex_fall = LoadMyTexture("textures/wood1.png");
+    ////////////////////////////////////////CASTLE SECTION////////////////////////////////////////////////////////////////////////////////
     //testing 3022.00f, 322.00f, 4042.42f
     //plats[0] = Platform_MakeStill((Vector3) { 3022, 319, 4042 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     //plats[1] = Platform_MakeFaller((Vector3) { 3032, 319, 4052 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
     plats[0] = Platform_MakeMover((Vector3) { 2408, 509, 936 }, (Vector3) { 2408, 521, 936 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
     plats[1] = Platform_MakeMover((Vector3) { 2190, 525, 605 }, (Vector3) { 2191, 545, 604 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
+    plats[1].disabled = true;
     plats[2] = Platform_MakeMover((Vector3) { 2200, 545, 605 }, (Vector3) { 2275, 545, 604 }, (Vector3) { 6, 1, 6 }, 4.0f, tex_plat, WHITE);
     plats[3] = Platform_MakeFaller((Vector3) { 2250, 545, 615 }, (Vector3) { 6, 1, 6 }, tex_fall, WHITE);
     plats[4] = Platform_MakeStill((Vector3) { 2255, 545, 625 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
@@ -378,6 +381,7 @@ void InitPlats()
     plats[20] = Platform_MakeMover((Vector3) { 2170, 590, 950 }, (Vector3) { 2170, 700, 950 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
     //plats[21] = Platform_MakeMover((Vector3) { 2170, 590, 960 }, (Vector3) { 2100, 700, 960 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
     //plats[22] = Platform_MakeMover((Vector3) { 2110, 700, 960 }, (Vector3) { 2170, 800, 950 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 #endif // PLATFORM_H

@@ -944,6 +944,8 @@ int main(void) {
                         {
                             don.yawY = atan2f(toMachine.x, toMachine.z);
                         }
+                        //section to handle enabling platforms that are disabled or other actions, whatever the mill powers
+                        if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_01) { plats[1].disabled = false; }
                     }
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";
@@ -2485,7 +2487,7 @@ int main(void) {
         {
             for (int i = 0; i < NUM_PLATS; i++)
             {
-                if (Vector3Distance(plats[i].pos, don.pos) > 600) { continue; }
+                if (Vector3Distance(plats[i].pos, don.pos) > 200) { continue; }
                 Platform_CollideAndRide(&plats[i], &don, dt, plats);
             }
         }
