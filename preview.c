@@ -2809,6 +2809,46 @@ int main(void) {
                     /*don.bowModel.transform = finalM;
                     DrawModel(don.bowModel, (Vector3) { 0 }, 1.0f, WHITE);*/
                 }
+
+                // wrench stuff
+                if (don.hasWrench && don.curAnimId == DONOGAN_ANIM_PROC_MACHINE_TURN)
+                {
+                    // hard-coded wrench placement/tuning
+                    Vector3 wrenchOffset = { -0.67f, 3.33f, 1.2f };
+                    Vector3 wrenchEulerDeg = { 90.0f, 0.0f, 180.0f };
+                    float wrenchScale = 0.25f;   // start big so we can SEE it first
+
+                    // local wrench rotation from hard-coded euler
+                    Quaternion qLocal = QuaternionFromEuler(
+                        DEG2RAD * wrenchEulerDeg.x,
+                        DEG2RAD * wrenchEulerDeg.y,
+                        DEG2RAD * wrenchEulerDeg.z
+                    );
+                    Matrix Rlocal = QuaternionToMatrix(QuaternionNormalize(qLocal));
+
+                    // local wrench offset
+                    Matrix Toffset = MatrixTranslate(
+                        wrenchOffset.x,
+                        wrenchOffset.y,
+                        wrenchOffset.z
+                    );
+
+                    // same style as bow
+                    Matrix Rchar = don.model.transform;
+                    Matrix Schar = MatrixScale(don.scale, don.scale, don.scale);
+                    Matrix Swrench = MatrixScale(wrenchScale, wrenchScale, wrenchScale);
+                    Matrix Tchar = MatrixTranslate(don.pos.x, don.pos.y, don.pos.z);
+
+                    Matrix finalM = MatrixMultiply(
+                        MatrixMultiply(Swrench, Schar),
+                        MatrixMultiply(
+                            MatrixMultiply(Rlocal, Toffset),
+                            MatrixMultiply(Rchar, Tchar)
+                        )
+                    );
+
+                    DrawMesh(don.wrenchModel.meshes[0], don.wrenchModel.materials[0], finalM);
+                }
                 DonDrawArrows(&don);
                 DrawBalls(camera, ball, lightningBall);
                 DrawLasers();

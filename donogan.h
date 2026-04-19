@@ -937,10 +937,14 @@ static void DonInitMachineTurnKeyframeGroups(Donogan* d)
 {
     const DonBone BONES[] = {
         DON_BONE_DEF_SPINE003,
+
         DON_BONE_DEF_SHOULDER_R,
         DON_BONE_DEF_UPPER_ARM_R,
         DON_BONE_DEF_FOREARM_R,
-        DON_BONE_DEF_HAND_R
+        DON_BONE_DEF_HAND_R,
+
+        DON_BONE_DEF_SHOULDER_L,
+        DON_BONE_DEF_UPPER_ARM_L
     };
     const int NUM_BONES = (int)(sizeof(BONES) / sizeof(BONES[0]));
 
@@ -951,37 +955,49 @@ static void DonInitMachineTurnKeyframeGroups(Donogan* d)
     g->curKey = 0;
 
     KfMakeZeroKey(&g->keyFrames[0], 0.08f, BONES, NUM_BONES);
-    KfMakeZeroKey(&g->keyFrames[1], 0.08f, BONES, NUM_BONES);
-    KfMakeZeroKey(&g->keyFrames[2], 0.08f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[1], 0.18f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[2], 0.12f, BONES, NUM_BONES);
     KfMakeZeroKey(&g->keyFrames[3], 0.08f, BONES, NUM_BONES);
 
-    // key 0 = arm reaches out / setup
-    g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 10, 0);      // spine003
-    g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 18);      // shoulderR
-    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(20, 10, 78);    // upper_armR
-    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(10, 0, 25);     // forearmR
-    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(0, 0, 10);      // handR
+    // key 0 = arm reaches across body / setup
+    // key 0 = arm reaches across body / setup
+    // key 0 = arm out at side, forearm bent inward / setup
+    // key 0 = arm at side, forearm slightly across middle / setup
+    // key 0 = arm down and slightly in front / setup
+    g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, 0);        // spine003 tiny turn
+    g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 0);        // shoulderR neutral (lower arm)
+    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(76, 0, 0);      // upper_armR forward (NOT side)
+    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 35, 0);       // forearm across middle //ads the kink, is there a way around it?
+    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(0, 22, 0);       // hand follows
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 0);        //lfeft arm stuff
+    g->keyFrames[0].kfBones[6].rot = QuatXYZDeg(0, 0, -80);
 
     // key 1 = twist A
-    g->keyFrames[1].kfBones[0].rot = QuatXYZDeg(0, 10, 0);
-    g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(0, 0, 18);
-    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(20, 10, 78);
-    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(10, 0, 120);    // strong forearm twist
-    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(0, 0, 60);      // hand follows
+    g->keyFrames[1].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(78, 0, 0);      // keep forward placement
+    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(0, 35, 0);       ////ads the kink, is there a way around it?
+    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(0, 32, 0);
+    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, 0);        //lfeft arm stuff
+    g->keyFrames[1].kfBones[6].rot = QuatXYZDeg(0, 0, -80);
 
-    // key 2 = twist B (same reach, opposite-ish twist)
-    g->keyFrames[2].kfBones[0].rot = QuatXYZDeg(0, 10, 0);
-    g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(0, 0, 18);
-    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(20, 10, 78);
-    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(10, 0, -120);
-    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(0, 0, -60);
+    // key 2 = twist B
+    g->keyFrames[2].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(80, 0, 0);
+    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(0, 35, 0);       ////ads the kink, is there a way around it?
+    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(0, 12, 0);
+    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, 0);        //lfeft arm stuff
+    g->keyFrames[2].kfBones[6].rot = QuatXYZDeg(0, 0, -80);
 
-    // key 3 = settle / end still reaching
-    g->keyFrames[3].kfBones[0].rot = QuatXYZDeg(0, 10, 0);
-    g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(0, 0, 18);
-    g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(20, 10, 78);
-    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(10, 0, 20);
-    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(0, 0, 8);
+    // key 3 = settle
+    g->keyFrames[3].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(78, 0, 0);
+    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(0, 35, 0); //ads the kink, is there a way around it?
+    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(0, 20, 0);
+    g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);        //lfeft arm stuff
+    g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(0, 0, -80);
 }
 
 // Choose the active keyframe group based on current proc anim
@@ -1324,7 +1340,7 @@ static void DonApplyProcFrame(Donogan* d)
     case DONOGAN_ANIM_PROC_MACHINE_TURN:
     {
         // 0.48 sec total: setup + three back/forth twists + settle
-        const float phase = 0.06f;
+        const float phase = 0.16f;
         float t = d->animTime;
 
         if (t < phase) { G->curKey = 0; } // setup
