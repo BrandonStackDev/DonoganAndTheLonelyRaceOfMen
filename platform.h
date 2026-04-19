@@ -366,8 +366,11 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
     // -----------------------------------------------------------------
     if (!CheckCollisionBoxes(d->outerBox, p->box)) 
     { 
-        d->gluedToPlatform = false;
-        d->gluedPlatId = -1;
+        if (d->gluedPlatId == platId)//key
+        {
+            d->gluedToPlatform = false;
+            d->gluedPlatId = -1;
+        }
         return; 
     }
 

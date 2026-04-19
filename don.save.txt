@@ -1,5 +1,5 @@
 DON_SAVE_V1
-don_pos = 762.724 327.333 2016.835
+don_pos = 586.976 420.500 1875.522
 don_bow = 0
 don_wrench = 1
 don_unlockedTruck = 1
@@ -8,10 +8,10 @@ don_mana   = 100
 don_starthealth = 100
 don_startmana   = 100
 don_level  = 2
-don_xp     = 250
+don_xp     = 252
 invY = 0
 invX = 0
-musicVol = 1.0000
+musicVol = 0.0000
 soundVol = 1.0000
 difficulty = 1
 --FIREPLACES-BEGIN--
@@ -48,16 +48,16 @@ MISSION[8] = 0
 ITEM[0] = 0
 ITEM[1] = 0
 ITEM[2] = 0
-ITEM[3] = 0
+ITEM[3] = 1
 ITEM[4] = 0
 ITEM[5] = 0
 --ITEMS-END--
 --INV-BEGIN--
 INV[0] = 0
-INV[1] = 1
+INV[1] = 0
 INV[2] = 0
 INV[3] = 0
 INV[4] = 0
-INV[5] = 0
+INV[5] = 1
 INV[6] = 0
 --INV-END--

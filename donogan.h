@@ -2483,7 +2483,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     break;
                 }
                 // --- Steep-slope check: swap to falling + start sliding ---
-                if(onLoad)
+                if(onLoad && !d->gluedToPlatform && d->onGround)
                 {
                     // --- Steep-slope check ---
                     Vector3 n = d->groundNormal;
@@ -2556,7 +2556,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         else d->pos.y -= drop * Clampf(d->slopeFollowRate * dt, 0.0f, 1.0f);
                         d->onGround = true;
                     }
-                    else {
+                    else if(!d->gluedToPlatform) {
                         // big cliff: go airborne
                         d->onGround = false;
                         d->velY = 0.0f;
