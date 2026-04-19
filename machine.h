@@ -293,13 +293,8 @@ static inline void Machine_Update(float dt, Donogan * d, Vector3 * truckPos)
     }
 }
 
-static inline int Machine_FindInteractable(Vector3 playerPos, float maxDistance, bool requireWrench)
+static inline int Machine_FindInteractable(Vector3 playerPos, float maxDistance)
 {
-    if (requireWrench == false)
-    {
-        // allowed
-    }
-
     int best = -1;
     float bestD = maxDistance;
 
@@ -325,7 +320,7 @@ static inline int Machine_TryInteract(Donogan * d, Vector3 playerPos, bool hasWr
 {
     if (!hasWrench) return -1;
 
-    int idx = Machine_FindInteractable(playerPos, MACHINE_INTERACT_DISTANCE, true);
+    int idx = Machine_FindInteractable(playerPos, MACHINE_INTERACT_DISTANCE);
     if (idx < 0) return -1;
 
     Machine* m = &gMachines[idx];

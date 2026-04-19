@@ -934,6 +934,17 @@ int main(void) {
             {
                 if (!don.isTalking && Machine_TryInteract(&don, don.pos, don.hasWrench) >= 0)
                 {
+                    int mi = Machine_FindInteractable(don.pos, MACHINE_INTERACT_DISTANCE);
+                    if (mi >= 0)
+                    {
+                        Vector3 toMachine = Vector3Subtract(gMachines[mi].pos, don.pos);
+                        toMachine.y = 0.0f;
+
+                        if (Vector3LengthSqr(toMachine) > 0.0001f)
+                        {
+                            don.yawY = atan2f(toMachine.x, toMachine.z);
+                        }
+                    }
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";
                     StartTimer(&toastTimer);
