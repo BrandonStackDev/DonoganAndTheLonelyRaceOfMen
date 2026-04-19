@@ -420,9 +420,9 @@ void InitPlats()
 
     // path from second area to third area - tighter jumps
     plats[37] = Platform_MakeStill((Vector3) { 474, 486, 1748 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[38] = Platform_MakeMover((Vector3) { 436, 530, 1742 }, (Vector3) { 436, 560, 1742 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    plats[38] = Platform_MakeMover((Vector3) { 468, 486, 1742 }, (Vector3) { 410, 580, 1742 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
     plats[39] = Platform_MakeStill((Vector3) { 396, 576, 1736 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[40] = Platform_MakeMover((Vector3) { 356, 612, 1730 }, (Vector3) { 320, 648, 1728 }, (Vector3) { 6, 1, 6 }, 6.0f, tex_plat, WHITE);
+    plats[40] = Platform_MakeMover((Vector3) { 390, 574, 1730 }, (Vector3) { 320, 648, 1728 }, (Vector3) { 6, 1, 6 }, 6.0f, tex_plat, WHITE);
 
     // clover of death 2
     plats[41] = Platform_MakeMover((Vector3) { 314, 648, 1722 }, (Vector3) { 314, 648, 1762 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
@@ -435,12 +435,13 @@ void InitPlats()
     plats[43].mover.boundTo[0] = 44; plats[43].mover.boundTo[1] = 41; plats[43].mover.boundTo[2] = 42;
     plats[44].mover.boundTo[0] = 41; plats[44].mover.boundTo[1] = 42; plats[44].mover.boundTo[2] = 43;
 
-    // approach peak
-    plats[45] = Platform_MakeStill((Vector3) { 274, 684, 1716 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[46] = Platform_MakeStill((Vector3) { 232, 724, 1710 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    // approach peak // approach peak
+    plats[45] = Platform_MakeMover((Vector3) { 274, 684, 1716 }, (Vector3) { 274, 724, 1716 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    plats[46] = Platform_MakeMover((Vector3) { 232, 724, 1710 }, (Vector3) { 232, 764, 1710 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
     plats[47] = Platform_MakeMover((Vector3) { 188, 764, 1704 }, (Vector3) { 188, 804, 1704 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
-    plats[48] = Platform_MakeStill((Vector3) { 142, 816, 1698 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
-    plats[49] = Platform_MakeStill((Vector3) { 96, 868, 1692 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[48] = Platform_MakeMover((Vector3) { 142, 816, 1698 }, (Vector3) { 142, 856, 1698 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    plats[49] = Platform_MakeMover((Vector3) { 96, 864, 1692 }, (Vector3) { 96, 934, 1692 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+
 
     // clover of death 3
     plats[50] = Platform_MakeMover((Vector3) { 42, 904, 1676 }, (Vector3) { 42, 904, 1716 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
