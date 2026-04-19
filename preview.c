@@ -652,6 +652,15 @@ int main(void) {
             gTruckLiftAtFloor = true;
             gTruckLiftHeight = -5.0;
         }
+        for (int mi = 0; mi < MACHINE_COUNT_WINDMILL; mi++)
+        {
+            if (gMachines[mi].active)
+            {
+                if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_01) { plats[1].disabled = false; } //castle close by itself, 1st one
+                else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_10) { plats[21].disabled = false; } //by barn
+            }
+        }
+        
         //detect general missions for completion (the non talking/interaction triggered missions)
         if (onLoad && !missions[MISSION_START_ALL_MILLS].complete)
         {
@@ -945,7 +954,8 @@ int main(void) {
                             don.yawY = atan2f(toMachine.x, toMachine.z);
                         }
                         //section to handle enabling platforms that are disabled or other actions, whatever the mill powers
-                        if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_01) { plats[1].disabled = false; }
+                        if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_01) { plats[1].disabled = false; } //castle close by itself, 1st one
+                        else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_10) { plats[21].disabled = false; } //by barn
                     }
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";

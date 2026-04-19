@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 21
+#define NUM_PLATS 56
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -381,6 +381,81 @@ void InitPlats()
     plats[20] = Platform_MakeMover((Vector3) { 2170, 590, 950 }, (Vector3) { 2170, 700, 950 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
     //plats[21] = Platform_MakeMover((Vector3) { 2170, 590, 960 }, (Vector3) { 2100, 700, 960 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
     //plats[22] = Platform_MakeMover((Vector3) { 2110, 700, 960 }, (Vector3) { 2170, 800, 950 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////NEAR WINDMILL BY BARN///////////////////////////////////////////////////////////////
+    // area anchors:
+    //      742, 323, 2038 -- near windmill by barn
+    //      511, 444, 1755 -- up on the first hill
+    //      -71, 926, 1669 -- near by mt peak
+    // don_pos = 511.75, 444.50, 1756.01 //need to match
+
+    // start lift at the barn
+    plats[21] = Platform_MakeMover((Vector3) { 742, 327, 2038 }, (Vector3) { 742, 360, 2038 }, (Vector3) { 8, 1, 8 }, 12.0f, tex_plat, WHITE);
+    plats[21].disabled = true;
+    // path from first area to second area - tighter jumps
+    plats[22] = Platform_MakeStill((Vector3) { 724, 366, 2012 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[23] = Platform_MakeStill((Vector3) { 706, 372, 1988 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[24] = Platform_MakeStill((Vector3) { 688, 378, 1964 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[25] = Platform_MakeMover((Vector3) { 670, 384, 1940 }, (Vector3) { 670, 404, 1940 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    plats[26] = Platform_MakeStill((Vector3) { 650, 398, 1916 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[27] = Platform_MakeStill((Vector3) { 630, 404, 1892 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[28] = Platform_MakeStill((Vector3) { 610, 412, 1868 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+
+    // clover of death 1
+    plats[29] = Platform_MakeMover((Vector3) { 585, 420, 1835 }, (Vector3) { 585, 420, 1875 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[30] = Platform_MakeMover((Vector3) { 585, 420, 1875 }, (Vector3) { 625, 420, 1875 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[31] = Platform_MakeMover((Vector3) { 625, 420, 1875 }, (Vector3) { 625, 420, 1835 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[32] = Platform_MakeMover((Vector3) { 625, 420, 1835 }, (Vector3) { 585, 420, 1835 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[29].mover.clover = true; plats[30].mover.clover = true; plats[31].mover.clover = true; plats[32].mover.clover = true;
+    plats[29].mover.boundTo[0] = 30; plats[29].mover.boundTo[1] = 31; plats[29].mover.boundTo[2] = 32;
+    plats[30].mover.boundTo[0] = 31; plats[30].mover.boundTo[1] = 32; plats[30].mover.boundTo[2] = 29;
+    plats[31].mover.boundTo[0] = 32; plats[31].mover.boundTo[1] = 29; plats[31].mover.boundTo[2] = 30;
+    plats[32].mover.boundTo[0] = 29; plats[32].mover.boundTo[1] = 30; plats[32].mover.boundTo[2] = 31;
+
+    // approach first hill
+    plats[33] = Platform_MakeStill((Vector3) { 565, 428, 1810 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[34] = Platform_MakeStill((Vector3) { 545, 436, 1786 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[35] = Platform_MakeMover((Vector3) { 525, 442, 1768 }, (Vector3) { 525, 455, 1768 }, (Vector3) { 6, 1, 6 }, 6.0f, tex_plat, WHITE);
+    plats[36] = Platform_MakeMover((Vector3) { 511, 450, 1755 }, (Vector3) { 485, 486, 1751 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+
+    // path from second area to third area - tighter jumps
+    plats[37] = Platform_MakeStill((Vector3) { 474, 486, 1748 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[38] = Platform_MakeMover((Vector3) { 436, 530, 1742 }, (Vector3) { 436, 560, 1742 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    plats[39] = Platform_MakeStill((Vector3) { 396, 576, 1736 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[40] = Platform_MakeMover((Vector3) { 356, 612, 1730 }, (Vector3) { 320, 648, 1728 }, (Vector3) { 6, 1, 6 }, 6.0f, tex_plat, WHITE);
+
+    // clover of death 2
+    plats[41] = Platform_MakeMover((Vector3) { 314, 648, 1722 }, (Vector3) { 314, 648, 1762 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[42] = Platform_MakeMover((Vector3) { 314, 648, 1762 }, (Vector3) { 354, 648, 1762 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[43] = Platform_MakeMover((Vector3) { 354, 648, 1762 }, (Vector3) { 354, 648, 1722 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[44] = Platform_MakeMover((Vector3) { 354, 648, 1722 }, (Vector3) { 314, 648, 1722 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[41].mover.clover = true; plats[42].mover.clover = true; plats[43].mover.clover = true; plats[44].mover.clover = true;
+    plats[41].mover.boundTo[0] = 42; plats[41].mover.boundTo[1] = 43; plats[41].mover.boundTo[2] = 44;
+    plats[42].mover.boundTo[0] = 43; plats[42].mover.boundTo[1] = 44; plats[42].mover.boundTo[2] = 41;
+    plats[43].mover.boundTo[0] = 44; plats[43].mover.boundTo[1] = 41; plats[43].mover.boundTo[2] = 42;
+    plats[44].mover.boundTo[0] = 41; plats[44].mover.boundTo[1] = 42; plats[44].mover.boundTo[2] = 43;
+
+    // approach peak
+    plats[45] = Platform_MakeStill((Vector3) { 274, 684, 1716 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[46] = Platform_MakeStill((Vector3) { 232, 724, 1710 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[47] = Platform_MakeMover((Vector3) { 188, 764, 1704 }, (Vector3) { 188, 804, 1704 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    plats[48] = Platform_MakeStill((Vector3) { 142, 816, 1698 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[49] = Platform_MakeStill((Vector3) { 96, 868, 1692 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+
+    // clover of death 3
+    plats[50] = Platform_MakeMover((Vector3) { 42, 904, 1676 }, (Vector3) { 42, 904, 1716 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[51] = Platform_MakeMover((Vector3) { 42, 904, 1716 }, (Vector3) { 82, 904, 1716 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[52] = Platform_MakeMover((Vector3) { 82, 904, 1716 }, (Vector3) { 82, 904, 1676 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[53] = Platform_MakeMover((Vector3) { 82, 904, 1676 }, (Vector3) { 42, 904, 1676 }, (Vector3) { 10, 1, 10 }, 4.0f, tex_plat, WHITE);
+    plats[50].mover.clover = true; plats[51].mover.clover = true; plats[52].mover.clover = true; plats[53].mover.clover = true;
+    plats[50].mover.boundTo[0] = 51; plats[50].mover.boundTo[1] = 52; plats[50].mover.boundTo[2] = 53;
+    plats[51].mover.boundTo[0] = 52; plats[51].mover.boundTo[1] = 53; plats[51].mover.boundTo[2] = 50;
+    plats[52].mover.boundTo[0] = 53; plats[52].mover.boundTo[1] = 50; plats[52].mover.boundTo[2] = 51;
+    plats[53].mover.boundTo[0] = 50; plats[53].mover.boundTo[1] = 51; plats[53].mover.boundTo[2] = 52;
+
+    plats[54] = Platform_MakeStill((Vector3) { -8, 918, 1672 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[55] = Platform_MakeStill((Vector3) { -71, 926, 1669 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
