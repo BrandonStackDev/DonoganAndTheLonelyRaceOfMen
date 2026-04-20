@@ -3459,6 +3459,8 @@ int main(void) {
             float normalizedY = (camera.position.z + (MAX_WORLD_SIZE/2)) / WORLD_HEIGHT;
             float normalizedTruckX = (truckPosition.x + (MAX_WORLD_SIZE / 2)) / WORLD_WIDTH;
             float normalizedTruckY = (truckPosition.z + (MAX_WORLD_SIZE / 2)) / WORLD_HEIGHT;
+            float normalizedSharkX = (shark.pos.x + (MAX_WORLD_SIZE / 2)) / WORLD_WIDTH;
+            float normalizedSharkY = (shark.pos.z + (MAX_WORLD_SIZE / 2)) / WORLD_HEIGHT;
             //truck marker
             if (!vehicleMode)
             {
@@ -3474,6 +3476,15 @@ int main(void) {
                 dest.y + normalizedY * dest.height
             };
             DrawCircleV(marker, 3, RED);
+            //shark
+            if (don.inWater)
+            {
+                Vector2 markerShark = {
+                dest.x + normalizedSharkX * dest.width,
+                dest.y + normalizedSharkY * dest.height
+                };
+                DrawCircleV(markerShark, 3, PURPLE);
+            }
 
             // Facing triangle (yellow "nose" pointing the player's yaw)
             float local_yaw = donnyMode ? +(yaw + (2.0f * (PI / 2.0f))) : vehicleMode ? truckAngle : -(yaw + (PI / 2.0f)); //
