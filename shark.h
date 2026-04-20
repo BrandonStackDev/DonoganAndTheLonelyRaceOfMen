@@ -8,6 +8,7 @@
 
 #include "texture.h"
 #include "donogan.h"
+#include "core.h"
 
 // =============================
 // CONFIG
@@ -413,7 +414,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
         if (!s->hasEaten)
         {
             s->hasEaten = true;
-
+            PlaySoundVol(sharkGulp);
             if (!d->eatenByShark)
             {
                 d->eatenByShark = true;

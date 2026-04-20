@@ -255,6 +255,7 @@ int main(void) {
     grow = LoadSound("sounds/grow.mp3");
     pick = LoadSound("sounds/pick.mp3");
     wrenchSound = LoadSound("sounds/wrench.mp3");
+    sharkGulp = LoadSound("sounds/shark_gulp.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
