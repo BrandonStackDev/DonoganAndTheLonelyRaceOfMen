@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Map C)
+project(Donogan C)
 set(CMAKE_C_STANDARD 99)
 
 # Where you installed raylib with "cmake --install"
@@ -7,7 +7,7 @@ list(APPEND CMAKE_PREFIX_PATH "C:/raylib")
 find_package(raylib CONFIG REQUIRED)
 
 set(SRC preview.c)
-
+#set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 # Add the resource file on Windows:
 if (WIN32)
   set(APP_RC "${CMAKE_CURRENT_SOURCE_DIR}/res/app.rc")
@@ -43,6 +43,13 @@ foreach(tgt IN ITEMS play)
   target_include_directories(${tgt} PRIVATE "C:/raylib/include")
   # Set stack size to 16 MB (default is ~1 MB)
 endforeach()
+
+if (MSVC)
+    string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+    string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+    string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+endif()
 
 add_custom_command(TARGET play POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory

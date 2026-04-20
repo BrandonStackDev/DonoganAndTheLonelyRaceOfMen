@@ -30,6 +30,7 @@
 #include "texture.h"
 #include "machine.h"
 #include "frustum.h"
+#include "shark.h"
 
 //fairly standard things
 #include <float.h>
@@ -461,7 +462,10 @@ int main(void) {
     float mapZoom = 1.0f;
     Rectangle mapViewport = { SCREEN_WIDTH - GAME_MAP_SIZE - 10, 10, 128, 128 };  // Map position + size
     mapTexture = LoadMyTexture("map/treasure_map.png"); //mapTexture = LoadMyTexture("map/elevation_color_map.png");
-    
+    //shark
+    Shark shark = { 0 };
+    InitShark(&shark, (Vector3) { 2782.0f, 140.0f, -2063.0f }, PLAYER_FLOAT_Y_POSITION);
+    if (!LoadShark(&shark)) return 1;
     //controller and truck and donny
     // //donny boy
     Color targetHitColor = (Color){ 200,220,250,100 };
@@ -2694,6 +2698,7 @@ int main(void) {
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         UpdateApples(dt);
         Machine_Update(dt, &don, &truckPosition);
+        Shark_Update(&shark, &don, dt);
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
@@ -3039,6 +3044,8 @@ int main(void) {
             //whales and fish
             if (onLoad)
             {
+                //shark
+                Shark_Draw(&shark);
                 //whales
                 for (int i = 0; i < numWhales; i++)
                 {
@@ -3578,6 +3585,8 @@ int main(void) {
     quitFileManager = true;
     //unload the machines
     Machine_Unload();
+    //shark
+    FreeShark(&shark);
     //VLDReportLeaks();
     UnloadModel(truck);
     UnloadModel(tire);
