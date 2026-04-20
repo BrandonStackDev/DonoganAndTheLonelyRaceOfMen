@@ -68,6 +68,9 @@ typedef struct {
     BoundingBox box;
     float steerTimer;
 
+    Model leg;
+    Texture legText;
+
 } Shark;
 
 // =============================
@@ -168,6 +171,14 @@ static void InitShark(Shark* s, Vector3 home, float surfaceY)
 
     s->attackSpeed = 64.0f;
     s->steerTimer = 0.0f;
+
+    s->leg= LoadModel("models/leg.obj");
+    s->legText = LoadMyTexture("textures/leg.png");
+
+    if (s->legText.id)
+    {
+        SetMaterialTexture(&s->leg.materials[0], MATERIAL_MAP_ALBEDO, s->legText);
+    }
 }
 
 static bool LoadShark(Shark* s)
@@ -430,21 +441,25 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
 // =============================
 // DRAW
 // =============================
-static void Shark_Draw(Shark* s)
+static void Shark_Draw(Shark* s, Donogan *d)
 {
     DrawModelEx(
         s->model,
         s->pos,
         (Vector3) {
         0, 1, 0
-    },
-        s->yaw,
-        (Vector3) {
-        s->scale, s->scale, s->scale
-    },
+        },
+            s->yaw,
+            (Vector3) {
+            s->scale, s->scale, s->scale
+        },
         WHITE
     );
     //DrawBoundingBox(s->box, RED); //todo: remove
+    if (d->eatenByShark)
+    {
+        DrawModel(s->leg,d->pos,1,WHITE);
+    }
 }
 
 // =============================
@@ -454,6 +469,8 @@ static void FreeShark(Shark* s)
 {
     UnloadModel(s->model);
     UnloadTexture(s->tex);
+    UnloadModel(s->leg);
+    UnloadTexture(s->legText);
 }
 
 #endif

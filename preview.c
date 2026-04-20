@@ -3045,7 +3045,7 @@ int main(void) {
             if (onLoad)
             {
                 //shark
-                Shark_Draw(&shark);
+                Shark_Draw(&shark,&don);
                 //whales
                 for (int i = 0; i < numWhales; i++)
                 {
