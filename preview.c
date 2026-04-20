@@ -3045,8 +3045,6 @@ int main(void) {
             //whales and fish
             if (onLoad)
             {
-                //shark
-                Shark_Draw(&shark,&don);
                 //whales
                 for (int i = 0; i < numWhales; i++)
                 {
@@ -3391,6 +3389,8 @@ int main(void) {
                     DrawBerriesForProp(g);
                 }
                 DrawApples();
+                //shark
+                Shark_Draw(&shark, &don);//trasnparencies in blood
             }
             //DrawGrid(256, 1.0f);
         EndMode3D();

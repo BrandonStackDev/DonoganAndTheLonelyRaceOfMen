@@ -1937,6 +1937,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             d->pos = (Vector3){ 2973.70f, 322.00f, 4042.42f };
             DonSetState(d, DONOGAN_STATE_DEATH);
         }
+        else
+        {
+            freeze = true;
+        }
     }
     if (!freeze)
     {

@@ -71,8 +71,12 @@ typedef struct {
 
     Model leg;
     Texture legText;
-
+    Model bloodModel;
+    Shader bloodShader;
+    int bloodTimeLoc;
+    int bloodVariantLoc;
 } Shark;
+
 
 // =============================
 // HELPERS
@@ -200,6 +204,18 @@ static bool LoadShark(Shark* s)
     Vector3 fwd = (Vector3){ sinf(DEG2RAD * s->yaw), 0.0f, cosf(DEG2RAD * s->yaw) };
     Vector3 nosePos = Vector3Add(s->pos, Vector3Scale(fwd, 10.0f)); // tweak 10.0f to match your shark length
     s->box = UpdateBoundingBox(s->origBox, nosePos);
+
+    s->bloodShader = LoadShader("shaders/120/blood.vs", "shaders/120/blood.fs");
+    s->bloodShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(s->bloodShader, "mvp");
+    s->bloodShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(s->bloodShader, "matModel");
+
+    s->bloodTimeLoc = GetShaderLocation(s->bloodShader, "uTime");
+    s->bloodVariantLoc = GetShaderLocation(s->bloodShader, "uVariant");
+
+    Mesh bloodMesh = GenMeshSphere(0.5f, 20, 20);
+    s->bloodModel = LoadModelFromMesh(bloodMesh);
+    s->bloodModel.materials[0].shader = s->bloodShader;
+    s->bloodModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 180, 20, 20, 170 };
 
     return true;
 }
@@ -508,6 +524,48 @@ static void Shark_Draw(Shark* s, Donogan *d)
         },
             WHITE
         );
+
+        //draw the blood
+        float time = (float)GetTime();
+        SetShaderValue(s->bloodShader, s->bloodTimeLoc, &time, SHADER_UNIFORM_FLOAT);
+
+        Vector3 bloodBase = legPos;
+        bloodBase.y += 0.06f;   // top of the leg, tweak this
+
+        BeginBlendMode(BLEND_ADDITIVE);
+        rlDisableDepthMask();
+
+        for (int i = 0; i < 12; i++)
+        {
+            float fi = (float)i;
+            SetShaderValue(s->bloodShader, s->bloodVariantLoc, &fi, SHADER_UNIFORM_FLOAT);
+
+            float a = time * (0.7f + 0.13f * fi) + fi * 0.8f;
+            float rad = 0.45f + 0.22f * sinf(time * 1.7f + fi * 1.3f);
+
+            Vector3 p = bloodBase;
+            p.x += cosf(a) * (0.25f + 0.05f * fi);
+            p.z += sinf(a) * (0.30f + 0.12f * fi);
+            p.y += 0.15f * fi + sinf(time * 2.2f + fi * 1.9f) * 0.18f;
+
+            float scale = 0.35f + 0.08f * sinf(time * 2.8f + fi);
+
+            DrawModelEx(
+                s->bloodModel,
+                p,
+                (Vector3) {
+                0, 1, 0
+            },
+                fi * 37.0f + time * 30.0f,
+                (Vector3) {
+                scale, scale * 1.25f, scale
+            },
+            (Color) {180, 20, 20, 255}
+            );
+        }
+
+        rlEnableDepthMask();
+        EndBlendMode();
     }
 }
 
@@ -520,6 +578,8 @@ static void FreeShark(Shark* s)
     UnloadTexture(s->tex);
     UnloadModel(s->leg);
     UnloadTexture(s->legText);
+    UnloadModel(s->bloodModel);
+    UnloadShader(s->bloodShader);
 }
 
 #endif
