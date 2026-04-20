@@ -16,7 +16,8 @@
 #define SHARK_SURFACE_CLEARANCE 0.6f
 #define SHARK_BOTTOM_CLEARANCE  1.0f
 
-#define SHARK_EAT_DISTANCE      12.0f
+#define SHARK_EAT_DISTANCE      20.0f
+#define SHARK_ATTACK_DISTANCE   180.0f
 
 // =============================
 // STATE
@@ -24,6 +25,7 @@
 typedef enum {
     SHARK_STATE_WANDER = 0,
     SHARK_STATE_STALK,
+    SHARK_STATE_ATTACK,
     SHARK_STATE_EAT
 } SharkState;
 
@@ -61,6 +63,11 @@ typedef struct {
     bool hasEaten;
     float eatTimer;
 
+    float attackSpeed;
+    BoundingBox origBox;
+    BoundingBox box;
+    float steerTimer;
+
 } Shark;
 
 // =============================
@@ -74,6 +81,10 @@ static float SharkDepthAtXZ(const Shark* s, float x, float z)
 
 static Vector3 SharkPickGoal(const Shark* s)
 {
+    Vector3 best = s->home;
+    bool found = false;
+    float bestScore = -999999.0f;
+
     for (int i = 0; i < 32; i++)
     {
         float r = GetRandomValue(20, (int)s->homeRadius);
@@ -81,7 +92,7 @@ static Vector3 SharkPickGoal(const Shark* s)
 
         Vector3 p = {
             s->home.x + sinf(a) * r,
-            0,
+            0.0f,
             s->home.z + cosf(a) * r
         };
 
@@ -92,14 +103,36 @@ static Vector3 SharkPickGoal(const Shark* s)
 
         float minY = seabed + s->bottomClearance;
         float maxY = s->surfaceY - s->surfaceClearance;
-
         if (maxY <= minY) continue;
 
         p.y = GetRandomValue((int)minY, (int)maxY);
-        return p;
+
+        float distFromHome = Vector3Distance(
+            (Vector3) {
+            p.x, 0, p.z
+        },
+            (Vector3) {
+            s->home.x, 0, s->home.z
+        });
+
+        float score = depth * 2.0f + distFromHome * 0.25f;
+
+        if (!found || score > bestScore)
+        {
+            best = p;
+            bestScore = score;
+            found = true;
+        }
     }
 
-    return s->home;
+    return found ? best : s->home;
+}
+
+static bool Shark_IsWaterDeepEnough(const Shark* s, float x, float z)
+{
+    float seabed = GetTerrainHeightFromMeshXZ(x, z);
+    if (seabed < -9000.0f) return false;
+    return ((s->surfaceY - seabed) >= s->minWaterDepth);
 }
 
 // =============================
@@ -132,6 +165,9 @@ static void InitShark(Shark* s, Vector3 home, float surfaceY)
 
     s->hasEaten = false;
     s->eatTimer = 0.0f;
+
+    s->attackSpeed = 64.0f;
+    s->steerTimer = 0.0f;
 }
 
 static bool LoadShark(Shark* s)
@@ -144,6 +180,9 @@ static bool LoadShark(Shark* s)
         SetMaterialTexture(&s->model.materials[0], MATERIAL_MAP_ALBEDO, s->tex);
     }
 
+    s->origBox = ScaleBoundingBox(GetModelBoundingBox(s->model), 0.8f);
+    s->box = UpdateBoundingBox(s->origBox, s->pos);
+
     return true;
 }
 
@@ -153,15 +192,78 @@ static float SharkAngleWrapDeg(float a)
     while (a < -180.0f) a += 360.0f;
     return a;
 }
+static Vector3 Shark_PickSteerGoalTowardTarget(const Shark* s, Vector3 target)
+{
+    Vector3 toTarget = Vector3Subtract(target, s->pos);
+    toTarget.y = 0.0f;
+
+    if (Vector3Length(toTarget) < 0.01f) return s->pos;
+
+    Vector3 forward = Vector3Normalize(toTarget);
+
+    // probe distance ahead
+    const float probeDist = 36.0f;
+
+    // candidate turn angles in degrees, ordered by preference
+    const float anglesDeg[] = { 0, 20, -20, 40, -40, 65, -65, 90, -90 };
+    const int count = (int)(sizeof(anglesDeg) / sizeof(anglesDeg[0]));
+
+    Vector3 best = s->pos;
+    bool found = false;
+    float bestScore = -999999.0f;
+
+    for (int i = 0; i < count; i++)
+    {
+        float a = DEG2RAD * anglesDeg[i];
+        float cs = cosf(a);
+        float sn = sinf(a);
+
+        Vector3 dir = {
+            forward.x * cs - forward.z * sn,
+            0.0f,
+            forward.x * sn + forward.z * cs
+        };
+
+        Vector3 p = Vector3Add(s->pos, Vector3Scale(dir, probeDist));
+
+        if (!Shark_IsWaterDeepEnough(s, p.x, p.z)) continue;
+
+        // score: prefer directions that still point toward target
+        Vector3 toP = Vector3Subtract(p, s->pos);
+        toP.y = 0.0f;
+        toP = Vector3Normalize(toP);
+
+        float score = Vector3DotProduct(toP, forward);
+
+        if (!found || score > bestScore)
+        {
+            best = p;
+            bestScore = score;
+            found = true;
+        }
+    }
+
+    if (!found)
+    {
+        // no valid steer found: fall back to home
+        return s->home;
+    }
+
+    // choose a legal Y for that X/Z
+    float seabed = GetTerrainHeightFromMeshXZ(best.x, best.z);
+    float minY = seabed + s->bottomClearance;
+    float maxY = s->surfaceY - s->surfaceClearance;
+    best.y = Clamp(s->pos.y, minY, maxY);
+
+    return best;
+}
 // =============================
 // UPDATE
 // =============================
 static void Shark_Update(Shark* s, Donogan* d, float dt)
 {
     s->stateTime += dt;
-
     float seabed = GetTerrainHeightFromMeshXZ(s->pos.x, s->pos.z);
-
     // =============================
     // DEPTH CHECK (XZ restriction)
     // =============================
@@ -202,17 +304,41 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
 
         if (dist > 0.01f)
         {
-            Vector3 fwd = Vector3Normalize(toDon);
-            s->goal = (Vector3){ d->pos.x, s->pos.y, d->pos.z };
+            s->steerTimer += dt;
+            if (s->steerTimer > 0.25f)
+            {
+                //*s->goal = Shark_PickSteerGoalTowardTarget(s, d->pos);
+                s->steerTimer = 0.0f;
+                Vector3 steer = Shark_PickSteerGoalTowardTarget(s, d->pos);
+                if (Vector3Distance(steer, s->home) < 1.0f)
+                {
+                    s->state = SHARK_STATE_WANDER;
+                    s->stateTime = 0.0f;
+                    s->goal = SharkPickGoal(s);
+                }
+                else
+                {
+                    s->goal = steer;
+                }
+            }
             s->speed = s->stalkSpeed;
         }
 
-        if (dist < SHARK_EAT_DISTANCE)
+        if (dist < SHARK_ATTACK_DISTANCE)
         {
-            s->state = SHARK_STATE_EAT;
+            s->state = SHARK_STATE_ATTACK;
             s->stateTime = 0.0f;
-            s->eatTimer = 0.0f;
             s->hasEaten = false;
+
+            // lock a lunge target straight through Donny
+            Vector3 toDon = Vector3Subtract(d->pos, s->pos);
+            toDon.y = 0.0f;
+            if (Vector3Length(toDon) > 0.01f)
+            {
+                Vector3 attackDir = Vector3Normalize(toDon);
+                s->goal = Vector3Add(d->pos, Vector3Scale(attackDir, 28.0f));
+                s->goal.y = d->pos.y;
+            }
         }
 
         if (!canHunt)
@@ -222,10 +348,37 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
             s->goal = SharkPickGoal(s);
         }
     }
+    else if (s->state == SHARK_STATE_ATTACK)
+    {
+        s->speed = s->attackSpeed;
+
+        // keep the lunge mostly flat and direct
+        Vector3 flatToGoal = Vector3Subtract(s->goal, s->pos);
+        flatToGoal.y = 0.0f;
+
+        // update box before testing
+        s->box = UpdateBoundingBox(s->origBox, s->pos);
+
+        // if we hit Donny, eat him
+        if (!d->eatenByShark && CheckCollisionBoxes(s->box, d->outerBox))
+        {
+            s->state = SHARK_STATE_EAT;
+            s->stateTime = 0.0f;
+            s->eatTimer = 0.0f;
+            s->hasEaten = false;
+        }
+        else if (Vector3Length(flatToGoal) < 6.0f || s->stateTime > 1.5f)
+        {
+            // missed the attack, go home / wander again
+            s->state = SHARK_STATE_WANDER;
+            s->stateTime = 0.0f;
+            s->goal = SharkPickGoal(s);
+        }
+    }
     else if (s->state == SHARK_STATE_EAT)
     {
         // stop the shark from trying to chase through Donny
-        s->speed = 0.0f;
+        s->speed = 16.0f;
 
         if (!s->hasEaten)
         {
@@ -271,6 +424,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
     float maxY = s->surfaceY - s->surfaceClearance;
 
     s->pos.y = Clamp(s->pos.y, minY, maxY);
+    s->box = UpdateBoundingBox(s->origBox, s->pos);
 }
 
 // =============================
@@ -290,6 +444,7 @@ static void Shark_Draw(Shark* s)
     },
         WHITE
     );
+    //DrawBoundingBox(s->box, RED); //todo: remove
 }
 
 // =============================
