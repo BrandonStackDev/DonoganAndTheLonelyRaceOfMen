@@ -155,7 +155,7 @@ static void InitShark(Shark* s, Vector3 home, float surfaceY)
     s->speed = 0.0f;
 
     s->wanderSpeed = 3.4f;
-    s->stalkSpeed = 12.4f;
+    s->stalkSpeed = 24.4f;
 
     s->homeRadius = 120.0f;
 
@@ -173,7 +173,7 @@ static void InitShark(Shark* s, Vector3 home, float surfaceY)
     s->hasEaten = false;
     s->eatTimer = 0.0f;
 
-    s->attackSpeed = 64.0f;
+    s->attackSpeed = 80.0f;
     s->steerTimer = 0.0f;
 
     s->leg= LoadModel("models/leg.obj");
@@ -195,8 +195,10 @@ static bool LoadShark(Shark* s)
         SetMaterialTexture(&s->model.materials[0], MATERIAL_MAP_ALBEDO, s->tex);
     }
 
-    s->origBox = ScaleBoundingBox(GetModelBoundingBox(s->model), 0.8f);
-    s->box = UpdateBoundingBox(s->origBox, s->pos);
+    s->origBox = (BoundingBox){ (Vector3) {-6,-6,-6}, (Vector3) {6,6,6} };//ScaleBoundingBox(GetModelBoundingBox(s->model), 0.8f);
+    Vector3 fwd = (Vector3){ sinf(DEG2RAD * s->yaw), 0.0f, cosf(DEG2RAD * s->yaw) };
+    Vector3 nosePos = Vector3Add(s->pos, Vector3Scale(fwd, 10.0f)); // tweak 10.0f to match your shark length
+    s->box = UpdateBoundingBox(s->origBox, nosePos);
 
     return true;
 }
@@ -346,12 +348,23 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
             s->hasEaten = false;
 
             // lock a lunge target straight through Donny
-            Vector3 toDon = Vector3Subtract(d->pos, s->pos);
+            /*Vector3 toDon = Vector3Subtract(d->pos, s->pos);
             toDon.y = 0.0f;
             if (Vector3Length(toDon) > 0.01f)
             {
                 Vector3 attackDir = Vector3Normalize(toDon);
                 s->goal = Vector3Add(d->pos, Vector3Scale(attackDir, 28.0f));
+                s->goal.y = d->pos.y;
+            }*/
+            float r = s->yaw;
+            Vector3 fwd = (Vector3){ sinf(r), 0.0f, cosf(r) };
+            Vector3 toDon = Vector3Subtract(d->pos, Vector3Add(s->pos, Vector3Scale(fwd, 8)));
+            toDon.y = 0.0f;
+
+            if (Vector3Length(toDon) > 0.01f)
+            {
+                Vector3 attackDir = Vector3Normalize(toDon);
+                s->goal = Vector3Add(d->pos, Vector3Scale(attackDir, 12.0f));
                 s->goal.y = d->pos.y;
             }
         }
@@ -372,7 +385,9 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
         flatToGoal.y = 0.0f;
 
         // update box before testing
-        s->box = UpdateBoundingBox(s->origBox, s->pos);
+        Vector3 fwd = (Vector3){ sinf(DEG2RAD * s->yaw), 0.0f, cosf(DEG2RAD * s->yaw) };
+        Vector3 nosePos = Vector3Add(s->pos, Vector3Scale(fwd, 10.0f)); // tweak 10.0f to match your shark length
+        s->box = UpdateBoundingBox(s->origBox, nosePos);
 
         // if we hit Donny, eat him
         if (!d->eatenByShark && CheckCollisionBoxes(s->box, d->outerBox))
@@ -440,7 +455,9 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
     float maxY = s->surfaceY - s->surfaceClearance;
 
     s->pos.y = Clamp(s->pos.y, minY, maxY);
-    s->box = UpdateBoundingBox(s->origBox, s->pos);
+    Vector3 fwd = (Vector3){ sinf(DEG2RAD * s->yaw), 0.0f, cosf(DEG2RAD * s->yaw) };
+    Vector3 nosePos = Vector3Add(s->pos, Vector3Scale(fwd, 10.0f)); // tweak 10.0f to match your shark length
+    s->box = UpdateBoundingBox(s->origBox, nosePos);
 }
 
 // =============================
