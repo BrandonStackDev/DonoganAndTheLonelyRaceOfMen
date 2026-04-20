@@ -464,7 +464,7 @@ int main(void) {
     mapTexture = LoadMyTexture("map/treasure_map.png"); //mapTexture = LoadMyTexture("map/elevation_color_map.png");
     //shark
     Shark shark = { 0 };
-    InitShark(&shark, (Vector3) { 2782.0f, 140.0f, -2063.0f }, PLAYER_FLOAT_Y_POSITION);
+    InitShark(&shark, (Vector3) { 3875.50, 196.84, 3838.98 }, PLAYER_FLOAT_Y_POSITION);
     if (!LoadShark(&shark)) return 1;
     //controller and truck and donny
     // //donny boy
@@ -2794,7 +2794,7 @@ int main(void) {
             rotationTruck.m13 = Lerp(truckOrigin.y + truckYOffsetDraw, truckOrigin.y + truckYOffsetDraw + truckPitchYOffset, 0.01f); //!!!!SPACE TRUCK!!!!
             rotationTruck.m14 = truckOrigin.z;
             //donogan
-            if (onLoad && donnyMode)
+            if (onLoad && donnyMode && !don.eatenByShark) //do not draw once he was eaten
             {
                 // Draw Donogan
                 DrawModel(don.model, don.pos, don.scale, don.drawColor); // uses model.transform for rotation

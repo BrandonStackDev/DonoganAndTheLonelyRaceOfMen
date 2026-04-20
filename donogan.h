@@ -516,6 +516,9 @@ typedef struct {
     bool jumpPressedEdge;   // set each frame from crossPressed
     bool gluedToPlatform;   // true while mover glue owns Donny
     int  gluedPlatId;       // plats[] index, -1 when none
+    //shark
+    bool eatenByShark;
+    Timer eatenTimer;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1724,6 +1727,9 @@ static Donogan InitDonogan(void)
     d.mana = 100;
     d.maxMana = 100;
     d.shook = 0.0f;
+
+    d.eatenByShark = false;
+    d.eatenTimer = CreateTimer(5.00f);
     PrintModelBones(&d.model);
     PrintModelBones(&d.bowModel);
     //proc anim setup
@@ -1920,6 +1926,17 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     if (d->health <= 0)
     {
         DonSetState(d, DONOGAN_STATE_DEATH);
+    }
+    if (d->eatenByShark)
+    {
+        if (HasTimerElapsed(&d->eatenTimer))
+        {
+            d->eatenByShark = false;
+            d->health = 0;
+            d->inWater = false;
+            d->pos = (Vector3){ 2973.70f, 322.00f, 4042.42f };
+            DonSetState(d, DONOGAN_STATE_DEATH);
+        }
     }
     if (!freeze)
     {
@@ -2437,12 +2454,14 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             case DONOGAN_STATE_DEATH:
                 d->bowMode = false;
                 d->squareThrowRequest = false;
+                
                 ResetTimer(&d->spellTimer);
                 if (d->animFinished) { 
                     DonSetState(d, DONOGAN_STATE_IDLE);
                     d->pos = (Vector3){ 2973.70f, 322.00f, 4042.42f };//start at home position after death
                     d->health = d->maxHealth;
                     d->mana = d->maxMana;
+                    d->inWater = false;
                     PlaySoundVol(donScream);
                 }
                 break;
