@@ -1,4 +1,4 @@
-﻿#version 100
+#version 100
 
 // Input vertex attributes
 attribute vec3 vertexPosition;
@@ -36,7 +36,7 @@ void main()
     float bend = tip * tip;                           // more motion at the tip, less at base
 
     // simple sine over time
-    float swayPhase = 6.2831853 * FREQ * uTime;       // 2π * FREQ * t
+    float swayPhase = 6.2831853 * FREQ * uTime;       //
     float sway      = sin(swayPhase);
 
     // lateral offset in object space along WIND_DIR
