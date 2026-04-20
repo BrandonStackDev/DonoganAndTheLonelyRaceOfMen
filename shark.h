@@ -81,7 +81,11 @@ static float SharkDepthAtXZ(const Shark* s, float x, float z)
     float seabed = GetTerrainHeightFromMeshXZ(x, z);
     return s->surfaceY - seabed;
 }
-
+static Vector3 SharkForwardFromYaw(float yawDeg)
+{
+    float r = DEG2RAD * yawDeg;
+    return (Vector3) { sinf(r), 0.0f, cosf(r) };
+}
 static Vector3 SharkPickGoal(const Shark* s)
 {
     Vector3 best = s->home;
@@ -399,6 +403,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
             {
                 d->eatenByShark = true;
                 StartTimer(&d->eatenTimer);
+                s->goal = SharkPickGoal(s);
             }
         }
 
@@ -458,7 +463,33 @@ static void Shark_Draw(Shark* s, Donogan *d)
     //DrawBoundingBox(s->box, RED); //todo: remove
     if (d->eatenByShark)
     {
-        DrawModel(s->leg,d->pos,1,WHITE);
+        Vector3 fwd = SharkForwardFromYaw(s->yaw);
+        Vector3 left = (Vector3){ -fwd.z, 0.0f, fwd.x };
+
+        Vector3 legPos = d->pos;
+        legPos.y += 4;
+        /*legPos = Vector3Add(legPos, Vector3Scale(left, 3.0f));
+        legPos = Vector3Add(legPos, Vector3Scale(fwd, 6.0f));*/
+
+        float t = (float)GetTime();
+        float bob = sinf(t * 2.4f) * 0.35f;
+        float sink = s->eatTimer * 1.5f;
+
+        legPos.y = d->pos.y - 0.15f + bob - sink;
+        if (legPos.y > (s->surfaceY - 2)) { legPos.y = s->surfaceY - 2; }
+
+        DrawModelEx(
+            s->leg,
+            legPos,
+            (Vector3) {
+            0, 1, 0
+        },
+            s->yaw + 90.0f,
+            (Vector3) {
+            1, 1, 1
+        },
+            WHITE
+        );
     }
 }
 
