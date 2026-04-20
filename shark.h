@@ -495,6 +495,9 @@ static void Shark_Draw(Shark* s, Donogan *d)
         WHITE
     );
     //DrawBoundingBox(s->box, RED); //todo: remove
+}
+static void Shark_Draw_Extremities(Shark* s, Donogan* d)
+{
     if (d->eatenByShark)
     {
         Vector3 fwd = SharkForwardFromYaw(s->yaw);
@@ -510,7 +513,7 @@ static void Shark_Draw(Shark* s, Donogan *d)
         float sink = s->eatTimer * 1.5f;
 
         legPos.y = d->pos.y - 0.15f + bob - sink;
-        if (legPos.y > (s->surfaceY - 2)) { legPos.y = s->surfaceY - 2; }
+        if (legPos.y > (s->surfaceY - 5)) { legPos.y = s->surfaceY - 5; }
 
         DrawModelEx(
             s->leg,
@@ -560,7 +563,9 @@ static void Shark_Draw(Shark* s, Donogan *d)
                 (Vector3) {
                 scale, scale * 1.25f, scale
             },
-            (Color) {180, 20, 20, 255}
+                (Color) {
+                180, 20, 20, 255
+            }
             );
         }
 
