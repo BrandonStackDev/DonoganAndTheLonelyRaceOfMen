@@ -160,8 +160,6 @@ static void InitWhale(Whale* A, Vector3 home, float bottomY, float surfaceY) {
     A->spinAccum = 0.0f;
     A->turnYawDelta = 0.0f;
     A->verticalBoost = 0.0f;
-
-    DisableCursor();
 }
 
 // ---------- FSM helpers (Fish State Management)----------

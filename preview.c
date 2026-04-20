@@ -1495,11 +1495,15 @@ int main(void) {
         FindClosestChunkAndAssignLod(vehicleMode?truckPosition:camera.position); //Im not sure If I need this here, but things work okay so...?
 
         // Mouse look
-        Vector2 mouse = GetMouseDelta();
-        yaw -= mouse.x * 0.003f;
-        pitch -= mouse.y * 0.003f;
+        Vector2 mouse = (Vector2){ 0 };
+        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+        {
+            mouse = GetMouseDelta();
+            yaw -= mouse.x * 0.003f;
+            pitch -= mouse.y * 0.003f;
+        }
+        
         pitch = Clamp(pitch, -PI/2.0f, PI/2.0f);
-
         Vector3 forward = {
             cosf(pitch) * cosf(yaw) * MAP_SCALE,
             sinf(pitch) * MAP_SCALE,
@@ -1523,7 +1527,7 @@ int main(void) {
                     }
                 }
             }
-            if (IsKeyPressed(KEY_C)) { DisableCursor(); }
+            //if (IsKeyPressed(KEY_C)) { DisableCursor(); }
             if (IsKeyPressed(KEY_X)) { EnableCursor(); }
             if (IsKeyPressed(KEY_Y)) { contInvertY = !contInvertY; }
             if (IsKeyPressed(KEY_M)) { showMap = !showMap; } // Toggle map
