@@ -2648,8 +2648,8 @@ int main(void) {
             }
         }
         // BeginMode3D(skyCam) ... draw panels around (0,0,0) as you already do
-        UpdateCamera(&camera, vehicleMode||donnyMode?CAMERA_THIRD_PERSON:CAMERA_FIRST_PERSON);
-        UpdateCamera(&skyCam, CAMERA_FIRST_PERSON);
+        //UpdateCamera(&camera, vehicleMode||donnyMode?CAMERA_THIRD_PERSON:CAMERA_FIRST_PERSON);
+        //UpdateCamera(&skyCam, CAMERA_FIRST_PERSON);
         // -------- State + animation update from controller --------
         if (!vehicleMode && donnyMode)
         {
