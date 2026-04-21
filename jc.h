@@ -66,6 +66,57 @@ typedef struct {
 Scene Scenes[SCENE_TOTAL_COUNT];
 Model HomeModels[MODEL_HOME_TOTAL_COUNT];
 
+static inline BoundingBox RotateScaleTranslateBoundingBoxY(BoundingBox orig, Vector3 pos, float scale, float yaw)
+{
+    // scale local box first
+    Vector3 localMin = {
+        orig.min.x * scale,
+        orig.min.y * scale,
+        orig.min.z * scale
+    };
+    Vector3 localMax = {
+        orig.max.x * scale,
+        orig.max.y * scale,
+        orig.max.z * scale
+    };
+
+    float c = cosf(yaw);
+    float s = sinf(yaw);
+
+    Vector3 mn = { FLT_MAX,  FLT_MAX,  FLT_MAX };
+    Vector3 mx = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+    for (int ix = 0; ix < 2; ++ix)
+        for (int iy = 0; iy < 2; ++iy)
+            for (int iz = 0; iz < 2; ++iz)
+            {
+                Vector3 p = {
+                    ix ? localMax.x : localMin.x,
+                    iy ? localMax.y : localMin.y,
+                    iz ? localMax.z : localMin.z
+                };
+
+                // rotate around Y in local space
+                Vector3 r = {
+                    p.x * c - p.z * s,
+                    p.y,
+                    p.x * s + p.z * c
+                };
+
+                // translate to world
+                r = Vector3Add(r, pos);
+
+                if (r.x < mn.x) mn.x = r.x;
+                if (r.y < mn.y) mn.y = r.y;
+                if (r.z < mn.z) mn.z = r.z;
+                if (r.x > mx.x) mx.x = r.x;
+                if (r.y > mx.y) mx.y = r.y;
+                if (r.z > mx.z) mx.z = r.z;
+            }
+
+    return (BoundingBox) { mn, mx };
+}
+
 void InitHomes() {
     // Load the models
     Model home001 = LoadModel("models/home_001.obj");
@@ -303,7 +354,8 @@ void InitHomes() {
     };
     for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
     {
-        Scenes[i].origBox = ScaleBoundingBox(GetModelBoundingBox(HomeModels[Scenes[i].modelType]), Scenes[i].scale);
+        BoundingBox original = GetModelBoundingBox(HomeModels[Scenes[i].modelType]); // ScaleBoundingBox(_, Scenes[i].scale);
+        Scenes[i].origBox = RotateScaleTranslateBoundingBoxY(original, (Vector3) {0,0,0}, Scenes[i].scale, Scenes[i].yaw);
         Scenes[i].box = UpdateBoundingBox(Scenes[i].origBox, Scenes[i].pos);
     }
 }
