@@ -519,6 +519,8 @@ typedef struct {
     //shark
     bool eatenByShark;
     Timer eatenTimer;
+    //in home
+    bool inHome;
 } Donogan;
 
 // Assets (adjust if needed)

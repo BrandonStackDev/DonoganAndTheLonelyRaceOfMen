@@ -880,8 +880,9 @@ int main(void) {
 
             // Update camera position from yaw/pitch/radius
             // Defaults
-            float baseRadius = 14.0f;
+            float baseRadius = 15.3f;
             float baseFov = 80.0f;
+            float homeRad = 10.2f;
 
             // -- much smaller zoom while aiming --
             float zoomRadius = 13.2f;   // was 10.0f
@@ -928,7 +929,7 @@ int main(void) {
             if (inBowCam) { don.yawY = yaw; }
             else if (don.state == DONOGAN_STATE_BOW_EXIT) { don.yawY = yaw + PI; don.bowMode = false; }
 
-            float desiredRadius = inBowCam ? zoomRadius : baseRadius;
+            float desiredRadius = inBowCam ? zoomRadius : don.inHome ? homeRad : baseRadius;
             float desiredFov = inBowCam ? zoomFov : baseFov;
 
             radius = Lerp(radius, desiredRadius, 1.0f - expf(-zoomRate * dt));
@@ -2300,7 +2301,7 @@ int main(void) {
                 camera.target = Vector3Lerp(camera.target, desiredTarget, followSpeed);
             }
         }
-        if (onLoad && donnyMode)
+        if (onLoad && donnyMode) //donny collision (probably not all of it, ugh!)
         {
             bool hitEnvWall = false; //todo: do I actually want hitEnvWall, if not, just delete this and clean up.
             //env boxes (aka duct tape)
@@ -2351,6 +2352,7 @@ int main(void) {
             }
             don.box = UpdateBoundingBox(don.origBB, don.pos);
             //home collision
+            don.inHome = false;
             for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
             {
                 for (int a = 0; a < MAX_ARROWS; a++)//arrows
@@ -2371,8 +2373,9 @@ int main(void) {
                         }
                     }
                 }
-                if (CheckCollisionBoxes(don.box, Scenes[i].box))//donny
+                if (CheckCollisionBoxes(don.box, Scenes[i].box))//donny home collision initial
                 {
+                    if (Scenes[i].modelType != MODEL_HOME_CASTLE) { don.inHome = true; } //exception for the castle, its wide open mostly
                     // classify slope: anything flatter than ~50° treated as ground
                     const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
                     for (int it = 0; it < 3; ++it)
