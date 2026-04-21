@@ -23,7 +23,8 @@
 #ifndef MENU_VISIBLE_ROWS
 #define MENU_VISIBLE_ROWS 10
 #endif
-
+//
+Donogan* donnyBoyInventory;
 // Colors
 Color MENU_BG;
 Color MENU_PANEL;
@@ -33,7 +34,7 @@ Color MENU_SELECT;
 Color MENU_OK;
 Color MENU_DIM;
 
-void InitMenu()
+void InitMenu(Donogan* d)
 {
     // Colors
     MENU_BG = (Color){ 20,  20,  20, 220 };
@@ -43,6 +44,7 @@ void InitMenu()
     MENU_SELECT = YELLOW;
     MENU_OK = GREEN;
     MENU_DIM = GRAY;
+    donnyBoyInventory = d;
 }
 
 // layout
@@ -475,6 +477,9 @@ static void _DrawInventory(GameState* gs) {
         DrawTextEx(GetFontDefault(), buf, (Vector2) { rightX, y }, textSize, 1.0f, rightColor);
     }
 
+    //
+    if (donnyBoyInventory->hasBow) { DrawTextEx(GetFontDefault(), "Bow", (Vector2) { panel.x + 12, panel.y + panel.height - 78 }, 20, 1.0f, MENU_DIM); }
+    if (donnyBoyInventory->hasWrench) { DrawTextEx(GetFontDefault(), "Wrench", (Vector2) { panel.x + 12, panel.y + panel.height - 58 }, 20, 1.0f, MENU_DIM); }
     DrawTextEx(GetFontDefault(),
         "Cross: use  |  Triangle: back",
         (Vector2) {panel.x + 12, panel.y + panel.height - 28},

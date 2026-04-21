@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 56
+#define NUM_PLATS 57
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -589,7 +589,9 @@ void InitPlats()
 
     plats[54] = Platform_MakeStill((Vector3) { -8, 918, 1672 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[55] = Platform_MakeStill((Vector3) { -71, 926, 1669 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////NEAR DONOGASN START///////////////////////////////////////  ///////////////////////
+    plats[56] = Platform_MakeMover((Vector3) { 2614.71, 326, 4634.44 }, (Vector3) { 2614.71, 364, 4634.44 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
+    plats[56].disabled = true;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
