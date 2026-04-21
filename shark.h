@@ -160,7 +160,7 @@ static void InitShark(Shark* s, Vector3 home, float surfaceY)
     s->speed = 0.0f;
 
     s->wanderSpeed = 3.4f;
-    s->stalkSpeed = 24.4f;
+    s->stalkSpeed = 32.4f;
 
     s->homeRadius = 120.0f;
 
@@ -239,7 +239,7 @@ static Vector3 Shark_PickSteerGoalTowardTarget(const Shark* s, Vector3 target)
     const float probeDist = 36.0f;
 
     // candidate turn angles in degrees, ordered by preference
-    const float anglesDeg[] = { 0, 20, -20, 40, -40, 65, -65, 90, -90 };
+    const float anglesDeg[] = { 120, -120, 90, -90, 20, -20, 40, -40, 65, -65, 0 };
     const int count = (int)(sizeof(anglesDeg) / sizeof(anglesDeg[0]));
 
     Vector3 best = s->pos;
@@ -285,7 +285,7 @@ static Vector3 Shark_PickSteerGoalTowardTarget(const Shark* s, Vector3 target)
 
     // choose a legal Y for that X/Z
     float seabed = GetTerrainHeightFromMeshXZ(best.x, best.z);
-    float minY = seabed + s->bottomClearance;
+    float minY = seabed + 7 + s->bottomClearance;
     float maxY = s->surfaceY - s->surfaceClearance;
     best.y = Clamp(s->pos.y, minY, maxY);
 
@@ -363,16 +363,6 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
             s->state = SHARK_STATE_ATTACK;
             s->stateTime = 0.0f;
             s->hasEaten = false;
-
-            // lock a lunge target straight through Donny
-            /*Vector3 toDon = Vector3Subtract(d->pos, s->pos);
-            toDon.y = 0.0f;
-            if (Vector3Length(toDon) > 0.01f)
-            {
-                Vector3 attackDir = Vector3Normalize(toDon);
-                s->goal = Vector3Add(d->pos, Vector3Scale(attackDir, 28.0f));
-                s->goal.y = d->pos.y;
-            }*/
             float r = s->yaw;
             Vector3 fwd = (Vector3){ sinf(r), 0.0f, cosf(r) };
             Vector3 toDon = Vector3Subtract(d->pos, Vector3Add(s->pos, Vector3Scale(fwd, 8)));
