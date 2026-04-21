@@ -35,6 +35,9 @@ Vector3 rearAxleOffset = { 0, 0, -1.5f }; // adjust Z as needed
 Vector3 truckOrigin = { 0 };
 Vector3 front = { 0 };
 Vector3 back = { 0 };
+bool truckCruise = false;
+bool prevTruckL3 = false;
+float truckCruiseTarget = 0.0f;
 #define truckFrontDim 3.4f
 #define truckBackDim -4.4f
 #define truckLength truckFrontDim - truckBackDim

@@ -1591,17 +1591,17 @@ int main(void) {
                 doingBonkers = true;
             }
             // Deadzone
-            if (fabsf(gpad.normLY) > 0.1f) 
+            if (fabsf(gpad.normLY) > 0.1f)
             {
                 if(truckAirState!=AIRBORNE)
                 {
                     //float ratio = fminf(fabsf(truckSpeed) / maxSpeed, 1.0f) + 1.0f; //use this version for exponential acceleration (I like it less)
                     //truckSpeed += -gpad.normLY * acceleration * ratio * ratio * ratio * GetFrameTime() * 12.0f;
-                    truckSpeed += -gpad.normLY * acceleration * GetFrameTime() * 62.0f;
+                    truckSpeed += -gpad.normLY * acceleration * dt * 62.0f;
                 }
                 //printf("speed=%f",truckSpeed);
             }
-            else
+            else if(!truckCruise)
             {
                 //update truck with friction
                 if (truckSpeed > 0.0f) { //friction
@@ -1613,8 +1613,32 @@ int main(void) {
                     if (truckSpeed > -0.00000001f) {truckSpeed = 0.0f;}  // Clamp to zero
                 }
             }
+            else if(truckCruise)
+            {
+                truckSpeed = LerpFloat(&truckCruiseTarget, &truckSpeed, &dt);
+            }
+            bool truckL3Pressed = (gpad.btnL3 && !prevTruckL3);
+            prevTruckL3 = gpad.btnL3;
+
+            if (truckL3Pressed)
+            {
+                truckCruise = !truckCruise;
+                if (truckCruise)
+                {
+                    truckCruiseTarget = truckSpeed;
+                    if (truckCruiseTarget < 2.0f) truckCruiseTarget = 2.0f; // don't cruise at near-zero
+                    toast = "Cruise On";
+                    StartTimer(&toastTimer);
+                }
+                else
+                {
+                    toast = "Cruise Off";
+                    StartTimer(&toastTimer);
+                }
+            }
             if (gpad.btnSquare>0)//square
             {
+                truckCruise = false;
                 if(truckAirState!=AIRBORNE && fabs(truckSpeed)>0)
                 {
                     truckSpeed -= deceleration * (truckSpeed>0?1:-1);
@@ -3525,6 +3549,7 @@ int main(void) {
                 else if (vehicleMode)
                 {
                     DrawText(TextFormat("POINTS: %d", points), 10, 30, 20, RAYWHITE);
+                    if (truckCruise) { DrawText(TextFormat("cruise on", points), 10, 50, 20, RAYWHITE); }
                 }
             }
         }
