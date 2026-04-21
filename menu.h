@@ -33,6 +33,7 @@ Color MENU_TEXT;
 Color MENU_SELECT;
 Color MENU_OK;
 Color MENU_DIM;
+bool keepAlive = true;
 
 void InitMenu(Donogan* d)
 {
@@ -352,8 +353,8 @@ void Menu_OnCross(GameState* gs, Donogan* d)
 {
     PlaySoundVol(menuSelect);
     if (gs->menuPage == MENU_PAGE_MAIN) {
-        static const char* entries[] = { "Inventory", "Save", "Load", "Options", "Missions", "Warp" };
-        const int count = 6;
+        static const char* entries[] = { "Inventory", "Save", "Load", "Options", "Missions", "Warp", "Quit"};
+        const int count = 7;
         Menu_ScrollClamp(count, &gs->menuSel, &gs->menuScroll);
         switch (gs->menuSel) {
         case 0: gs->menuPage = MENU_PAGE_INVENTORY; gs->menuSel = 0; gs->menuScroll = 0; break;
@@ -362,10 +363,15 @@ void Menu_OnCross(GameState* gs, Donogan* d)
         case 3: gs->menuPage = MENU_PAGE_OPTIONS; gs->menuSel = 0; gs->menuScroll = 0; break;
         case 4: gs->menuPage = MENU_PAGE_MISSIONS; gs->menuSel = 0; gs->menuScroll = 0; break;
         case 5: gs->menuPage = MENU_PAGE_WARP; gs->menuSel = 0; gs->menuScroll = 0; break;
+        case 6: gs->menuPage = MENU_QUIT; gs->menuSel = 0; gs->menuScroll = 0; keepAlive = false; break;
         }
         return;
     }
-
+    if (gs->menuPage == MENU_QUIT)
+    {
+        gs->menuPage = MENU_PAGE_MAIN;
+        keepAlive = false;
+    }
     if (gs->menuPage == MENU_PAGE_MISSIONS) {
         // enter detail for selected mission
         const int count = MISSION_TOTAL_COUNT;                                             //
@@ -428,8 +434,8 @@ static void _DrawMain(GameState* gs) {
     Menu_DrawHeader("Main Menu", panel);
     Menu_DrawBox(panel);
 
-    static const char* entries[] = { "Inventory", "Save", "Load", "Options", "Missions", "Warp" };
-    const int count = 6;
+    static const char* entries[] = { "Inventory", "Save", "Load", "Options", "Missions", "Warp", "Quit"};
+    const int count = 7;
     Menu_ScrollClamp(count, &gs->menuSel, &gs->menuScroll);
 
     int row = 0;

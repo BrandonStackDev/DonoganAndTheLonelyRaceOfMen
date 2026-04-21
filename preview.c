@@ -649,7 +649,7 @@ int main(void) {
 
     StartTimer(&don.hitTimer);
     long loop_counter = 0;
-    while (!WindowShouldClose()) 
+    while (!WindowShouldClose() && keepAlive)
     {
         //shut off in water if in vehicle
         if (!donnyMode) { don.inWater = false; }
