@@ -20,9 +20,9 @@
 #define SHARK_EAT_DISTANCE      20.0f
 #define SHARK_ATTACK_DISTANCE   180.0f
 
-#define SHARK_FAR_REPATH_DIST   1000.0f
+#define SHARK_FAR_REPATH_DIST   6000.0f
 #define SHARK_RING_RADIUS       6500.0f
-#define SHARK_RING_REACHED_DIST 80.0f
+#define SHARK_RING_REACHED_DIST 320.0f
 
 // =============================
 // STATE
@@ -385,6 +385,22 @@ static Vector3 Shark_PickSteerGoalTowardTarget(const Shark* s, Vector3 target)
 // =============================
 static void Shark_Update(Shark* s, Donogan* d, float dt)
 {
+    if (s->usingFarRing)
+    {
+        s->usingFarRing = false;
+        s->state = SHARK_STATE_STALK;
+        s->stateTime = 0.0f;
+    }
+    else if (Vector3Distance(s->pos, d->pos) > SHARK_FAR_REPATH_DIST)
+    {
+        s->usingFarRing = true;
+        s->farRingGoal = Shark_PickOuterRingGoalTowardTarget(s, d->pos);
+        s->goal = s->farRingGoal;
+        s->pos = s->goal;
+        s->state = SHARK_STATE_STALK;
+        s->stateTime = 0.0f;
+        return;
+    }
     s->stateTime += dt;
     float seabed = GetTerrainHeightFromMeshXZ(s->pos.x, s->pos.z);
     // =============================
@@ -394,16 +410,30 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
     {
         if (s->state == SHARK_STATE_STALK || s->state == SHARK_STATE_ATTACK)
         {
-            s->usingFarRing = true;
-            s->farRingGoal = Shark_PickOuterRingGoalTowardTarget(s, d->pos);
-            s->goal = s->farRingGoal;
-            s->state = SHARK_STATE_STALK;
-            s->stateTime = 0.0f;
+            if (Vector3Distance(s->pos, d->pos) > SHARK_FAR_REPATH_DIST) 
+            { 
+                s->usingFarRing = true; 
+                s->farRingGoal = Shark_PickOuterRingGoalTowardTarget(s, d->pos);
+                s->goal = s->farRingGoal;
+                s->pos = s->goal;
+                s->state = SHARK_STATE_STALK;
+                s->stateTime = 0.0f;
+                s->usingFarRing = false;
+            }
+            else
+            {
+                s->goal = s->home;
+                s->state = SHARK_STATE_WANDER;
+                s->stateTime = 0.0f;
+                s->steerTimer = 0.0f;
+            }
         }
         else
         {
             s->goal = s->home;
             s->state = SHARK_STATE_WANDER;
+            s->stateTime = 0.0f;
+            s->steerTimer = 0.0f;
         }
     }
 
@@ -428,6 +458,9 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
         {
             s->state = SHARK_STATE_STALK;
             s->stateTime = 0.0f;
+            s->usingFarRing = false;
+            s->steerTimer = 0.0f;
+            s->goal = Shark_PickSteerGoalTowardTarget(s, d->pos);
         }
     }
     else if (s->state == SHARK_STATE_STALK)
@@ -437,20 +470,25 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
         float dist = Vector3Length(toDon);
         float worldDistToDon = Vector3Distance(s->pos, d->pos);
 
-        if (worldDistToDon > SHARK_FAR_REPATH_DIST && !s->usingFarRing)
+        if (worldDistToDon > SHARK_FAR_REPATH_DIST && !s->usingFarRing && !Shark_IsWaterDeepEnough(s, s->pos.x, s->pos.z))
         {
-            s->usingFarRing = true;
+            if (Vector3Distance(s->pos, d->pos) > SHARK_FAR_REPATH_DIST) { s->usingFarRing = true; }
             s->farRingGoal = Shark_PickOuterRingGoalTowardTarget(s, d->pos);
             s->goal = s->farRingGoal;
+            s->pos = s->goal;
+            s->speed = 128;
         }
         if (s->usingFarRing)
         {
             s->goal = s->farRingGoal;
+            s->pos = s->goal;
 
             if (Vector3Distance(s->pos, s->farRingGoal) < SHARK_RING_REACHED_DIST)
             {
                 s->usingFarRing = false;
                 s->steerTimer = 0.0f;
+                s->stateTime = 0.0f;   // optional but helpful
+                s->goal = Shark_PickSteerGoalTowardTarget(s, d->pos);   // immediate re-acquire
             }
 
             s->speed = s->stalkSpeed;
