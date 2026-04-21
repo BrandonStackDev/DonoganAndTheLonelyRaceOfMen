@@ -651,6 +651,8 @@ int main(void) {
     long loop_counter = 0;
     while (!WindowShouldClose()) 
     {
+        //shut off in water if in vehicle
+        if (!donnyMode) { don.inWater = false; }
         //things that are affected by machines that need save file updates
         if (don.unlockedTruck) 
         { 

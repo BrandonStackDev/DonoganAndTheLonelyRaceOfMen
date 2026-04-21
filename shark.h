@@ -20,6 +20,10 @@
 #define SHARK_EAT_DISTANCE      20.0f
 #define SHARK_ATTACK_DISTANCE   180.0f
 
+#define SHARK_FAR_REPATH_DIST   1000.0f
+#define SHARK_RING_RADIUS       6500.0f
+#define SHARK_RING_REACHED_DIST 80.0f
+
 // =============================
 // STATE
 // =============================
@@ -75,12 +79,38 @@ typedef struct {
     Shader bloodShader;
     int bloodTimeLoc;
     int bloodVariantLoc;
+
+    bool usingFarRing;
+    Vector3 farRingGoal;
+
+    ModelAnimation proc;
+    int boneBodyMid;
+    int boneBodyRear;
+    int boneTailBase;
+    int boneTailTip;
 } Shark;
 
 
 // =============================
 // HELPERS
 // =============================
+//anim
+static void SharkPoseResetToBind(const Model* m, ModelAnimation* p)
+{
+    for (int b = 0; b < p->boneCount; b++)
+    {
+        p->framePoses[0][b] = m->bindPose[b];
+    }
+}
+
+static void SharkSetFromBindPlusEuler(const Model* m, ModelAnimation* p, int idx, float ex, float ey, float ez)
+{
+    if (idx < 0) return;
+
+    Quaternion dq = QuaternionFromEuler(ex, ey, ez);
+    p->framePoses[0][idx].rotation = QuaternionMultiply(dq, m->bindPose[idx].rotation);
+}
+//other
 static float SharkDepthAtXZ(const Shark* s, float x, float z)
 {
     float seabed = GetTerrainHeightFromMeshXZ(x, z);
@@ -147,6 +177,49 @@ static bool Shark_IsWaterDeepEnough(const Shark* s, float x, float z)
     return ((s->surfaceY - seabed) >= s->minWaterDepth);
 }
 
+static Vector3 Shark_PickOuterRingGoalTowardTarget(const Shark* s, Vector3 target)
+{
+    // Use target direction from world center (0,0 in XZ) so we pick a ring point
+    Vector3 flat = { target.x, 0.0f, target.z };
+    float len = sqrtf(flat.x * flat.x + flat.z * flat.z);
+
+    if (len < 0.001f) len = 1.0f;
+
+    Vector3 dir = { flat.x / len, 0.0f, flat.z / len };
+
+    // Try straight toward Donny first, then slight offsets around the ring
+    const float offsetsDeg[] = { 0, 18, -18, 36, -36, 54, -54, 72, -72, 90, -90 };
+    const int count = (int)(sizeof(offsetsDeg) / sizeof(offsetsDeg[0]));
+
+    for (int i = 0; i < count; i++)
+    {
+        float a = DEG2RAD * offsetsDeg[i];
+        float cs = cosf(a);
+        float sn = sinf(a);
+
+        Vector3 d = {
+            dir.x * cs - dir.z * sn,
+            0.0f,
+            dir.x * sn + dir.z * cs
+        };
+
+        Vector3 p = {
+            d.x * SHARK_RING_RADIUS,
+            0.0f,
+            d.z * SHARK_RING_RADIUS
+        };
+
+        if (!Shark_IsWaterDeepEnough(s, p.x, p.z)) continue;
+
+        float seabed = GetTerrainHeightFromMeshXZ(p.x, p.z);
+        float minY = seabed + s->bottomClearance;
+        float maxY = s->surfaceY - s->surfaceClearance;
+        p.y = Clamp(s->pos.y, minY, maxY);
+        return p;
+    }
+
+    return s->home;
+}
 // =============================
 // INIT
 // =============================
@@ -188,6 +261,11 @@ static void InitShark(Shark* s, Vector3 home, float surfaceY)
     {
         SetMaterialTexture(&s->leg.materials[0], MATERIAL_MAP_ALBEDO, s->legText);
     }
+
+    s->boneBodyMid = 13; // spine.005
+    s->boneBodyRear = 12; // spine.004
+    s->boneTailBase = 2;  // spine.001
+    s->boneTailTip = 3;  // spine
 }
 
 static bool LoadShark(Shark* s)
@@ -217,6 +295,17 @@ static bool LoadShark(Shark* s)
     s->bloodModel.materials[0].shader = s->bloodShader;
     s->bloodModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 180, 20, 20, 170 };
 
+    s->proc.boneCount = s->model.boneCount;
+    s->proc.bones = s->model.bones;
+    s->proc.frameCount = 1;
+    s->proc.framePoses = MemAlloc(sizeof(Transform*) * 1);
+    s->proc.framePoses[0] = MemAlloc(sizeof(Transform) * s->proc.boneCount);
+
+    for (int b = 0; b < s->proc.boneCount; b++)
+    {
+        s->proc.framePoses[0][b] = s->model.bindPose[b];
+    }
+    //PrintModelBones(&s->model); //return false to see it.
     return true;
 }
 
@@ -303,8 +392,19 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
     // =============================
     if ((s->surfaceY - seabed) < s->minWaterDepth)
     {
-        s->goal = s->home;
-        s->state = SHARK_STATE_WANDER;
+        if (s->state == SHARK_STATE_STALK || s->state == SHARK_STATE_ATTACK)
+        {
+            s->usingFarRing = true;
+            s->farRingGoal = Shark_PickOuterRingGoalTowardTarget(s, d->pos);
+            s->goal = s->farRingGoal;
+            s->state = SHARK_STATE_STALK;
+            s->stateTime = 0.0f;
+        }
+        else
+        {
+            s->goal = s->home;
+            s->state = SHARK_STATE_WANDER;
+        }
     }
 
     bool canHunt = d->inWater &&
@@ -335,29 +435,51 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
         Vector3 toDon = Vector3Subtract(d->pos, s->pos);
         toDon.y = 0.0f; // keep chase calmer in yaw
         float dist = Vector3Length(toDon);
+        float worldDistToDon = Vector3Distance(s->pos, d->pos);
 
-        if (dist > 0.01f)
+        if (worldDistToDon > SHARK_FAR_REPATH_DIST && !s->usingFarRing)
         {
-            s->steerTimer += dt;
-            if (s->steerTimer > 0.25f)
+            s->usingFarRing = true;
+            s->farRingGoal = Shark_PickOuterRingGoalTowardTarget(s, d->pos);
+            s->goal = s->farRingGoal;
+        }
+        if (s->usingFarRing)
+        {
+            s->goal = s->farRingGoal;
+
+            if (Vector3Distance(s->pos, s->farRingGoal) < SHARK_RING_REACHED_DIST)
             {
-                //*s->goal = Shark_PickSteerGoalTowardTarget(s, d->pos);
+                s->usingFarRing = false;
                 s->steerTimer = 0.0f;
-                Vector3 steer = Shark_PickSteerGoalTowardTarget(s, d->pos);
-                if (Vector3Distance(steer, s->home) < 1.0f)
-                {
-                    s->state = SHARK_STATE_WANDER;
-                    s->stateTime = 0.0f;
-                    s->goal = SharkPickGoal(s);
-                }
-                else
-                {
-                    s->goal = steer;
-                }
             }
+
             s->speed = s->stalkSpeed;
         }
-
+        else
+        {
+            if (dist > 0.01f)
+            {
+                s->steerTimer += dt;
+                if (s->steerTimer > 0.25f)
+                {
+                    //*s->goal = Shark_PickSteerGoalTowardTarget(s, d->pos);
+                    s->steerTimer = 0.0f;
+                    Vector3 steer = Shark_PickSteerGoalTowardTarget(s, d->pos);
+                    if (Vector3Distance(steer, s->home) < 1.0f)
+                    {
+                        s->state = SHARK_STATE_WANDER;
+                        s->stateTime = 0.0f;
+                        s->goal = SharkPickGoal(s);
+                    }
+                    else
+                    {
+                        s->goal = steer;
+                    }
+                }
+                s->speed = s->stalkSpeed;
+            }
+        }
+        
         if (dist < SHARK_ATTACK_DISTANCE)
         {
             s->state = SHARK_STATE_ATTACK;
@@ -465,6 +587,58 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
     Vector3 fwd = (Vector3){ sinf(DEG2RAD * s->yaw), 0.0f, cosf(DEG2RAD * s->yaw) };
     Vector3 nosePos = Vector3Add(s->pos, Vector3Scale(fwd, 10.0f)); // tweak 10.0f to match your shark length
     s->box = UpdateBoundingBox(s->origBox, nosePos);
+    
+    //anims
+    float t = (float)GetTime();
+
+    float ampBody = 0.0f;
+    float ampTail = 0.0f;
+    float freq = 0.0f;
+
+    if (s->state == SHARK_STATE_WANDER)
+    {
+        ampBody = DEG2RAD * 2.0f;
+        ampTail = DEG2RAD * 5.0f;
+        freq = 2.0f;
+    }
+    else if (s->state == SHARK_STATE_STALK)
+    {
+        ampBody = DEG2RAD * 4.0f;
+        ampTail = DEG2RAD * 10.0f;
+        freq = 3.0f;
+    }
+    else if (s->state == SHARK_STATE_ATTACK)
+    {
+        ampBody = DEG2RAD * 6.0f;
+        ampTail = DEG2RAD * 14.0f;
+        freq = 5.0f;
+    }
+    else
+    {
+        ampBody = DEG2RAD * 3.0f;
+        ampTail = DEG2RAD * 8.0f;
+        freq = 2.0f;
+    }
+
+    float bodyRearYaw = sinf(t * freq + 0.1f) * ampBody;
+    float bodyMidYaw = sinf(t * freq + 0.25f) * ampBody * 1.12f;
+    float tailBaseYaw = sinf(t * freq + 0.50f) * ampTail;
+    float tailTipYaw = sinf(t * freq + 0.75f) * ampTail * 1.3f;
+
+    SharkPoseResetToBind(&s->model, &s->proc);
+
+    // side-to-side motion = yaw around local Y
+    SharkSetFromBindPlusEuler(&s->model, &s->proc, s->boneBodyRear, 0.0f, bodyRearYaw, 0.0f);
+    SharkSetFromBindPlusEuler(&s->model, &s->proc, s->boneBodyMid, 0.0f, bodyMidYaw, 0.0f);
+    SharkSetFromBindPlusEuler(&s->model, &s->proc, s->boneTailBase, 0.0f, tailBaseYaw, 0.0f);
+    SharkSetFromBindPlusEuler(&s->model, &s->proc, s->boneTailTip, 0.0f, tailTipYaw, 0.0f);//yes?
+    SharkSetFromBindPlusEuler(&s->model, &s->proc, 4, 0.0f, tailTipYaw, 0.0f);//yes?
+    SharkSetFromBindPlusEuler(&s->model, &s->proc, 5, 0.0f, tailTipYaw, 0.0f);//yes?
+    SharkSetFromBindPlusEuler(&s->model, &s->proc, 6, 0.0f, tailTipYaw, 0.0f);//yes?
+    SharkSetFromBindPlusEuler(&s->model, &s->proc, 7, 0.0f, tailTipYaw, 0.0f);//yes?
+    SharkSetFromBindPlusEuler(&s->model, &s->proc, 8, 0.0f, tailTipYaw, 0.0f);//yes?
+
+    UpdateModelAnimation(s->model, s->proc, 0);
 }
 
 // =============================
@@ -575,6 +749,12 @@ static void FreeShark(Shark* s)
     UnloadTexture(s->legText);
     UnloadModel(s->bloodModel);
     UnloadShader(s->bloodShader);
+    if (s->proc.framePoses)
+    {
+        if (s->proc.framePoses[0]) MemFree(s->proc.framePoses[0]);
+        MemFree(s->proc.framePoses);
+        s->proc.framePoses = NULL;
+    }
 }
 
 #endif
