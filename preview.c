@@ -943,10 +943,13 @@ int main(void) {
             camera.position.x = camera.target.x + radius * cosf(pitch) * sinf(yaw);
             camera.position.y = camera.target.y + radius * sinf(pitch);
             camera.position.z = camera.target.z + radius * cosf(pitch) * cosf(yaw);
-            float camGroundY = GetTerrainHeightFromMeshXZ(camera.position.x, camera.position.z);
-            if (camGroundY + 0.1 > camera.position.y)
+            if (!inBowCam)
             {
-                camera.position.y = camGroundY + 0.1;
+                float camGroundY = GetTerrainHeightFromMeshXZ(camera.position.x, camera.position.z);
+                if (camGroundY + 0.1f > camera.position.y)
+                {
+                    camera.position.y = camGroundY + 0.1f;
+                }
             }
 
             if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
