@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 62
+#define NUM_PLATS 65
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -599,6 +599,11 @@ void InitPlats()
     plats[59] = Platform_MakeMover((Vector3) { 2504.34, 456, 494.34 }, (Vector3) { 2504.34, 586, 494.34 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
     plats[60] = Platform_MakeStill((Vector3) { 2510, 588, 494.34 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[61] = Platform_MakeMover((Vector3) { 2552.05, 590, 545.34 }, (Vector3) { 2552.05, 730, 545.34 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    ////////////////////////////////////////////////////TREEHOUSE/////////////////////////////////////////////////////////////////////
+    //2725.00, 436.00, 4117.71
+    plats[62] = Platform_MakeMover((Vector3) { 2710.00, 406.00, 4120.00 }, (Vector3) { 2710.00, 436.00, 4120.00 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[63] = Platform_MakeStill((Vector3) { 2715.00, 436.00, 4100.71 }, (Vector3) { 18, 1, 6 }, tex_plat, WHITE);
+    plats[64] = Platform_MakeStill((Vector3) { 2740.00, 436.00, 4100.71 }, (Vector3) { 6, 1, 30 }, tex_plat, WHITE);
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 

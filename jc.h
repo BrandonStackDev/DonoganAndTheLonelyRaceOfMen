@@ -22,6 +22,7 @@ typedef enum {
     MODEL_HOME_CASTLE, //castle, cool texture!
     MODEL_HOME_WINDMILL, //windmill, will have spinning rotor
     MODEL_BARN,         //barn that holds da wrench
+    MODEL_TREE_HOUSE,
     MODEL_HOME_TOTAL_COUNT
 } Model_Home_Type;
 
@@ -50,6 +51,7 @@ typedef enum {
     SCENE_HOME_WINDMILL_10,
     SCENE_HOME_WINDMILL_11,
     SCENE_HOME_BARN_01,
+    SCENE_TREE_HOUSE_01,
     SCENE_TOTAL_COUNT
 } Scene_Type;
 
@@ -143,6 +145,9 @@ void InitHomes() {
     Model home008 = LoadModel("models/barn.obj");
     home008.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/barn.png");
     HomeModels[MODEL_BARN] = home008;
+    Model home009 = LoadModel("models/treehouse.obj");
+    home009.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/treehouse.png");
+    HomeModels[MODEL_TREE_HOUSE] = home009;
 
     // Populate the scene list (the important part)
     Scenes[SCENE_HOME_CABIN_01] = (Scene){ //where the truck is
@@ -349,6 +354,15 @@ void InitHomes() {
         .pos = (Vector3){ 875.34, 374.00, 1353.11 },
         .yaw = PI / 2.0f, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 46.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_TREE_HOUSE_01] = (Scene){ ////barn
+        .type = SCENE_TREE_HOUSE_01,
+        .modelType = MODEL_TREE_HOUSE,
+        .pos = (Vector3){ 2725.00, 436.00, 4117.71 },
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 8.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
