@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 57
+#define NUM_PLATS 62
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -592,6 +592,13 @@ void InitPlats()
     ///////////////////////////////////////////////////////////NEAR DONOGASN START///////////////////////////////////////  ///////////////////////
     plats[56] = Platform_MakeMover((Vector3) { 2614.71, 326, 4634.44 }, (Vector3) { 2614.71, 364, 4634.44 }, (Vector3) { 6, 1, 6 }, 8.0f, tex_plat, WHITE);
     plats[56].disabled = true;
+    /////////////////////////////////////////////////////////FARSIDE CASTLE SPACESHIPMODE PATH/////////////////////////////////////////////////////////////////////////
+    plats[57] = Platform_MakeMover((Vector3) { 2504.34, 384, 494.34 }, (Vector3) { 2504.34, 450, 494.34 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[57].disabled = true;
+    plats[58] = Platform_MakeStill((Vector3) { 2510, 454, 494.34 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[59] = Platform_MakeMover((Vector3) { 2504.34, 456, 494.34 }, (Vector3) { 2504.34, 586, 494.34 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[60] = Platform_MakeStill((Vector3) { 2510, 588, 494.34 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[61] = Platform_MakeMover((Vector3) { 2552.05, 590, 545.34 }, (Vector3) { 2552.05, 730, 545.34 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 

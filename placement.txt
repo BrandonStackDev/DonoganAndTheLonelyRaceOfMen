@@ -1,14 +1,1 @@
-//adriana's?
-don_pos = 2269.11, 331.29, -3446.53
 
-//good home stead position
-don_pos = 2573.33, 335.06, 2396.03
-
-//good place for a home, large deck over the cliff?
-don_pos = 1883.24, 358.77, -2268.53
-//shark 3875.50, 196.84, 3838.98
-//new stuff?
-//water gear mill?
-don_pos = 2023.66, 303.30, -887.73
-//plat for spaceship mode
-don_pos = 2614.71, 323.76, 4634.44
