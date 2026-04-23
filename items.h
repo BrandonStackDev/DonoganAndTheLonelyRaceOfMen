@@ -60,7 +60,7 @@ typedef struct {
     bool collected; //this one means collected forever
 } TrackedItem; //for items on the map that do not respawn and are kept in the save file
 
-#define NUM_ITEMS 14
+#define NUM_ITEMS 18
 #define NUM_TRACKED_ITEMS 12
 #define MAX_CLOSE_ITEMS 32
 Item map_items[NUM_ITEMS];
@@ -233,6 +233,11 @@ void InitItems()
     map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 2583.28, 587.28, 602.32 }, INV_POTION, 1);
     map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 2592.96, 587.28, 603.09 }, INV_POTION, 1);
     map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 2591.27, 587.29, 594.96 }, INV_POTION, 1);//14 (with this method as it gets large I will need counters here anyway, but still I think less work to set up, I just need markers every now and again)
+    //cottage1
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -1226.03, 389.0, 599.22 }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -1207.41, 389.0, 599.82 }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -1203.97, 389.0, 611.20 }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -1222.47, 389.0, 605.15 }, INV_POTION, 1);
     ////setup tracked map items
     ////for testing: 3022.00f, 322.00f, 4042.42f
     //good book

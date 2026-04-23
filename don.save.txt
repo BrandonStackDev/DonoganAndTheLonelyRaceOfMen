@@ -1,5 +1,5 @@
 DON_SAVE_V1
-don_pos = -1227.595 379.670 713.202
+don_pos = -1224.823 384.000 664.317
 don_bow = 0
 don_wrench = 1
 don_unlockedTruck = 1
@@ -59,9 +59,9 @@ ITEM[10] = 1
 ITEM[11] = 0
 --ITEMS-END--
 --INV-BEGIN--
-INV[0] = 0
-INV[1] = 0
-INV[2] = 0
+INV[0] = 1
+INV[1] = 1
+INV[2] = 2
 INV[3] = 0
 INV[4] = 0
 INV[5] = 1
