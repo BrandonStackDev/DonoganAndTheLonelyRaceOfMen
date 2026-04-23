@@ -1,9 +1,0 @@
-
-don_pos = -1214.70, 387.76, 603.48
-don_pos = -1213.66, 387.76, 608.70
-
---items
-don_pos = 
-don_pos = 
-don_pos = 
-don_pos = 

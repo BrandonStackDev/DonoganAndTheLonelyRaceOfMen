@@ -61,7 +61,7 @@ typedef struct {
 } TrackedItem; //for items on the map that do not respawn and are kept in the save file
 
 #define NUM_ITEMS 18
-#define NUM_TRACKED_ITEMS 12
+#define NUM_TRACKED_ITEMS 14
 #define MAX_CLOSE_ITEMS 32
 Item map_items[NUM_ITEMS];
 TrackedItem map_tracked_items[NUM_TRACKED_ITEMS];
@@ -248,6 +248,7 @@ void InitItems()
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 585.12, 422, 1874.69 }, INV_BOOK, 1); //plats near barn/windmill
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 2720.00, 438.00, 4100.71 }, INV_BOOK, 1); //tree house
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { -2400.32, 421.0, -2589.49 }, INV_BOOK, 1); //tree house by windmill
+    map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 1899.63, 806, -455.70 }, INV_BOOK, 1); //pair
     //book of shadows
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2126.62, 545.88, 834.43 }, INV_EVIL_BOOK, 1); //castle
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -2301.45, 336.09, 3530.99 }, INV_EVIL_BOOK, 1); //temple on start island
@@ -255,6 +256,7 @@ void InitItems()
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 41.14, 906, 1715.81 }, INV_EVIL_BOOK, 1); //plats near barn/windmill
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2740.00, 438.00, 4110.71 }, INV_EVIL_BOOK, 1); //tree house
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -2399.84, 421.0, -2579.47 }, INV_EVIL_BOOK, 1); //tree house by windmill
+    map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 1735.15, 806, -1186.69 }, INV_EVIL_BOOK, 1); //pair
 }
 
 #endif // ITEMS_H

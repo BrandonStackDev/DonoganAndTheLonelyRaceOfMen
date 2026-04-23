@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 70
+#define NUM_PLATS 72
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -614,6 +614,11 @@ void InitPlats()
     plats[67] = Platform_MakeStill((Vector3) { -2410.63, 418.00, -2545.34 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[68] = Platform_MakeStill((Vector3) { -2400.08, 418.00, -2579.14 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     plats[69] = Platform_MakeStill((Vector3) { -2400.08, 418.00, -2590.14 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    ///////////////////////////////////////////////////WINDMILL/BOOK PAIR////////////////////////////////////////////////////////////////
+    plats[70] = Platform_MakeMover((Vector3) { 1899.63, 445.51, -455.70 }, (Vector3) { 1899.63, 800, -455.70 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[70].disabled = true;
+    plats[71] = Platform_MakeMover((Vector3) { 1735.15, 542.52, -1186.69 }, (Vector3) { 1735.15, 800, -1186.69 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[71].disabled = true;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
