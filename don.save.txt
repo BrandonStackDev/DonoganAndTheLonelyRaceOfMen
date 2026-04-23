@@ -1,14 +1,14 @@
 DON_SAVE_V1
-don_pos = -2268.876 333.132 3533.622
+don_pos = -1227.595 379.670 713.202
 don_bow = 0
 don_wrench = 1
 don_unlockedTruck = 1
 don_health = 100
-don_mana   = 94
+don_mana   = 100
 don_starthealth = 100
 don_startmana   = 100
 don_level  = 1
-don_xp     = 198
+don_xp     = 217
 invY = 0
 invX = 0
 musicVol = 1.0000

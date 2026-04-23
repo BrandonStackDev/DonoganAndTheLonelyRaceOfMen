@@ -23,6 +23,7 @@ typedef enum {
     MODEL_HOME_WINDMILL, //windmill, will have spinning rotor
     MODEL_BARN,         //barn that holds da wrench
     MODEL_TREE_HOUSE,
+    MODEL_HOME_COTTAGE,
     MODEL_HOME_TOTAL_COUNT
 } Model_Home_Type;
 
@@ -53,6 +54,7 @@ typedef enum {
     SCENE_HOME_BARN_01,
     SCENE_TREE_HOUSE_01,
     SCENE_TREE_HOUSE_02,
+    SCENE_HOME_COTTAGE_01,
     SCENE_TOTAL_COUNT
 } Scene_Type;
 
@@ -149,6 +151,9 @@ void InitHomes() {
     Model home009 = LoadModel("models/treehouse.obj");
     home009.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/treehouse.png");
     HomeModels[MODEL_TREE_HOUSE] = home009;
+    Model home010 = LoadModel("models/cottage.obj");
+    home010.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/cottage.png");
+    HomeModels[MODEL_HOME_COTTAGE] = home010;
 
     // Populate the scene list (the important part)
     Scenes[SCENE_HOME_CABIN_01] = (Scene){ //where the truck is
@@ -367,12 +372,21 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_TREE_HOUSE_02] = (Scene){ ////by windmill at the top of the map
+    Scenes[SCENE_TREE_HOUSE_02] = (Scene){ ////treehouse by windmill at the top of the map
         .type = SCENE_TREE_HOUSE_02,
         .modelType = MODEL_TREE_HOUSE,
         .pos = (Vector3){ -2417.00, 412.00, -2570.00},
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 8.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_COTTAGE_01] = (Scene){ ////cottage near middle of map
+        .type = SCENE_HOME_COTTAGE_01,
+        .modelType = MODEL_HOME_COTTAGE,
+        .pos = (Vector3){ -1214.70, 400, 603.48},
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 24.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
