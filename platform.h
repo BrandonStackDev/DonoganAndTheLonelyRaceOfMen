@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 65
+#define NUM_PLATS 70
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -604,6 +604,16 @@ void InitPlats()
     plats[62] = Platform_MakeMover((Vector3) { 2710.00, 406.00, 4120.00 }, (Vector3) { 2710.00, 436.00, 4120.00 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
     plats[63] = Platform_MakeStill((Vector3) { 2715.00, 436.00, 4100.71 }, (Vector3) { 18, 1, 6 }, tex_plat, WHITE);
     plats[64] = Platform_MakeStill((Vector3) { 2740.00, 436.00, 4100.71 }, (Vector3) { 6, 1, 30 }, tex_plat, WHITE);
+    ////////////////////////////////////////////////////TreeHouse by Windmill at the edge of the map///////////////////////////////////////////////
+    //      don_pos = 
+    //      don_pos = -2398.63, 385.33, -2538.34
+    //      don_pos = -2399.08, 380.24, -2579.14
+    plats[65] = Platform_MakeMover((Vector3) { -2423.91, 388.00, -2532.08 }, (Vector3) { -2423.91, 418.00, -2532.08 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[65].disabled = true;
+    plats[66] = Platform_MakeStill((Vector3) { -2398.63, 418.00, -2538.34 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[67] = Platform_MakeStill((Vector3) { -2410.63, 418.00, -2545.34 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[68] = Platform_MakeStill((Vector3) { -2400.08, 418.00, -2579.14 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
+    plats[69] = Platform_MakeStill((Vector3) { -2400.08, 418.00, -2590.14 }, (Vector3) { 6, 1, 6 }, tex_plat, WHITE);
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 

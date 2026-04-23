@@ -52,6 +52,7 @@ typedef enum {
     SCENE_HOME_WINDMILL_11,
     SCENE_HOME_BARN_01,
     SCENE_TREE_HOUSE_01,
+    SCENE_TREE_HOUSE_02,
     SCENE_TOTAL_COUNT
 } Scene_Type;
 
@@ -357,10 +358,19 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
-    Scenes[SCENE_TREE_HOUSE_01] = (Scene){ ////barn
+    Scenes[SCENE_TREE_HOUSE_01] = (Scene){ ////by donogans
         .type = SCENE_TREE_HOUSE_01,
         .modelType = MODEL_TREE_HOUSE,
         .pos = (Vector3){ 2725.00, 436.00, 4117.71 },
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 8.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_TREE_HOUSE_02] = (Scene){ ////by windmill at the top of the map
+        .type = SCENE_TREE_HOUSE_02,
+        .modelType = MODEL_TREE_HOUSE,
+        .pos = (Vector3){ -2417.00, 412.00, -2570.00},
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 8.0f,
         .origBox = (BoundingBox){0},

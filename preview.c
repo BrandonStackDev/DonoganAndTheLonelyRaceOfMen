@@ -667,6 +667,7 @@ int main(void) {
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_10) { plats[21].disabled = false; plats[36].disabled = false; plats[40].disabled = false;} //by barn
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_02) { plats[56].disabled = false; } //by donogans
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_03) { plats[57].disabled = false; } //farside castle spaceshipmode
+                else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_08) { plats[65].disabled = false; } //treehouse by windmill
             }
         }
         
@@ -971,6 +972,7 @@ int main(void) {
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_10) { plats[21].disabled = false; plats[36].disabled = false;plats[40].disabled = false;} //by barn
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_02) { plats[56].disabled = false; } //by donogans
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_03) { plats[57].disabled = false; } //farside castle spaceshipmode
+                        else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_08) { plats[65].disabled = false; } //treehouse by windmill
                     }
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";
