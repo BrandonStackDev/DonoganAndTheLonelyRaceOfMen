@@ -951,6 +951,10 @@ int main(void) {
                 {
                     camera.position.y = camGroundY + 0.1f;
                 }
+                if (camera.position.y < don.pos.y)
+                {
+                    camera.position.y = don.pos.y;
+                }
             }
 
             if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
