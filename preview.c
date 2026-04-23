@@ -959,7 +959,7 @@ int main(void) {
                 {
                     camera.position.y = camGroundY + 0.1f;
                 }
-                if (camera.position.y < don.pos.y)//prevent clipping(from backface culling) a bit more
+                if (!don.gluedToPlatform && camera.position.y < don.pos.y)//prevent clipping(from backface culling) a bit more
                 {
                     camera.position.y = don.pos.y;
                 }
