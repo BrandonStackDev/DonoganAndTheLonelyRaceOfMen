@@ -189,6 +189,8 @@ typedef enum {
     FIREPIT_HOME = 0,
     FIREPIT_CASTLE,
     FIREPIT_VILLAGE,
+    FIREPIT_COTTAGE,
+    FIREPIT_BARN,
     FIREPIT_TOTAL_COUNT
 } FirepitLocation;
 

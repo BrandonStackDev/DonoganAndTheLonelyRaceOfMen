@@ -570,6 +570,12 @@ int main(void) {
     fires[FIREPIT_VILLAGE].location = FIREPIT_VILLAGE;
     fires[FIREPIT_VILLAGE].pos = (Vector3){ -3743, 327, 1069 };
     fires[FIREPIT_VILLAGE].name = "Village";
+    fires[FIREPIT_COTTAGE].location = FIREPIT_COTTAGE;
+    fires[FIREPIT_COTTAGE].pos = (Vector3){ -1214.70, 400, 664 };
+    fires[FIREPIT_COTTAGE].name = "cottage";
+    fires[FIREPIT_BARN].location = FIREPIT_BARN;
+    fires[FIREPIT_BARN].pos = (Vector3){ 922.00f, 353.00f, 2026.00f };
+    fires[FIREPIT_BARN].name = "barn/windmill";
     // INIT INTERACTIVE POINTS OF INTEREST
     InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
     InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
