@@ -2625,11 +2625,16 @@ int main(void) {
             {
                 int b = act_bg[i];
                 if (!bg[b].active) { continue; }
-                if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
-                bool punching = (don.state == DONOGAN_STATE_PUNCH_CROSS_ENTER
+                //if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
+                bool punching = don.punching;
+                bool bodyHit = CheckCollisionBoxes(bg[b].box, don.outerBox);
+                bool punchHit = punching && CheckCollisionBoxes(bg[b].box, don.punchBox);
+
+                if (!bodyHit && !punchHit) { continue; }
+                /*bool punching = (don.state == DONOGAN_STATE_PUNCH_CROSS_ENTER
                     || don.state == DONOGAN_STATE_PUNCH_JAB_ENTER
                     || don.state == DONOGAN_STATE_PUNCH_CROSS
-                    || don.state == DONOGAN_STATE_PUNCH_JAB);
+                    || don.state == DONOGAN_STATE_PUNCH_JAB);*/
                 if (bg[b].type == BG_GHOST && HasTimerElapsed(&don.hitTimer))
                 {
                     //hit don
@@ -2640,7 +2645,7 @@ int main(void) {
                 }
                 else if (bg[b].type == BG_YETI) 
                 {
-                    if (punching) {
+                    if (punchHit) {
                         // punched a yeti!
                         TraceLog(LOG_INFO, "punched a yeti!");
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
@@ -2658,7 +2663,7 @@ int main(void) {
                 }
                 else if (bg[b].type == BG_ROBO)
                 {
-                    if (punching)
+                    if (punchHit)
                     {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
                     }
@@ -2757,6 +2762,8 @@ int main(void) {
         UpdateApples(dt);
         Machine_Update(dt, &don, &truckPosition);
         Shark_Update(&shark, &don, dt);
+        don.punching = DonIsPunching(&don);
+        don.punchBox = DonMakePunchBox(&don);
         //whale farts
         if (onLoad && !missions[MISSION_FART_WHALE].complete)
         {
@@ -2894,6 +2901,7 @@ int main(void) {
                     {
                         DrawBoundingBox(gEnvBoundingBoxes[i].box, MAGENTA);
                     }
+                    if (don.punching) { DrawBoundingBox(don.punchBox, ORANGE); }
                 }
 
                 //bow stuff

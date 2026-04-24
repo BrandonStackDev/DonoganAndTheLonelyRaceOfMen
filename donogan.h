@@ -522,6 +522,9 @@ typedef struct {
     Timer eatenTimer;
     //in home
     bool inHome;
+    //punching
+    BoundingBox punchBox;
+    bool punching;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -531,6 +534,30 @@ static const char* PNG = "textures/donogan.png";
 static const char* BOW_GLB = "models/bow.glb";
 static const char* BOW_PNG = "textures/bow.png";
 
+static inline bool DonIsPunching(const Donogan* d)
+{
+    return d->state == DONOGAN_STATE_PUNCH_JAB ||
+        d->state == DONOGAN_STATE_PUNCH_CROSS;
+}
+static inline BoundingBox DonMakePunchBox(const Donogan* d)
+{
+    Vector3 fwd = {
+        sinf(d->yawY),
+        0.0f,
+        cosf(d->yawY)
+    };
+
+    float size = 2.2f;      // cube size, tune this
+    float reach = 2.1f;     // distance forward, tune this
+
+    Vector3 c = Vector3Add(d->pos, Vector3Scale(fwd, reach));
+    c.y = d->outerBox.min.y + 0.55f * (d->outerBox.max.y - d->outerBox.min.y);
+
+    return (BoundingBox) {
+        { c.x - size * 0.5f, c.y - size * 0.5f, c.z - size * 0.5f },
+        { c.x + size * 0.5f, c.y + size * 0.5f, c.z + size * 0.5f }
+    };
+}
 //lasers
 // ===== Robo Lasers ===========================================================
 #define MAX_LASERS 16
