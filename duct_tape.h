@@ -23,7 +23,7 @@ typedef struct
 
 
 
-#define gEnvBoundingBoxCount 22
+#define gEnvBoundingBoxCount 24
 
 EnvBoundingBox gEnvBoundingBoxes[gEnvBoundingBoxCount] = { 0 };
 
@@ -51,6 +51,8 @@ void GoGoGadgetDuctTape()
     gEnvBoundingBoxes[19] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1839.4f, 360, 4119.7f },(Vector3) { 1844.2f, 372.0f, 4182.0f } } };//nice 01 wall 4
     gEnvBoundingBoxes[20] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1830.0f, 360, 4136.0f },(Vector3) { 1845.0f, 364.4f, 4140.0f } } };//nice 01 wall 5
     gEnvBoundingBoxes[21] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { 1841.0f, 372, 4119.7f },(Vector3) { 1844.2f, 374.4f, 4182.0f } } };//nice 01 ground 1
+    gEnvBoundingBoxes[22] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { -2313.59, 333.08, 3503.79 },(Vector3) { -2222.63, 350.00, 3524.00 } } };//temple wall
+    gEnvBoundingBoxes[23] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { -669.12, 574, 3726.89 },(Vector3) { -668.00, 575.67, 3748.53 } } };//lucyies sisters ground
 }
 
 #endif // DUCT_TAPE_H
