@@ -165,8 +165,19 @@ static void InitWhale(Whale* A, Vector3 home, float bottomY, float surfaceY) {
     A->turnYawDelta = 0.0f;
     A->verticalBoost = 0.0f;
 
-    A->origBox = (BoundingBox){ (Vector3) { -20,-20,-20 },(Vector3) { 20,20,20 } };
-    A->box = UpdateBoundingBox(A->origBox, A->pos);
+    A->origBox = (BoundingBox){
+    (Vector3) {
+        -35.0f, -35.0f, -35.0f
+    },
+    (Vector3) {
+        35.0f,  35.0f,  35.0f
+    }
+    };
+    A->box = UpdateBoundingBox(A->origBox, (Vector3) {
+        A->pos.x,
+        A->pos.y - 18.0f,
+        A->pos.z
+    });
 }
 
 // ---------- FSM helpers (Fish State Management)----------
@@ -447,7 +458,11 @@ static void FSM_Tick(Whale* A, float t, float dt) {
 
     UpdateModelAnimation(A->model, A->proc, 0);
     A->stateTime += dt;
-    A->box = UpdateBoundingBox(A->origBox, A->pos);
+    A->box = UpdateBoundingBox(A->origBox, (Vector3) {
+        A->pos.x,
+        A->pos.y - 18.0f,
+        A->pos.z
+    });
 }
 
 #endif // WHALE_H
