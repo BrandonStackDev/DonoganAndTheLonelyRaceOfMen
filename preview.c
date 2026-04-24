@@ -906,9 +906,10 @@ int main(void) {
             float fovRate = 6.0f;
 
             // Base target = torso
-            Vector3 desiredTarget = (Vector3){ don.pos.x, don.pos.y + 1.0f, don.pos.z };
+            Vector3 desiredTarget = (Vector3){ don.pos.x, don.pos.y + 2.6f, don.pos.z };
 
             if (inBowCam) {
+                desiredTarget = (Vector3){ don.pos.x, don.pos.y + 0.555f, don.pos.z };
                 // 1) compute spawn + aim
                 Vector3 spawn = Vector3Add(don.pos, RotYawOffset(don.arrowOffset, don.yawY, 1, false));
                 float gySpawn = GetTerrainHeightFromMeshXZ(spawn.x, spawn.z);
