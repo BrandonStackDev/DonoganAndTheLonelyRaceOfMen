@@ -955,9 +955,9 @@ int main(void) {
             if (!inBowCam)
             {
                 float camGroundY = GetTerrainHeightFromMeshXZ(camera.position.x, camera.position.z);
-                if (camGroundY + 0.1f > camera.position.y)
+                if (camGroundY + 0.6f > camera.position.y)
                 {
-                    camera.position.y = camGroundY + 0.1f;
+                    camera.position.y = camGroundY + 0.6f;
                 }
                 if (!don.gluedToPlatform && camera.position.y < don.pos.y)//prevent clipping(from backface culling) a bit more
                 {
