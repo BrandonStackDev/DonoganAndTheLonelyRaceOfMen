@@ -2483,6 +2483,9 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
             case DONOGAN_STATE_HIT:
                 d->bowMode = false;
+                d->bowCur = -1;
+                d->bowFinished = true;
+                d->bowReleaseCamHold = 0.0f;
                 d->squareThrowRequest = false;
                 ResetTimer(&d->spellTimer);
                 if (d->animFinished) { DonSetState(d, DONOGAN_STATE_IDLE);}
@@ -2490,6 +2493,9 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
             case DONOGAN_STATE_DEATH:
                 d->bowMode = false;
+                d->bowCur = -1;
+                d->bowFinished = true;
+                d->bowReleaseCamHold = 0.0f;
                 d->squareThrowRequest = false;
                 
                 ResetTimer(&d->spellTimer);
