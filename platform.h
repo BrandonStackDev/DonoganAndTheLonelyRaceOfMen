@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 77
+#define NUM_PLATS 123
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -629,6 +629,74 @@ void InitPlats()
     ///////////////////////////////////////////////////////SECTION BRIDGE WITH HOPPERS///////////////////////////////////////////////////////////
     plats[76] = Platform_MakeMover((Vector3) { 1689.63, 550, -1713.86 }, (Vector3) { 1689.63, 600, -1713.86 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
     plats[76].disabled = true;
+    //1689.63, 600, -1713.86 -> 823.44, 879.19, -1826.03
+    //delta-X = 823.44  - 1689.63  =                        -866.19
+    //delta-Y = 879.19 - 600 =                              +279.19
+    //delta-Z = -1826.03 - (-1713.86) =                     -112.17
+    plats[77] = Platform_MakeStill((Vector3) { 1651.97f, 610.82f, -1718.74f }, (Vector3) { 14, 1, 6 }, tex_plat, WHITE);
+    plats[78] = Platform_MakeStill((Vector3) { 1651.97f, 610.82f, -1727.74f }, (Vector3) { 12, 1, 6 }, tex_plat, WHITE);
+
+    plats[79] = Platform_MakeStill((Vector3) { 1620.31f, 620.00f, -1723.61f }, (Vector3) { 16, 1, 6 }, tex_plat, WHITE);
+
+    plats[80] = Platform_MakeStill((Vector3) { 1590.65f, 628.36f, -1728.49f }, (Vector3) { 16, 1, 8 }, tex_plat, WHITE);
+    plats[81] = Platform_MakeStill((Vector3) { 1576.65f, 634.36f, -1719.49f }, (Vector3) { 10, 1, 6 }, tex_plat, WHITE);
+
+    plats[82] = Platform_MakeStill((Vector3) { 1538.99f, 640.57f, -1733.37f }, (Vector3) { 16, 1, 6 }, tex_plat, WHITE);
+
+    plats[83] = Platform_MakeStill((Vector3) { 1501.32f, 658.99f, -1738.24f }, (Vector3) { 12, 1, 8 }, tex_plat, WHITE);
+    plats[84] = Platform_MakeStill((Vector3) { 1501.32f, 658.99f, -1747.24f }, (Vector3) { 12, 1, 6 }, tex_plat, WHITE);
+
+    plats[85] = Platform_MakeStill((Vector3) { 1463.66f, 671.59f, -1743.12f }, (Vector3) { 14, 1, 6 }, tex_plat, WHITE);
+
+    plats[86] = Platform_MakeStill((Vector3) { 1426.00f, 684.35f, -1748.00f }, (Vector3) { 16, 1, 6 }, tex_plat, WHITE);
+    plats[87] = Platform_MakeStill((Vector3) { 1426.00f, 684.35f, -1739.00f }, (Vector3) { 10, 1, 6 }, tex_plat, WHITE);
+
+    plats[88] = Platform_MakeStill((Vector3) { 1388.34f, 698, -1752.87f }, (Vector3) { 14, 1, 8 }, tex_plat, WHITE);
+
+    plats[89] = Platform_MakeMover((Vector3) { 1350.68f, 700, -1757.75f }, (Vector3) { 1350.68f, 730, -1757.75f }, (Vector3) { 8, 1, 8 }, 6, tex_plat, WHITE);
+
+    plats[90] = Platform_MakeStill((Vector3) { 1310.02f, 723.48f, -1762.63f }, (Vector3) { 12, 1, 8 }, tex_plat, WHITE);
+    plats[91] = Platform_MakeStill((Vector3) { 1313.02f, 723.48f, -1771.63f }, (Vector3) { 12, 1, 6 }, tex_plat, WHITE);
+    plats[92] = Platform_MakeStill((Vector3) { 1310.02f, 723.48f, -1753.63f }, (Vector3) { 10, 1, 6 }, tex_plat, WHITE);
+    //gap too big
+    plats[93] = Platform_MakeStill((Vector3) { 1275.36f, 736.78f, -1767.50f }, (Vector3) { 16, 1, 6 }, tex_plat, WHITE);
+
+    plats[94] = Platform_MakeStill((Vector3) { 1237.70f, 750.20f, -1772.38f }, (Vector3) { 14, 1, 8 }, tex_plat, WHITE);
+
+    plats[95] = Platform_MakeStill((Vector3) { 1200.04f, 763.73f, -1777.26f }, (Vector3) { 16, 1, 6 }, tex_plat, WHITE);
+    plats[96] = Platform_MakeStill((Vector3) { 1200.04f, 763.73f, -1786.26f }, (Vector3) { 12, 1, 6 }, tex_plat, WHITE);
+
+    plats[97] = Platform_MakeStill((Vector3) { 1162.38f, 777.37f, -1782.13f }, (Vector3) { 14, 1, 8 }, tex_plat, WHITE);
+
+    plats[98] = Platform_MakeStill((Vector3) { 1124.72f, 791.12f, -1787.01f }, (Vector3) { 16, 1, 6 }, tex_plat, WHITE);
+
+    plats[99] = Platform_MakeStill((Vector3) { 1087.06f, 804.97f, -1791.89f }, (Vector3) { 12, 1, 8 }, tex_plat, WHITE);
+    plats[100] = Platform_MakeStill((Vector3) { 1049.39f, 818.92f, -1796.76f }, (Vector3) { 16, 1, 6 }, tex_plat, WHITE);
+    plats[101] = Platform_MakeStill((Vector3) { 823.44f, 891.19f, -1826.03f }, (Vector3) { 16, 1, 10 }, tex_plat, WHITE);
+    //movers
+    plats[102] = Platform_MakeMover((Vector3) { 1680, 605, -1713.86 }, (Vector3) { 1665, 611, -1718.74f }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[103] = Platform_MakeMover((Vector3) { 1035.0f, 826.0f, -1800.0f }, (Vector3) { 1018.0f, 832.0f, -1802.0f }, (Vector3) { 8, 1, 8 }, 7.0f, tex_plat, WHITE);
+    plats[104] = Platform_MakeMover((Vector3) { 996.0f, 838.0f, -1805.0f }, (Vector3) { 978.0f, 844.0f, -1807.0f }, (Vector3) { 10, 1, 8 }, 7.0f, tex_plat, WHITE);
+    plats[105] = Platform_MakeMover((Vector3) { 956.0f, 850.0f, -1810.0f }, (Vector3) { 938.0f, 856.0f, -1812.0f }, (Vector3) { 8, 1, 8 }, 7.0f, tex_plat, WHITE);
+    plats[106] = Platform_MakeMover((Vector3) { 918.0f, 862.0f, -1815.0f }, (Vector3) { 900.0f, 868.0f, -1817.0f }, (Vector3) { 10, 1, 8 }, 7.0f, tex_plat, WHITE);
+    plats[107] = Platform_MakeMover((Vector3) { 882.0f, 872.0f, -1819.0f }, (Vector3) { 864.0f, 878.0f, -1821.0f }, (Vector3) { 8, 1, 8 }, 7.0f, tex_plat, WHITE);
+    plats[108] = Platform_MakeMover((Vector3) { 850.0f, 882.0f, -1823.0f }, (Vector3) { 835.0f, 888.0f, -1825.0f }, (Vector3) { 10, 1, 8 }, 6.0f, tex_plat, WHITE);
+    plats[109] = Platform_MakeMover((Vector3) { 956.0f, 850.0f, -1801.0f }, (Vector3) { 938.0f, 856.0f, -1803.0f }, (Vector3) { 8, 1, 8 }, 6.0f, tex_plat, WHITE);
+    plats[110] = Platform_MakeMover((Vector3) { 918.0f, 862.0f, -1826.0f }, (Vector3) { 900.0f, 868.0f, -1828.0f }, (Vector3) { 8, 1, 8 }, 6.0f, tex_plat, WHITE);
+    plats[111] = Platform_MakeMover((Vector3) { 872.0f, 876.0f, -1810.0f }, (Vector3) { 852.0f, 884.0f, -1813.0f }, (Vector3) { 8, 1, 8 }, 6.0f, tex_plat, WHITE);
+    plats[111].disabled = true;
+    //by hand
+    plats[112] = Platform_MakeMover((Vector3) { 1555, 645, -1733.37f }, (Vector3) { 1515, 655, -1738.24f }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[113] = Platform_MakeStill((Vector3) { 1487.66, 666, -1740.57 }, (Vector3) { 4, 1, 8 }, tex_plat, WHITE);
+    plats[114] = Platform_MakeStill((Vector3) { 1444, 675, -1742.73 }, (Vector3) { 6, 1, 8 }, tex_plat, WHITE);
+    plats[115] = Platform_MakeStill((Vector3) { 1406.04, 691, -1749.15 }, (Vector3) { 4, 1, 8 }, tex_plat, WHITE);
+    plats[116] = Platform_MakeStill((Vector3) { 1290, 734, -1757.50f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[117] = Platform_MakeStill((Vector3) { 1255, 745, -1767.98 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[118] = Platform_MakeStill((Vector3) { 1220.0f, 756.0f, -1773.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[119] = Platform_MakeStill((Vector3) { 1182.0f, 770.0f, -1780.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[120] = Platform_MakeStill((Vector3) { 1143.0f, 784.0f, -1785.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[121] = Platform_MakeStill((Vector3) { 1106.0f, 798.0f, -1790.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[122] = Platform_MakeStill((Vector3) { 1068.0f, 812.0f, -1795.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
