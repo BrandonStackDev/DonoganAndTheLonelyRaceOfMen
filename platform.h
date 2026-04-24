@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 76
+#define NUM_PLATS 77
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -625,6 +625,10 @@ void InitPlats()
 
     plats[74] = Platform_MakeMover((Vector3) { 1735.15, 605, -1186.69 }, (Vector3) { 1735.15, 700, -1186.69 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
     plats[75] = Platform_MakeMover((Vector3) { 1735.15, 705, -1186.69 }, (Vector3) { 1735.15, 800, -1186.69 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////SECTION BRIDGE WITH HOPPERS///////////////////////////////////////////////////////////
+    plats[76] = Platform_MakeMover((Vector3) { 1689.63, 550, -1713.86 }, (Vector3) { 1689.63, 600, -1713.86 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[76].disabled = true;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 

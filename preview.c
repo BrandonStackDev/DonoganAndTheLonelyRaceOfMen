@@ -676,6 +676,7 @@ int main(void) {
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_08) { plats[65].disabled = false; } //treehouse by windmill
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_04) { plats[70].disabled = false; } //pair
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_05) { plats[71].disabled = false; } //pair
+                else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_06) { plats[76].disabled = false; } //bridge
             }
         }
         
@@ -988,6 +989,7 @@ int main(void) {
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_08) { plats[65].disabled = false; } //treehouse by windmill
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_04) { plats[70].disabled = false; } //pair
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_05) { plats[71].disabled = false; } //pair
+                        else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_06) { plats[76].disabled = false; } //bridge
                     }
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";
