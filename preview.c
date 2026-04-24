@@ -2757,6 +2757,35 @@ int main(void) {
         UpdateApples(dt);
         Machine_Update(dt, &don, &truckPosition);
         Shark_Update(&shark, &don, dt);
+        //whale farts
+        if (onLoad && !missions[MISSION_FART_WHALE].complete)
+        {
+            for (int w = 0; w < numWhales; w++)
+            {
+                bool hitWhale = false;
+
+                for (int b = 0; b < DON_MAX_BUBBLES; b++)
+                {
+                    if (!don.bubbles[b].alive) { continue; }
+
+                    if (CheckCollisionBoxes(don.bubbles[b].box, whales[w].box))
+                    {
+                        hitWhale = true;
+                        don.bubbles[b].alive = 0; // optional, prevents repeated hits
+                        break;
+                    }
+                }
+
+                if (hitWhale)
+                {
+                    missions[MISSION_FART_WHALE].complete = true;
+                    toast = "Completed mission! You farted on a whale!";
+                    StartTimer(&toastTimer);
+                    don.xp += 100;
+                    break;
+                }
+            }
+        }
         // Update the light shader with the camera view position
         SetShaderValue(lightningBugShader, lightningBugShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
         SetShaderValue(instancingLightShader, instancingLightShader.locs[SHADER_LOC_VECTOR_VIEW], &camera.position, SHADER_UNIFORM_VEC3);
@@ -2939,7 +2968,7 @@ int main(void) {
                 DrawBalls(camera, ball, lightningBall);
                 DrawLasers();
                 //bubbles
-                if (don.inWater) { DonDrawBubbles(&don); }
+                if (don.inWater) { DonDrawBubbles(&don, displayBoxes); }
             }
             if (onLoad)
             {
@@ -3115,6 +3144,7 @@ int main(void) {
                     Matrix S = MatrixScale(10, 10, 10);
                     Matrix whaleXform = MatrixMultiply(S, MatrixMultiply(R,T));
                     DrawMesh(whales[i].model.meshes[0], whales[i].model.materials[0], whaleXform);
+                    if (displayBoxes) { DrawBoundingBox(whales[i].box, BLUE); }
                     //DrawSphere(whales[i].pos, 4.0f, RED);
                 }
                 //fish

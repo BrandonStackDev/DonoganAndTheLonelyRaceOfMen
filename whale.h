@@ -5,6 +5,7 @@
 #include "raymath.h"
 #include <stdio.h>
 #include "texture.h"
+#include "core.h"
 
 //bones in the whale indexes
 typedef enum {
@@ -76,6 +77,9 @@ typedef struct {
     float descendTimer;         // seconds since apex
     Vector3 breachEulerStart;   // yaw/pitch/roll at BREACH entry
     Vector3 breachEulerTarget;  // where we want to end up while falling
+
+    //box
+    BoundingBox origBox, box;
 } Whale;
 
 // --------- Small helpers ----------
@@ -160,6 +164,9 @@ static void InitWhale(Whale* A, Vector3 home, float bottomY, float surfaceY) {
     A->spinAccum = 0.0f;
     A->turnYawDelta = 0.0f;
     A->verticalBoost = 0.0f;
+
+    A->origBox = (BoundingBox){ (Vector3) { -20,-20,-20 },(Vector3) { 20,20,20 } };
+    A->box = UpdateBoundingBox(A->origBox, A->pos);
 }
 
 // ---------- FSM helpers (Fish State Management)----------
@@ -440,6 +447,7 @@ static void FSM_Tick(Whale* A, float t, float dt) {
 
     UpdateModelAnimation(A->model, A->proc, 0);
     A->stateTime += dt;
+    A->box = UpdateBoundingBox(A->origBox, A->pos);
 }
 
 #endif // WHALE_H

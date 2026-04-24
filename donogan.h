@@ -19,7 +19,7 @@
 #include "game.h"
 #include "texture.h"
 //bubbles
-#define DON_MAX_BUBBLES 128
+#define DON_MAX_BUBBLES 32
 
 // ---------- Character states ----------
 // ===== Donny (67 bones) ======================================================
@@ -289,6 +289,7 @@ typedef struct Bubble {
     float   radius;
     float   life, maxLife;
     unsigned char alive;
+    BoundingBox origBox, box;
 } Bubble;
 //proc anim
 #define MAX_KEY_FRAME_BONES 16
@@ -1516,6 +1517,8 @@ static inline void DonSpawnBubbles(Donogan* d, int count, float strength) {
         b->life = 0.0f;
         b->maxLife = 0.9f + 0.5f * frand01();
         b->alive = 1;
+        b->origBox = (BoundingBox){ (Vector3) { -1,-1,-1 },(Vector3) { 1,1,1 } };
+        b->box = UpdateBoundingBox(b->origBox, b->pos);
     }
 }
 
@@ -1534,6 +1537,7 @@ static inline void DonUpdateBubbles(Donogan* d, float dt) {
 
         // kill if above surface or life over
         if (b->life >= b->maxLife || b->pos.y > d->waterY + 0.05f) b->alive = 0;
+        b->box = UpdateBoundingBox(b->origBox, b->pos);
     }
 }
 //helper for drawing
@@ -2668,7 +2672,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 #include "rlgl.h"  // at top of preview.c
 
 // ... in your 3D draw loop, after DrawModel(don.model, ...) ...
-void DonDrawBubbles(const Donogan* d) {
+void DonDrawBubbles(const Donogan* d, bool displayBoxes) {
     // draw transparent without writing depth to avoid sorting artifacts
     rlDisableDepthMask();
     for (int i = 0; i < DON_MAX_BUBBLES; i++) {
@@ -2678,6 +2682,7 @@ void DonDrawBubbles(const Donogan* d) {
         unsigned char a = (unsigned char)((1.0f - t) * 160); // fade out
         Color c = (Color){ 180, 220, 255, a };      // light blue with alpha
         DrawSphereEx(b->pos, b->radius, 8, 8, c);   // small, simple sphere
+        if (displayBoxes) { DrawBoundingBox(b->box, BLUE); }
     }
     rlEnableDepthMask();
 }

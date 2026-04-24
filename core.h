@@ -23,6 +23,7 @@
 #include "util.h"
 #include "models.h"
 #include "objMemParse.h"
+#include "timer.h"
 
 //float   GetTerrainHeightFromMeshXZ(float x, float z);//todo: 
 //Vector3 GetTerrainNormalFromMeshXZ(float x, float z);

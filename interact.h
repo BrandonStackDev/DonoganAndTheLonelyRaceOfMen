@@ -156,6 +156,7 @@ typedef enum {
     MISSION_KILL_ROBO,
     MISSION_START_ALL_MILLS,
     MISSION_RESCUE_NICK,
+    MISSION_FART_WHALE,
     MISSION_TOTAL_COUNT
 } MissionType;
 
@@ -371,6 +372,11 @@ void InitMissions()
     missions[MISSION_RESCUE_NICK].type = MISSION_RESCUE_NICK;
     missions[MISSION_RESCUE_NICK].name = "Rescue Nick from the Robot Orbs";
     missions[MISSION_RESCUE_NICK].desc = "Press triangle near nick to rescue him.";
+    //far on whale
+    missions[MISSION_FART_WHALE].complete = false;
+    missions[MISSION_FART_WHALE].type = MISSION_FART_WHALE;
+    missions[MISSION_FART_WHALE].name = "Fart on a Whale";
+    missions[MISSION_FART_WHALE].desc = "Blow bubbles under water at a whale.";
 }
 
 // Draw text using font inside rectangle limits with support for text selection
