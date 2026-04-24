@@ -905,7 +905,7 @@ int main(void) {
             float zoomRate = 6.0f;
             float fovRate = 6.0f;
 
-            // Base target = torso
+            // Base target = head
             Vector3 desiredTarget = (Vector3){ don.pos.x, don.pos.y + 2.6f, don.pos.z };
 
             if (inBowCam) {
@@ -1543,17 +1543,6 @@ int main(void) {
         float spd = MOVE_SPEED;
         if (!donnyMode || !don.isTalking)
         {
-            if (IsKeyPressed(KEY_T)) { modelSearchType++; modelSearchType = modelSearchType % MODEL_TOTAL_COUNT; }
-            if (IsKeyDown(KEY_R))
-            {
-                if (onLoad && !FindNextTreeInChunk(&camera, closestCX, closestCY, 15.0f, modelSearchType)) {
-                    TraceLog(LOG_INFO, "No suitable prop found in current chunk.");
-                    if (!FindAnyTreeInWorld(&camera, 15.0f, modelSearchType))
-                    {
-                        TraceLog(LOG_INFO, "Prop error, we didnt find any on the map this try...");
-                    }
-                }
-            }
             //if (IsKeyPressed(KEY_C)) { DisableCursor(); }
             if (IsKeyPressed(KEY_X)) { EnableCursor(); }
             if (IsKeyPressed(KEY_Y)) { contInvertY = !contInvertY; }
@@ -2306,12 +2295,23 @@ int main(void) {
             {
                 camYaw = truckAngle * RAD2DEG + relativeYaw;
                 float radYaw = camYaw * DEG2RAD;
+                //float radPitch = relativePitch * DEG2RAD;
+                Vector3 n = GetTerrainNormalFromMeshXZ(truckPosition.x, truckPosition.z);
+                float upDot = Vector3DotProduct(n, (Vector3) { 0, 1, 0 });
+                float slope01 = Clamp(1.0f - upDot, 0.0f, 0.35f);
+                float hillCamDistance = camDistance + slope01 * 35.0f;
                 float radPitch = relativePitch * DEG2RAD;
+                //end new section
                 float followSpeed = 5.0f * GetFrameTime();
-                Vector3 offset = {
+                /*Vector3 offset = {
                     camDistance * cosf(radPitch) * sinf(radYaw),
                     camDistance * sinf(radPitch),
                     camDistance * cosf(radPitch) * cosf(radYaw)
+                };*/
+                Vector3 offset = {
+                    hillCamDistance * cosf(radPitch) * sinf(radYaw),
+                    hillCamDistance * sinf(radPitch),
+                    hillCamDistance * cosf(radPitch) * cosf(radYaw)
                 };
 
                 Vector3 desiredCameraPos = Vector3Add(truckPosition, offset);
