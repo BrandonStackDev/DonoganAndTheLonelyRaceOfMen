@@ -22,6 +22,7 @@ typedef enum {
     BG_GHOST,
     BG_YETI,
     BG_ROBO,
+    BG_PUMPKIN_HOPPER,
     BG_TYPE_COUNT
 } BadGuyType;
 
@@ -36,6 +37,7 @@ typedef enum {
     ATTACK_FREEZE,
     ATTACK_THROW,
     ATTACK_ARROW,
+    ATTACK_HOP
 } DonAttackType;
 
 //todo: badguy specific (because ghosts are one hit and I only have the yeti it doesnt make sense yet)
@@ -159,6 +161,13 @@ typedef enum {
     //for the robot orb
 } RoboState;
 
+typedef enum {
+    HOPPER_STATE_SLEEP,
+    HOPPER_STATE_WAIT,
+    HOPPER_STATE_JUMP,
+    HOPPER_STATE_DEAD
+} HopperState;
+
 typedef struct {
     bool isInUse;
     BadGuyType type;
@@ -260,6 +269,19 @@ void InitBadGuyModels(Shader ghostShader)
                 bgModelBorrower[index].tex = robo_tex;
                 bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
                 bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
+            }
+            else if (bg_t == BG_PUMPKIN_HOPPER)
+            {
+                bgModelBorrower[index].model = LoadModel("models/hopper.obj");
+                bgModelBorrower[index].tex = LoadMyTexture("textures/hopper.png"); // if you have one
+
+                if (bgModelBorrower[index].model.materialCount > 0)
+                {
+                    bgModelBorrower[index].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture =
+                        bgModelBorrower[index].tex;
+                }
+
+                bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12f);
             }
         }
     }
@@ -806,6 +828,56 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
     }
 }
 
+static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
+{
+    float groundY = BG_GroundY(b->pos);
+
+    switch (b->state)
+    {
+    case HOPPER_STATE_SLEEP:
+    {
+        if (Vector3Distance(d->pos, b->pos) < b->awareRadius)
+        {
+            b->aware = true;
+            b->state = HOPPER_STATE_WAIT;
+            ResetTimer(&b->interactionTimer);
+            StartTimer(&b->interactionTimer);
+        }
+    } break;
+
+    case HOPPER_STATE_WAIT:
+    {
+        Vector3 toDon = Vector3Subtract(d->pos, b->pos);
+        b->yaw = RAD2DEG * atan2f(toDon.x, toDon.z);
+
+        if (HasTimerElapsed(&b->interactionTimer))
+        {
+            Vector3 dir = Vector3Normalize((Vector3) { toDon.x, 0, toDon.z });
+            b->vel = Vector3Scale(dir, b->speed);
+            b->vel.y = 10.0f;
+            b->state = HOPPER_STATE_JUMP;
+        }
+    } break;
+
+    case HOPPER_STATE_JUMP:
+    {
+        b->pos = Vector3Add(b->pos, Vector3Scale(b->vel, dt));
+        b->vel.y -= 28.0f * dt;
+
+        if (b->pos.y <= groundY)
+        {
+            b->pos.y = groundY;
+            b->vel = (Vector3){ 0 };
+            b->state = HOPPER_STATE_WAIT;
+            ResetTimer(&b->interactionTimer);
+            StartTimer(&b->interactionTimer);
+        }
+    } break;
+    }
+
+    b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+}
+
 //create functions
 BadGuy CreateGhost(Vector3 pos)
 {
@@ -875,12 +947,33 @@ BadGuy CreateRobo(Vector3 pos)
     b.drawColor = WHITE;
     return b;
 }
-
+static inline BadGuy CreatePumpkinHopper(Vector3 pos)
+{
+    BadGuy b = { 0 };
+    b.active = false;
+    b.dead = false;
+    b.aware = false;
+    b.type = BG_PUMPKIN_HOPPER;
+    b.spawnPoint = pos;
+    b.pos = pos;
+    b.scale = 1.8f;
+    b.state = HOPPER_STATE_SLEEP;
+    b.spawnRadius = 120.0f;
+    b.awareRadius = 35.0f;
+    b.speed = 8.0f;
+    b.health = 20;
+    b.startHealth = b.health;
+    b.respawnTimer = CreateTimer(30.0f);
+    b.interactionTimer = CreateTimer(1.0f);
+    b.gbm_index = -1;
+    b.drawColor = WHITE;
+    return b;
+}
 //end of the file stuff, important!
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 136; //increment this, every time, you add, a bg...
+    bg_count = 137; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -1037,6 +1130,8 @@ void InitBadGuys(Shader ghostShader)
     bg[133] = CreateRobo((Vector3) { 2814.29, 345.95, 71.14 });
     bg[134] = CreateRobo((Vector3) { 2652.73, 324.56, -134.66 });
     bg[135] = CreateRobo((Vector3) { 2733.59, 352.75, -238.67 });
+    //hoppers bridge
+    bg[136] = CreatePumpkinHopper((Vector3) { 3014.59, 320, 4040.96 });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
@@ -1142,6 +1237,10 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         {
             BG_Update_Robo(d, &bg[i], dt);
         }
+        else if (bg[i].type == BG_PUMPKIN_HOPPER)
+        {
+            BG_Update_PumpkinHopper(d, &bg[i], dt);
+        }
         //update general stuff
         bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);
         if (bg[i].type == BG_YETI) {//im sick of these mfn snakes on this mfn plane!
@@ -1223,6 +1322,12 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                     else if (bg[b].type == BG_ROBO)
                     {
                         bg[b].state = ROBO_STATE_SPAWN;
+                    }
+                    else if (bg[b].type == BG_PUMPKIN_HOPPER)
+                    {
+                        bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z);
+                        bg[b].targetPos = bg[b].pos;
+                        bg[b].state = HOPPER_STATE_SLEEP;
                     }
                     return true;
                 }
