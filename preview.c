@@ -2580,7 +2580,7 @@ int main(void) {
                     if (bg[b].type == BG_YETI)
                     {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
-                        bg[b].state = YETI_STATE_HIT;
+                        Yeti_KnockBackFromDonogan(&bg[b], &don);
                         BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
                     }
                     else if (bg[b].type == BG_ROBO)
@@ -2591,7 +2591,7 @@ int main(void) {
                     else if (bg[b].type == BG_PUMPKIN_HOPPER)
                     {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
-                        bg[b].state = HOPPER_STATE_SLEEP;
+                        Hopper_KnockBackFromDonogan(&bg[b], &don);
                     }
                 }
             }
@@ -2656,15 +2656,14 @@ int main(void) {
                     DonSetState(&don, DONOGAN_STATE_HIT);
                     StartTimer(&don.hitTimer);
                 }
-                else if (bg[b].type == BG_YETI) 
+                else if (bg[b].type == BG_YETI && bg[b].state != YETI_STATE_HIT)//want this extra check here, so neither happens
                 {
                     if (punchHit) {
                         // punched a yeti!
                         TraceLog(LOG_INFO, "punched a yeti!");
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
-                        bg[b].state = YETI_STATE_HIT;
+                        Yeti_KnockBackFromDonogan(&bg[b], &don);
                         BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
-                        // todo: punch-applied timer?
                     }
                     else if (HasTimerElapsed(&don.hitTimer)) {
                         // yeti damages Don (cooldown applies here only)

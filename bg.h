@@ -519,6 +519,22 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
 }
 
 // === NEW: Yeti state update ================================================
+static inline void Yeti_KnockBackFromDonogan(BadGuy* b, Donogan* d)
+{
+    Vector3 away = Vector3Subtract(b->pos, d->pos);
+    away.y = 0.0f;
+
+    if (Vector3Length(away) < 0.001f)
+    {
+        away = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+    }
+
+    away = Vector3Normalize(away);
+
+    b->vel = Vector3Scale(away, 10.0f); // stronger than hopper
+    b->vel.y = 8.5f;                    // nice pop
+    b->state = YETI_STATE_HIT;
+}
 static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
 {
     if (Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
@@ -646,10 +662,29 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     } break;
 
     case YETI_STATE_HIT:
-        if (b->animFrame >= b->anims[b->curAnim].frameCount - 1) {
-            b->state = YETI_STATE_PLANNING;
+    {
+        b->pos = Vector3Add(b->pos, Vector3Scale(b->vel, dt));
+        b->vel.y -= 28.0f * dt;
+
+        // slight horizontal damping
+        b->vel.x *= 0.985f;
+        b->vel.z *= 0.985f;
+
+        if (b->pos.y <= groundY)
+        {
+            b->pos.y = groundY;
+            b->vel = (Vector3){ 0 };
+
+            if (b->health <= 0)
+            {
+                b->state = YETI_STATE_DEAD;
+            }
+            else
+            {
+                b->state = YETI_STATE_PLANNING;
+            }
         }
-        break;
+    } break;
 
     case YETI_STATE_DYING:
         if (b->drawColor.a != 0) { b->drawColor.a--; }
@@ -959,8 +994,8 @@ BadGuy CreateYeti(Vector3 pos)
     b.type = BG_YETI;
     b.spawnPoint = pos;
     b.spawnRadius = 200;
-    b.awareRadius = 80;
-    b.tetherRadius = 30;
+    b.awareRadius = 100;
+    b.tetherRadius = 40;
     b.gbm_index = -1;
     b.active = false;
     b.dead = false;
