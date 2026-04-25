@@ -183,7 +183,7 @@ static inline void DrawDisplayMaps(
         {
             // skip windmills if you want homes only
             if (Scenes[i].modelType != MODEL_HOME_WINDMILL) continue;
-            MapDrawWorldCircle(Scenes[i].pos, dest, DARKBLUE);
+            MapDrawWorldCircle(Scenes[i].pos, dest, Scenes[i].active ? MAGENTA: DARKBLUE);
         }
     }
 }
