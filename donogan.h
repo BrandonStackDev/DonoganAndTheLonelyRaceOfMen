@@ -2373,9 +2373,14 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 if (d->animFinished) {
                     float moveMag = sqrtf(lx * lx + ly * ly);
                     if (moveMag > 0.1f)
-                        DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    {
+                        bool wantsRun = d->runLock || d->runningHeld;
+                        DonSetState(d, wantsRun ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    }
                     else
+                    {
                         DonSetState(d, DONOGAN_STATE_PUNCH_IDLE);
+                    }
                 }
             } break;
 
@@ -2389,9 +2394,14 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 if (d->animFinished) {
                     float moveMag = sqrtf(lx * lx + ly * ly);
                     if (moveMag > 0.1f)
-                        DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    {
+                        bool wantsRun = d->runLock || d->runningHeld;
+                        DonSetState(d, wantsRun ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    }
                     else
+                    {
                         DonSetState(d, DONOGAN_STATE_PUNCH_IDLE);
+                    }
                 }
             } break;
 
@@ -2403,7 +2413,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         if (d->hasWrench) DonSetState(d, DONOGAN_STATE_WRENCH_SWING);
                         else              DonSetState(d, DONOGAN_STATE_PUNCH_CROSS);
                     }
-                    else if (moveMag > 0.1f) { DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK); }
+                    else if (moveMag > 0.1f) {
+                        bool wantsRun = d->runLock || d->runningHeld;
+                        DonSetState(d, wantsRun ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    }
                     else if (L2Pressed) {
                         DonSetState(d, DONOGAN_STATE_BOW_ENTER);
                         d->bowMode = true;
@@ -2451,9 +2464,14 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 if (d->animFinished) {
                     float moveMag = sqrtf(lx * lx + ly * ly);
                     if (moveMag > 0.1f)
-                        DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    {
+                        bool wantsRun = d->runLock || d->runningHeld;
+                        DonSetState(d, wantsRun ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    }
                     else
+                    {
                         DonSetState(d, DONOGAN_STATE_PUNCH_IDLE);
+                    }
                 }
             } break;
             case DONOGAN_STATE_SLIDE: //sliding....slide...

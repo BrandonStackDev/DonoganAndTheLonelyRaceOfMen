@@ -3181,7 +3181,49 @@ int main(void) {
                     Vector3 wrenchOffset = { -0.67f, 3.33f, 1.2f };
                     Vector3 wrenchEulerDeg = { 90.0f, 0.0f, 180.0f };
                     float wrenchScale = 0.25f;   // start big so we can SEE it first
+                    if (don.curAnimId == DONOGAN_ANIM_PROC_WRENCH_SWING)
+                    {
+                        float t = don.animTime / 0.40f;
+                        if (t < 0.0f) t = 0.0f;
+                        if (t > 1.0f) t = 1.0f;
 
+                        Vector3 p0 = { -1.35f, 3.15f, 0.35f }; // back/outside wind-up
+                        Vector3 p1 = { -0.35f, 3.55f, 1.65f }; // forward strike
+                        Vector3 p2 = { 0.95f, 3.75f, 1.10f }; // across body
+                        Vector3 p3 = { -0.67f, 3.33f, 1.20f }; // recover/default
+
+                        if (t < 0.33f) {
+                            float u = t / 0.33f;
+                            wrenchOffset = Vector3Lerp(p0, p1, u);
+                        }
+                        else if (t < 0.66f) {
+                            float u = (t - 0.33f) / 0.33f;
+                            wrenchOffset = Vector3Lerp(p1, p2, u);
+                        }
+                        else {
+                            float u = (t - 0.66f) / 0.34f;
+                            wrenchOffset = Vector3Lerp(p2, p3, u);
+                        }
+
+                        // optional: rotate it through the swing too
+                        Vector3 r0 = { 90.0f, 0.0f, 220.0f };
+                        Vector3 r1 = { 70.0f, 0.0f, 145.0f };
+                        Vector3 r2 = { 105.0f, 0.0f, 80.0f };
+                        Vector3 r3 = { 90.0f, 0.0f, 180.0f };
+
+                        if (t < 0.33f) {
+                            float u = t / 0.33f;
+                            wrenchEulerDeg = Vector3Lerp(r0, r1, u);
+                        }
+                        else if (t < 0.66f) {
+                            float u = (t - 0.33f) / 0.33f;
+                            wrenchEulerDeg = Vector3Lerp(r1, r2, u);
+                        }
+                        else {
+                            float u = (t - 0.66f) / 0.34f;
+                            wrenchEulerDeg = Vector3Lerp(r2, r3, u);
+                        }
+                    }
                     // local wrench rotation from hard-coded euler
                     Quaternion qLocal = QuaternionFromEuler(
                         DEG2RAD * wrenchEulerDeg.x,
