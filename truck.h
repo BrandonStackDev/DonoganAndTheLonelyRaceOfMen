@@ -236,6 +236,65 @@ wc.x + TIRE_BOX_HALF, wc.y + TIRE_BOX_HALF, wc.z + TIRE_BOX_HALF
     }
 }
 
+static inline void DrawHoverFlame(Vector3 pos, float t)
+{
+    float h = 1.5f + 0.35f * sinf(t * 18.0f);
+    float r = 0.35f + 0.08f * sinf(t * 25.0f);
+
+    DrawCylinderEx(
+        pos,
+        Vector3Add(pos, (Vector3) { 0, -h, 0 }),
+        r,
+        0.05f,
+        8,
+        ORANGE
+    );
+
+    DrawSphere(Vector3Add(pos, (Vector3) { 0, -h, 0 }), 0.16f, YELLOW);
+}
+
+static inline void DrawHoverFlameShadered(
+    Model fireModel,
+    Shader fireShader,
+    int fireVariantLoc,
+    Vector3 P,
+    float variantBase
+)
+{
+    BeginBlendMode(BLEND_ADDITIVE);
+
+    P.y -= 0.65f;
+
+    {
+        float v = variantBase + 0.00f;
+        SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
+        DrawModelEx(fireModel, P, (Vector3) { 1, 0, 0 }, 180.0f,
+            (Vector3) {
+            0.35f, 0.75f, 0.35f
+        }, WHITE);
+    }
+
+    {
+        float v = variantBase + 1.37f;
+        SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
+        DrawModelEx(fireModel, P, (Vector3) { 1, 0, 0 }, 180.0f,
+            (Vector3) {
+            0.28f, 1.05f, 0.28f
+        }, WHITE);
+    }
+
+    {
+        float v = variantBase + 2.73f;
+        SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
+        DrawModelEx(fireModel, P, (Vector3) { 1, 0, 0 }, 180.0f,
+            (Vector3) {
+            0.60f, 0.75f, 0.60f
+        }, WHITE);
+    }
+
+    EndBlendMode();
+}
+
 // --->>> SUMMON (state + helpers)
 static bool  truckSummonActive = false;
 static float truckSummonStopRadius = 4.25f;   // stop this far from Donny

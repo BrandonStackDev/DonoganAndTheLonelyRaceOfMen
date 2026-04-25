@@ -207,6 +207,12 @@ int main(void) {
     LightningBug *bugs;
     Star *stars;
     bool vehicleMode = false;
+    bool hoverMode = false;
+    bool prevHoverR3 = false;
+    float hoverLift = 0.0f;        // current visual/physics lift
+    float hoverLiftTarget = 0.0f;  // 0 normal, 3-ish hover
+    float hoverFallVel = 0.0f;
+    float hoverTireFold = 0.0f;    // 0 normal tires, 1 flat tires
     // --- Donny mode state ---
     bool donnyMode = true;
     Vector3 donMove = (Vector3){ 0 };
@@ -1238,7 +1244,39 @@ int main(void) {
         }
         else if (don.unlockedTruck && vehicleMode)
         {
-            if (truckAirState == AIRBORNE) //gravity
+            bool r3 = havePad ? (gpad.btnR3 > 0) : false;
+            if (don.canHasCheeseburger && r3 && !prevHoverR3)
+            {
+                hoverMode = !hoverMode;
+                hoverLiftTarget = hoverMode ? 3.5f : 0.0f;
+                toast = hoverMode ? "Hover Mode!" : "Truck Mode!";
+                StartTimer(&toastTimer);
+            }
+            prevHoverR3 = r3;
+            if (hoverMode && gpad.btnCross && !prevCross)
+            {
+                truckAirState = AIRBORNE;
+                gravityCollected = -2.8f;   // upward burst; tune
+                hoverFallVel = -11.0f;      // optional if you use custom hover falling
+            }
+            if (hoverMode && truckAirState == AIRBORNE)
+            {
+                truckPitch += 0.00004f * GetFrameTime();
+
+                truckPosition.y -= GetFrameTime() * GRAVITY * gravityCollected * 0.35f;
+                gravityCollected += GetFrameTime() * GRAVITY * 0.35f;
+
+                // when near hover height again, land back into hover
+                float gy = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
+                float hoverY = gy + TRUCK_Y_OFFSET_DRAW + hoverLift;
+                if (truckPosition.y <= hoverY)
+                {
+                    truckPosition.y = hoverY;
+                    truckAirState = GROUND;
+                    gravityCollected = 0.0f;
+                }
+            }
+            else if (truckAirState == AIRBORNE) //gravity
             {
                 truckPitch += 0.0001 * GetFrameTime();//dip it slightly down
                 if (truckPitch > PI / 7.0f) { truckPitch = PI / 7.0f; }
@@ -2294,6 +2332,29 @@ int main(void) {
                         }
                         rebuildFromTires = true;
                     }
+                }
+            }
+            hoverLift = Lerp(hoverLift, hoverLiftTarget, dt * 3.5f);
+            hoverTireFold = Lerp(hoverTireFold, hoverMode ? 1.0f : 0.0f, dt * 5.0f);
+
+            if (hoverMode)
+            {
+                rebuildFromTires = false;
+                float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
+                if (groundY > -9000.0f)
+                {
+                    float desiredY = groundY + TRUCK_Y_OFFSET_DRAW + hoverLift;
+                    float minHoverY = WHALE_SURFACE + 3.2f; // slight above water
+                    if (desiredY < minHoverY)
+                    {
+                        desiredY = minHoverY;
+                    }
+                    // soft hover spring
+                    truckPosition.y = Lerp(truckPosition.y, desiredY, dt * 6.0f);
+                    truckAirState = GROUND;
+                    gravityCollected = 0.0f;
+                    truckForward.y = 0.0f;
+                    
                 }
             }
             if(rebuildFromTires)
@@ -3370,10 +3431,11 @@ int main(void) {
                     // First apply spin around X (wheel axis), then steering around Y
                     // Step 1: Create rotation matrices for yaw (Y), pitch (X), and roll (Z)
                     //printf("steerAngle : %f\n",steerAngle);
-                    Matrix yawMatrix = MatrixRotateY((truckAngle - steerAngle));     // Turn left/right
+                    Matrix yawMatrix = MatrixRotateY((hoverMode?0: truckAngle - steerAngle));     // Turn left/right
                     //Matrix yawMatrix   = MatrixRotateY(tireAngleDelta);
+                    float tireRotAngle = hoverMode ? 90.0f : 0;
                     Matrix pitchMatrix = MatrixRotateX(-tireSpinPos[i]);   // Tilt forward/back //sinf(truckAngle)
-                    Matrix rollMatrix = MatrixRotateZ(0);    // Lean left/right
+                    Matrix rollMatrix = MatrixRotateZ(tireRotAngle);    // Lean left/right
                     //truckTireOffsetMatrix
                     Vector3 tireSpace = RotateY(RotateX(RotateZ(tireOffsets[i], truckRoll + truckTrickRoll), truckPitch - truckTrickPitch), -truckAngle - truckTrickYaw);
                     // Step 2: Combine them in the proper order:
@@ -3383,7 +3445,21 @@ int main(void) {
                     rotation.m12 = truckOrigin.x + tireSpace.x;
                     rotation.m13 = truckOrigin.y + tireSpace.y - tireYOffset[i]; //!!!!SPACE TIRES!!!!
                     rotation.m14 = truckOrigin.z + tireSpace.z;
+                    Vector3 tireWorldPos = { rotation.m12, rotation.m13, rotation.m14 };
                     DrawMesh(tire.meshes[0], tireMaterial, rotation);
+                    if (hoverMode)
+                    {
+                        Vector3 flamePos = tireWorldPos;
+                        flamePos.y -= 0.8f;
+
+                        DrawHoverFlameShadered(
+                            fireModel,
+                            fireShader,
+                            fireVariantLoc,
+                            flamePos,
+                            (float)GetTime() + i * 1.37f
+                        );
+                    }
                 }
                 if (displayBoxes)
                 {
