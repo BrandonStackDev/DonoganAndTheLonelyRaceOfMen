@@ -2375,7 +2375,7 @@ int main(void) {
                 // front height vs back height
                 float frontAvg = (fl + fr) / 2.0f;
                 float backAvg  = (bl + br) / 2.0f;
-                truckPitch = Lerp(truckPitch, -atan2f(frontAvg - backAvg, truckLength),GetFrameTime()*16.0f);  // pitch is positive when nose is up
+                truckPitch = Lerp(truckPitch, -atan2f(frontAvg - backAvg, truckLength),GetFrameTime()*(hoverMode?0.01f:16.0f));  // pitch is positive when nose is up
 
                 // 3. Roll (Z-axis rotation, lean left/right)
                 // left height vs right height
@@ -3506,6 +3506,11 @@ int main(void) {
                         // Front tires only — steer left/right
                         steerAngle = PI / 8.0f * gpad.normLX; // tweak max angle
                     }
+                    if (hoverMode)
+                    {
+                        truckPitch = Lerp(truckPitch, 0.0f, dt * 4.0f);
+                        truckRoll = Lerp(truckRoll, 0.0f, dt * 4.0f);
+                    }
                     // First apply spin around X (wheel axis), then steering around Y
                     // Step 1: Create rotation matrices for yaw (Y), pitch (X), and roll (Z)
                     //printf("steerAngle : %f\n",steerAngle);
@@ -3516,6 +3521,10 @@ int main(void) {
                     Matrix rollMatrix = MatrixRotateZ(tireRotAngle);    // Lean left/right
                     //truckTireOffsetMatrix
                     Vector3 tireSpace = RotateY(RotateX(RotateZ(tireOffsets[i], truckRoll + truckTrickRoll), truckPitch - truckTrickPitch), -truckAngle - truckTrickYaw);
+                    /*if (hoverMode)
+                    {
+                        tireSpace = RotateY(RotateX(RotateZ(tireOffsets[i], 0.0f),0.0f),-truckAngle - truckTrickYaw);
+                    }*/
                     // Step 2: Combine them in the proper order:
                     // Yaw → Pitch → Roll (you can change order depending on your feel/needs)
                     Matrix rotation = MatrixMultiply(pitchMatrix, MatrixMultiply(yawMatrix, rollMatrix));//neo where are you!
