@@ -2712,6 +2712,44 @@ int main(void) {
                 }
             }
         }
+        // hopper vs still platforms
+        for (int b = 0; b < bg_count; b++)
+        {
+            if (!bg[b].active) continue;
+            if (bg[b].type != BG_PUMPKIN_HOPPER) continue;
+            if (bg[b].dead) continue;
+
+            bg[b].groundY = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z);
+            bg[b].onPlatform = false;
+
+            for (int p = 0; p < NUM_PLATS; p++)
+            {
+                if (plats[p].disabled) continue;
+                if (plats[p].type != PLATFORM_STILL) continue;
+
+                const float skin = 0.4f;
+
+                bool xz =
+                    bg[b].pos.x >= plats[p].box.min.x - skin &&
+                    bg[b].pos.x <= plats[p].box.max.x + skin &&
+                    bg[b].pos.z >= plats[p].box.min.z - skin &&
+                    bg[b].pos.z <= plats[p].box.max.z + skin;
+
+                if (!xz) continue;
+
+                float topY = plats[p].box.max.y;
+
+                bool nearTop =
+                    bg[b].pos.y >= topY - 3.0f &&
+                    bg[b].pos.y <= topY + 12.0f;
+
+                if (!nearTop) continue;
+
+                bg[b].groundY = topY;
+                bg[b].onPlatform = true;
+                break;
+            }
+        }
         //end collision section -----------------------------------------------------------------------------------------------------------------
 
         //updates before drawing--------------------------------------------------------

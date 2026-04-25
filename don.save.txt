@@ -1,14 +1,14 @@
 DON_SAVE_V1
-don_pos = -271.657 911.740 2237.107
+don_pos = 1623.927 540.218 -1723.871
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
-don_health = 33
-don_mana   = 110
+don_health = 34
+don_mana   = 112
 don_starthealth = 112
 don_startmana   = 112
 don_level  = 30
-don_xp     = 3826
+don_xp     = 3957
 invY = 0
 invX = 0
 musicVol = 1.0000
@@ -62,8 +62,8 @@ ITEM[10] = 1
 ITEM[11] = 1
 ITEM[12] = 1
 ITEM[13] = 1
-ITEM[14] = 0
-ITEM[15] = 0
+ITEM[14] = 1
+ITEM[15] = 1
 --ITEMS-END--
 --INV-BEGIN--
 INV[0] = 5
@@ -71,6 +71,6 @@ INV[1] = 11
 INV[2] = 11
 INV[3] = 14
 INV[4] = 39
-INV[5] = 7
-INV[6] = 7
+INV[5] = 8
+INV[6] = 8
 --INV-END--

@@ -220,6 +220,8 @@ typedef struct {
     Vector3  throwVel;
 
     bool bounced;
+    float groundY;
+    bool onPlatform;
 } BadGuy;
 //instance of a bad guy, will borrow its model
 
@@ -883,7 +885,12 @@ static inline void Hopper_KnockBackFromDonogan(BadGuy* b, Donogan* d)
 
 static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
 {
-    float groundY = BG_GroundY(b->pos);
+    //float groundY = BG_GroundY(b->pos);
+    float groundY = b->groundY;
+    if (groundY < -9000.0f)
+    {
+        groundY = BG_GroundY(b->pos);
+    }
     if (b->health <= 0 && b->state != HOPPER_STATE_HURT){b->state = HOPPER_STATE_DEAD;}
     switch (b->state)
     {
@@ -925,6 +932,12 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
             ResetTimer(&b->interactionTimer);
             StartTimer(&b->interactionTimer);
         }
+        if (!b->onPlatform && b->spawnPoint.y > BG_GroundY(b->pos) + 10.0f && b->pos.y < b->spawnPoint.y - 25.0f)
+        {
+            b->health = 0;
+            b->state = HOPPER_STATE_DEAD;
+            break;
+        }
     } break;
     case HOPPER_STATE_HURT:
     {
@@ -950,6 +963,12 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
                 ResetTimer(&b->interactionTimer);
                 StartTimer(&b->interactionTimer);
             }
+        }
+        if (!b->onPlatform && b->spawnPoint.y > BG_GroundY(b->pos) + 10.0f && b->pos.y < b->spawnPoint.y - 25.0f)
+        {
+            b->health = 0;
+            b->state = HOPPER_STATE_DEAD;
+            break;
         }
     } break;
     case HOPPER_STATE_DEAD:
@@ -1061,7 +1080,7 @@ static inline BadGuy CreatePumpkinHopper(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 137; //increment this, every time, you add, a bg...
+    bg_count = 147; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -1219,7 +1238,18 @@ void InitBadGuys(Shader ghostShader)
     bg[134] = CreateRobo((Vector3) { 2652.73, 324.56, -134.66 });
     bg[135] = CreateRobo((Vector3) { 2733.59, 352.75, -238.67 });
     //hoppers bridge
-    bg[136] = CreatePumpkinHopper((Vector3) { 3014.59, 320, 4040.96 });
+    bg[136] = CreatePumpkinHopper((Vector3) { 1650.05, 611.32, -1718.89 });
+    bg[137] = CreatePumpkinHopper((Vector3) { 1618.74, 620.50, -1723.95 });
+    bg[138] = CreatePumpkinHopper((Vector3) { 1574.60, 634.86, -1718.52 });
+    //
+    bg[139] = CreatePumpkinHopper((Vector3) { 1500.46, 659.49, -1739.17 });
+    bg[140] = CreatePumpkinHopper((Vector3) { 1501.12, 659.49, -1747.64 });
+    bg[141] = CreatePumpkinHopper((Vector3) { 1460.35, 672.09, -1743.29 });
+    bg[142] = CreatePumpkinHopper((Vector3) { 1384.44, 698.50, -1752.68 });
+    bg[143] = CreatePumpkinHopper((Vector3) { 1271.63, 737.28, -1767.41 });
+    bg[144] = CreatePumpkinHopper((Vector3) { 1197.10, 764.23, -1777.97 });
+    bg[145] = CreatePumpkinHopper((Vector3) { 1159.77, 777.87, -1782.11 });
+    bg[146] = CreatePumpkinHopper((Vector3) { 1046.50, 819.42, -1796.91 });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
@@ -1418,8 +1448,9 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                     }
                     else if (bg[b].type == BG_PUMPKIN_HOPPER)
                     {
-                        bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z);
+                        bg[b].pos = bg[b].spawnPoint;
                         bg[b].targetPos = bg[b].pos;
+                        bg[b].groundY = bg[b].pos.y;
                         bg[b].state = HOPPER_STATE_SLEEP;
                     }
                     return true;
