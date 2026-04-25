@@ -243,7 +243,7 @@ int main(void) {
     bool cottageDoorOpen = false;
     float cottageDoorSlide = 0.0f; // 0 closed, 1 open
     Vector3 cottageDoorClosed = { -600, 806.0f, 2863.95f };
-    Vector3 cottageDoorOpenPos = { -618.45f, 806.0f, 2863.95f };
+    Vector3 cottageDoorOpenPos = { -617, 806.0f, 2863.95f };
     BoundingBox cottageDoorBox;
     //int for model type to search for when pressing R
     int modelSearchType = 0;
@@ -2760,6 +2760,8 @@ int main(void) {
                 bool punching = don.punching;
                 bool bodyHit = CheckCollisionBoxes(bg[b].box, don.outerBox);
                 bool punchHit = punching && CheckCollisionBoxes(bg[b].box, don.punchBox);
+                bool wrenchHit = DonIsWrenchSwinging(&don) && CheckCollisionBoxes(bg[b].box, don.punchBox);
+                DonAttackType atk = wrenchHit ? ATTACK_THROW : ATTACK_PUNCH;
 
                 if (!bodyHit && !punchHit) { continue; }
                 /*bool punching = (don.state == DONOGAN_STATE_PUNCH_CROSS_ENTER
@@ -2781,6 +2783,15 @@ int main(void) {
                         TraceLog(LOG_INFO, "punched a yeti!");
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
                         Yeti_KnockBackFromDonogan(&bg[b], &don);
+                        if (wrenchHit) {
+                            Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
+                            dir.y = 0.35f;
+                            dir = Vector3Normalize(dir);
+
+                            bg[b].vel = Vector3Scale(dir, 55.0f);
+                            bg[b].vel.y = 22.0f;
+                            bg[b].state = YETI_STATE_ATTACK; // crude but gives airborne physics
+                        }
                         BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
                     }
                     else if (HasTimerElapsed(&don.hitTimer)) {
@@ -2793,7 +2804,18 @@ int main(void) {
                 }
                 else if (bg[b].type == BG_ROBO)
                 {
-                    if (punchHit)
+                    if (wrenchHit)
+                    {
+                        bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
+                        Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
+                        dir.y = 0.35f;
+                        dir = Vector3Normalize(dir);
+
+                        bg[b].vel = Vector3Scale(dir, 55.0f);
+                        bg[b].vel.y = 22.0f;
+                        bg[b].state = ROBO_STATE_PLAN;
+                    }
+                    else if (punchHit)
                     {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
                     }
@@ -2814,6 +2836,17 @@ int main(void) {
                         don.velY = don.jumpSpeed;   // or *1.1f for extra juice
                         don.state = DONOGAN_STATE_JUMPING;
                         don.onGround = false;
+                    }
+                    else if (wrenchHit)
+                    {
+                        bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
+                        Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
+                        dir.y = 0.35f;
+                        dir = Vector3Normalize(dir);
+
+                        bg[b].vel = Vector3Scale(dir, 55.0f);
+                        bg[b].vel.y = 22.0f;
+                        bg[b].state = HOPPER_STATE_HURT;
                     }
                     else if (punchHit)
                     {
@@ -2965,8 +2998,11 @@ int main(void) {
         //shark
         Shark_Update(&shark, &don, dt);
         //punchin and fightin and cusin
-        don.punching = DonIsPunching(&don);
-        don.punchBox = DonMakePunchBox(&don);
+        /*don.punching = DonIsPunching(&don);
+        don.punchBox = DonMakePunchBox(&don);*/
+        don.punching = DonIsPunching(&don) || DonIsWrenchSwinging(&don);
+        if (DonIsWrenchSwinging(&don)) don.punchBox = DonMakeWrenchBox(&don);
+        else                           don.punchBox = DonMakePunchBox(&don);
         //whale farts
         if (onLoad && !missions[MISSION_FART_WHALE].complete)
         {
@@ -3139,7 +3175,7 @@ int main(void) {
                 }
 
                 // wrench stuff
-                if (don.hasWrench && don.curAnimId == DONOGAN_ANIM_PROC_MACHINE_TURN)
+                if (don.hasWrench && (don.curAnimId == DONOGAN_ANIM_PROC_MACHINE_TURN || don.curAnimId == DONOGAN_ANIM_PROC_WRENCH_SWING))
                 {
                     // hard-coded wrench placement/tuning
                     Vector3 wrenchOffset = { -0.67f, 3.33f, 1.2f };

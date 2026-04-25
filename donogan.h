@@ -215,12 +215,14 @@ typedef enum {
     DONOGAN_STATE_SPELL_EXIT,
     DONOGAN_STATE_SPELL_SHOOT,
     DONOGAN_STATE_MACHINE_TURN,
+    DONOGAN_STATE_WRENCH_SWING,
     DONOGAN_STATE_HIT,
     DONOGAN_STATE_DEATH,
 } DonoganState;
 
 // ---------- Anim IDs present in your GLB (+procedural negatives)----------
 typedef enum {
+    DONOGAN_ANIM_PROC_WRENCH_SWING = -8,
     DONOGAN_ANIM_PROC_MACHINE_TURN = -7,
     DONOGAN_ANIM_PROC_SPELL_SHOOT = -6,
     DONOGAN_ANIM_PROC_BOW_ENTER = -5,
@@ -304,6 +306,7 @@ typedef enum {
     BOW_KFG_EXIT,
     SPELL_KFG_SHOOT,
     MACHINE_KFG_TURN,
+    WRENCH_KFG_SWING,
     BOW_KFG_COUNT
 } BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
 typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
@@ -554,6 +557,28 @@ static inline BoundingBox DonMakePunchBox(const Donogan* d)
 
     Vector3 c = Vector3Add(d->pos, Vector3Scale(fwd, reach));
     c.y = d->outerBox.min.y + 0.55f * (d->outerBox.max.y - d->outerBox.min.y);
+
+    return (BoundingBox) {
+        { c.x - size * 0.5f, c.y - size * 0.5f, c.z - size * 0.5f },
+        { c.x + size * 0.5f, c.y + size * 0.5f, c.z + size * 0.5f }
+    };
+}
+static inline bool DonIsWrenchSwinging(const Donogan* d)
+{
+    return d->state == DONOGAN_STATE_WRENCH_SWING &&
+        d->animTime >= 0.10f &&
+        d->animTime <= 0.32f;
+}
+
+static inline BoundingBox DonMakeWrenchBox(const Donogan* d)
+{
+    Vector3 fwd = { sinf(d->yawY), 0.0f, cosf(d->yawY) };
+
+    float size = 4.2f;
+    float reach = 3.0f;
+
+    Vector3 c = Vector3Add(d->pos, Vector3Scale(fwd, reach));
+    c.y = d->outerBox.min.y + 0.60f * (d->outerBox.max.y - d->outerBox.min.y);
 
     return (BoundingBox) {
         { c.x - size * 0.5f, c.y - size * 0.5f, c.z - size * 0.5f },
@@ -1041,6 +1066,60 @@ static void DonInitMachineTurnKeyframeGroups(Donogan* d)
     g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(0, 0, -80);
 }
 
+static void DonInitWrenchSwingKf(Donogan* d)
+{
+    DonBone bones[] = {
+        DON_BONE_DEF_SPINE002,
+        DON_BONE_DEF_SPINE003,
+        DON_BONE_DEF_SHOULDER_R,
+        DON_BONE_DEF_UPPER_ARM_R,
+        DON_BONE_DEF_FOREARM_R,
+        DON_BONE_DEF_HAND_R,
+        DON_BONE_DEF_SHOULDER_L,
+        DON_BONE_DEF_UPPER_ARM_L,
+        DON_BONE_DEF_FOREARM_L,
+        DON_BONE_DEF_HAND_L
+    };
+
+    KeyFrameGroup* g = &d->kfGroups[WRENCH_KFG_SWING];
+    g->state = DONOGAN_STATE_WRENCH_SWING;
+    g->anim = DONOGAN_ANIM_PROC_WRENCH_SWING;
+    g->maxKey = 4;
+    g->curKey = 0;
+
+    for (int k = 0; k < 4; k++) {
+        KfMakeZeroKey(&g->keyFrames[k], k * 0.1f, bones, 10);
+    }
+
+    // 0: wind-up, hand outside/back
+    g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, -15, 0);
+    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(25, 0, 45);
+    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(-55, 0, 20);
+    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(-25, 0, 0);
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 35);
+
+    // 1: forward strike
+    g->keyFrames[1].kfBones[0].rot = QuatXYZDeg(0, 20, 0);
+    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(55, 0, -35);
+    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(15, 0, -45);
+    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(35, 0, 0);
+    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, -35);
+
+    // 2: across body / up
+    g->keyFrames[2].kfBones[0].rot = QuatXYZDeg(0, 35, 0);
+    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(70, 0, -70);
+    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(35, 0, -65);
+    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(45, 0, 0);
+    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, -75);
+
+    // 3: settle
+    g->keyFrames[3].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(15, 0, 0);
+    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);
+}
+
 // Choose the active keyframe group based on current proc anim
 static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     switch (d->curAnimId) {
@@ -1051,6 +1130,7 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     case DONOGAN_ANIM_PROC_BOW_EXIT:  return &d->kfGroups[BOW_KFG_EXIT];
     case DONOGAN_ANIM_PROC_SPELL_SHOOT:  return &d->kfGroups[SPELL_KFG_SHOOT];
     case DONOGAN_ANIM_PROC_MACHINE_TURN: return &d->kfGroups[MACHINE_KFG_TURN];//NEW for machines
+    case DONOGAN_ANIM_PROC_WRENCH_SWING: return &d->kfGroups[WRENCH_KFG_SWING];//wrench attack
     default:                          return NULL;
     }
 }
@@ -1392,6 +1472,19 @@ static void DonApplyProcFrame(Donogan* d)
         else if (t < phase * 6.0f) G->curKey = 1;
         else if (t < phase * 7.0f) G->curKey = 2;
         else if (t < phase * 8.0f) G->curKey = 3;
+        else d->animFinished = true;
+    } break;
+    case DONOGAN_ANIM_PROC_WRENCH_SWING:
+    {
+        if (!G) { d->animFinished = true; break; }
+
+        const float phase = 0.10f;
+        float t = d->animTime;
+
+        if (t < phase * 1.0f) G->curKey = 0;
+        else if (t < phase * 2.0f) G->curKey = 1;
+        else if (t < phase * 3.0f) G->curKey = 2;
+        else if (t < phase * 4.0f) G->curKey = 3;
         else d->animFinished = true;
     } break;
     default:
@@ -1772,6 +1865,7 @@ static Donogan InitDonogan(void)
     DonInitBowKeyframeGroups(&d);
     DonInitSpellShootKeyframeGroups(&d);
     DonInitMachineTurnKeyframeGroups(&d);
+    DonInitWrenchSwingKf(&d);
     DonInitArrows(&d);
 
     DonSnapToGround(&d);
@@ -1851,6 +1945,7 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_SPELL_EXIT:              return DONOGAN_ANIM_Spell_Simple_Exit;
     case DONOGAN_STATE_SPELL_SHOOT:             return DONOGAN_ANIM_PROC_SPELL_SHOOT;
     case DONOGAN_STATE_MACHINE_TURN:      return DONOGAN_ANIM_PROC_MACHINE_TURN;
+    case DONOGAN_STATE_WRENCH_SWING:      return DONOGAN_ANIM_PROC_WRENCH_SWING;
     case DONOGAN_STATE_HIT:         return DONOGAN_ANIM_Hit_Chest;
     case DONOGAN_STATE_DEATH:       return DONOGAN_ANIM_Death01;
     default:                        return DONOGAN_ANIM_Idle_Loop;
@@ -2304,7 +2399,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 if (d->animFinished) {
                     float moveMag = sqrtf(lx * lx + ly * ly);
                     if (L1Pressed) { DonSetState(d, DONOGAN_STATE_PUNCH_JAB); }
-                    else if (R1Pressed) { DonSetState(d, DONOGAN_STATE_PUNCH_CROSS); }
+                    else if (R1Pressed) {
+                        if (d->hasWrench) DonSetState(d, DONOGAN_STATE_WRENCH_SWING);
+                        else              DonSetState(d, DONOGAN_STATE_PUNCH_CROSS);
+                    }
                     else if (moveMag > 0.1f) { DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK); }
                     else if (L2Pressed) {
                         DonSetState(d, DONOGAN_STATE_BOW_ENTER);
@@ -2346,7 +2444,18 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     }
                 }
             } break;
+            case DONOGAN_STATE_WRENCH_SWING: {
+                d->velXZ = (Vector3){ 0 };
+                d->rollVel = (Vector3){ 0 };
 
+                if (d->animFinished) {
+                    float moveMag = sqrtf(lx * lx + ly * ly);
+                    if (moveMag > 0.1f)
+                        DonSetState(d, d->runningHeld ? DONOGAN_STATE_RUN : DONOGAN_STATE_WALK);
+                    else
+                        DonSetState(d, DONOGAN_STATE_PUNCH_IDLE);
+                }
+            } break;
             case DONOGAN_STATE_SLIDE: //sliding....slide...
             {
                 // Treat like ...
@@ -2633,7 +2742,11 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     break;
                 }
                 if (!d->bowMode && d->onGround && R1Pressed) {
-                    DonSetState(d, DONOGAN_STATE_PUNCH_CROSS_ENTER);
+                    if (R1Pressed) {
+                        if (d->hasWrench) DonSetState(d, DONOGAN_STATE_WRENCH_SWING);
+                        else              DonSetState(d, DONOGAN_STATE_PUNCH_CROSS_ENTER);
+                    }
+                    //DonSetState(d, DONOGAN_STATE_PUNCH_CROSS_ENTER);
                     break;
                 }
                 // Decide locomotion from stick (your existing code)
