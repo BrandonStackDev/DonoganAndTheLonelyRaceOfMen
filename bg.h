@@ -111,7 +111,7 @@ int GetDamageDone(GameState *gs, Donogan *d, DonAttackType attack, BadGuyType bg
         }
         else if (gs->diff == DIFF_NORMAL)
         {
-            return d->level;
+            return d->level + 1;
         }
         else//hard
         {
@@ -281,7 +281,7 @@ void InitBadGuyModels(Shader ghostShader)
                         bgModelBorrower[index].tex;
                 }
 
-                bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12f);
+                bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.8);
             }
         }
     }
@@ -361,12 +361,12 @@ static inline Quaternion BG_BuildWorldQuat(const BadGuy* b) {
 
 static inline void DrawBadGuy(BadGuy * b) {
     if (!b || !b->active || b->gbm_index < 0) return;
-
+    Vector3 drawPos = b->pos;
     Model* M = &bgModelBorrower[b->gbm_index].model;
 
     Quaternion q = BG_BuildWorldQuat(b);
     Matrix R = QuaternionToMatrix(q);
-    Matrix T = MatrixTranslate(b->pos.x, b->pos.y, b->pos.z);
+    Matrix T = MatrixTranslate(drawPos.x, drawPos.y, drawPos.z);
     float s = (b->scale > 0.0f) ? b->scale : 1.0f;
     Matrix S = MatrixScale(s, s, s);
     Matrix world = MatrixMultiply(S, MatrixMultiply(R, T));
@@ -831,7 +831,7 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
 static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
 {
     float groundY = BG_GroundY(b->pos);
-
+    if (b->health <= 0) { b->state = HOPPER_STATE_DEAD; }
     switch (b->state)
     {
     case HOPPER_STATE_SLEEP:
@@ -873,8 +873,18 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
             StartTimer(&b->interactionTimer);
         }
     } break;
-    }
 
+    case HOPPER_STATE_DEAD:
+    {
+        b->active = false;
+        b->dead = true;
+        if (b->gbm_index >= 0) { bgModelBorrower[b->gbm_index].isInUse = false; }
+        b->gbm_index = -1;
+        StartTimer(&b->respawnTimer);
+        ResetTimer(&b->interactionTimer);
+        d->xp += 12;
+    }
+    }
     b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
 }
 
@@ -1246,6 +1256,11 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         if (bg[i].type == BG_YETI) {//im sick of these mfn snakes on this mfn plane!
             bg[i].box.max.y += 4.5;
             bg[i].box.min.y += 4;
+        }
+        else if (bg[i].type == BG_PUMPKIN_HOPPER)
+        {
+            bg[i].box.max.y += 2.25;
+            bg[i].box.min.y += 1.8321;
         }
     }
     //handle don and timer for square spell

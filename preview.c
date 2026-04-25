@@ -2588,6 +2588,11 @@ int main(void) {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
                         bg[b].state = ROBO_STATE_PLAN;
                     }
+                    else if (bg[b].type == BG_PUMPKIN_HOPPER)
+                    {
+                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
+                        bg[b].state = HOPPER_STATE_SLEEP;
+                    }
                 }
             }
         }
@@ -2617,6 +2622,12 @@ int main(void) {
                     bg[b].state = ROBO_STATE_PLAN;
                     balls[i].alive = false;
                     bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type); // I think this will kill it, low health on these guys...
+                }
+                else if (bg[b].type == BG_PUMPKIN_HOPPER && CheckCollisionBoxSphere(bg[b].box, balls[i].pos, balls[i].radius))
+                {
+                    bg[b].state = HOPPER_STATE_DEAD;
+                    balls[i].alive = false;
+                    bg[b].health = 0; // just kill hoppers
                 }
             }
         }
@@ -2673,6 +2684,31 @@ int main(void) {
                     {
                         bg[b].health -= 1;
                         bg[b].state = ROBO_STATE_PLAN;
+                    }
+                }
+                else if (bg[b].type == BG_PUMPKIN_HOPPER)
+                {
+                    if (don.state == DONOGAN_STATE_JUMPING || don.state == DONOGAN_STATE_JUMP_LAND)
+                    {
+                        // hopped a hopper!
+                        TraceLog(LOG_INFO, "hopped a hopper!");
+                        bg[b].health = 0;
+                        bg[b].state = HOPPER_STATE_DEAD;
+                        don.velY = don.jumpSpeed;   // or *1.1f for extra juice
+                        don.state = DONOGAN_STATE_JUMPING;
+                        don.onGround = false;
+                    }
+                    else if (punchHit) {
+                        // punched a hopper!
+                        TraceLog(LOG_INFO, "punched a hopper!");
+                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
+                        bg[b].state = HOPPER_STATE_SLEEP;
+                    }
+                    else if (HasTimerElapsed(&don.hitTimer)) {
+                        TraceLog(LOG_INFO, "ouch! hopper oof!");
+                        don.health -= 10;
+                        DonSetState(&don, DONOGAN_STATE_HIT);
+                        StartTimer(&don.hitTimer);
                     }
                 }
             }
