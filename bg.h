@@ -1080,7 +1080,7 @@ static inline BadGuy CreatePumpkinHopper(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 154; //increment this, every time, you add, a bg...
+    bg_count = 160; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -1258,6 +1258,13 @@ void InitBadGuys(Shader ghostShader)
     bg[151] = CreatePumpkinHopper((Vector3) { 2436.51, 395.85, 4345.13 });
     bg[152] = CreatePumpkinHopper((Vector3) { 2341.39, 391.53, 4417.55 });
     bg[153] = CreatePumpkinHopper((Vector3) { 2315.52, 381.14, 4496.64 });
+    //hoppers near ocean north past castle
+    bg[154] = CreatePumpkinHopper((Vector3) { 2284.50f, 338.82f, -3194.66f });
+    bg[155] = CreatePumpkinHopper((Vector3) { 2312.21f, 338.82f, -3239.63f });
+    bg[156] = CreatePumpkinHopper((Vector3) { 2329.44f, 338.82f, -3271.89f });
+    bg[157] = CreatePumpkinHopper((Vector3) { 2376.49f, 331.29f, -3281.79f });
+    bg[158] = CreatePumpkinHopper((Vector3) { 2426.24f, 327.53f, -3448.19f });
+    bg[159] = CreatePumpkinHopper((Vector3) { 2479.76f, 320.06f, -3481.24f });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
