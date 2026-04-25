@@ -3895,6 +3895,8 @@ int main(void) {
             float normalizedTruckY = (truckPosition.z + (MAX_WORLD_SIZE / 2)) / WORLD_HEIGHT;
             float normalizedSharkX = (shark.pos.x + (MAX_WORLD_SIZE / 2)) / WORLD_WIDTH;
             float normalizedSharkY = (shark.pos.z + (MAX_WORLD_SIZE / 2)) / WORLD_HEIGHT;
+            //maps
+            DrawDisplayMaps(dest, &don, truckPosition, whales, numWhales);
             //truck marker
             if (!vehicleMode)
             {
@@ -3919,7 +3921,6 @@ int main(void) {
                 };
                 DrawCircleV(markerShark, 3, PURPLE);
             }
-            DrawDisplayMaps(dest, &don, truckPosition, whales, numWhales);
             // Facing triangle (yellow "nose" pointing the player's yaw)
             float local_yaw = donnyMode ? +(yaw + (2.0f * (PI / 2.0f))) : vehicleMode ? truckAngle : -(yaw + (PI / 2.0f)); //
             float local_x_sign = vehicleMode|| donnyMode ? 1.0f : -1.0f;

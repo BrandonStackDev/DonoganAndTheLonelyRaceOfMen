@@ -18,8 +18,8 @@ typedef enum {
     MAP_HOMES = 0,
     MAP_WHALES,
     MAP_BOOKS,
+    MAP_WINDMILL,
     //alister and galadriel
-    //windmills
     MAP_TOTAL_COUNT
 } MapTypes;
 
@@ -87,6 +87,7 @@ static inline void InitMaps(void)
     maps[MAP_HOMES] = CreateGameMap("Homes Map", (Vector3) { 2965.78, 324, 4036.69 }, MAP_HOMES);
     maps[MAP_WHALES] = CreateGameMap("Whales Map", (Vector3) { 2740.00f, 441.00f, 4110.71f }, MAP_WHALES);
     maps[MAP_BOOKS] = CreateGameMap("Books Map", (Vector3) { 2720.00f, 441.00f, 4100.71f }, MAP_BOOKS);
+    maps[MAP_WINDMILL] = CreateGameMap("Windmills Map", (Vector3) { -603.88, 577.5, 3695.54 }, MAP_WINDMILL);
 }
 
 static inline void ConsumeMaps(Donogan* d)
@@ -172,8 +173,17 @@ static inline void DrawDisplayMaps(
             }
             else if (map_tracked_items[i].type == INV_EVIL_BOOK)
             {
-                MapDrawWorldCircle(map_tracked_items[i].pos, dest, BLACK);
+                MapDrawWorldCircle(map_tracked_items[i].pos, dest, (Color) {0,0,0,245});
             }
+        }
+    }
+    else if (active == MAP_WINDMILL)
+    {
+        for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
+        {
+            // skip windmills if you want homes only
+            if (Scenes[i].modelType != MODEL_HOME_WINDMILL) continue;
+            MapDrawWorldCircle(Scenes[i].pos, dest, DARKBLUE);
         }
     }
 }
