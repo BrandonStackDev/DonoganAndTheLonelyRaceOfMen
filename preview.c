@@ -182,6 +182,13 @@ static void Audio_SelectSongRelative(int delta)
     }
 }
 
+static BoundingBox MakeCottageDoorBox(Vector3 center)
+{
+    return (BoundingBox) {
+        { center.x - 8.0f, center.y - 8.0f, center.z - 1.25f },
+        { center.x + 8.0f, center.y + 8.0f, center.z + 1.25f }
+    };
+}
 
 /// @brief main!
 /// @param  
@@ -226,7 +233,12 @@ int main(void) {
     float camDistance = 14.0f;  // Distance from truck
     float relativeYaw = 0.0f;  // <-- instead of camYaw
     float relativePitch = 0.0f;  // <-- instead of camYaw
-    
+    //for the cottage door
+    bool cottageDoorOpen = false;
+    float cottageDoorSlide = 0.0f; // 0 closed, 1 open
+    Vector3 cottageDoorClosed = { -602.45f, 806.0f, 2863.95f };
+    Vector3 cottageDoorOpenPos = { -620.45f, 806.0f, 2863.95f };
+    BoundingBox cottageDoorBox;
     //int for model type to search for when pressing R
     int modelSearchType = 0;
     //---------------RAYLIB INIT STUFF---------------------------------------
@@ -677,6 +689,7 @@ int main(void) {
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_04) { plats[70].disabled = false; } //pair
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_05) { plats[71].disabled = false; } //pair
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_06) { plats[76].disabled = false; plats[111].disabled = false; } //bridge
+                else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_09) { cottageDoorOpen = true; } //yetimt
             }
         }
         
@@ -990,6 +1003,7 @@ int main(void) {
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_04) { plats[70].disabled = false; } //pair
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_05) { plats[71].disabled = false; } //pair
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_06) { plats[76].disabled = false; plats[111].disabled = false; } //bridge
+                        else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_09) { cottageDoorOpen = true; } //yetimt
                     }
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";
@@ -2379,6 +2393,26 @@ int main(void) {
                 }
             }
             don.box = UpdateBoundingBox(don.origBB, don.pos);
+            //door
+            if (cottageDoorSlide < 0.98f && CheckCollisionBoxes(don.box, cottageDoorBox))
+            {
+                BoundingBox a = don.box;
+                BoundingBox b = cottageDoorBox;
+
+                Vector3 ac = { (a.min.x + a.max.x) * 0.5f, (a.min.y + a.max.y) * 0.5f, (a.min.z + a.max.z) * 0.5f };
+                Vector3 bc = { (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f, (b.min.z + b.max.z) * 0.5f };
+                Vector3 ah = { (a.max.x - a.min.x) * 0.5f, (a.max.y - a.min.y) * 0.5f, (a.max.z - a.min.z) * 0.5f };
+                Vector3 bh = { (b.max.x - b.min.x) * 0.5f, (b.max.y - b.min.y) * 0.5f, (b.max.z - b.min.z) * 0.5f };
+
+                Vector3 d = { ac.x - bc.x, ac.y - bc.y, ac.z - bc.z };
+                float penX = (ah.x + bh.x) - fabsf(d.x);
+                float penZ = (ah.z + bh.z) - fabsf(d.z);
+
+                if (penX < penZ) don.pos.x += (d.x > 0.0f) ? penX : -penX;
+                else             don.pos.z += (d.z > 0.0f) ? penZ : -penZ;
+
+                don.box = UpdateBoundingBox(don.origBB, don.pos);
+            }
             //home collision
             don.inHome = false;
             for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
@@ -2835,8 +2869,18 @@ int main(void) {
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         UpdateApples(dt);
+        //machines
         Machine_Update(dt, &don, &truckPosition);
+        if (cottageDoorOpen)
+        {
+            cottageDoorSlide += GetFrameTime() * 0.7f;
+            if (cottageDoorSlide > 1.0f) cottageDoorSlide = 1.0f;
+        }
+        Vector3 doorPos = Vector3Lerp(cottageDoorClosed, cottageDoorOpenPos, cottageDoorSlide);
+        cottageDoorBox = MakeCottageDoorBox(doorPos);
+        //shark
         Shark_Update(&shark, &don, dt);
+        //punchin and fightin and cusin
         don.punching = DonIsPunching(&don);
         don.punchBox = DonMakePunchBox(&don);
         //whale farts
@@ -3145,6 +3189,15 @@ int main(void) {
             //homes
             if (onLoad)
             {
+                Vector3 doorPos = Vector3Lerp(cottageDoorClosed, cottageDoorOpenPos, cottageDoorSlide);
+                if (Vector3Distance(doorPos,don.pos)<100) // cottage sliding door draw
+                {
+                    DrawCube(doorPos, 16.0f, 16.0f, 2.5f, BROWN);
+                    if (displayBoxes)
+                    {
+                        DrawBoundingBox(cottageDoorBox, RED);
+                    }
+                }
                 int milCnt = 0;
                 rlDisableBackfaceCulling();
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
