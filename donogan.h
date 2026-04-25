@@ -525,6 +525,8 @@ typedef struct {
     //punching
     BoundingBox punchBox;
     bool punching;
+    //rocket/hover.space mode for truck
+    bool canHasCheeseburger;
 } Donogan;
 
 // Assets (adjust if needed)

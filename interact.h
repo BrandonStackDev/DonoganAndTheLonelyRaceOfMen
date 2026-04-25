@@ -193,6 +193,7 @@ typedef enum {
     FIREPIT_COTTAGE,
     FIREPIT_BARN,
     FIREPIT_YETI_MT,
+    FIREPIT_RAP,
     FIREPIT_TOTAL_COUNT
 } FirepitLocation;
 

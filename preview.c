@@ -291,6 +291,12 @@ int main(void) {
     Machine_Init();
     //env bounding boxes, duct tape
     GoGoGadgetDuctTape();
+    //rocket ship
+    Model rocketModel = LoadModel("models/rocket.obj");
+    rocketModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/rocket.png");
+    Vector3 rocketPos = (Vector3){ 2556.61, 732.95, 542.69 };
+    BoundingBox rocketBox = UpdateBoundingBox(GetModelBoundingBox(rocketModel), rocketPos);
+    //other stuff
     Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
     Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 160.0f, (SCREEN_WIDTH / 2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
     Font default_font = GetFontDefault();
@@ -588,9 +594,12 @@ int main(void) {
     fires[FIREPIT_BARN].location = FIREPIT_BARN;
     fires[FIREPIT_BARN].pos = (Vector3){ 922.00f, 353.00f, 2026.00f };
     fires[FIREPIT_BARN].name = "Barn/Windmill";
-    fires[FIREPIT_YETI_MT].location = FIREPIT_BARN;
+    fires[FIREPIT_YETI_MT].location = FIREPIT_YETI_MT;
     fires[FIREPIT_YETI_MT].pos = (Vector3){ -649.22, 790.59, 2887.02 };
     fires[FIREPIT_YETI_MT].name = "Yeti Mountain";
+    fires[FIREPIT_RAP].location = FIREPIT_RAP;
+    fires[FIREPIT_RAP].pos = (Vector3){ 788.23, 877.18, -1849.37 };
+    fires[FIREPIT_RAP].name = "Reach Around Point";
     // INIT INTERACTIVE POINTS OF INTEREST
     InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
     InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
@@ -1892,6 +1901,14 @@ int main(void) {
         bool alreadyHandledY = false;
         if (donnyMode && !vehicleMode)
         {
+            //rocket
+            if (!don.canHasCheeseburger && CheckCollisionBoxes(rocketBox, don.outerBox))
+            {
+                don.canHasCheeseburger = true;
+                toast = "Unlocked Hover mode for the Truck!";
+                StartTimer(&toastTimer);
+                don.xp += 100;
+            }
             //are we in water?
             //bool inWater = don.pos.y < PLAYER_FLOAT_Y_POSITION;
             float feetY = DonFeetWorldY(&don);         // from donogan.h
@@ -3015,6 +3032,8 @@ int main(void) {
             //donogan
             if (onLoad && donnyMode && !don.eatenByShark) //do not draw once he was eaten
             {
+                //rocket
+                if (!don.canHasCheeseburger) { DrawModel(rocketModel, rocketPos, 1, WHITE); }
                 // Draw Donogan
                 DrawModel(don.model, don.pos, don.scale, don.drawColor); // uses model.transform for rotation
                 if (displayBoxes) 
