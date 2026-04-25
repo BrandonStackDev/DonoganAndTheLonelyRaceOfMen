@@ -18,6 +18,7 @@ typedef enum {
     MENU_PAGE_MISSIONS,
     MENU_PAGE_MISSION_DETAIL,
     MENU_PAGE_WARP,
+    MENU_PAGE_MAPS,
     MENU_QUIT
 } MenuPage;
 

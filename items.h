@@ -61,7 +61,7 @@ typedef struct {
 } TrackedItem; //for items on the map that do not respawn and are kept in the save file
 
 #define NUM_ITEMS 18
-#define NUM_TRACKED_ITEMS 18
+#define NUM_TRACKED_ITEMS 16
 #define MAX_CLOSE_ITEMS 32
 Item map_items[NUM_ITEMS];
 TrackedItem map_tracked_items[NUM_TRACKED_ITEMS];
@@ -246,7 +246,6 @@ void InitItems()
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 2688.86, 330.53, 4529.79 }, INV_BOOK, 1);//temple on start island
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { -2238.10, 336.00, 3441.12 }, INV_BOOK, 1);//greek white temple
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 585.12, 422, 1874.69 }, INV_BOOK, 1); //plats near barn/windmill
-    map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 2720.00, 438.00, 4100.71 }, INV_BOOK, 1); //tree house
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { -2400.32, 421.0, -2589.49 }, INV_BOOK, 1); //tree house by windmill
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 1899.63, 806, -455.70 }, INV_BOOK, 1); //pair
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 1144.80, 787, -1785.58 }, INV_BOOK, 1); //bridge
@@ -256,7 +255,6 @@ void InitItems()
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2711.45, 362.51, 4524.31 }, INV_EVIL_BOOK, 1); //temple on start island
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -2301.45, 336.09, 3530.99 }, INV_EVIL_BOOK, 1); //greek white temple //, -2243.00, 336.00, 3468.78
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 41.14, 906, 1715.81 }, INV_EVIL_BOOK, 1); //plats near barn/windmill
-    map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2740.00, 438.00, 4110.71 }, INV_EVIL_BOOK, 1); //tree house
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -2399.84, 421.0, -2579.47 }, INV_EVIL_BOOK, 1); //tree house by windmill
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 1735.15, 806, -1186.69 }, INV_EVIL_BOOK, 1); //pair
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 805.95, 882, -1838.85 }, INV_EVIL_BOOK, 1); //bridge

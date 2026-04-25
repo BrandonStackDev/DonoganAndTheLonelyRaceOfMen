@@ -18,6 +18,7 @@
 #include "core.h"
 #include "items.h" //items[]
 #include "machine.h"
+#include "maps.h"
 
 // --- config ---
 #ifndef MENU_VISIBLE_ROWS
@@ -176,6 +177,12 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
         fprintf(f, "INV[%d] = %d\n", i, inventory[i].count);  //
     }
     fprintf(f, "--INV-END--\n");
+    //maps
+    fprintf(f, "--MAPS-BEGIN--\n");
+    for (int i = 0; i < MAP_TOTAL_COUNT; i++) {
+        fprintf(f, "MAP[%d] = %d %d\n", i, maps[i].collected ? 1 : 0, maps[i].display ? 1 : 0);
+    }
+    fprintf(f, "--MAPS-END--\n");
 
     fclose(f);
     PlaySoundVol(menuSaveOrLoad);
@@ -187,23 +194,25 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
     FILE* f = fopen(path ? path : "don.save.txt", "rb");
     if (!f) return false;
 
-    char line[512]; bool inFires = false, inMissions = false, inItems = false, inInv = false, inMach = false;
+    char line[512]; bool inFires = false, inMissions = false, inItems = false, inInv = false, inMach = false, inMaps = false;
     while (fgets(line, sizeof(line), f)) {
         // strip
         char* s = line;
         while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n') ++s;
         if (!*s) continue;
 
-        if (!strncmp(s, "--FIREPLACES-BEGIN--", 20)) { inFires = true;  inMissions = false; inItems = false; inInv = false; inMach = false; continue; }
+        if (!strncmp(s, "--FIREPLACES-BEGIN--", 20)) { inFires = true;  inMissions = false; inItems = false; inInv = false; inMach = false; inMaps = false; continue; }
         if (!strncmp(s, "--FIREPLACES-END--", 18)) { inFires = false; continue; }
-        if (!strncmp(s, "--MISSIONS-BEGIN--", 18)) { inMissions = true; inFires = false;  inItems = false; inInv = false; inMach = false; continue; }
+        if (!strncmp(s, "--MISSIONS-BEGIN--", 18)) { inMissions = true; inFires = false;  inItems = false; inInv = false; inMach = false; inMaps = false; continue; }
         if (!strncmp(s, "--MISSIONS-END--", 16)) { inMissions = false; continue; }
-        if (!strncmp(s, "--ITEMS-BEGIN--", 15)) { inItems = true;  inMissions = false; inFires = false; inInv = false; inMach = false; continue; }
+        if (!strncmp(s, "--ITEMS-BEGIN--", 15)) { inItems = true;  inMissions = false; inFires = false; inInv = false; inMach = false; inMaps = false; continue; }
         if (!strncmp(s, "--ITEMS-END--", 13)) { inItems = false; continue; }
-        if (!strncmp(s, "--INV-BEGIN--", 13)) { inInv = true;  inItems = false; inMissions = false; inFires = false; inMach = false; continue; }
+        if (!strncmp(s, "--INV-BEGIN--", 13)) { inInv = true;  inItems = false; inMissions = false; inFires = false; inMach = false; inMaps = false; continue; }
         if (!strncmp(s, "--INV-END--", 11)) { inInv = false; continue; }
-        if (!strncmp(s, "--MACHINES-BEGIN--", 13)) { inMach = true;  inItems = false; inMissions = false; inFires = false; inInv = false; continue; }
+        if (!strncmp(s, "--MACHINES-BEGIN--", 13)) { inMach = true;  inItems = false; inMissions = false; inFires = false; inInv = false; inMaps = false; continue; }
         if (!strncmp(s, "--MACHINES-END--", 11)) { inMach = false; continue; }
+        if (!strncmp(s, "--MAPS-BEGIN--", 14)) { inMaps = true; inFires = false; inMissions = false; inItems = false; inInv = false; inMach = false; continue; }
+        if (!strncmp(s, "--MAPS-END--", 12)) { inMaps = false; continue; }
 
         if (inFires) {
             int idx = 0, val = 0;
@@ -240,7 +249,16 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
             }
             continue;
         }
-
+        if (inMaps) {
+            int idx = 0, collected = 0, display = 0;
+            if (sscanf(s, "MAP[%d] = %d %d", &idx, &collected, &display) == 3) {
+                if (idx >= 0 && idx < MAP_TOTAL_COUNT) {
+                    maps[idx].collected = collected != 0;
+                    maps[idx].display = display != 0;
+                }
+            }
+            continue;
+        }
         // scalars
         if (!strncmp(s, "don_pos", 7)) {
             float x, y, z; if (sscanf(s, "don_pos = %f %f %f", &x, &y, &z) == 3) { d->pos.x = x; d->pos.y = y; d->pos.z = z; }
@@ -337,6 +355,7 @@ static void Menu_OnTriangle(GameState* gs) {
     case MENU_PAGE_MISSIONS:
     case MENU_PAGE_MISSION_DETAIL:
     case MENU_PAGE_WARP:
+    case MENU_PAGE_MAPS:
         gs->menuPage = MENU_PAGE_MAIN; gs->menuSel = 0; gs->menuScroll = 0; break;
     case MENU_PAGE_MAIN:
     default:
@@ -357,8 +376,8 @@ void Menu_OnCross(GameState* gs, Donogan* d)
 {
     PlaySoundVol(menuSelect);
     if (gs->menuPage == MENU_PAGE_MAIN) {
-        static const char* entries[] = { "Inventory", "Save", "Load", "Options", "Missions", "Warp", "Quit"};
-        const int count = 7;
+        static const char* entries[] = { "Inventory", "Save", "Load", "Options", "Missions", "Warp", "Maps", "Quit"};
+        const int count = 8;
         Menu_ScrollClamp(count, &gs->menuSel, &gs->menuScroll);
         switch (gs->menuSel) {
         case 0: gs->menuPage = MENU_PAGE_INVENTORY; gs->menuSel = 0; gs->menuScroll = 0; break;
@@ -367,7 +386,8 @@ void Menu_OnCross(GameState* gs, Donogan* d)
         case 3: gs->menuPage = MENU_PAGE_OPTIONS; gs->menuSel = 0; gs->menuScroll = 0; break;
         case 4: gs->menuPage = MENU_PAGE_MISSIONS; gs->menuSel = 0; gs->menuScroll = 0; break;
         case 5: gs->menuPage = MENU_PAGE_WARP; gs->menuSel = 0; gs->menuScroll = 0; break;
-        case 6: gs->menuPage = MENU_QUIT; gs->menuSel = 0; gs->menuScroll = 0; keepAlive = false; break;
+        case 6: gs->menuPage = MENU_PAGE_MAPS; gs->menuSel = 0; gs->menuScroll = 0; break;
+        case 7: gs->menuPage = MENU_QUIT; gs->menuSel = 0; gs->menuScroll = 0; keepAlive = false; break;
         }
         return;
     }
@@ -399,7 +419,22 @@ void Menu_OnCross(GameState* gs, Donogan* d)
         Menu_Close(gs);
         return;
     }
+    if (gs->menuPage == MENU_PAGE_MAPS) {
+        const int count = MAP_TOTAL_COUNT;
+        Menu_ScrollClamp(count, &gs->menuSel, &gs->menuScroll);
 
+        int i = gs->menuSel;
+        if (i >= 0 && i < MAP_TOTAL_COUNT && maps[i].collected) {
+            if (maps[i].display) {
+                maps[i].display = false; // turn off selected map
+            }
+            else {
+                Maps_SetOnlyDisplay(i);  // turn this one on, all others off
+            }
+            PlaySoundVol(menuSaveOrLoad);
+        }
+        return;
+    }
     // OPTIONS && MISSION_DETAIL have no Cross action (Options changes on Left/Right).
     //INVENTORY
     if (gs->menuPage == MENU_PAGE_INVENTORY) {
@@ -438,8 +473,8 @@ static void _DrawMain(GameState* gs) {
     Menu_DrawHeader("Main Menu", panel);
     Menu_DrawBox(panel);
 
-    static const char* entries[] = { "Inventory", "Save", "Load", "Options", "Missions", "Warp", "Quit"};
-    const int count = 7;
+    static const char* entries[] = { "Inventory", "Save", "Load", "Options", "Missions", "Warp", "Maps", "Quit"};
+    const int count = 8;
     Menu_ScrollClamp(count, &gs->menuSel, &gs->menuScroll);
 
     int row = 0;
@@ -583,7 +618,37 @@ static void _DrawWarp(GameState* gs) {
 
     DrawTextEx(GetFontDefault(), "Cross: warp  |  Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
 }
+static void _DrawMaps(GameState* gs)
+{
+    Rectangle panel = MenuPanelRect();
+    Menu_DrawHeader("Maps", panel);
+    Menu_DrawBox(panel);
 
+    const int count = MAP_TOTAL_COUNT;
+    Menu_ScrollClamp(count, &gs->menuSel, &gs->menuScroll);
+
+    int row = 0;
+    for (int i = gs->menuScroll; i < count && row < MENU_VISIBLE_ROWS; ++i, ++row) {
+        char buf[128];
+
+        if (!maps[i].collected) {
+            snprintf(buf, sizeof(buf), "%s: ???", maps[i].name);
+        }
+        else {
+            snprintf(buf, sizeof(buf), "%s: %s", maps[i].name, maps[i].display ? "On" : "Off");
+        }
+
+        bool isOn = maps[i].collected && maps[i].display;
+        Menu_DrawRow(buf, row, gs->menuSel - gs->menuScroll, panel, MENU_TEXT, isOn);
+    }
+
+    DrawTextEx(GetFontDefault(),
+        "Cross: toggle map  |  Triangle: back",
+        (Vector2) {
+        panel.x + 12, panel.y + panel.height - 28
+    },
+        20.0f, 1.0f, MENU_DIM);
+}
 // Public draw entrypoint: call this from your 2D HUD pass (does NOT pause your world)
 static void Menu_DrawOverlay(const GameState* gs, const Donogan* d)
 {
@@ -600,6 +665,7 @@ static void Menu_DrawOverlay(const GameState* gs, const Donogan* d)
     case MENU_PAGE_MISSIONS:        _DrawMissions(mgs);       break;
     case MENU_PAGE_MISSION_DETAIL:  _DrawMissionDetail(mgs);  break;
     case MENU_PAGE_WARP:            _DrawWarp(mgs);           break;
+    case MENU_PAGE_MAPS:            _DrawMaps(mgs); break;
     default: break;
     }
 }

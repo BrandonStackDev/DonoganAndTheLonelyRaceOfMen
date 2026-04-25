@@ -295,6 +295,8 @@ int main(void) {
     InitApples();
     //machines and lift
     Machine_Init();
+    //maps
+    InitMaps();
     //env bounding boxes, duct tape
     GoGoGadgetDuctTape();
     //rocket ship
@@ -689,6 +691,19 @@ int main(void) {
     {
         //shut off in water if in vehicle
         if (!donnyMode) { don.inWater = false; }
+        //maps
+        if (onLoad)
+        {
+            int foundOn = -1;
+            for (int i = 0; i < MAP_TOTAL_COUNT; i++) {
+                if (!maps[i].collected) maps[i].display = false;
+
+                if (maps[i].display) {
+                    if (foundOn < 0) foundOn = i;
+                    else maps[i].display = false;
+                }
+            }
+        }
         //things that are affected by machines that need save file updates
         if (don.unlockedTruck) 
         { 
@@ -2986,6 +3001,7 @@ int main(void) {
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         UpdateApples(dt);
+        ConsumeMaps(&don);
         //machines
         Machine_Update(dt, &don, &truckPosition);
         if (cottageDoorOpen)
@@ -3348,8 +3364,12 @@ int main(void) {
             //machines
             Machine_DrawAll(camera.position, frustum);
             Machine_DrawTruckLift();
-            //items
-            if (onLoad) { DrawItems(displayBoxes); }
+            //items and maps
+            if (onLoad) 
+            { 
+                DrawItems(displayBoxes); 
+                DrawUncollectedMaps(displayBoxes);
+            }
             //homes
             if (onLoad)
             {
@@ -3899,7 +3919,7 @@ int main(void) {
                 };
                 DrawCircleV(markerShark, 3, PURPLE);
             }
-
+            DrawDisplayMaps(dest, &don, truckPosition, whales, numWhales);
             // Facing triangle (yellow "nose" pointing the player's yaw)
             float local_yaw = donnyMode ? +(yaw + (2.0f * (PI / 2.0f))) : vehicleMode ? truckAngle : -(yaw + (PI / 2.0f)); //
             float local_x_sign = vehicleMode|| donnyMode ? 1.0f : -1.0f;

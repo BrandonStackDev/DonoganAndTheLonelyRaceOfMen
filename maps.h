@@ -1,0 +1,181 @@
+#ifndef MAPS_H
+#define MAPS_H
+
+#include "raylib.h"
+#include "raymath.h"
+#include "rlgl.h"
+#include <stdbool.h>
+#include <string.h>
+
+#include "texture.h"
+#include "core.h"
+#include "donogan.h"
+#include "game.h"
+#include "jc.h"
+#include "items.h"
+
+typedef enum {
+    MAP_HOMES = 0,
+    MAP_WHALES,
+    MAP_BOOKS,
+    //alister and galadriel
+    //windmills
+    MAP_TOTAL_COUNT
+} MapTypes;
+
+typedef struct {
+    bool collected;
+    bool display;
+    MapTypes type;
+    Vector3 pos;
+    BoundingBox box;
+    float scale;
+    char name[64];
+} GameMap;
+
+GameMap maps[MAP_TOTAL_COUNT];
+
+Model mapModel = { 0 };
+Texture2D mapTex = { 0 };
+
+static inline GameMap CreateGameMap(const char* name, Vector3 pos, MapTypes type)
+{
+    GameMap m = { 0 };
+    m.collected = false;
+    m.display = false;
+    m.type = type;
+    m.pos = pos;
+    m.scale = 1.0f;
+
+    snprintf(m.name, sizeof(m.name), "%s", name ? name : "Map");
+
+    BoundingBox base = GetModelBoundingBox(mapModel);
+    base = ScaleBoundingBox(base, m.scale);
+    m.box = UpdateBoundingBox(base, pos);
+
+    return m;
+}
+
+static inline void Maps_SetOnlyDisplay(int idx)
+{
+    for (int i = 0; i < MAP_TOTAL_COUNT; i++) {
+        maps[i].display = false;
+    }
+
+    if (idx >= 0 && idx < MAP_TOTAL_COUNT && maps[idx].collected) {
+        maps[idx].display = true;
+    }
+}
+
+static inline int Maps_GetDisplayed(void)
+{
+    for (int i = 0; i < MAP_TOTAL_COUNT; i++) {
+        if (maps[i].display) return i;
+    }
+    return -1;
+}
+
+static inline void InitMaps(void)
+{
+    mapModel = LoadModel("models/map.obj");
+    mapTex = LoadMyTexture("textures/map.png");
+
+    if (mapModel.materialCount > 0) {
+        mapModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = mapTex;
+    }
+
+    maps[MAP_HOMES] = CreateGameMap("Homes Map", (Vector3) { 2965.78, 324, 4036.69 }, MAP_HOMES);
+    maps[MAP_WHALES] = CreateGameMap("Whales Map", (Vector3) { 2740.00f, 441.00f, 4110.71f }, MAP_WHALES);
+    maps[MAP_BOOKS] = CreateGameMap("Books Map", (Vector3) { 2720.00f, 441.00f, 4100.71f }, MAP_BOOKS);
+}
+
+static inline void ConsumeMaps(Donogan* d)
+{
+    for (int i = 0; i < MAP_TOTAL_COUNT; i++) {
+        if (maps[i].collected) continue;
+
+        if (CheckCollisionBoxes(maps[i].box, d->outerBox)) {
+            maps[i].collected = true;
+            maps[i].display = false;
+
+            toast = "Found a Map!";
+            StartTimer(&toastTimer);
+            PlaySoundVol(menuSaveOrLoad);
+        }
+    }
+}
+
+static inline void DrawUncollectedMaps(bool drawBoxes)
+{
+    for (int i = 0; i < MAP_TOTAL_COUNT; i++) {
+        if (maps[i].collected) continue;
+
+        DrawModel(mapModel, maps[i].pos, maps[i].scale, WHITE);
+        if (drawBoxes) DrawBoundingBox(maps[i].box, SKYBLUE);
+    }
+}
+static inline Vector2 MapWorldToScreen(Vector3 p, Rectangle dest)
+{
+    float nx = (p.x + (MAX_WORLD_SIZE / 2.0f)) / WORLD_WIDTH;
+    float ny = (p.z + (MAX_WORLD_SIZE / 2.0f)) / WORLD_HEIGHT;
+
+    return (Vector2) {
+        dest.x + nx * dest.width,
+            dest.y + ny * dest.height
+    };
+}
+
+static inline void MapDrawWorldCircle(Vector3 p, Rectangle dest, Color c)
+{
+    DrawCircleV(MapWorldToScreen(p, dest), 3.0f, c);
+}
+static inline void DrawDisplayMaps(
+    Rectangle dest,
+    Donogan* d,
+    Vector3 truckPos,
+    Whale* whales,
+    int numWhales
+)
+{
+    int active = Maps_GetDisplayed();
+    if (active < 0) return;
+
+    // always draw Don + truck as base markers
+    MapDrawWorldCircle(d->pos, dest, RED);
+    MapDrawWorldCircle(truckPos, dest, BLUE);
+
+    if (active == MAP_HOMES)
+    {
+        for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
+        {
+            // skip windmills if you want homes only
+            if (Scenes[i].modelType == MODEL_HOME_WINDMILL) continue;
+            MapDrawWorldCircle(Scenes[i].pos, dest, GREEN);
+        }
+    }
+    else if (active == MAP_WHALES)
+    {
+        for (int i = 0; i < numWhales; i++)
+        {
+            MapDrawWorldCircle(whales[i].pos, dest, PURPLE);
+        }
+    }
+    else if (active == MAP_BOOKS)
+    {
+        for (int i = 0; i < NUM_TRACKED_ITEMS; i++)
+        {
+            if (map_tracked_items[i].collected) continue;
+
+            if (map_tracked_items[i].type == INV_BOOK)
+            {
+                MapDrawWorldCircle(map_tracked_items[i].pos, dest, WHITE);
+            }
+            else if (map_tracked_items[i].type == INV_EVIL_BOOK)
+            {
+                MapDrawWorldCircle(map_tracked_items[i].pos, dest, BLACK);
+            }
+        }
+    }
+}
+
+#endif // MAPS_H
