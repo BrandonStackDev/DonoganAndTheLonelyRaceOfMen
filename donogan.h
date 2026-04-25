@@ -1092,11 +1092,17 @@ static void DonInitWrenchSwingKf(Donogan* d)
     }
 
     // 0: wind-up, hand outside/back
-    g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, -15, 0);
+    /*g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, -15, 0);
     g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(25, 0, 45);
     g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(-55, 0, 20);
     g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(-25, 0, 0);
-    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 35);
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 35);*/
+    // 0: wind-up LOWER (more relaxed at side)
+    g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, -10, 0);   // less torso twist
+    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(5, 0, 25);    // shoulder WAY lower
+    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(-25, 0, 10);  // upper arm less lifted
+    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(-10, 0, 0);   // forearm relaxed
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 20);    // slight wrist angle
 
     // 1: forward strike
     g->keyFrames[1].kfBones[0].rot = QuatXYZDeg(0, 20, 0);
