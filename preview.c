@@ -2698,11 +2698,11 @@ int main(void) {
                         don.state = DONOGAN_STATE_JUMPING;
                         don.onGround = false;
                     }
-                    else if (punchHit) {
-                        // punched a hopper!
+                    else if (punchHit)
+                    {
                         TraceLog(LOG_INFO, "punched a hopper!");
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
-                        bg[b].state = HOPPER_STATE_SLEEP;
+                        Hopper_KnockBackFromDonogan(&bg[b], &don);
                     }
                     else if (HasTimerElapsed(&don.hitTimer)) {
                         TraceLog(LOG_INFO, "ouch! hopper oof!");

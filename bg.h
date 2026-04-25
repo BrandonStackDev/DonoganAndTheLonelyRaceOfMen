@@ -165,6 +165,7 @@ typedef enum {
     HOPPER_STATE_SLEEP,
     HOPPER_STATE_WAIT,
     HOPPER_STATE_JUMP,
+    HOPPER_STATE_HURT,
     HOPPER_STATE_DEAD
 } HopperState;
 
@@ -828,10 +829,27 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
     }
 }
 
+static inline void Hopper_KnockBackFromDonogan(BadGuy* b, Donogan* d)
+{
+    Vector3 away = Vector3Subtract(b->pos, d->pos);
+    away.y = 0.0f;
+
+    if (Vector3Length(away) < 0.001f)
+    {
+        away = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+    }
+
+    away = Vector3Normalize(away);
+
+    b->vel = Vector3Scale(away, 8.0f); // backwards shove
+    b->vel.y = 7.0f;                   // little pop upward
+    b->state = HOPPER_STATE_HURT;
+}
+
 static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
 {
     float groundY = BG_GroundY(b->pos);
-    if (b->health <= 0) { b->state = HOPPER_STATE_DEAD; }
+    if (b->health <= 0 && b->state != HOPPER_STATE_HURT){b->state = HOPPER_STATE_DEAD;}
     switch (b->state)
     {
     case HOPPER_STATE_SLEEP:
@@ -873,7 +891,32 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
             StartTimer(&b->interactionTimer);
         }
     } break;
+    case HOPPER_STATE_HURT:
+    {
+        b->pos = Vector3Add(b->pos, Vector3Scale(b->vel, dt));
+        b->vel.y -= 28.0f * dt;
 
+        // optional: slow horizontal drift
+        b->vel.x *= 0.985f;
+        b->vel.z *= 0.985f;
+
+        if (b->pos.y <= groundY)
+        {
+            b->pos.y = groundY;
+            b->vel = (Vector3){ 0 };
+
+            if (b->health <= 0)
+            {
+                b->state = HOPPER_STATE_DEAD;
+            }
+            else
+            {
+                b->state = HOPPER_STATE_WAIT;
+                ResetTimer(&b->interactionTimer);
+                StartTimer(&b->interactionTimer);
+            }
+        }
+    } break;
     case HOPPER_STATE_DEAD:
     {
         b->active = false;
