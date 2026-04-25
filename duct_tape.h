@@ -19,11 +19,12 @@ typedef struct
 {
     EnvBoundingBoxType type;     // ground/wall/etc.
     BoundingBox box;             // Raylib AABB (min/max)
+    bool disable;
 } EnvBoundingBox;
 
 
 
-#define gEnvBoundingBoxCount 24
+#define gEnvBoundingBoxCount 27
 
 EnvBoundingBox gEnvBoundingBoxes[gEnvBoundingBoxCount] = { 0 };
 
@@ -53,6 +54,10 @@ void GoGoGadgetDuctTape()
     gEnvBoundingBoxes[21] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { 1841.0f, 372, 4119.7f },(Vector3) { 1844.2f, 374.4f, 4182.0f } } };//nice 01 ground 1
     gEnvBoundingBoxes[22] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { -2313.59, 333.08, 3503.79 },(Vector3) { -2222.63, 350.00, 3524.00 } } };//temple wall
     gEnvBoundingBoxes[23] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { -669.12, 574, 3726.89 },(Vector3) { -668.00, 575.67, 3748.53 } } };//lucyies sisters ground
+    // second cottage front wall left of door
+    gEnvBoundingBoxes[24] = (EnvBoundingBox){ EBBT_WALL, (BoundingBox) { (Vector3) { -627.5f, 793.0f, 2866.8f }, (Vector3) { -608.8f, 809.0f, 2870.2f } } };
+    gEnvBoundingBoxes[25] = (EnvBoundingBox){ EBBT_WALL, (BoundingBox) { (Vector3) { -596.3f, 793.0f, 2866.8f }, (Vector3) { -576.5f, 809.0f, 2870.2f } } };
+    gEnvBoundingBoxes[26] = (EnvBoundingBox){ EBBT_WALL, (BoundingBox) { (Vector3) { -627.5f, 793.0f, 2866.8f }, (Vector3) { -576.5f, 809.0f, 2870.2f } } };
 }
 
 #endif // DUCT_TAPE_H

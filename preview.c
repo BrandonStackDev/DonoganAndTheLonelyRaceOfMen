@@ -185,8 +185,8 @@ static void Audio_SelectSongRelative(int delta)
 static BoundingBox MakeCottageDoorBox(Vector3 center)
 {
     return (BoundingBox) {
-        { center.x - 8.0f, center.y - 8.0f, center.z - 1.25f },
-        { center.x + 8.0f, center.y + 8.0f, center.z + 1.25f }
+        { center.x - 10.0f, center.y - 8.0f, center.z - 1.67f },
+        { center.x + 10.0f, center.y + 8.0f, center.z + 1.67f }
     };
 }
 
@@ -236,8 +236,8 @@ int main(void) {
     //for the cottage door
     bool cottageDoorOpen = false;
     float cottageDoorSlide = 0.0f; // 0 closed, 1 open
-    Vector3 cottageDoorClosed = { -602.45f, 806.0f, 2863.95f };
-    Vector3 cottageDoorOpenPos = { -620.45f, 806.0f, 2863.95f };
+    Vector3 cottageDoorClosed = { -600, 806.0f, 2863.95f };
+    Vector3 cottageDoorOpenPos = { -618.45f, 806.0f, 2863.95f };
     BoundingBox cottageDoorBox;
     //int for model type to search for when pressing R
     int modelSearchType = 0;
@@ -584,10 +584,13 @@ int main(void) {
     fires[FIREPIT_VILLAGE].name = "Village";
     fires[FIREPIT_COTTAGE].location = FIREPIT_COTTAGE;
     fires[FIREPIT_COTTAGE].pos = (Vector3){ -1214.70, 400, 664 };
-    fires[FIREPIT_COTTAGE].name = "cottage";
+    fires[FIREPIT_COTTAGE].name = "Cottage";
     fires[FIREPIT_BARN].location = FIREPIT_BARN;
     fires[FIREPIT_BARN].pos = (Vector3){ 922.00f, 353.00f, 2026.00f };
-    fires[FIREPIT_BARN].name = "barn/windmill";
+    fires[FIREPIT_BARN].name = "Barn/Windmill";
+    fires[FIREPIT_YETI_MT].location = FIREPIT_BARN;
+    fires[FIREPIT_YETI_MT].pos = (Vector3){ -649.22, 790.59, 2887.02 };
+    fires[FIREPIT_YETI_MT].name = "Yeti Mountain";
     // INIT INTERACTIVE POINTS OF INTEREST
     InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
     InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
@@ -689,7 +692,7 @@ int main(void) {
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_04) { plats[70].disabled = false; } //pair
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_05) { plats[71].disabled = false; } //pair
                 else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_06) { plats[76].disabled = false; plats[111].disabled = false; } //bridge
-                else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_09) { cottageDoorOpen = true; } //yetimt
+                else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_09) { cottageDoorOpen = true; gEnvBoundingBoxes[26].disable = true; } //yetimt
             }
         }
         
@@ -1003,7 +1006,7 @@ int main(void) {
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_04) { plats[70].disabled = false; } //pair
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_05) { plats[71].disabled = false; } //pair
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_06) { plats[76].disabled = false; plats[111].disabled = false; } //bridge
-                        else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_09) { cottageDoorOpen = true; } //yetimt
+                        else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_09) { cottageDoorOpen = true; gEnvBoundingBoxes[26].disable = true; } //yetimt
                     }
                     // placeholder toast / sound / animation trigger //play wrenchSound
                     toast = "Machine activated!";
@@ -2349,6 +2352,7 @@ int main(void) {
             //env boxes (aka duct tape)
             for (int i = 0; i < gEnvBoundingBoxCount; i++)//todo: if this list ever gets big add culling
             {
+                if (gEnvBoundingBoxes[i].disable) { continue; }
                 if (CheckCollisionBoxes(don.box, gEnvBoundingBoxes[i].box))
                 {
                     if (gEnvBoundingBoxes[i].type == EBBT_GROUND)
@@ -2394,6 +2398,7 @@ int main(void) {
             }
             don.box = UpdateBoundingBox(don.origBB, don.pos);
             //door
+            bool doorCollide = false;
             if (cottageDoorSlide < 0.98f && CheckCollisionBoxes(don.box, cottageDoorBox))
             {
                 BoundingBox a = don.box;
@@ -2410,8 +2415,9 @@ int main(void) {
 
                 if (penX < penZ) don.pos.x += (d.x > 0.0f) ? penX : -penX;
                 else             don.pos.z += (d.z > 0.0f) ? penZ : -penZ;
-
+                /*don.pos.x -= 2;*/
                 don.box = UpdateBoundingBox(don.origBB, don.pos);
+                doorCollide = true;
             }
             //home collision
             don.inHome = false;
