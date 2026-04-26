@@ -557,6 +557,7 @@ int main(void) {
     Texture atreyu_head = LoadMyTexture("textures/atreyu_head.png");
     Texture darrel_head = LoadMyTexture("textures/darrel_head.png");
     Texture lucy_head = LoadMyTexture("textures/lucy_head.png");
+    Texture wiz_head = LoadMyTexture("textures/wiz_head.png");
     //truck
     InitTruck();
     //more lb stuff
@@ -4031,7 +4032,7 @@ int main(void) {
                 talkee = lucy_head;
             }
             else if (don.who == TALK_TYPE_WIZARD) {
-                talkee = tol_head; // todo wiz_head
+                talkee = wiz_head; // todo wiz_head
             }
 
             Rectangle src = { 0, 0, talkee.width, talkee.height };
