@@ -211,36 +211,24 @@ bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
 {
     int result = true;
 
-    if (model.boneCount != anim.boneCount)
+    if (model.skeleton.boneCount != anim.boneCount)
     {
         result = false;
     }
-    else
-    {
-        for (int i = 0; i < model.boneCount; i++)
-        {
-            if (model.bones[i].parent != anim.bones[i].parent) 
-            { 
-                result = false; 
-                break; 
-            }
-        }
-    }
-
     return result;
 }
 // was: static inline void NPC_AnimTick(NPC* n, float dt)
 static inline bool NPC_AnimTick(NPC* n, float dt) {
     if (!n || !n->anims || n->animCount <= 0) return false;
     ModelAnimation* a = &n->anims[n->curAnim];
-    if (a->frameCount <= 0) return false;
+    if (a->keyframeCount <= 0) return false;
 
     float prev = n->animFrame;
     n->animFrame += n->animFPS * dt;
 
     bool looped = false;
-    if (n->animFrame >= a->frameCount) {
-        n->animFrame = fmodf(n->animFrame, (float)a->frameCount);
+    if (n->animFrame >= a->keyframeCount) {
+        n->animFrame = fmodf(n->animFrame, (float)a->keyframeCount);
         looped = true;
     }
     if (IsModelAnimationValidMe(n->model, *a)) {

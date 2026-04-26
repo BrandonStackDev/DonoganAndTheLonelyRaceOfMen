@@ -19,7 +19,7 @@ typedef enum {
     MAP_WHALES,
     MAP_BOOKS,
     MAP_WINDMILL,
-    //alister and galadriel
+    //Alister and Galadriel, TOL, and Atreyu
     MAP_TOTAL_COUNT
 } MapTypes;
 

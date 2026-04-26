@@ -1,14 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
 project(Donogan C)
+
 set(CMAKE_C_STANDARD 99)
 
-# Where you installed raylib with "cmake --install"
+# Use static MSVC runtime: /MT for Release, /MTd for Debug.
+# Must be before add_executable().
+if (MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 list(APPEND CMAKE_PREFIX_PATH "C:/raylib")
 find_package(raylib CONFIG REQUIRED)
 
 set(SRC preview.c)
-#set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-# Add the resource file on Windows:
+
 if (WIN32)
   set(APP_RC "${CMAKE_CURRENT_SOURCE_DIR}/res/app.rc")
   list(APPEND SRC "${APP_RC}")
@@ -16,43 +21,36 @@ endif()
 
 add_executable(play ${SRC})
 
-# ---- Visual Leak Detector (VLD) wiring (MSVC only) ----
-#if (MSVC)
-#  set(VLD_ROOT "C:/Program Files (x86)/Visual Leak Detector")
-
-  #if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-    #set(_VLD_LIB "${VLD_ROOT}/lib/Win64/vld.lib")
-  #else()
-    #set(_VLD_LIB "${VLD_ROOT}/lib/Win32/vld.lib")
-#  endif()
-
-  #add_library(VLD::VLD UNKNOWN IMPORTED)
-  #set_target_properties(VLD::VLD PROPERTIES
-    #IMPORTED_LOCATION             "${_VLD_LIB}"
-    #INTERFACE_INCLUDE_DIRECTORIES "${VLD_ROOT}/include"
-#  )
-
-  # Link VLD for Debug (and RelWithDebInfo, optional)
-  #target_link_libraries(play PRIVATE $<$<CONFIG:Debug>:VLD::VLD>)
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
-foreach(tgt IN ITEMS play)
-  set_target_properties(${tgt} PROPERTIES LINK_FLAGS "/STACK:16777216")
-  target_link_libraries(${tgt} PRIVATE raylib opengl32 gdi32 winmm user32 shell32)
-  target_compile_definitions(${tgt} PRIVATE _CRT_SECURE_NO_WARNINGS NOMINMAX WIN32_LEAN_AND_MEAN)
-  target_include_directories(${tgt} PRIVATE "C:/raylib/include")
-  # Set stack size to 16 MB (default is ~1 MB)
-endforeach()
-
 if (MSVC)
-    string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-    string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-    string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+  set_property(TARGET play PROPERTY
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
+
+set_target_properties(play PROPERTIES
+  LINK_FLAGS "/STACK:16777216"
+)
+
+target_link_libraries(play PRIVATE
+  raylib
+  opengl32
+  gdi32
+  winmm
+  user32
+  shell32
+)
+
+target_compile_definitions(play PRIVATE
+  _CRT_SECURE_NO_WARNINGS
+  NOMINMAX
+  WIN32_LEAN_AND_MEAN
+)
+
+target_include_directories(play PRIVATE
+  "C:/raylib/include"
+)
 
 add_custom_command(TARGET play POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           "${CMAKE_CURRENT_SOURCE_DIR}/res"
-          "$<TARGET_FILE_DIR:play>/res")
-
+          "$<TARGET_FILE_DIR:play>/res"
+)

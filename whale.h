@@ -90,12 +90,12 @@ static float SmoothStep(float t) { t = Clamp01(t); return t * t * (3.0f - 2.0f *
 static float Frand(float a, float b) { return a + (b - a) * ((float)GetRandomValue(0, 1000000) / 1000000.0f); }
 //helpers
 static void PoseResetToBind(const Model* m, ModelAnimation* p) {
-    for (int b = 0; b < p->boneCount; b++) { p->framePoses[0][b] = m->bindPose[b]; }
+    for (int b = 0; b < p->boneCount; b++) { p->keyframePoses[0][b] = m->skeleton.bindPose[b]; }
 }
 static void SetFromBindPlusEuler(const Model* m, ModelAnimation* p, int idx, float ex, float ey, float ez) {
     if (idx < 0) return;
     Quaternion dq = QuaternionFromEuler(ex, ey, ez);
-    p->framePoses[0][idx].rotation = QuaternionMultiply(dq, m->bindPose[idx].rotation);
+    p->keyframePoses[0][idx].rotation = QuaternionMultiply(dq, m->skeleton.bindPose[idx].rotation);
 }
 
 // BuildWorldQuat (replace the body)
@@ -134,11 +134,11 @@ static bool LoadWhale(Whale* A) {
     if (A->tex.id) SetMaterialTexture(&A->model.materials[0], MATERIAL_MAP_ALBEDO, A->tex);
 
     // 1-frame procedural animation
-    A->proc.boneCount = A->model.boneCount;
-    A->proc.bones = A->model.bones;
-    A->proc.frameCount = 1;
-    A->proc.framePoses = MemAlloc(sizeof(Transform*) * 1);
-    A->proc.framePoses[0] = MemAlloc(sizeof(Transform) * A->proc.boneCount);
+    A->proc.boneCount = A->model.skeleton.boneCount;
+    //A->proc.skeleton.bones = A->model.bones;
+    A->proc.keyframeCount = 1;
+    A->proc.keyframePoses = MemAlloc(sizeof(Transform*) * 1);
+    A->proc.keyframePoses[0] = MemAlloc(sizeof(Transform) * A->proc.boneCount);
     PoseResetToBind(&A->model, &A->proc);
     return true;
 }

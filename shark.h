@@ -99,7 +99,7 @@ static void SharkPoseResetToBind(const Model* m, ModelAnimation* p)
 {
     for (int b = 0; b < p->boneCount; b++)
     {
-        p->framePoses[0][b] = m->bindPose[b];
+        p->keyframePoses[0][b] = m->skeleton.bindPose[b];
     }
 }
 
@@ -108,7 +108,7 @@ static void SharkSetFromBindPlusEuler(const Model* m, ModelAnimation* p, int idx
     if (idx < 0) return;
 
     Quaternion dq = QuaternionFromEuler(ex, ey, ez);
-    p->framePoses[0][idx].rotation = QuaternionMultiply(dq, m->bindPose[idx].rotation);
+    p->keyframePoses[0][idx].rotation = QuaternionMultiply(dq, m->skeleton.bindPose[idx].rotation);
 }
 //other
 static float SharkDepthAtXZ(const Shark* s, float x, float z)
@@ -295,15 +295,15 @@ static bool LoadShark(Shark* s)
     s->bloodModel.materials[0].shader = s->bloodShader;
     s->bloodModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 180, 20, 20, 170 };
 
-    s->proc.boneCount = s->model.boneCount;
-    s->proc.bones = s->model.bones;
-    s->proc.frameCount = 1;
-    s->proc.framePoses = MemAlloc(sizeof(Transform*) * 1);
-    s->proc.framePoses[0] = MemAlloc(sizeof(Transform) * s->proc.boneCount);
+    s->proc.boneCount = s->model.skeleton.boneCount;
+    //s->proc.bones = s->model.skeleton.bones; //raylib 6
+    s->proc.keyframeCount = 1;
+    s->proc.keyframePoses = MemAlloc(sizeof(Transform*) * 1);
+    s->proc.keyframePoses[0] = MemAlloc(sizeof(Transform) * s->proc.boneCount);
 
     for (int b = 0; b < s->proc.boneCount; b++)
     {
-        s->proc.framePoses[0][b] = s->model.bindPose[b];
+        s->proc.keyframePoses[0][b] = s->model.skeleton.bindPose[b];
     }
     //PrintModelBones(&s->model); //return false to see it.
     return true;
@@ -787,11 +787,11 @@ static void FreeShark(Shark* s)
     UnloadTexture(s->legText);
     UnloadModel(s->bloodModel);
     UnloadShader(s->bloodShader);
-    if (s->proc.framePoses)
+    if (s->proc.keyframePoses)
     {
-        if (s->proc.framePoses[0]) MemFree(s->proc.framePoses[0]);
-        MemFree(s->proc.framePoses);
-        s->proc.framePoses = NULL;
+        if (s->proc.keyframePoses[0]) MemFree(s->proc.keyframePoses[0]);
+        MemFree(s->proc.keyframePoses);
+        s->proc.keyframePoses = NULL;
     }
 }
 

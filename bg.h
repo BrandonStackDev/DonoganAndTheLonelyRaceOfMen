@@ -314,7 +314,7 @@ static inline void BG_UpdateAnim(BadGuy* b, float dt) {
 
     const int a = b->curAnim;
     const ModelAnimation* A = &b->anims[a];
-    if (A->frameCount <= 0) return;
+    if (A->keyframeCount <= 0) return;
 
     // advance frames
     float framesToAdvance = b->animFPS * dt;
@@ -324,8 +324,8 @@ static inline void BG_UpdateAnim(BadGuy* b, float dt) {
     b->animFrame += adv;
 
     // Loop everything except "one-shot" jumps (we'll clamp on ATTACK state)
-    if (b->animFrame >= A->frameCount) {
-        b->animFrame %= A->frameCount;
+    if (b->animFrame >= A->keyframeCount) {
+        b->animFrame %= A->keyframeCount;
     }
 
     // Apply pose to the shared model we're borrowing
@@ -642,7 +642,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
         // Don't loop the JUMP anim: clamp last frame until we land
         if (b->anims && b->animCount > 0) {
             int a = b->curAnim;
-            const int last = b->anims[a].frameCount > 0 ? b->anims[a].frameCount - 1 : 0;
+            const int last = b->anims[a].keyframeCount > 0 ? b->anims[a].keyframeCount - 1 : 0;
             if (b->animFrame > last) b->animFrame = last;
         }
 
@@ -702,7 +702,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
             d->xp += 50;
             yetiKillCount++;
         }
-        if (b->animFrame >= b->anims[b->curAnim].frameCount - 1) {
+        if (b->animFrame >= b->anims[b->curAnim].keyframeCount - 1) {
             BG_SetAnim(b, ANIM_YETI_ROAR, true);
         }
         break;

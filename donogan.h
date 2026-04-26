@@ -824,10 +824,10 @@ static void BowStripScaleAndRootOffset(Donogan* d)
 
     for (unsigned k = 0; k < d->bowAnimCount; ++k) {
         ModelAnimation* A = &d->bowAnimsRaw[k];
-        if (!A || !A->framePoses) continue;
+        if (!A || !A->keyframePoses) continue;
 
-        for (int f = 0; f < (int)A->frameCount; ++f) {
-            Transform* F = A->framePoses[f];
+        for (int f = 0; f < (int)A->keyframeCount; ++f) {
+            Transform* F = A->keyframePoses[f];
 
             bool firstRootDone = false;
             for (int b = 0; b < (int)A->boneCount; ++b) {
@@ -835,7 +835,7 @@ static void BowStripScaleAndRootOffset(Donogan* d)
                 F[b].scale = (Vector3){ 1,1,1 };
 
                 // 2) zero translation on the *first* root only
-                if (d->bowModel.bones[b].parent == -1) {
+                if (d->bowModel.skeleton.bones[b].parent == -1) {
                     if (!firstRootDone) { F[b].translation = (Vector3){ 0,0,0 }; firstRootDone = true; }
                 }
             }
@@ -862,7 +862,7 @@ static void BowApplyFrame(Donogan* d)
 {
     if (!d || d->bowCur < 0 || !d->bowAnimsRaw) return;
     const ModelAnimation* A = &d->bowAnimsRaw[d->bowCur];
-    int fc = (int)A->frameCount; if (fc < 1) fc = 1;
+    int fc = (int)A->keyframeCount; if (fc < 1) fc = 1;
 
     // Clamp/finish behavior like body
     if (!d->bowLoop) {
@@ -1173,7 +1173,7 @@ static inline Matrix SRT(Transform t) {
 }
 static Matrix BoneWorldFromPose(const Donogan* d, const Transform* pose, int bone) {
     Matrix M = MatrixIdentity();
-    for (int b = bone; b != -1; b = d->model.bones[b].parent) {
+    for (int b = bone; b != -1; b = d->model.skeleton.bones[b].parent) {
         M = MatrixMultiply(SRT(pose[b]), M);
     }
     //if your character has its own world transform, left-multiply it here:
@@ -1187,11 +1187,11 @@ static inline Matrix LocalToWorldMatrix(const Model* model,
     int boneId)
 {
     Matrix M = SRT(locals[boneId]);
-    int p = model->bones[boneId].parent;
+    int p = model->skeleton.bones[boneId].parent;
     while (p >= 0) {
         Matrix Mp = SRT(locals[p]);
         M = MatrixMultiply(Mp, M); // world = parentWorld * local
-        p = model->bones[p].parent;
+        p = model->skeleton.bones[p].parent;
     }
     return M;
 }
@@ -1206,7 +1206,7 @@ static inline Transform WorldToLocalTransform(const Model* model,
 {
     // 1) Parent world
     Matrix parentWorld = MatrixIdentity();
-    int parent = model->bones[boneId].parent;
+    int parent = model->skeleton.bones[boneId].parent;
     if (parent >= 0) parentWorld = LocalToWorldMatrix(model, locals, parent);
 
     // 2) Local matrix from parent space
@@ -1227,10 +1227,10 @@ static inline Transform WorldToLocalTransform(const Model* model,
 static Quaternion DonWorldRotFromPose(const Donogan* d, const Transform* pose, int bone)
 {
     Quaternion q = pose[bone].rotation;                  // local
-    int p = d->model.bones[bone].parent;
+    int p = d->model.skeleton.bones[bone].parent;
     while (p >= 0) {                                     // climb to root
         q = QuaternionNormalize(QuaternionMultiply(pose[p].rotation, q));
-        p = d->model.bones[p].parent;
+        p = d->model.skeleton.bones[p].parent;
     }
     return q;                                            // world-space rotation
 }
@@ -1331,9 +1331,9 @@ static inline Transform MatrixToTransform(Matrix m)
 //worst thing ever, do not touch unless you need to...
 static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFrameBone* KB, Transform* out)
 {
-    if (boneId < 0 || boneId >= d->model.boneCount) return;
+    if (boneId < 0 || boneId >= d->model.skeleton.boneCount) return;
 
-    int parent = d->model.bones[boneId].parent;
+    int parent = d->model.skeleton.bones[boneId].parent;
 
     if (boneId == rootBoneId)
     {
@@ -1357,14 +1357,14 @@ static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFram
     else
     {
         // Parent delta: how parent moved vs bind (bind->current in parent space)
-        const Quaternion qBindP = d->model.bindPose[parent].rotation;
+        const Quaternion qBindP = d->model.skeleton.bindPose[parent].rotation;
         const Quaternion qCurP = out[parent].rotation;
         const Quaternion qDeltaP = QuaternionNormalize(QuaternionMultiply(qCurP, QuaternionInvert(qBindP)));
         // Rebuild CHILD from bind locals using the parent's delta (no stretch):
-        const Quaternion childBindRot = d->model.bindPose[boneId].rotation;
+        const Quaternion childBindRot = d->model.skeleton.bindPose[boneId].rotation;
         // World position: parent world + rotated local bind offset
-        Vector3 childBindWorld = d->model.bindPose[boneId].translation;
-        Vector3 parentBindWorld = d->model.bindPose[parent].translation;
+        Vector3 childBindWorld = d->model.skeleton.bindPose[boneId].translation;
+        Vector3 parentBindWorld = d->model.skeleton.bindPose[parent].translation;
         Vector3 childRelBindWorld = Vector3Subtract(childBindWorld, parentBindWorld);
         Vector3 childRel = Vector3RotateByQuaternion(childRelBindWorld, qDeltaP);
         out[boneId].translation = Vector3Add(out[parent].translation, childRel);
@@ -1373,9 +1373,9 @@ static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFram
     }
 
     // Recurse
-    for (int i = 0; i < d->model.boneCount; ++i)
+    for (int i = 0; i < d->model.skeleton.boneCount; ++i)
     {
-        if (d->model.bones[i].parent == boneId)
+        if (d->model.skeleton.bones[i].parent == boneId)
             DonApplyPoseFk(rootBoneId, i, d, KB, out);
     }
 }
@@ -1384,15 +1384,15 @@ static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFram
 // Apply current group's current key (single key for now) as deltas on top of bind pose
 static void DonApplyProcPoseFromKF(Donogan* d)
 {
-    if (!d || d->model.boneCount <= 0 || !d->model.bindPose) { return; }
+    if (!d || d->model.skeleton.boneCount <= 0 || !d->model.skeleton.bindPose) { return; }
 
-    const int bc = d->model.boneCount;
+    const int bc = d->model.skeleton.boneCount;
     // Temp frame (1 frame) – simple and clear
     Transform* out = (Transform*)MemAlloc(sizeof(Transform) * bc);
     if (!out) return;
 
     // Base = bind pose (later, you can switch this to a cached GLB pose to avoid "snap")
-    for (int i = 0; i < bc; ++i) { out[i] = d->model.bindPose[i]; }
+    for (int i = 0; i < bc; ++i) { out[i] = d->model.skeleton.bindPose[i]; }
     float alpha = 1.0f;
     if (d->curAnimId == DONOGAN_ANIM_PROC_BOW_ENTER ||
         d->curAnimId == DONOGAN_ANIM_PROC_BOW_AIM ||
@@ -1424,9 +1424,9 @@ static void DonApplyProcPoseFromKF(Donogan* d)
     Transform* framesArr[1] = { out };
     ModelAnimation A1;
     A1.boneCount = bc;
-    A1.frameCount = 1;
-    A1.bones = d->model.bones;
-    A1.framePoses = framesArr;
+    A1.keyframeCount = 1;
+    //A1.bones = d->model.skeleton.bones; //raylib 6
+    A1.keyframePoses = framesArr;
 
     UpdateModelAnimation(d->model, A1, 0);
     MemFree(out);
@@ -1508,30 +1508,30 @@ static void PrintBoneRecursive(const Model* m, int boneIndex, int depth);
 // Print the full bone list as a tree with bind-pose data
 void PrintModelBones(const Model* m) {
     if (!m) { printf("PrintModelBones: model == NULL\n"); return; }
-    if (m->boneCount <= 0 || !m->bones) {
+    if (m->skeleton.boneCount <= 0 || !m->skeleton.bones) {
         printf("PrintModelBones: no bones\n");
         return;
     }
-    printf("=== Bones (%d) ===\n", m->boneCount);
+    printf("=== Bones (%d) ===\n", m->skeleton.boneCount);
 
     // Print all roots (parent == -1), then recurse into children
-    for (int i = 0; i < m->boneCount; ++i) {
-        if (m->bones[i].parent == -1) {
+    for (int i = 0; i < m->skeleton.boneCount; ++i) {
+        if (m->skeleton.bones[i].parent == -1) {
             PrintBoneRecursive(m, i, 0);
         }
     }
 
     // Also list any unparented-but-non-root anomalies (just in case)
-    for (int i = 0; i < m->boneCount; ++i) {
-        if (m->bones[i].parent >= m->boneCount) {
+    for (int i = 0; i < m->skeleton.boneCount; ++i) {
+        if (m->skeleton.bones[i].parent >= m->skeleton.boneCount) {
             printf("[WARN] Bone %d ('%s') has invalid parent index %d\n",
-                i, m->bones[i].name, m->bones[i].parent);
+                i, m->skeleton.bones[i].name, m->skeleton.bones[i].parent);
         }
     }
 }
 
 static void PrintBoneRecursive(const Model* m, int boneIndex, int depth) {
-    const BoneInfo* bi = &m->bones[boneIndex];
+    const BoneInfo* bi = &m->skeleton.bones[boneIndex];
     // Indent
     for (int d = 0; d < depth; ++d) printf("  ");
 
@@ -1539,8 +1539,8 @@ static void PrintBoneRecursive(const Model* m, int boneIndex, int depth) {
     printf("└─[%3d] '%s'  parent=%d", boneIndex, bi->name, bi->parent);
 
     // Bind pose (if available)
-    if (m->bindPose) {
-        const Transform tp = m->bindPose[boneIndex];
+    if (m->skeleton.bindPose) {
+        const Transform tp = m->skeleton.bindPose[boneIndex];
         printf("\n");
         for (int d = 0; d < depth; ++d) printf("  ");
         printf("    T=(%.3f, %.3f, %.3f)  "
@@ -1555,8 +1555,8 @@ static void PrintBoneRecursive(const Model* m, int boneIndex, int depth) {
     }
 
     // Recurse: find children (linear scan; simple & safe)
-    for (int j = 0; j < m->boneCount; ++j) {
-        if (m->bones[j].parent == boneIndex) {
+    for (int j = 0; j < m->skeleton.boneCount; ++j) {
+        if (m->skeleton.bones[j].parent == boneIndex) {
             PrintBoneRecursive(m, j, depth + 1);
         }
     }
@@ -1577,25 +1577,34 @@ static inline void DonProcessRunToggle(Donogan* d, bool L3)
 }
 
 // --------- Anim track name→index and remap (fixes “warpy skin”) ----------
-static int AnimBoneIndexByName(const ModelAnimation* anim, const char* name) {
-    for (int i = 0; i < anim->boneCount; i++) {
-        if (anim->bones && anim->bones[i].name && name && (strcmp(anim->bones[i].name, name) == 0)) return i;
+static int AnimBoneIndexByName(const Model* model, const char* name)
+{
+    if (!model || !name) return -1;
+
+    int count = model->skeleton.boneCount;
+    BoneInfo* bones = model->skeleton.bones;
+
+    for (int i = 0; i < count; i++)
+    {
+        if (bones[i].name && strcmp(bones[i].name, name) == 0)
+            return i;
     }
+
     return -1;
 }
 
 static ModelAnimation BuildRemapped(const Model* model, const ModelAnimation* src) {
     ModelAnimation out = { 0 };
-    out.boneCount = model->boneCount;
-    out.frameCount = src->frameCount;
-    out.bones = model->bones; // target order = model
-    out.framePoses = (Transform**)MemAlloc(sizeof(Transform*) * out.frameCount);
-    for (int f = 0; f < (int)out.frameCount; f++) {
-        out.framePoses[f] = (Transform*)MemAlloc(sizeof(Transform) * out.boneCount);
-        for (int mb = 0; mb < model->boneCount; mb++) {
-            const char* mname = model->bones[mb].name;
+    out.boneCount = model->skeleton.boneCount;
+    out.keyframeCount = src->keyframeCount;
+    //out.bones = model->bones; // target order = model//raylib 6
+    out.keyframePoses = (Transform**)MemAlloc(sizeof(Transform*) * out.keyframeCount);
+    for (int f = 0; f < (int)out.keyframeCount; f++) {
+        out.keyframePoses[f] = (Transform*)MemAlloc(sizeof(Transform) * out.boneCount);
+        for (int mb = 0; mb < model->skeleton.boneCount; mb++) {
+            const char* mname = model->skeleton.bones[mb].name;
             int ab = AnimBoneIndexByName(src, mname);
-            out.framePoses[f][mb] = (ab >= 0) ? src->framePoses[f][ab] : model->bindPose[mb];
+            out.keyframePoses[f][mb] = (ab >= 0) ? src->keyframePoses[f][ab] : model->skeleton.bindPose[mb];
         }
     }
     return out;
@@ -1603,8 +1612,8 @@ static ModelAnimation BuildRemapped(const Model* model, const ModelAnimation* sr
 
 static void FreeRemapped(ModelAnimation* a) {
     if (!a) return;
-    for (int f = 0; f < (int)a->frameCount; ++f) if (a->framePoses[f]) MemFree(a->framePoses[f]);
-    if (a->framePoses) MemFree(a->framePoses);
+    for (int f = 0; f < (int)a->keyframeCount; ++f) if (a->keyframePoses[f]) MemFree(a->keyframePoses[f]);
+    if (a->keyframePoses) MemFree(a->keyframePoses);
 }
 
 static inline float frand01(void) {
@@ -1671,9 +1680,9 @@ static inline void DonUpdateBubbles(Donogan* d, float dt) {
 //helper for drawing
 static Matrix DonBoneGlobalMatrix(const Donogan* d, int boneIndex) {
     Matrix M = MatrixIdentity();
-    const Transform* frame = d->anims[d->curAnimId].framePoses[d->curFrame];
+    const Transform* frame = d->anims[d->curAnimId].keyframePoses[d->curFrame];
     // Walk up the hierarchy, multiplying local (scale*rot*trans) at each parent
-    for (int b = boneIndex; b != -1; b = d->model.bones[b].parent) {
+    for (int b = boneIndex; b != -1; b = d->model.skeleton.bones[b].parent) {
         Transform t = frame[b];
         Matrix L = MatrixMultiply(
             MatrixScale(t.scale.x, t.scale.y, t.scale.z),
@@ -1908,7 +1917,7 @@ static void DonApplyFrame(Donogan* d)
 {
     if (!d || d->animCount == 0 || !d->anims) return;
     const ModelAnimation* A = &d->anims[d->curAnimId];
-    int fc = (int)A->frameCount; if (fc < 1) fc = 1;
+    int fc = (int)A->keyframeCount; if (fc < 1) fc = 1;
 
     // Frame advance
     if (!d->animLoop) {
@@ -2790,7 +2799,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     if (d->curAnimId >= 0 && d->animCount>0)
     {
         const ModelAnimation* A = &d->anims[d->curAnimId];
-        int frameCount = (A) ? (int)A->frameCount : 1;
+        int frameCount = (A) ? (int)A->keyframeCount : 1;
         if (frameCount < 1) frameCount = 1;
 
         if (d->animLoop) {
@@ -2816,7 +2825,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         if (!d->bowFinished) { d->bowTime += dt; }
 
         const ModelAnimation* A = &d->bowAnimsRaw[d->bowCur];
-        int frameCount = A ? (int)A->frameCount : 1;
+        int frameCount = A ? (int)A->keyframeCount : 1;
         if (frameCount < 1) frameCount = 1;
 
         int rate = 1;

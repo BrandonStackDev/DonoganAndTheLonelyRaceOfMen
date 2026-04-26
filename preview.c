@@ -4070,11 +4070,11 @@ int main(void) {
             if (whales[i].model.meshCount > 0) UnloadModel(whales[i].model);
             if (whales[i].tex.id) UnloadTexture(whales[i].tex);
 
-            if (whales[i].proc.framePoses)
+            if (whales[i].proc.keyframePoses)
             {
-                if (whales[i].proc.framePoses[0]) MemFree(whales[i].proc.framePoses[0]);
-                MemFree(whales[i].proc.framePoses);
-                whales[i].proc.framePoses = NULL;
+                if (whales[i].proc.keyframePoses[0]) MemFree(whales[i].proc.keyframePoses[0]);
+                MemFree(whales[i].proc.keyframePoses);
+                whales[i].proc.keyframePoses = NULL;
             }
         }
 
