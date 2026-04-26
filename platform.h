@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 123
+#define NUM_PLATS 127
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -697,6 +697,12 @@ void InitPlats()
     plats[120] = Platform_MakeStill((Vector3) { 1143.0f, 784.0f, -1785.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     plats[121] = Platform_MakeStill((Vector3) { 1106.0f, 798.0f, -1790.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     plats[122] = Platform_MakeStill((Vector3) { 1068.0f, 812.0f, -1795.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    /////////////////////////////////////////////////////NEAR WATER WHEEL////////////////////////////////////////////////////////////////////////////
+    plats[123] = Platform_MakeMover((Vector3) { -1670.57, 365, -1551.97 }, (Vector3) { -1670.57, 400, -1551.97 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[123].disabled = true;
+    plats[124] = Platform_MakeStill((Vector3) { -1673.10, 395, -1516.90 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[125] = Platform_MakeStill((Vector3) { -1639.99, 390, -1514.37 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[126] = Platform_MakeStill((Vector3) { -1636.25, 380, -1480.48 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE); //todo: put a map on this guy
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
