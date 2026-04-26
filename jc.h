@@ -552,46 +552,26 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
         MatrixMultiply(MatrixMultiply(torusFace, MatrixMultiply(rightSide, spin)), base));
 
     // 6 paddle/trough boxes around wheel
-    // 6 paddle/trough boxes around wheel
     for (int k = 0; k < WATER_WHEEL_BUCKET_COUNT; k++)
     {
-        float a = (k*60) * DEG2RAD;
+        float a = ((float)k / (float)WATER_WHEEL_BUCKET_COUNT) * 2.0f * PI;
 
-        // Spin-axis is local X.
-        // Circle lives in local Y/Z.
         float r = 1.96f;
 
-        /*Matrix bucketPlace =
-            MatrixMultiply(
-                MatrixTranslate(0.0f, cosf(a) * r, sinf(a) * r),
-                MatrixRotateX(a)
-            );*/
-        Matrix bucketPlace =
-            MatrixMultiply(
-                MatrixTranslate(0.0f, cosf(a) * r, sinf(a) * r),
-                MatrixRotateX(a + 90.0f * DEG2RAD)
-            );
+        // Start at top of wheel, then orbit that point around local X.
+        Matrix orbit = MatrixRotateX(a);
+        Matrix pushOut = MatrixTranslate(0.0f, r, 0.0f);
 
-        Matrix bucketM = MatrixMultiply(MatrixMultiply(bucketPlace, spin), base);
+        // Optional: rotate bucket itself so it follows the wheel angle.
+        Matrix bucketFace = MatrixRotateX(a);
+
+        Matrix bucketLocal = MatrixMultiply(bucketFace, pushOut);
+        bucketLocal = MatrixMultiply(bucketLocal, orbit);
+
+        Matrix bucketM = MatrixMultiply(MatrixMultiply(bucketLocal, spin), base);
 
         DrawMesh(w->bucket.meshes[0], w->bucket.materials[0], bucketM);
     }
-    /*for (int k = 0; k < WATER_WHEEL_BUCKET_COUNT; k++)
-    {
-        float a = ((float)k / (float)WATER_WHEEL_BUCKET_COUNT) * 360.0f * DEG2RAD;
-
-        Matrix local =
-            MatrixMultiply(
-                MatrixMultiply(
-                    MatrixRotateX(a),
-                    MatrixTranslate(0.0f, 3.15f, 0.0f)
-                ),
-                MatrixRotateZ(0.0f)
-            );
-
-        Matrix bucketM = MatrixMultiply(MatrixMultiply(local, spin), base);
-        DrawMesh(w->bucket.meshes[0], w->bucket.materials[0], bucketM);
-    }*/
 
     // axle spins too
     Matrix axleFace = MatrixRotateZ(90.0f * DEG2RAD);
