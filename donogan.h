@@ -1887,7 +1887,7 @@ static void FreeDonogan(Donogan* d)
     }
     if (d->animsRaw && d->animCount > 0) UnloadModelAnimations(d->animsRaw, d->animCount);
     if (d->bowAnimsRaw && d->bowAnimCount > 0) UnloadModelAnimations(d->bowAnimsRaw, d->bowAnimCount);
-    if (d->tex.id) UnLoadTexture(d->tex);
+    if (d->tex.id) UnloadTexture(d->tex);
     if (d->model.meshCount) UnloadModel(d->model);
 }
 

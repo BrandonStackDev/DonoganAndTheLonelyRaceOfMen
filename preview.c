@@ -4030,51 +4030,215 @@ int main(void) {
         DrawFPS(10,10);
         EndDrawing();
     }
+    // -----------------------------------------------------------------------------
+    // CLEANUP
+    // -----------------------------------------------------------------------------
     quitFileManager = true;
-    //unload the machines
-    Machine_Unload();
-    //shark
+
+    // Since your file worker is detached, give it a moment to notice quitFileManager.
+    // Better long-term fix: keep the thread HANDLE and WaitForSingleObject() it.
+    sleep_ms(200);
+
+    // ---- audio/music ----
+    if (gGame.currentMusicLoaded)
+    {
+        StopMusicStream(gGame.currentMusic);
+        UnloadMusicStream(gGame.currentMusic);
+        gGame.currentMusicLoaded = false;
+    }
+
+    UnloadSound(carHorn);
+    UnloadSound(donScream);
+    UnloadSound(menuSelect);
+    UnloadSound(menuBack);
+    UnloadSound(menuSaveOrLoad);
+    UnloadSound(grow);
+    UnloadSound(pick);
+    UnloadSound(wrenchSound);
+    UnloadSound(sharkGulp);
+
+    // ---- main character / actors ----
+    FreeDonogan(&don);      // already exists in donogan.h
     FreeShark(&shark);
-    //VLDReportLeaks();
+    Machine_Unload();
+
+    // whales
+    if (whales)
+    {
+        for (int i = 0; i < numWhales; i++)
+        {
+            if (whales[i].model.meshCount > 0) UnloadModel(whales[i].model);
+            if (whales[i].tex.id) UnloadTexture(whales[i].tex);
+
+            if (whales[i].proc.framePoses)
+            {
+                if (whales[i].proc.framePoses[0]) MemFree(whales[i].proc.framePoses[0]);
+                MemFree(whales[i].proc.framePoses);
+                whales[i].proc.framePoses = NULL;
+            }
+        }
+
+        free(whales);
+        whales = NULL;
+    }
+
+    // ---- local preview.c models/textures ----
+    UnloadModel(rocketModel);
+    UnloadModel(rotor);
+    UnloadModel(tol);
+    UnloadModel(atreyu);
+    UnloadModel(canoe);
+    UnloadModel(wrenchModel);
+    UnloadModel(treeCubeModel);
+    UnloadModel(ball);
+    UnloadModel(fireModel);
+
+    UnloadTexture(don_head);
+    UnloadTexture(tol_head);
+    UnloadTexture(atreyu_head);
+    UnloadTexture(darrel_head);
+    UnloadTexture(lucy_head);
+
+    UnloadTexture(mapTexture);
+
+    // ---- truck ----
     UnloadModel(truck);
     UnloadModel(tire);
-    //unload skybox
+
+    // If these textures were separately loaded into truckMaterial/tireMaterial,
+    // unload them too. Your InitTruck loads texture handles into materials.
+    if (truckMaterial.maps[MATERIAL_MAP_DIFFUSE].texture.id)
+    {
+        UnloadTexture(truckMaterial.maps[MATERIAL_MAP_DIFFUSE].texture);
+    }
+    if (tireMaterial.maps[MATERIAL_MAP_DIFFUSE].texture.id)
+    {
+        UnloadTexture(tireMaterial.maps[MATERIAL_MAP_DIFFUSE].texture);
+    }
+    UnloadMaterial(truckMaterial);
+    UnloadMaterial(tireMaterial);
+
+    // ---- skybox ----
     UnloadTexture(skyTexFront);
     UnloadTexture(skyTexBack);
     UnloadTexture(skyTexLeft);
     UnloadTexture(skyTexRight);
     UnloadTexture(skyTexUp);
-    ////unload in game map
-    UnloadTexture(mapTexture);
-    //unload tiles
-    free(foundTiles);
-    //unload chunks
-    for (int cy = 0; cy < CHUNK_COUNT; cy++)
+
+    // ---- generated bug/star buffers ----
+    free(bugs);
+    bugs = NULL;
+
+    free(stars);
+    stars = NULL;
+
+    // ---- fonts ----
+    UnloadFont(req_font);
+    UnloadFont(res_font);
+    // do NOT unload default_font from GetFontDefault()
+
+    // ---- shaders ----
+    UnloadShader(instancingLightShader);
+    UnloadShader(grassInstancingLightShader);
+    UnloadShader(lightningBugShader);
+    UnloadShader(starShader);
+    UnloadShader(lightningBall);
+    UnloadShader(ghostShader);
+    UnloadShader(fireShader);
+    UnloadShader(gWaterShader);
+
+    // ---- static prop models/textures loaded by InitStaticGameProps ----
+    for (int i = 0; i < MODEL_TOTAL_COUNT; i++)
     {
-        for (int cx = 0; cx < CHUNK_COUNT; cx++) {
-            if(chunks[cx][cy].isLoaded)
-            {
-                UnloadModel(chunks[cx][cy].model);
-                UnloadModel(chunks[cx][cy].model32);
-                UnloadModel(chunks[cx][cy].model16);
-                UnloadModel(chunks[cx][cy].model8);
-                UnloadTexture(chunks[cx][cy].texture);
-                UnloadTexture(chunks[cx][cy].textureBig);
-                UnloadTexture(chunks[cx][cy].textureFull);
-                UnloadTexture(chunks[cx][cy].textureDamn);
-                free(chunks[cx][cy].props);
-                chunks[cx][cy].props = NULL;
-            }
-        }
+        if (StaticObjectModels[i].meshCount > 0) UnloadModel(StaticObjectModels[i]);
+        if (HighFiStaticObjectModels[i].meshCount > 0) UnloadModel(HighFiStaticObjectModels[i]);
+
+        if (HighFiStaticObjectModelTextures[i].id) UnloadTexture(HighFiStaticObjectModelTextures[i]);
+        if (LowFiStaticObjectModelTextures[i].id) UnloadTexture(LowFiStaticObjectModelTextures[i]);
+
+        // Only unload if you are sure each material owns unique maps.
+        // Since these are LoadMaterialDefault copies, this is usually okay:
+        UnloadMaterial(HighFiStaticObjectMaterials[i]);
     }
 
-    for (int x = 0; x < CHUNK_COUNT; x++) {
-        free(chunks[x]);
+    // ---- chunks / water / props ----
+    if (chunks)
+    {
+        for (int cy = 0; cy < CHUNK_COUNT; cy++)
+        {
+            for (int cx = 0; cx < CHUNK_COUNT; cx++)
+            {
+                Chunk* c = &chunks[cx][cy];
+
+                if (c->isLoaded)
+                {
+                    if (c->model.meshCount > 0)   UnloadModel(c->model);
+                    if (c->model32.meshCount > 0) UnloadModel(c->model32);
+                    if (c->model16.meshCount > 0) UnloadModel(c->model16);
+                    if (c->model8.meshCount > 0)  UnloadModel(c->model8);
+
+                    if (c->texture.id)     UnloadTexture(c->texture);
+                    if (c->textureBig.id)  UnloadTexture(c->textureBig);
+                    if (c->textureFull.id) UnloadTexture(c->textureFull);
+                    if (c->textureDamn.id) UnloadTexture(c->textureDamn);
+                }
+
+                if (c->water)
+                {
+                    for (int w = 0; w < c->waterCount; w++)
+                    {
+                        if (c->water[w].model.meshCount > 0)
+                        {
+                            UnloadModel(c->water[w].model);
+                        }
+                    }
+
+                    MemFree(c->water);
+                    c->water = NULL;
+                    c->waterCount = 0;
+                }
+
+                free(c->props);
+                c->props = NULL;
+            }
+        }
+
+        for (int x = 0; x < CHUNK_COUNT; x++)
+        {
+            free(chunks[x]);
+        }
+
+        free(chunks);
+        chunks = NULL;
     }
-    free(chunks);
-    chunks = NULL;
+
+    // ---- tile manifest / compressed tile entries ----
+    if (foundTiles)
+    {
+        for (int i = 0; i < foundTileCount; i++)
+        {
+            if (foundTiles[i].state == TS_IN_GPU && foundTiles[i].model.meshCount > 0)
+            {
+                UnloadModel(foundTiles[i].model);
+            }
+
+            free(foundTiles[i].compData);
+            foundTiles[i].compData = NULL;
+
+            free(foundTiles[i].uncompData);
+            foundTiles[i].uncompData = NULL;
+        }
+
+        free(foundTiles);
+        foundTiles = NULL;
+        foundTileCount = 0;
+    }
+
+    // ---- raylib shutdown ----
     MUTEX_DESTROY(mutex);
+
     CloseAudioDevice();
     CloseWindow();
+
     return 0;
 }
