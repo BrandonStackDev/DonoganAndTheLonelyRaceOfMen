@@ -4126,11 +4126,17 @@ int main(void) {
     UnloadTexture(skyTexUp);
 
     // ---- generated bug/star buffers ----
-    free(bugs);
-    bugs = NULL;
+    if (bugGenHappened)
+    {
+        free(bugs);
+        bugs = NULL;
+    }
 
-    free(stars);
-    stars = NULL;
+    if (starGenHappened)
+    {
+        free(stars);
+        stars = NULL;
+    }
 
     // ---- fonts ----
     UnloadFont(req_font);
@@ -4158,7 +4164,7 @@ int main(void) {
 
         // Only unload if you are sure each material owns unique maps.
         // Since these are LoadMaterialDefault copies, this is usually okay:
-        UnloadMaterial(HighFiStaticObjectMaterials[i]);
+        //UnloadMaterial(HighFiStaticObjectMaterials[i]);
     }
 
     // ---- chunks / water / props ----
@@ -4222,16 +4228,16 @@ int main(void) {
                 UnloadModel(foundTiles[i].model);
             }
 
-            free(foundTiles[i].compData);
+            /*free(foundTiles[i].compData);
             foundTiles[i].compData = NULL;
 
             free(foundTiles[i].uncompData);
-            foundTiles[i].uncompData = NULL;
+            foundTiles[i].uncompData = NULL;*/
         }
 
-        free(foundTiles);
+        /*free(foundTiles); //dont actually need to free data, just get it all out of the gpu, as much as possible, os will restore this
         foundTiles = NULL;
-        foundTileCount = 0;
+        foundTileCount = 0;*/
     }
 
     // ---- raylib shutdown ----
