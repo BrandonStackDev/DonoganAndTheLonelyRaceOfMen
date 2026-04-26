@@ -2173,7 +2173,7 @@ int main(void) {
 
                             // if the tire bottom is below the rock top, lift the truck so it rests on it
                             float tireBottom = tb.min.y;
-                            float desiredBottom = tree.box.max.y;
+                            float desiredBottom = tree.outerBox.max.y;
                             if (tireBottom < desiredBottom)
                             {
                                 float dy = desiredBottom - tireBottom;
@@ -2185,7 +2185,8 @@ int main(void) {
                                 float groundYy = desiredBottom;
                                 if (groundYy < -9000.0f) { groundYy = pos.y; } // if we error, dont change y
                                 pos.y = groundYy + 1.2;//this actually works well, adding 1.2 here
-                                tireYPos[t] = pos.y;
+                                //tireYPos[t] = pos.y;
+                                tireYPos[t] = Lerp(tireYPos[t], pos.y, 10.0f * dt);
                                 tireYOffset[t] -= (tireBottom - groundYy) * dt;
                                 if (tireYOffset[t] > 0.2f) { tireYOffset[t] = 0.2f; }
                                 if (tireYOffset[t] < -0.12f) { tireYOffset[t] = -0.12f; }
