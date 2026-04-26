@@ -72,6 +72,30 @@ typedef struct {
 Scene Scenes[SCENE_TOTAL_COUNT];
 Model HomeModels[MODEL_HOME_TOTAL_COUNT];
 
+#define WATER_WHEEL_COUNT 1
+#define WATER_WHEEL_BUCKET_COUNT 6
+
+typedef struct WaterWheel {
+    Vector3 pos;
+    float yaw;
+    float scale;
+    float spin;
+    float spinSpeed;
+
+    Model rotor;
+    Texture2D rotorTex;
+
+    Model bigRing;
+    Model smallRing;
+    Model axle;
+    Model bucket;
+    Model mount;
+
+    BoundingBox box;
+} WaterWheel;
+
+WaterWheel gWaterWheels[WATER_WHEEL_COUNT];
+
 static inline BoundingBox RotateScaleTranslateBoundingBoxY(BoundingBox orig, Vector3 pos, float scale, float yaw)
 {
     // scale local box first
@@ -408,5 +432,159 @@ void InitHomes() {
     }
 }
 
+static inline void WaterWheel_Init(void)
+{
+    WaterWheel* w = &gWaterWheels[0];
+    memset(w, 0, sizeof(*w));
 
+    w->pos = (Vector3){ -1660, 322, -1400 }; //
+    w->yaw = 0.0f;
+    w->scale = 16.0f;
+    w->spin = 0.0f;
+    w->spinSpeed = 70.0f; // degrees/sec
+
+    w->rotor = LoadModel("models/ww_rotor.obj");
+    w->rotorTex = LoadMyTexture("textures/ww_rotor.png");
+    w->rotor.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = w->rotorTex;
+
+    // low segment torus = blocky wooden wheel
+    w->bigRing = LoadModelFromMesh(GenMeshTorus(3.2f, 0.18f, 12, 4));
+    w->smallRing = LoadModelFromMesh(GenMeshTorus(0.85f, 0.14f, 10, 4));
+
+    w->bigRing.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BROWN;
+    w->smallRing.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BROWN;
+
+    // long axle through middle, toward back mount
+    w->axle = LoadModelFromMesh(GenMeshCylinder(0.22f, 3.2f, 8));
+    w->axle.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BROWN;
+
+    // trough / paddle bucket: simple box for now
+    w->bucket = LoadModelFromMesh(GenMeshCube(1.15f, 0.32f, 0.42f));
+    w->bucket.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BROWN;
+
+    // non-spinning back machine/mount
+    w->mount = LoadModelFromMesh(GenMeshCube(1.2f, 2.2f, 1.2f));
+    w->mount.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = DARKBROWN;
+
+    w->box = (BoundingBox){
+        (Vector3) {
+ w->pos.x - 5, w->pos.y - 5, w->pos.z - 5
+},
+(Vector3) {
+w->pos.x + 5, w->pos.y + 5, w->pos.z + 5
+}
+    };
+}
+
+static inline void WaterWheel_Update(float dt)
+{
+    for (int i = 0; i < WATER_WHEEL_COUNT; i++)
+    {
+        WaterWheel* w = &gWaterWheels[i];
+        w->spin += w->spinSpeed * dt;
+        if (w->spin > 360.0f) w->spin -= 360.0f;
+    }
+}
+
+//static inline Matrix WaterWheel_BaseMatrix(WaterWheel* w)
+//{
+//    Matrix S = MatrixScale(w->scale, w->scale, w->scale);
+//    Matrix R = MatrixRotateY(w->yaw);
+//    Matrix T = MatrixTranslate(w->pos.x, w->pos.y, w->pos.z);
+//    return MatrixMultiply(MatrixMultiply(S, R), T);
+//}
+static inline Matrix WaterWheel_BaseMatrix(WaterWheel* w)
+{
+    Matrix S = MatrixScale(w->scale, w->scale, w->scale);
+
+    // yaw placement + fixed 90 degree local turn for the whole wheel assembly
+    Matrix R = MatrixRotateY(w->yaw + -90.0f * DEG2RAD);
+
+    Matrix T = MatrixTranslate(w->pos.x, w->pos.y, w->pos.z);
+
+    return MatrixMultiply(MatrixMultiply(S, R), T);
+}
+static inline Matrix WaterWheel_BaseMatrixRotor(WaterWheel* w)
+{
+    Matrix S = MatrixScale(w->scale*2, w->scale*2, w->scale*2);
+
+    // yaw placement + fixed 90 degree local turn for the whole wheel assembly
+    Matrix R = MatrixRotateY(w->yaw + -90.0f * DEG2RAD);
+
+    Matrix T = MatrixTranslate(w->pos.x, w->pos.y, w->pos.z);
+
+    return MatrixMultiply(MatrixMultiply(S, R), T);
+}
+static inline void WaterWheel_DrawOne(WaterWheel* w)
+{
+    Matrix base = WaterWheel_BaseMatrix(w);
+    Matrix baseRotor = WaterWheel_BaseMatrixRotor(w);
+
+    // Spin around local X axis.
+    // If it spins wrong, change this to MatrixRotateZ(w->spin*DEG2RAD)
+    Matrix spin = MatrixRotateX(w->spin * DEG2RAD);
+
+    // side offsets
+    Matrix leftSide = MatrixTranslate(-0.55f, 0.0f, 0.0f);
+    Matrix rightSide = MatrixTranslate(0.55f, 0.0f, 0.0f);
+
+    // torus default orientation may need a 90 degree turn
+    Matrix torusFace = MatrixRotateY(90.0f * DEG2RAD);
+
+    // spinning rotor center
+    Matrix rotorM = MatrixMultiply(spin, baseRotor);
+    //DrawModel(w->rotor, (Vector3) { 0 }, w->scale * 4, WHITE);*/
+    // Better explicit matrix draw for custom mesh pieces
+    DrawMesh(w->rotor.meshes[0], w->rotor.materials[0], rotorM);
+
+    // big rings, both sides
+    DrawMesh(w->bigRing.meshes[0], w->bigRing.materials[0],
+        MatrixMultiply(MatrixMultiply(torusFace, MatrixMultiply(leftSide, spin)), base));
+
+    DrawMesh(w->bigRing.meshes[0], w->bigRing.materials[0],
+        MatrixMultiply(MatrixMultiply(torusFace, MatrixMultiply(rightSide, spin)), base));
+
+    // small rings, both sides
+    DrawMesh(w->smallRing.meshes[0], w->smallRing.materials[0],
+        MatrixMultiply(MatrixMultiply(torusFace, MatrixMultiply(leftSide, spin)), base));
+
+    DrawMesh(w->smallRing.meshes[0], w->smallRing.materials[0],
+        MatrixMultiply(MatrixMultiply(torusFace, MatrixMultiply(rightSide, spin)), base));
+
+    // 6 paddle/trough boxes around wheel
+    for (int k = 0; k < WATER_WHEEL_BUCKET_COUNT; k++)
+    {
+        float a = ((float)k / (float)WATER_WHEEL_BUCKET_COUNT) * 360.0f * DEG2RAD;
+
+        Matrix local =
+            MatrixMultiply(
+                MatrixMultiply(
+                    MatrixRotateX(a),
+                    MatrixTranslate(0.0f, 3.15f, 0.0f)
+                ),
+                MatrixRotateZ(0.0f)
+            );
+
+        Matrix bucketM = MatrixMultiply(MatrixMultiply(local, spin), base);
+        DrawMesh(w->bucket.meshes[0], w->bucket.materials[0], bucketM);
+    }
+
+    // axle spins too
+    Matrix axleFace = MatrixRotateZ(90.0f * DEG2RAD);
+    DrawMesh(w->axle.meshes[0], w->axle.materials[0],
+        MatrixMultiply(MatrixMultiply(axleFace, spin), base));
+
+    // back mount DOES NOT spin
+    Matrix mountLocal = MatrixTranslate(0.0f, 0.0f, -2.15f);
+    DrawMesh(w->mount.meshes[0], w->mount.materials[0],
+        MatrixMultiply(mountLocal, base));
+}
+
+static inline void WaterWheel_Draw(void)
+{
+    for (int i = 0; i < WATER_WHEEL_COUNT; i++)
+    {
+        WaterWheel_DrawOne(&gWaterWheels[i]);
+    }
+}
 #endif // JC_H

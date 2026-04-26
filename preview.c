@@ -285,6 +285,8 @@ int main(void) {
     InitAllNPC();
     //load the homes models/scenes and stuff like that
     InitHomes();
+    //water wheel
+    WaterWheel_Init();
     //talking
     InitTalkingInteractions();
     //missions
@@ -3005,6 +3007,7 @@ int main(void) {
         ConsumeMaps(&don);
         //machines
         Machine_Update(dt, &don, &truckPosition);
+        WaterWheel_Update(dt);
         if (cottageDoorOpen)
         {
             cottageDoorSlide += GetFrameTime() * 0.7f;
@@ -3383,6 +3386,7 @@ int main(void) {
                         DrawBoundingBox(cottageDoorBox, RED);
                     }
                 }
+                WaterWheel_Draw();
                 int milCnt = 0;
                 rlDisableBackfaceCulling();
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
