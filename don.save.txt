@@ -1,14 +1,14 @@
 DON_SAVE_V1
-don_pos = 716.801 87.603 5312.066
+don_pos = 2615.045 323.765 4608.065
 don_bow = 0
 don_wrench = 1
 don_unlockedTruck = 1
 don_health = 100
-don_mana   = 100
+don_mana   = 96
 don_starthealth = 100
 don_startmana   = 100
-don_level  = 1
-don_xp     = 170
+don_level  = 2
+don_xp     = 280
 don_hover  = 0
 invY = 0
 invX = 0
@@ -34,7 +34,7 @@ MACHINES[5] = 0
 MACHINES[6] = 0
 MACHINES[7] = 0
 MACHINES[8] = 0
-MACHINES[9] = 0
+MACHINES[9] = 1
 MACHINES[10] = 0
 MACHINES[11] = 1
 --MACHINES-END--
@@ -52,7 +52,7 @@ MISSION[9] = 0
 --MISSIONS-END--
 --ITEMS-BEGIN--
 ITEM[0] = 0
-ITEM[1] = 0
+ITEM[1] = 1
 ITEM[2] = 0
 ITEM[3] = 0
 ITEM[4] = 0
@@ -60,7 +60,7 @@ ITEM[5] = 0
 ITEM[6] = 0
 ITEM[7] = 0
 ITEM[8] = 0
-ITEM[9] = 0
+ITEM[9] = 1
 ITEM[10] = 0
 ITEM[11] = 0
 ITEM[12] = 0
@@ -74,8 +74,8 @@ INV[1] = 0
 INV[2] = 0
 INV[3] = 0
 INV[4] = 0
-INV[5] = 0
-INV[6] = 0
+INV[5] = 1
+INV[6] = 1
 --INV-END--
 --MAPS-BEGIN--
 MAP[0] = 1 0

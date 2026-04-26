@@ -261,7 +261,7 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
         }
         // scalars
         if (!strncmp(s, "don_pos", 7)) {
-            float x, y, z; if (sscanf(s, "don_pos = %f %f %f", &x, &y, &z) == 3) { d->pos.x = x; d->pos.y = y; d->pos.z = z; }
+            float x, y, z; if (sscanf(s, "don_pos = %f %f %f", &x, &y, &z) == 3) { d->pos.x = x; d->pos.y = y+3; d->pos.z = z; }
         }
         else if (!strncmp(s, "don_bow", 7)) {
             sscanf(s, "don_bow = %d", &d->hasBow);
@@ -310,8 +310,8 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
     fclose(f);
 
     // snap to ground after warps/loads
-    d->groundY = GetTerrainHeightFromMeshXZ(d->pos.x, d->pos.z);
-    DonSnapToGround(d);
+    /*d->groundY = GetTerrainHeightFromMeshXZ(d->pos.x, d->pos.z);
+    DonSnapToGround(d);*/
     Menu_ApplyVolumes(gs);
     PlaySoundVol(menuSaveOrLoad);
     return true;
@@ -523,8 +523,10 @@ static void _DrawInventory(GameState* gs) {
     }
 
     //
-    if (donnyBoyInventory->hasBow) { DrawTextEx(GetFontDefault(), "Bow", (Vector2) { panel.x + 12, panel.y + panel.height - 78 }, 20, 1.0f, MENU_DIM); }
-    if (donnyBoyInventory->hasWrench) { DrawTextEx(GetFontDefault(), "Wrench", (Vector2) { panel.x + 12, panel.y + panel.height - 58 }, 20, 1.0f, MENU_DIM); }
+    if (donnyBoyInventory->hasBow) { DrawTextEx(GetFontDefault(), "Bow", (Vector2) { panel.x + 12, panel.y + panel.height - 118 }, 20, 1.0f, MENU_DIM); }
+    if (donnyBoyInventory->hasWrench) { DrawTextEx(GetFontDefault(), "Wrench", (Vector2) { panel.x + 12, panel.y + panel.height - 98 }, 20, 1.0f, MENU_DIM); }
+    if (donnyBoyInventory->unlockedTruck) { DrawTextEx(GetFontDefault(), "Truck", (Vector2) { panel.x + 12, panel.y + panel.height - 78 }, 20, 1.0f, MENU_DIM); }
+    if (donnyBoyInventory->canHasCheeseburger) { DrawTextEx(GetFontDefault(), "Hover", (Vector2) { panel.x + 12, panel.y + panel.height - 58 }, 20, 1.0f, MENU_DIM); }
     DrawTextEx(GetFontDefault(),
         "Cross: use  |  Triangle: back",
         (Vector2) {panel.x + 12, panel.y + panel.height - 28},
