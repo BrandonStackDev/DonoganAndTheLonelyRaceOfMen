@@ -10,7 +10,7 @@ Check out the previews on itch - https://fiver-156.itch.io/donogan-light-preview
  - you will need to download the map folder from itch and place its contents in DonoganAndTheLonelyRaceOfMen/map
 	- if done correctly you will see lots of folders like map/chunk_10_10/ and some images and other things directly in the map folder
 		- lots of .stack files under tile_64	
-	- if you have trouble trying to get setup reach out on itch, (leave a comment or whatever)
+	- if you have trouble trying to get setup reach out on itch
 
 [![Map](readme_assets/treasure_map.png)](readme_assets/treasure_map.png)
 
@@ -22,15 +22,8 @@ how to play...
 
 For Donogan, you need a keyboard and a controller. The controller will need the typical "psx" buttons, so analog sticks, d-pad, start button is on the right of the middle, L&R 1,2,&3, and the 4 important buttons (like A and B and stuff, or X, Square, Circle..., that stuff). 
 
-64 bit only. You will want a modern and decent GPU so you can run Ollama locally. (you dont have to run ollama, but the conversations are lame without it.) You probably will want 16GB RAM on your system as well.
-
-you will probably need to install the provided c++ redistributable for some random DLL I couldn't remove from dependency. Reboot after.
-
-On start up, the load bar is broken in this version in the light version.
-
-Also, what makes it light weight is that I removed the tiling system for distant objects (to make the installer much smaller and the resource use lower).
-
- - as a result, objects will "pop" into frame as you get close to them
+64 bit only. You will want a modern and decent GPU so you can run Ollama locally. (you dont have to run ollama, but the conversations are lame without it.)
+You probably will want 16GB RAM on your system as well.
 
 Controls:
 
@@ -85,6 +78,7 @@ triangle - exit and go back to Donogan (triangle again to re-enter if you are cl
 circle - honk the horn. Will make Atreyu mad.
 
 R1,L1,R2,L2 - tricks when air born. You need speed to jump high.
+L3 cruise, R3 hover if unlocked
 
 Helpful keyboard stuff
 
@@ -111,11 +105,7 @@ CTRL - (Possibly Left only I cant remember...) - toggle between donogan and came
 To talk to NPC's, press triangle when near them.
 
 
-Lots of (mostly small I hope) bugs, and lots of stuff to add (inventory, more badguys. more npcs, more missions, etc)
-
-Some things I may never fix, or will use (like the broken building collision for example, could be used to hide things in the buildings which I think is cool...)
-
-Any way, happy adventuring. Put on some FlannelKat and drive the truck around!
+Happy adventuring! Put on some FlannelKat and drive the truck around.
 
 
 [![Home](readme_assets/home1.png)](readme_assets/home1.png)
