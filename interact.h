@@ -97,7 +97,7 @@ static const char* SHEET_LUCY_TWO =
 "Tone: Very thankful.\n"
 "IF Donogan asks, the Tree of Life is in a gorge near the center of the mainland."
 "Stay in character. Do not mention being an AI or models. Keep responses brief.\n";
-static const char* SHEET_LUCY_TWO_DEFAULT = "Thank you for finding Clarence! The tree of Life is near the center of the mainland in a large gorge.\n";
+static const char* SHEET_LUCY_TWO_DEFAULT = "Thank you for finding Clarence! I wanted to tell you a hint, The tree of Life is near the center of the mainland in a large gorge.\n";
 
 static const char* SHEET_NICK =
 "You are Nick, A man of 33. Donogan Just rescued you from robotic orbs that shoot lasers.\n"
