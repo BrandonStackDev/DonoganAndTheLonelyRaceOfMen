@@ -16,6 +16,7 @@ typedef enum {
     NPC_MODEL_TYPE_DARREL,
     NPC_MODEL_TYPE_CHICKEN, //darrel is the name of the model + the name of the first chararcter that we are using it with...
     NPC_MODEL_TYPE_LUCY,
+    NPC_MODEL_TYPE_WIZARD,
 } NPC_Model_Type;
 
 typedef enum {
@@ -23,6 +24,7 @@ typedef enum {
     NPC_CHICKEN,
     NPC_LUCY,
     NPC_NICK, //NPC_MODEL_TYPE_DARREL - mark repeats this way for yourself
+    NPC_WIZARD,
     NPC_TOTAL,
 } NPC_Type;
 
@@ -55,6 +57,13 @@ typedef enum {
     LUCY_STATE_WALK,
     LUCY_STATE_JOG,
 } LucyState;
+
+typedef enum {
+    WIZARD_STATE_HELLO = 0,
+    WIZARD_STATE_TALK,
+    WIZARD_STATE_FLY,
+    WIZARD_STATE_DONE
+} WizardState;
 
 typedef struct {
     NPC_Type type;
@@ -134,6 +143,9 @@ void InitAllNPC()
     Texture lucy_tex = LoadMyTexture("textures/lucy.png");
     int lucy_animCount = 0;
     ModelAnimation* lucy_anims = LoadModelAnimations("models/lucy.glb", &lucy_animCount);
+    //wizard
+    Model wiz_model = LoadModel("models/wizard.obj");
+    Texture wiz_tex = LoadMyTexture("textures/wizard.png");
     //setup darrel
     npcs[NPC_DARREL].type = NPC_DARREL;
     npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
@@ -205,6 +217,23 @@ void InitAllNPC()
     npcs[NPC_NICK].animFPS = 24.0f;
     npcs[NPC_NICK].animFrame = 0.0f;
     NPC_AnimSet(&npcs[NPC_NICK], npcs[NPC_NICK].curAnim, true, npcs[NPC_NICK].animFPS); // start correct clip
+    //setup wizard
+    npcs[NPC_WIZARD].type = NPC_WIZARD;
+    npcs[NPC_WIZARD].modelType = NPC_MODEL_TYPE_WIZARD;
+    npcs[NPC_WIZARD].model = wiz_model; 
+    npcs[NPC_WIZARD].tex = wiz_tex;
+    npcs[NPC_WIZARD].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = wiz_tex;
+    npcs[NPC_WIZARD].animCount = 0;
+    npcs[NPC_WIZARD].pos = (Vector3){ 3020, 320, 4030 }; //test pos = (Vector3){ 3022.00f, 322.00f, 4042.42f };
+    npcs[NPC_WIZARD].targetPos = npcs[NPC_WIZARD].pos;
+    npcs[NPC_WIZARD].scale = 3.9f;
+    npcs[NPC_WIZARD].yaw = 0.0f;
+    npcs[NPC_WIZARD].speed = 6.0f;
+    npcs[NPC_WIZARD].isRescue = false;
+    npcs[NPC_WIZARD].state = WIZARD_STATE_HELLO;
+    npcs[NPC_WIZARD].curAnim = 0;
+    npcs[NPC_WIZARD].animFPS = 0;
+    npcs[NPC_WIZARD].animFrame = 0.0f;
 }
 
 bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
@@ -251,6 +280,12 @@ static inline void NPC_Update_Simple(NPC* n, const Donogan* d, float dt, bool lo
         n->curAnim = n->state;
         NPC_AnimSet(n, n->curAnim, true, n->animFPS);
     }
+}
+
+static inline void NPC_Update_Wiz(NPC* n, const Donogan* d, float dt)
+{
+    float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
+    n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
 }
 
 static inline void NPC_Update_Rescue(NPC* n, const Donogan* d, float dt, bool looped)
@@ -337,7 +372,10 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     if (dist > cutoff) return;
 
     //put them on the ground always
-    n->pos.y = NPC_GroundY(n->pos);
+    if (n->type != NPC_WIZARD)
+    {
+        n->pos.y = NPC_GroundY(n->pos);
+    }
     // Tick animation & refresh box
     bool looped = NPC_AnimTick(n, dt);
     // Case dispatch
@@ -346,6 +384,7 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     case NPC_CHICKEN: NPC_Update_Chicken(n, d, dt, looped); break;
     case NPC_LUCY: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_NICK: NPC_Update_Rescue(n, d, dt, looped); break;
+    case NPC_WIZARD: NPC_Update_Wiz(n,d,dt); break;
     default: break;
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);
