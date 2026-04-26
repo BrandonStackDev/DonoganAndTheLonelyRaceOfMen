@@ -530,6 +530,8 @@ typedef struct {
     bool punching;
     //rocket/hover.space mode for truck
     bool canHasCheeseburger;
+    //wizard
+    bool talkedToBlueWizard;
 } Donogan;
 
 // Assets (adjust if needed)

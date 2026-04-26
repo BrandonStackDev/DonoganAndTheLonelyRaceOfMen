@@ -137,6 +137,7 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     fprintf(f, "don_level  = %d\n", d->level);
     fprintf(f, "don_xp     = %d\n", d->xp);
     fprintf(f, "don_hover  = %d\n", d->canHasCheeseburger);
+    fprintf(f, "don_wiz  = %d\n", d->talkedToBlueWizard);
 
     // GameState
     fprintf(f, "invY = %d\n", gs->invY ? 1 : 0);
@@ -292,6 +293,9 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
         }
         else if (!strncmp(s, "don_hover", 9)) {
             sscanf(s, "don_hover = %d", &d->canHasCheeseburger);
+        }
+        else if (!strncmp(s, "don_wiz", 7)) {
+            sscanf(s, "don_wiz = %d", &d->talkedToBlueWizard);
         }
         else if (!strncmp(s, "invY", 4)) {
             int v = 0; sscanf(s, "invY = %d", &v); gs->invY = (v != 0);
