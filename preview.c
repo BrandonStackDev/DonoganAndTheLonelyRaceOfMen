@@ -190,6 +190,31 @@ static BoundingBox MakeCottageDoorBox(Vector3 center)
     };
 }
 
+static void FinishTalking(Donogan* d)
+{
+    d->isTalking = false;
+    StartTimer(&d->talkStartTimer);
+
+    if (d->who == TALK_TYPE_DARREL)
+    {
+        npcs[NPC_DARREL].state = DARREL_STATE_CONFUSED;
+    }
+    else if (d->who == TALK_TYPE_LUCY_ONE || d->who == TALK_TYPE_LUCY_TWO)
+    {
+        npcs[NPC_LUCY].state = LUCY_STATE_HELLO;
+    }
+    else if (d->who == TALK_TYPE_NICK)
+    {
+        npcs[NPC_NICK].state = DARREL_STATE_CONFUSED;
+    }
+    else if (d->who == TALK_TYPE_WIZARD)
+    {
+        d->talkedToBlueWizard = true;
+        npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
+        npcs[NPC_WIZARD].targetPos = (Vector3){ 8008, 8008, 8008 };
+    }
+}
+
 /// @brief main!
 /// @param  
 /// @return 
@@ -709,11 +734,6 @@ int main(void) {
                 }
             }
         }
-        if (!don.isTalking && don.talkedToBlueWizard && npcs[NPC_WIZARD].state < WIZARD_STATE_FLY)
-        {
-            npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
-            npcs[NPC_WIZARD].targetPos = (Vector3){8000,110000,8000};
-        }
         //things that are affected by machines that need save file updates
         if (don.unlockedTruck) 
         { 
@@ -1026,6 +1046,8 @@ int main(void) {
 
             if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
             {
+                prevTalkTri = gpad.btnTriangle;
+                prevTalkX = gpad.btnCross;
                 if (!don.isTalking && Machine_TryInteract(&don, don.pos, don.hasWrench) >= 0)
                 {
                     int mi = Machine_FindInteractable(don.pos, MACHINE_INTERACT_DISTANCE);
@@ -1180,29 +1202,6 @@ int main(void) {
                     
                     npcs[NPC_LUCY].state = LUCY_STATE_TALK;
                     StartTimer(&don.talkStartTimer);//debounce triangle
-                }
-                else if (don.isTalking && HasTimerElapsed(&don.talkStartTimer))//timer prevents entering and exiting quickly, this is the exit talking routine...
-                {
-                    don.isTalking = false;
-                    StartTimer(&don.talkStartTimer);
-                    if (don.who == TALK_TYPE_DARREL)
-                    {
-                        npcs[NPC_DARREL].state = DARREL_STATE_CONFUSED;
-                    }
-                    else if (don.who == TALK_TYPE_LUCY_ONE || don.who == TALK_TYPE_LUCY_TWO)
-                    {
-                        npcs[NPC_LUCY].state = LUCY_STATE_HELLO;
-                    }
-                    else if (don.who == TALK_TYPE_NICK)
-                    {
-                        npcs[NPC_NICK].state = DARREL_STATE_CONFUSED;
-                    }
-                    else if (don.who == TALK_TYPE_WIZARD)
-                    {
-                        don.talkedToBlueWizard = true;
-                        npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
-                        npcs[NPC_WIZARD].targetPos = (Vector3){ 8008, 8008, 8008 };
-                    }
                 }
                 else if (!missions[MISSION_CLARENCE_CHICKEN].complete //clarence the chicken mission
                     && HasTimerElapsed(&don.interactionLimitTimer)
@@ -1708,25 +1707,7 @@ int main(void) {
 
             if (talkResult == TALK_RESULT_FINISHED)
             {
-                don.isTalking = false;
-                StartTimer(&don.talkStartTimer);
-
-                if (don.who == TALK_TYPE_DARREL)
-                {
-                    npcs[NPC_DARREL].state = DARREL_STATE_CONFUSED;
-                }
-                else if (don.who == TALK_TYPE_LUCY_ONE || don.who == TALK_TYPE_LUCY_TWO)
-                {
-                    npcs[NPC_LUCY].state = LUCY_STATE_HELLO;
-                }
-                else if (don.who == TALK_TYPE_NICK)
-                {
-                    npcs[NPC_NICK].state = DARREL_STATE_CONFUSED;
-                }
-                else if (don.who == TALK_TYPE_WIZARD)
-                {
-                    npcs[NPC_WIZARD].state = WIZARD_STATE_HELLO;
-                }
+                FinishTalking(&don);
             }
         }
         
