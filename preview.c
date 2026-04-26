@@ -220,6 +220,8 @@ int main(void) {
     bool havePad = false;
     int prevCross = 0;
     int prevTri = 0;
+    bool prevTalkX = false;
+    bool prevTalkTri = false;
     float moveMag = 0.0f;
     // --- Third-person orbit camera state (around don.pos) ---
     float yaw = 0.0f, pitch = 0.25f, radius = 14.0f;
@@ -618,6 +620,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_CHICKEN] = (POI){ POI_TYPE_CHICKEN , &npcs[NPC_CHICKEN].pos };
     InteractivePoints[POI_TYPE_LUCY] = (POI){ POI_TYPE_LUCY , &npcs[NPC_LUCY].pos };
     InteractivePoints[POI_TYPE_NICK] = (POI){ POI_TYPE_NICK , &npcs[NPC_NICK].pos }; //rescue mission
+    InteractivePoints[POI_TYPE_WIZARD] = (POI){ POI_TYPE_WIZARD , &npcs[NPC_WIZARD].pos }; //wiz
     //init the stuff before launching thread launcher
     InitMenu(&don);//just for some color stuff
     //INIT
@@ -1068,6 +1071,7 @@ int main(void) {
                     don.isTalking = true;
                     don.who = TALK_TYPE_TOL;
                     StartTimer(&don.talkStartTimer);
+                    Talk_Reset(don.who);
                     if (!missions[MISSION_FIND_TOL].complete)
                     {
                         toast = "Completed mission! You found The Tree of Life!";
@@ -1075,6 +1079,15 @@ int main(void) {
                         don.xp += 150;
                         missions[MISSION_FIND_TOL].complete = true;
                     }
+                }
+                else if (!don.isTalking
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_WIZARD].pos, don.pos) < 13
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_WIZARD;
+                    StartTimer(&don.talkStartTimer);
+                    Talk_Reset(don.who);
                 }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.02f
@@ -1092,6 +1105,7 @@ int main(void) {
                         missions[MISSION_FIND_ATREYU].complete = true;
                     }
                     StartTimer(&don.talkStartTimer);
+                    Talk_Reset(don.who);
                 }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_DARREL].pos, don.pos) < 11.44f
@@ -1101,6 +1115,7 @@ int main(void) {
                     don.who = TALK_TYPE_DARREL;
                     npcs[NPC_DARREL].state = DARREL_STATE_TALK;
                     StartTimer(&don.talkStartTimer);
+                    Talk_Reset(don.who);
                 }
                 else if (Vector3Distance(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 12.00f
                     && !don.isTalking) //check !isTalking because we want to make sure we hit the exit talk routine if don is talking
@@ -1128,6 +1143,7 @@ int main(void) {
                         don.who = TALK_TYPE_NICK;
                         npcs[NPC_NICK].state = DARREL_STATE_TALK;
                         StartTimer(&don.talkStartTimer);
+                        Talk_Reset(don.who);
                     }
                 }
                 else if (!don.isTalking
@@ -1148,10 +1164,12 @@ int main(void) {
                             npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos;
                         }
                         don.who = TALK_TYPE_LUCY_TWO;
+                        Talk_Reset(don.who);
                     }
                     else
                     {
                         don.who = TALK_TYPE_LUCY_ONE;
+                        Talk_Reset(don.who);
                     }
                     
                     npcs[NPC_LUCY].state = LUCY_STATE_TALK;
@@ -1159,7 +1177,6 @@ int main(void) {
                 }
                 else if (don.isTalking && HasTimerElapsed(&don.talkStartTimer))//timer prevents entering and exiting quickly, this is the exit talking routine...
                 {
-                    Conv_Clear();
                     don.isTalking = false;
                     StartTimer(&don.talkStartTimer);
                     if (don.who == TALK_TYPE_DARREL)
@@ -1669,7 +1686,36 @@ int main(void) {
         }
         else if (don.isTalking)
         {
-            GetKeyBoardInput(don.who);
+            bool xPressed = (gpad.btnCross && !prevTalkX);
+            bool triPressed = (gpad.btnTriangle && !prevTalkTri);
+
+            prevTalkX = gpad.btnCross;
+            prevTalkTri = gpad.btnTriangle;
+
+            TalkResult talkResult = Talk_UpdateController(xPressed, triPressed);
+
+            if (talkResult == TALK_RESULT_FINISHED)
+            {
+                don.isTalking = false;
+                StartTimer(&don.talkStartTimer);
+
+                if (don.who == TALK_TYPE_DARREL)
+                {
+                    npcs[NPC_DARREL].state = DARREL_STATE_CONFUSED;
+                }
+                else if (don.who == TALK_TYPE_LUCY_ONE || don.who == TALK_TYPE_LUCY_TWO)
+                {
+                    npcs[NPC_LUCY].state = LUCY_STATE_HELLO;
+                }
+                else if (don.who == TALK_TYPE_NICK)
+                {
+                    npcs[NPC_NICK].state = DARREL_STATE_CONFUSED;
+                }
+                else if (don.who == TALK_TYPE_WIZARD)
+                {
+                    npcs[NPC_WIZARD].state = WIZARD_STATE_HELLO;
+                }
+            }
         }
         
         //handle controller input
@@ -3970,31 +4016,51 @@ int main(void) {
         }
         if (donnyMode && don.isTalking)
         {
-            //draw the outer containers, border...
-            DrawRectangle(talk_contain.x - 4, talk_contain.y - 4, talk_contain.width + 8, talk_contain.height + 8, BLACK);
-            DrawRectangle(res_contain.x - 4, res_contain.y - 4, res_contain.width + 8, res_contain.height + 8, BLACK);
-            //draw the inner rectangles and the prompt
-            DrawRectangle(talk_contain.x, talk_contain.y, talk_contain.width, talk_contain.height, RAYWHITE);
-            Rectangle src = { 0, 0, don_head.width, don_head.height };
-            Rectangle dest = { (talk_contain.x + talk_contain.width) - 66, (talk_contain.y + talk_contain.height) - 66, 64, 64 }; //64x64
-            DrawTexturePro(don_head, src, dest, (Vector2) { 0, 0 }, 0.0f, WHITE);
-            DrawTextBoxed(req_font, TalkInput, (Rectangle) { talk_contain.x + 4, talk_contain.y + 4, talk_contain.width - 4, talk_contain.height - 4 }, 32.0f, 2.0f, true, BLACK);
-            
-            DrawRectangle(res_contain.x, res_contain.y, res_contain.width, res_contain.height, RAYWHITE);
+            Rectangle box = {
+                40,
+                SCREEN_HEIGHT - 210,
+                SCREEN_WIDTH - 80,
+                170
+            };
+
+            DrawRectangle(box.x - 4, box.y - 4, box.width + 8, box.height + 8, BLACK);
+            DrawRectangle(box.x, box.y, box.width, box.height, RAYWHITE);
+
             Texture2D talkee = tol_head;
-            if (don.who == TALK_TYPE_ATREYU || don.who == TALK_TYPE_ATREYU_BOW) { talkee = atreyu_head; }
-            else if (don.who == TALK_TYPE_DARREL || don.who == TALK_TYPE_NICK) { talkee = darrel_head; }
-            else if (don.who == TALK_TYPE_LUCY_ONE || don.who == TALK_TYPE_LUCY_TWO) { talkee = lucy_head; }
-            src = (Rectangle){ 0, 0, talkee.width, talkee.height };
-            dest = (Rectangle){ (res_contain.x + res_contain.width) - 66, (res_contain.y + res_contain.height) - 66, 64, 64 }; //64x64
+
+            if (don.who == TALK_TYPE_ATREYU || don.who == TALK_TYPE_ATREYU_BOW) {
+                talkee = atreyu_head;
+            }
+            else if (don.who == TALK_TYPE_DARREL || don.who == TALK_TYPE_NICK) {
+                talkee = darrel_head;
+            }
+            else if (don.who == TALK_TYPE_LUCY_ONE || don.who == TALK_TYPE_LUCY_TWO) {
+                talkee = lucy_head;
+            }
+            else if (don.who == TALK_TYPE_WIZARD) {
+                talkee = tol_head; // todo wiz_head
+            }
+
+            Rectangle src = { 0, 0, talkee.width, talkee.height };
+            Rectangle dest = { box.x + box.width - 74, box.y + 10, 64, 64 };
             DrawTexturePro(talkee, src, dest, (Vector2) { 0, 0 }, 0.0f, WHITE);
-            //draw the response
-            if (false) { //OllamaIsBusy()
-                DrawTextBoxed(res_font, "...", (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 15.0f, 2.0f, true, BLACK);
-            }
-            else if (true) { //OllamaHasReply()
-                DrawTextBoxed(res_font, OllamaGetReply(), (Rectangle) { res_contain.x + 4, res_contain.y + 4, res_contain.width - 4, res_contain.height - 4 }, 15.0f, 2.0f, true, BLACK);
-            }
+
+            DrawText(Talk_GetSpeaker(), box.x + 16, box.y + 12, 28, BLACK);
+
+            DrawTextBoxed(
+                req_font,
+                Talk_GetLine(),
+                (Rectangle) {
+                box.x + 16, box.y + 52, box.width - 110, 78
+            },
+                28.0f,
+                2.0f,
+                true,
+                BLACK
+            );
+
+            DrawText("X: OK", box.x + 16, box.y + box.height - 32, 22, DARKGRAY);
+            DrawText("Triangle: Close", box.x + 110, box.y + box.height - 32, 22, DARKGRAY);
         }
         if (onLoad) 
         {

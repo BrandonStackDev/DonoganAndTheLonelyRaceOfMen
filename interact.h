@@ -7,103 +7,6 @@
 #include "rlgl.h"
 #include <stdio.h> 
 #include <stdbool.h>
-#include <string.h>   // for strlen, memmove, strncpy
-#include <ctype.h>   // tolower
-
-
-//api calls
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <windows.h>
-#include <winhttp.h>
-#pragma comment(lib, "winhttp.lib")
-#endif
-
-
-// ===== Conversation history (rolling buffer) ================================
-#define CONV_MAX 8000  //
-
-static char  g_convBuf[CONV_MAX];
-static size_t g_convLen = 0;
-static int   g_replyConsumed = 1; // set to 0 when a request starts; back to 1 after we add the reply
-
-#define MAX_INPUT_CHARS 1024
-#define MAX_INPUT_CHARS_ARRAY_LEN 1025 //+1
-
-// --- Ollama config (can later be loaded from a file) ---
-#define OLLAMA_MAX_REQ   16384
-#define OLLAMA_MAX_REQ_SHEET   13256
-#define OLLAMA_MAX_RESP 262144
-
-static char g_ollamaHost[64] = "127.0.0.1";
-static int  g_ollamaPort = 11434;
-static char g_ollamaModel[32] = "gemma3";//"llama3"
-
-// Response buffer (null-terminated text to display)
-static char g_ollamaResponse[OLLAMA_MAX_RESP];
-
-// Simple state flags
-#ifdef _WIN32
-static volatile LONG g_ollamaBusy = 0;  // 0 = idle, 1 = in-flight
-static volatile LONG g_ollamaDone = 0;  // 1 = a fresh reply is available
-static HANDLE g_ollamaThread = NULL;
-#endif
-
-static const char* SHEET_TOL =
-"You are the Tree of Life, an ancient, gentle, mystical entity rooted in wisdom.\n"
-"You speak in haiku.\n"
-"Tone: kind, serene, a little playful. Avoid long paragraphs.\n"
-"Knowledge: the forest, Donogan (the player), magic arrows, rivers, winds, and hidden groves.\n"
-"Stay in character. Do not mention being an AI or models.\n";
-static const char* SHEET_TOL_DEFAULT = "I am the Tree of Life, old and wise.\n";
-
-static const char* SHEET_ATREYU =
-"You are the Indian Warrior Atreyu, the last of the Lenape.\n"
-"You speak briefly, in simple sentences. You are trying to meditating on a high peak.\n"
-"Tone: Wise, but a bit rude because you are trying to meditate, but open after continued questioning.\n"
-"Knowledge: Kashic records for the Lenape.\n"
-"Stay in character. Do not mention being an AI or models.\n";
-static const char* SHEET_ATREYU_DEFAULT = "(uhg!) Hello, I am Atreyu. Please be quiet, I am trying to meditate...\n";
-
-static const char* SHEET_ATREYU_BOW =
-"You are the Indian Warrior Atreyu, the last of the Lenape.\n"
-"You speak in simple sentences. You are trying to meditating on a high peak. You are meeting Donogan for the first time. You give him your bow and arrows. The player holds L2 to use the bow, and R2 to fire.\n"
-"Tone: Wise, gentle\n"
-"Stay in character. Do not mention being an AI or models.\n";
-static const char* SHEET_ATREYU_BOW_DEFAULT = "Here is my bow, you may have it.\n";
-
-static const char* SHEET_DARREL =
-"You are Darrel, just a kindhearted normal guy.\n"
-"You speak in simple sentences. You are convinced that the tree of life is the tiny tree in front of you, when really its a large obvious tree near by. he wonders why its so small tho...?\n"
-"Tone: humorous, Darrel is funny, he can hear the Tree of Life speak, its says 'Im over here...', what could that mean, and why is it so tiny?\n"
-"Stay in character. Do not mention being an AI or models.\n";
-static const char* SHEET_DARREL_DEFAULT = "This is the Tree of Life...Its kind of small...?\n";
-
-static const char* SHEET_LUCY_ONE =
-"You are Lucy, A kind old women of 73. She is at her home.\n"
-"You speak in simple sentences. Your chicken (Clarence) wondered down the road and is lost. You need Donogan to go get him.\n"
-"Tone: Concerned for the chicken.\n"
-"Stay in character. Do not mention being an AI or models. Keep responses brief.\n";
-static const char* SHEET_LUCY_ONE_DEFAULT = "Clarence my chicken is missing! Will you help me look for him?\n";
-
-static const char* SHEET_LUCY_TWO =
-"You are Lucy, A kind old women of 73. She is at her home.\n"
-"You speak in simple sentences. Donogan brought your chicken (Clarence) back and you are grateful.\n"
-"Tone: Very thankful.\n"
-"IF Donogan asks, the Tree of Life is in a gorge near the center of the mainland."
-"Stay in character. Do not mention being an AI or models. Keep responses brief.\n";
-static const char* SHEET_LUCY_TWO_DEFAULT = "Thank you for finding Clarence! I wanted to tell you a hint, The tree of Life is near the center of the mainland in a large gorge.\n";
-
-static const char* SHEET_NICK =
-"You are Nick, A man of 33. Donogan Just rescued you from robotic orbs that shoot lasers.\n"
-"You speak in simple sentences. You are grateful for being rescued.\n"
-"Tone: Very thankful.\n";
-static const char* SHEET_NICK_DEFAULT = "Thank you for rescuing me from those robotic orbs!\n";
 
 typedef enum {
     TALK_TYPE_TOL,
@@ -113,36 +16,9 @@ typedef enum {
     TALK_TYPE_LUCY_ONE,
     TALK_TYPE_LUCY_TWO,
     TALK_TYPE_NICK,
+    TALK_TYPE_WIZARD
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
-
-static inline const char* GetCharacterSheet(TALK_TYPE who)
-{
-    switch (who) {
-    case TALK_TYPE_TOL:         return SHEET_TOL;
-    case TALK_TYPE_ATREYU:         return SHEET_ATREYU;
-    case TALK_TYPE_ATREYU_BOW:         return SHEET_ATREYU_BOW;
-    case TALK_TYPE_DARREL:         return SHEET_DARREL;
-    case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE;
-    case TALK_TYPE_LUCY_TWO:         return SHEET_LUCY_TWO;
-    case TALK_TYPE_NICK:         return SHEET_NICK;
-    default:              return "?";
-    }
-}
-
-static inline const char* GetCharacterDefaultSheet(TALK_TYPE who)
-{
-    switch (who) {
-    case TALK_TYPE_TOL:         return SHEET_TOL_DEFAULT;
-    case TALK_TYPE_ATREYU:         return SHEET_ATREYU_DEFAULT;
-    case TALK_TYPE_ATREYU_BOW:         return SHEET_ATREYU_BOW_DEFAULT;
-    case TALK_TYPE_DARREL:         return SHEET_DARREL_DEFAULT;
-    case TALK_TYPE_LUCY_ONE:         return SHEET_LUCY_ONE_DEFAULT;
-    case TALK_TYPE_LUCY_TWO:         return SHEET_LUCY_TWO_DEFAULT;
-    case TALK_TYPE_NICK:         return SHEET_NICK_DEFAULT;
-    default:              return "?";
-    }
-}
 
 //missions
 typedef enum {
@@ -177,6 +53,7 @@ typedef enum {
     POI_TYPE_CHICKEN,
     POI_TYPE_LUCY,
     POI_TYPE_NICK,
+    POI_TYPE_WIZARD,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
@@ -207,124 +84,181 @@ typedef struct {
 Mission missions[MISSION_TOTAL_COUNT];
 Firepit fires[FIREPIT_TOTAL_COUNT];
 POI InteractivePoints[POI_TYPE_TOTAL_COUNT];
-char *TalkInput;      // NOTE: One extra space required for null terminator char '\0'
-int LetterCount;
 
+typedef enum {
+    TALK_OPTION_OK = 0,
+    TALK_OPTION_YES_NO,
+} TalkOptionType;
 
-// Check if any key is pressed
-// NOTE: We limit keys check to keys between 32 (KEY_SPACE) and 126
-bool IsAnyKeyPressed()
-{
-    bool keyPressed = false;
-    int key = GetKeyPressed();
+typedef enum {
+    TALK_RESULT_NONE = 0,
+    TALK_RESULT_ADVANCED,
+    TALK_RESULT_FINISHED,
+    TALK_RESULT_YES,
+    TALK_RESULT_NO,
+} TalkResult;
 
-    if ((key >= 32) && (key <= 126)) keyPressed = true;
+#define TALK_LINE_MAX 8
 
-    return keyPressed;
-}
-//conversation history stuff
-// 
-static inline void Conv_Clear(void) {
-    g_convLen = 0;
-    g_convBuf[0] = '\0';
-    g_ollamaResponse[0] = '\0';
-}
-// --- Simple helpers for config parsing ---
-static char* str_trim(char* s) {
-    if (!s) return s;
-    // leading
-    while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n') s++;
-    // trailing
-    char* e = s + strlen(s);
-    while (e > s && (e[-1] == ' ' || e[-1] == '\t' || e[-1] == '\r' || e[-1] == '\n')) --e;
-    *e = 0;
-    return s;
-}
+typedef struct TalkData {
+    TALK_TYPE type;
+    const char* speaker;
+    const char* lines[TALK_LINE_MAX];
+    int lineCount;
+    TalkOptionType optionType;
+} TalkData;
 
-static void unquote_inplace(char** pval) {
-    if (!pval || !*pval) return;
-    char* v = *pval;
-    size_t n = strlen(v);
-    if (n >= 2) {
-        if ((v[0] == '"' && v[n - 1] == '"') ||
-            (v[0] == '\'' && v[n - 1] == '\'')) {
-            v[n - 1] = 0;
-            *pval = v + 1;
-        }
+static TalkData talkData[] = {
+    {
+        TALK_TYPE_TOL,
+        "Tree of Life",
+        {
+            "I am the Tree of Life, old and wise.",
+            "The books you seek are scattered across this lonely world.",
+            "Some books heal the soul. Some books darken it."
+        },
+        3,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_ATREYU,
+        "Atreyu",
+        {
+            "(uhg!) Hello, I am Atreyu.",
+            "Please be quiet. I am trying to meditate.",
+            "The wind carries old names through these mountains."
+        },
+        3,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_ATREYU_BOW,
+        "Atreyu",
+        {
+            "Here is my bow. You may have it.",
+            "Hold L2 to aim.",
+            "Press R2 to fire."
+        },
+        3,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_DARREL,
+        "Darrel",
+        {
+            "This is the Tree of Life.",
+            "It is kind of small...?",
+            "Sometimes I hear a voice saying, 'I am over here.'"
+        },
+        3,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_LUCY_ONE,
+        "Lucy",
+        {
+            "Clarence my chicken is missing!",
+            "Will you help me look for him?",
+            "He is brave, but not especially smart."
+        },
+        3,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_LUCY_TWO,
+        "Lucy",
+        {
+            "Thank you for finding Clarence!",
+            "I wanted to tell you a hint.",
+            "The Tree of Life is near the center of the mainland, in a large gorge."
+        },
+        3,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_NICK,
+        "Nick",
+        {
+            "Thank you for rescuing me from those robot orbs!",
+            "I thought I was finished.",
+            "I owe you one, Donogan."
+        },
+        3,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_WIZARD,
+        "Blue Wizard",
+        {
+            "Ah, Donogan.",
+            "The world is older than your map.",
+            "Find the good books. Beware the shadow books.",
+            "[Donogan] Why, what are they for?",
+            "Donogan, you are the Queso Cataracts!",
+            "[Donogan] You want me to shove cheese into my eyeballs?!",
+            "No!, I mean ... No, just find the maps and the books. And Hover mode for the Truck is near the castle."
+        },
+        7,
+        TALK_OPTION_OK
     }
-}
-// Load ollama.config.txt; keep compiled defaults on any problem
-static void LoadOllamaConfig(void) {
-    FILE* f = fopen("ollama.config.txt", "rb");
-    if (!f) {
-        TraceLog(LOG_INFO, "Ollama config not found; using defaults %s:%d model=%s",
-            g_ollamaHost, g_ollamaPort, g_ollamaModel);
-        return;
-    }
+};
 
-    char line[512];
-    int lineno = 0;
-    while (fgets(line, sizeof(line), f)) {
-        lineno++;
-
-        // Strip BOM if present on first line
-        if (lineno == 1 && (unsigned char)line[0] == 0xEF &&
-            (unsigned char)line[1] == 0xBB &&
-            (unsigned char)line[2] == 0xBF) {
-            memmove(line, line + 3, strlen(line) - 2);
-        }
-
-        // Trim and skip comments/blank
-        char* p = str_trim(line);
-        if (!*p) continue;
-        if (*p == '#' || *p == ';') continue;             // #... or ;...
-        if (p[0] == '/' && p[1] == '/') continue;         // //...
-
-        // key = value
-        char* eq = strchr(p, '=');
-        if (!eq) continue; // ignore malformed lines
-        *eq = 0;
-        char* key = str_trim(p);
-        char* val = str_trim(eq + 1);
-        unquote_inplace(&val);
-
-        // lowercase key
-        for (char* t = key; *t; ++t) *t = (char)tolower((unsigned char)*t);
-
-        if (strcmp(key, "host") == 0) {
-            if (*val) {
-                strncpy(g_ollamaHost, val, sizeof(g_ollamaHost) - 1);
-                g_ollamaHost[sizeof(g_ollamaHost) - 1] = 0;
-            }
-        }
-        else if (strcmp(key, "port") == 0) {
-            char* end = NULL;
-            long port = strtol(val, &end, 10);
-            if (end != val && port > 0 && port < 65536) {
-                g_ollamaPort = (int)port;
-            }
-        }
-        else if (strcmp(key, "model") == 0) {
-            if (*val) {
-                strncpy(g_ollamaModel, val, sizeof(g_ollamaModel) - 1);
-                g_ollamaModel[sizeof(g_ollamaModel) - 1] = 0;
-            }
-        }
-        // Unknown keys are ignored (future-proof)
-    }
-
-    fclose(f);
-    TraceLog(LOG_INFO, "Ollama config loaded: %s:%d model=%s",
-        g_ollamaHost, g_ollamaPort, g_ollamaModel);
-}
-
+static int talkLineIndex = 0;
 void InitTalkingInteractions()
 {
-    LoadOllamaConfig();
-    TalkInput = (char*)malloc(sizeof(char) * MAX_INPUT_CHARS_ARRAY_LEN);
-    TalkInput[0] = '\0';
-    LetterCount = 0;
-    Conv_Clear();
+    g_currentTalkWho = TALK_TYPE_TOL;
+    talkLineIndex = 0;
+}
+
+static inline int TalkDataCount(void)
+{
+    return (int)(sizeof(talkData) / sizeof(talkData[0]));
+}
+
+static inline TalkData* GetTalkData(TALK_TYPE type)
+{
+    for (int i = 0; i < TalkDataCount(); i++)
+    {
+        if (talkData[i].type == type) return &talkData[i];
+    }
+
+    return &talkData[0];
+}
+
+static inline void Talk_Reset(TALK_TYPE type)
+{
+    g_currentTalkWho = type;
+    talkLineIndex = 0;
+}
+
+static inline TalkResult Talk_Advance(void)
+{
+    TalkData* t = GetTalkData(g_currentTalkWho);
+    if (!t) return TALK_RESULT_NONE;
+
+    if (talkLineIndex < t->lineCount - 1)
+    {
+        talkLineIndex++;
+        return TALK_RESULT_ADVANCED;
+    }
+
+    return TALK_RESULT_FINISHED;
+}
+
+static inline const char* Talk_GetSpeaker(void)
+{
+    return GetTalkData(g_currentTalkWho)->speaker;
+}
+
+static inline const char* Talk_GetLine(void)
+{
+    TalkData* t = GetTalkData(g_currentTalkWho);
+    if (!t || t->lineCount <= 0) return "";
+
+    if (talkLineIndex < 0) talkLineIndex = 0;
+    if (talkLineIndex >= t->lineCount) talkLineIndex = t->lineCount - 1;
+
+    return t->lines[talkLineIndex];
 }
 
 void InitMissions()
@@ -517,310 +451,38 @@ static void DrawTextBoxed(Font font, const char* text, Rectangle rec, float font
     DrawTextBoxedSelectable(font, text, rec, fontSize, spacing, wordWrap, tint, 0, 0, WHITE, WHITE);
 }
 
-//// Minimal JSON escaper for prompt -> JSON string value
-//static size_t JsonEscape(const char* in, char* out, size_t cap) {
-//    size_t i = 0;
-//    for (const unsigned char* p = (const unsigned char*)in; *p && i < cap - 1; ++p) {
-//        unsigned char c = *p;
-//        if (c == '\"' || c == '\\') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = (char)c; }
-//        else if (c == '\n') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 'n'; }
-//        else if (c == '\r') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 'r'; }
-//        else if (c == '\t') { if (i + 2 >= cap) break; out[i++] = '\\'; out[i++] = 't'; }
-//        else if (c < 0x20) { // control -> \u00XX
-//            if (i + 6 >= cap) break;
-//            i += (size_t)snprintf(out + i, cap - i, "\\u%04x", c);
-//        }
-//        else out[i++] = (char)c;
-//    }
-//    out[i] = 0;
-//    return i;
-//}
-//
-//// Pull "response": "..." out of Ollama's JSON (stream:false)
-//static void ExtractResponseText(const char* json, char* out, size_t cap) {
-//    const char* p = strstr(json, "\"response\"");
-//    if (!p) { // fallback: dump raw json (truncated) if format surprises us
-//        strncpy(out, json, cap - 1); out[cap - 1] = 0; return;
-//    }
-//    p = strchr(p, ':'); if (!p) { out[0] = 0; return; }
-//    p++;
-//    while (*p == ' ' || *p == '\t') p++;
-//    if (*p == '\"') p++;
-//
-//    size_t i = 0;
-//    int esc = 0;
-//    for (; *p && i < cap - 1; ++p) {
-//        char c = *p;
-//        if (esc) {
-//            switch (c) {
-//            case 'n': out[i++] = '\n'; break;
-//            case 'r': out[i++] = '\r'; break;
-//            case 't': out[i++] = '\t'; break;
-//            case '\\': out[i++] = '\\'; break;
-//            case '"': out[i++] = '"'; break;
-//            case 'u': /* naive: skip \uXXXX */ p += 4; break;
-//            default: out[i++] = c; break;
-//            }
-//            esc = 0;
-//        }
-//        else if (c == '\\') esc = 1;
-//        else if (c == '\"') break;
-//        else out[i++] = c;
-//    }
-//    out[i] = 0;
-//}
-//
-//static inline bool IsBlankStr(const char* s) {
-//    if (!s) return true;
-//    while (*s) { if (*s > ' ') return false; ++s; }
-//    return true;
-//}
-
-static DWORD WINAPI OllamaThreadProc(LPVOID lp) {
-    return 0;
-}
-
-//BOOL hadError = TRUE;
-//#ifdef _WIN32
-//static DWORD WINAPI OllamaThreadProc(LPVOID lp) {
-//    /////this section is a hack to remove the ollama stuff
-//    // if you wired the 'who' we discussed earlier, use that:
-//    const char* def = GetCharacterDefaultSheet(g_currentTalkWho);
-//    if (!def) def = "?";
-//
-//    strncpy(g_ollamaResponse, def, sizeof(g_ollamaResponse) - 1);
-//    g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
-//    return 0;
-//    /////////////////////////////////////////////////////////////////
-////    char* heapPrompt = (char*)lp;
-////    InterlockedExchange(&g_ollamaDone, 0);
-////    g_ollamaResponse[0] = '\0';
-////
-////    // Wide host
-////    wchar_t whost[64];
-////    MultiByteToWideChar(CP_UTF8, 0, g_ollamaHost, -1, whost, (int)(sizeof(whost) / sizeof(wchar_t)));
-////
-////    // Session / connect / request
-////    HINTERNET hSession = WinHttpOpen(L"Donogan/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, NULL, NULL, 0);
-////    if (!hSession) { hadError = TRUE;  goto cleanup; }
-////
-////    HINTERNET hConnect = WinHttpConnect(hSession, whost, (INTERNET_PORT)g_ollamaPort, 0);
-////    if (!hConnect) { hadError = TRUE;  goto cleanup; }
-////
-////    HINTERNET hRequest = WinHttpOpenRequest(
-////        hConnect, L"POST", L"/api/generate", NULL, WINHTTP_NO_REFERER,
-////        WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
-////    if (!hRequest) { hadError = TRUE;  goto cleanup; }
-////
-////    // Header
-////    const wchar_t* hdr = L"Content-Type: application/json\r\n";
-////    WinHttpAddRequestHeaders(hRequest, hdr, (ULONG)-1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
-////
-////    // Body
-////    char esc[OLLAMA_MAX_REQ / 2];
-////    JsonEscape(heapPrompt ? heapPrompt : "", esc, sizeof(esc));
-////
-////    char body[OLLAMA_MAX_REQ];
-////    int bodyLen = snprintf(body, sizeof(body),
-////        "{"
-////        "\"model\":\"%s\","
-////        "\"prompt\":\"%s\","
-////        "\"stream\":false"
-////        "}",
-////        g_ollamaModel, esc);
-////
-////    BOOL ok = WinHttpSendRequest(
-////        hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-////        (LPVOID)body, (DWORD)bodyLen, (DWORD)bodyLen, 0);
-////    if (!ok) { hadError = TRUE;  goto cleanup; }
-////
-////    ok = WinHttpReceiveResponse(hRequest, NULL);
-////    if (!ok) { hadError = TRUE;  goto cleanup; }
-////
-////    // Read response
-////    DWORD avail = 0, read = 0;
-////    size_t wr = 0;
-////    g_ollamaResponse[0] = '\0';
-////    do {
-////        if (!WinHttpQueryDataAvailable(hRequest, &avail)) break;
-////        if (avail == 0) break;
-////        char tmp[4096];
-////        DWORD toRead = (avail > sizeof(tmp)) ? (DWORD)sizeof(tmp) : avail;
-////        if (!WinHttpReadData(hRequest, tmp, toRead, &read)) break;
-////        if (read == 0) break;
-////        size_t left = (OLLAMA_MAX_RESP - 1) - wr;
-////        size_t copy = (read < left) ? read : left;
-////        if (copy > 0) { memcpy(g_ollamaResponse + wr, tmp, copy); wr += copy; g_ollamaResponse[wr] = 0; }
-////    } while (read > 0);
-////
-////    // Extract just the "response" text into the same buffer
-////    {
-////        char extracted[OLLAMA_MAX_RESP];
-////        ExtractResponseText(g_ollamaResponse, extracted, sizeof(extracted));
-////        strncpy(g_ollamaResponse, extracted, sizeof(g_ollamaResponse) - 1);
-////        g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
-////    }
-////
-////cleanup:
-////    if (IsBlankStr(g_ollamaResponse) || hadError) {
-////        // if you wired the 'who' we discussed earlier, use that:
-////        const char* def = GetCharacterDefaultSheet(g_currentTalkWho);
-////        if (!def) def = "?";
-////
-////        strncpy(g_ollamaResponse, def, sizeof(g_ollamaResponse) - 1);
-////        g_ollamaResponse[sizeof(g_ollamaResponse) - 1] = 0;
-////    }
-////    if (hRequest)  WinHttpCloseHandle(hRequest);
-////    if (hConnect)  WinHttpCloseHandle(hConnect);
-////    if (hSession)  WinHttpCloseHandle(hSession);
-////    if (heapPrompt) free(heapPrompt);
-////
-////    InterlockedExchange(&g_ollamaBusy, 0);
-////    InterlockedExchange(&g_ollamaDone, 1);
-////    return 0;
-//}
-//#endif
-//
-//// API you call from game code:
-static bool StartOllamaGenerate(const char* prompt) {
-#ifdef _WIN32
-    if (InterlockedCompareExchange(&g_ollamaBusy, 1, 0) != 0) return false; // already running
-    g_ollamaResponse[0] = '\0';
-    InterlockedExchange(&g_ollamaDone, 0);
-    char* copy = _strdup(prompt ? prompt : "");
-    g_ollamaThread = CreateThread(NULL, 0, OllamaThreadProc, copy, 0, NULL);
-    if (!g_ollamaThread) { InterlockedExchange(&g_ollamaBusy, 0); if (copy) free(copy); return false; }
-    return true;
-#else
-    (void)prompt; return false;
-#endif
-}
-//
-static bool OllamaIsBusy(void) {
-    return true;
-#ifdef _WIN32
-    return InterlockedCompareExchange(&g_ollamaBusy, 0, 0) != 0;
-#else
-    return false;
-#endif
-}
-//
-//static bool OllamaHasReply(void) {
-//#ifdef _WIN32
-//    return InterlockedCompareExchange(&g_ollamaDone, 0, 0) != 0;
-//#else
-//    return false;
-//#endif
-//}
-//
-static const char* OllamaGetReply(void) { return GetCharacterDefaultSheet(g_currentTalkWho); }
-//
-//// Drop from the beginning up to and including the first '\n'
-static inline void Conv_DropOldestLine(void) {
-    if (g_convLen == 0) return;
-    char* nl = memchr(g_convBuf, '\n', g_convLen);
-    if (!nl) { g_convLen = 0; g_convBuf[0] = '\0'; return; }
-    size_t remove = (size_t)((nl - g_convBuf) + 1);
-    memmove(g_convBuf, g_convBuf + remove, g_convLen - remove);
-    g_convLen -= remove;
-    g_convBuf[g_convLen] = '\0';
-}
-
-// Ensure enough room; if not, drop oldest lines until it fits
-static inline void Conv_EnsureRoom(size_t need) {
-    if (need >= CONV_MAX) { // pathological: line bigger than buffer, keep last tail
-        g_convLen = 0; g_convBuf[0] = '\0'; return;
-    }
-    while (g_convLen + need >= (CONV_MAX - 1)) {
-        Conv_DropOldestLine();
-        if (g_convLen == 0) break;
-    }
-}
-
-// Append "Prefix: text\n" (no JSON escaping here; that’s handled later)
-static inline void Conv_AppendLine(const char* prefix, const char* text) {
-    if (!prefix) prefix = "";
-    if (!text) text = "";
-    size_t lp = strlen(prefix);
-    size_t lt = strlen(text);
-    size_t need = lp + 2 /*": "*/ + lt + 1 /*\n*/;
-
-    Conv_EnsureRoom(need);
-    int n = snprintf(g_convBuf + g_convLen, (size_t)(CONV_MAX - g_convLen),
-        "%s: %s\n", prefix, text);
-    if (n > 0) {
-        size_t wrote = (size_t)n;
-        g_convLen += (wrote < (CONV_MAX - g_convLen)) ? wrote : (CONV_MAX - 1 - g_convLen);
-    }
-}
-
-// Build the full prompt (sheet + history + "Response:" cue) into dst
-static inline void BuildPromptWithHistory(TALK_TYPE who, const char* userText,
-    char* dst, size_t dstCap) {
-    const char* sheet = GetCharacterSheet(who);
-    char header[64] = "Donogan";  // speaker label (change if you expose a player name)
-
-    // 1) ensure the user's line is the newest in the history
-    Conv_AppendLine(header, userText ? userText : "");
-
-    // 2) prompt: <sheet>\n\n<history>Response:
-    // keep it concise without extra instructions so model continues after "Response:"
-    snprintf(dst, dstCap, "%s\n\n%sResponse:",
-        sheet ? sheet : "", g_convBuf);
-}
-
-// Call this every frame during talk mode; once reply arrives, append to history
-static inline void Conv_PollAndAppendReply(void) {
-    if (true) { //!g_replyConsumed && OllamaHasReply()
-        const char* r = OllamaGetReply();
-        Conv_AppendLine("Response", r ? r : "");
-        g_replyConsumed = 1;
-    }
-}
-
-void GetKeyBoardInput(TALK_TYPE who)
+static inline TalkResult Talk_UpdateController(bool xPressed, bool triPressed)
 {
-    g_currentTalkWho = who;
-    //handle response concat to history here
-    Conv_PollAndAppendReply();
-    // Get char pressed (unicode character) on the queue
-    int key = GetCharPressed();
-
-    // Check if more characters have been pressed on the same frame
-    while (key > 0)
+    if (triPressed)
     {
-        // NOTE: Only allow keys in range [32..125]
-        if ((key >= 32) && (key <= 125) && (LetterCount < MAX_INPUT_CHARS))
+        return TALK_RESULT_FINISHED;
+    }
+
+    TalkData* t = GetTalkData(g_currentTalkWho);
+    if (!t) return TALK_RESULT_NONE;
+
+    switch (t->optionType)
+    {
+    case TALK_OPTION_OK:
+        if (xPressed)
         {
-            TalkInput[LetterCount] = (char)key;
-            TalkInput[LetterCount + 1] = '\0'; // Add null terminator at the end of the string
-            LetterCount++;
+            return Talk_Advance();
         }
+        break;
 
-        key = GetCharPressed();  // Check next character in the queue
+    case TALK_OPTION_YES_NO:
+        // later:
+        // dpad left/right picks yes/no
+        // X confirms
+        if (xPressed)
+        {
+            return TALK_RESULT_YES;
+        }
+        break;
     }
 
-    if (IsKeyPressed(KEY_BACKSPACE))
-    {
-        LetterCount--;
-        if (LetterCount < 0) { LetterCount = 0; }
-        TalkInput[LetterCount] = '\0';
-    }
-    // Kick off the call when Enter is pressed and were not busy
-    if (IsKeyPressed(KEY_ENTER) && LetterCount > 0 && !OllamaIsBusy()) {
-        g_currentTalkWho = who;  // <-- remember who for defaults
-        char prompt[OLLAMA_MAX_REQ_SHEET];
-
-        // Build prompt: <sheet>\n\n<Donogan/Response rolling history>\nResponse:
-        BuildPromptWithHistory(who, TalkInput, prompt, sizeof(prompt));
-
-        // Start request
-        g_replyConsumed = 0;                    // we expect a new reply
-        StartOllamaGenerate(prompt);
-
-        // clear input for next user line
-        TalkInput[0] = '\0';
-        LetterCount = 0;
-    }
+    return TALK_RESULT_NONE;
 }
+
+
 #endif // INTERACT_H
