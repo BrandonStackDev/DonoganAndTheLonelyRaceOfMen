@@ -552,7 +552,31 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
         MatrixMultiply(MatrixMultiply(torusFace, MatrixMultiply(rightSide, spin)), base));
 
     // 6 paddle/trough boxes around wheel
+    // 6 paddle/trough boxes around wheel
     for (int k = 0; k < WATER_WHEEL_BUCKET_COUNT; k++)
+    {
+        float a = (k*60) * DEG2RAD;
+
+        // Spin-axis is local X.
+        // Circle lives in local Y/Z.
+        float r = 1.96f;
+
+        /*Matrix bucketPlace =
+            MatrixMultiply(
+                MatrixTranslate(0.0f, cosf(a) * r, sinf(a) * r),
+                MatrixRotateX(a)
+            );*/
+        Matrix bucketPlace =
+            MatrixMultiply(
+                MatrixTranslate(0.0f, cosf(a) * r, sinf(a) * r),
+                MatrixRotateX(a + 90.0f * DEG2RAD)
+            );
+
+        Matrix bucketM = MatrixMultiply(MatrixMultiply(bucketPlace, spin), base);
+
+        DrawMesh(w->bucket.meshes[0], w->bucket.materials[0], bucketM);
+    }
+    /*for (int k = 0; k < WATER_WHEEL_BUCKET_COUNT; k++)
     {
         float a = ((float)k / (float)WATER_WHEEL_BUCKET_COUNT) * 360.0f * DEG2RAD;
 
@@ -567,7 +591,7 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
 
         Matrix bucketM = MatrixMultiply(MatrixMultiply(local, spin), base);
         DrawMesh(w->bucket.meshes[0], w->bucket.materials[0], bucketM);
-    }
+    }*/
 
     // axle spins too
     Matrix axleFace = MatrixRotateZ(90.0f * DEG2RAD);
@@ -575,7 +599,14 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
         MatrixMultiply(MatrixMultiply(axleFace, spin), base));
 
     // back mount DOES NOT spin
-    Matrix mountLocal = MatrixTranslate(0.0f, 0.0f, -2.15f);
+    /*Matrix mountLocal = MatrixTranslate(0.0f, 0.0f, -2.15f);
+    DrawMesh(w->mount.meshes[0], w->mount.materials[0],
+        MatrixMultiply(mountLocal, base));*/
+        // back mount DOES NOT spin
+    // Behind rotor is local X after your wheel yaw fix.
+    // If it goes in front, flip -2.15f to +2.15f.
+    Matrix mountLocal = MatrixTranslate(-3.4f, 0.0f, 0.0f);
+
     DrawMesh(w->mount.meshes[0], w->mount.materials[0],
         MatrixMultiply(mountLocal, base));
 }
