@@ -1586,8 +1586,7 @@ static int AnimBoneIndexByName(const Model* model, const char* name)
 
     for (int i = 0; i < count; i++)
     {
-        if (bones[i].name && strcmp(bones[i].name, name) == 0)
-            return i;
+        if (bones[i].name && strcmp(bones[i].name, name) == 0) { return i; } 
     }
 
     return -1;
@@ -1603,7 +1602,7 @@ static ModelAnimation BuildRemapped(const Model* model, const ModelAnimation* sr
         out.keyframePoses[f] = (Transform*)MemAlloc(sizeof(Transform) * out.boneCount);
         for (int mb = 0; mb < model->skeleton.boneCount; mb++) {
             const char* mname = model->skeleton.bones[mb].name;
-            int ab = AnimBoneIndexByName(src, mname);
+            int ab = AnimBoneIndexByName(model, mname);
             out.keyframePoses[f][mb] = (ab >= 0) ? src->keyframePoses[f][ab] : model->skeleton.bindPose[mb];
         }
     }
