@@ -284,8 +284,23 @@ static inline void NPC_Update_Simple(NPC* n, const Donogan* d, float dt, bool lo
 
 static inline void NPC_Update_Wiz(NPC* n, const Donogan* d, float dt)
 {
+    if (n->state == WIZARD_STATE_FLY)
+    {
+        n->pos = Vector3Lerp(n->pos, n->targetPos, dt * 0.25f);
+
+        float targetYaw = atan2f(n->targetPos.x - n->pos.x, n->targetPos.z - n->pos.z);
+        n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f);
+
+        if (Vector3Distance(n->pos, d->pos) > 600.0f)
+        {
+            n->state = WIZARD_STATE_DONE;
+        }
+
+        return;
+    }
+
     float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
-    n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
+    n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f);
 }
 
 static inline void NPC_Update_Rescue(NPC* n, const Donogan* d, float dt, bool looped)

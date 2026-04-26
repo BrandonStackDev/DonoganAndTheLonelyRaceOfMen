@@ -709,6 +709,11 @@ int main(void) {
                 }
             }
         }
+        if (!don.isTalking && don.talkedToBlueWizard && npcs[NPC_WIZARD].state < WIZARD_STATE_FLY)
+        {
+            npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
+            npcs[NPC_WIZARD].targetPos = (Vector3){8000,110000,8000};
+        }
         //things that are affected by machines that need save file updates
         if (don.unlockedTruck) 
         { 
@@ -1086,8 +1091,9 @@ int main(void) {
                 {
                     don.isTalking = true;
                     don.who = TALK_TYPE_WIZARD;
-                    StartTimer(&don.talkStartTimer);
                     Talk_Reset(don.who);
+                    StartTimer(&don.talkStartTimer);
+                    npcs[NPC_WIZARD].state = WIZARD_STATE_TALK;
                 }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.02f
@@ -1190,6 +1196,12 @@ int main(void) {
                     else if (don.who == TALK_TYPE_NICK)
                     {
                         npcs[NPC_NICK].state = DARREL_STATE_CONFUSED;
+                    }
+                    else if (don.who == TALK_TYPE_WIZARD)
+                    {
+                        don.talkedToBlueWizard = true;
+                        npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
+                        npcs[NPC_WIZARD].targetPos = (Vector3){ 8008, 8008, 8008 };
                     }
                 }
                 else if (!missions[MISSION_CLARENCE_CHICKEN].complete //clarence the chicken mission
