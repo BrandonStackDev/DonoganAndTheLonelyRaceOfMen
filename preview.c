@@ -3487,12 +3487,13 @@ int main(void) {
             }
             //machines
             Machine_DrawAll(camera.position, frustum);
-            Machine_DrawTruckLift();
+            if (Vector3Distance(don.pos,Scenes[SCENE_HOME_CABIN_02].pos) < 150) { Machine_DrawTruckLift(); }
+            
             //items and maps
             if (onLoad) 
             { 
                 DrawItems(displayBoxes); 
-                DrawUncollectedMaps(displayBoxes);
+                DrawUncollectedMaps(displayBoxes);//todo: culling
             }
             //homes
             if (onLoad)
@@ -3506,7 +3507,7 @@ int main(void) {
                         DrawBoundingBox(cottageDoorBox, RED);
                     }
                 }
-                WaterWheel_Draw();
+                WaterWheel_Draw(&don);
                 int milCnt = 0;
                 rlDisableBackfaceCulling();
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
@@ -3946,7 +3947,7 @@ int main(void) {
                     }
                     DrawBerriesForProp(g);
                 }
-                DrawApples();
+                DrawApples(&don);
                 //shark
                 Shark_Draw_Extremities(&shark, &don);//trasnparencies in blood
             }

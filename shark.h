@@ -684,6 +684,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
 // =============================
 static void Shark_Draw(Shark* s, Donogan *d)
 {
+    if (Vector3Distance(s->pos, d->pos) > 1024) { return; }
     DrawModelEx(
         s->model,
         s->pos,

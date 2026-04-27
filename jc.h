@@ -591,10 +591,11 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
         MatrixMultiply(mountLocal, base));
 }
 
-static inline void WaterWheel_Draw(void)
+static inline void WaterWheel_Draw(Donogan* d)
 {
     for (int i = 0; i < WATER_WHEEL_COUNT; i++)
     {
+        if (Vector3Distance(d->pos, gWaterWheels[i].pos) < 300) { continue; }
         WaterWheel_DrawOne(&gWaterWheels[i]);
     }
 }

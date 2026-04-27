@@ -138,9 +138,10 @@ void UpdateApples(float dt) {
 }
 
 
-static inline void DrawApples(void) {
+static inline void DrawApples(Donogan* d) {
     for (int i = 0; i < MAX_APPLES_TOTAL; ++i) {
         if (!apples[i].spawned) { continue; }
+        if (Vector3Distance(d->pos,apples[i].pos) < 200) { continue; }
         //TraceLog(LOG_INFO, "drawing spawned apple...%d", i);
         DrawModel(apple, apples[i].pos, apples[i].scale, WHITE);
         // optional debug
