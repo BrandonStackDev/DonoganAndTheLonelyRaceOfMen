@@ -181,7 +181,69 @@ static void Audio_SelectSongRelative(int delta)
         gSongPrevPlayed = 0.0f;  // <-- add
     }
 }
+static inline void PushDonnyOutOfMachineWorldBoxes(Donogan* d)
+{
+    if (!d) return;
 
+    const float SKIN = 0.03f;
+
+    for (int i = 0; i < gMachineCount; i++)
+    {
+        Machine* m = &gMachines[i];
+        if (!m->visible) continue;
+
+        BoundingBox a = d->box;
+        BoundingBox b = m->worldBox;
+
+        // small vertical forgiveness, but this is X/Z wall collision only
+        b.min.y -= 0.5f;
+        b.max.y += 0.5f;
+
+        if (!CheckCollisionBoxes(a, b)) continue;
+
+        Vector3 ac = {
+            (a.min.x + a.max.x) * 0.5f,
+            (a.min.y + a.max.y) * 0.5f,
+            (a.min.z + a.max.z) * 0.5f
+        };
+
+        Vector3 bc = {
+            (b.min.x + b.max.x) * 0.5f,
+            (b.min.y + b.max.y) * 0.5f,
+            (b.min.z + b.max.z) * 0.5f
+        };
+
+        Vector3 ah = {
+            (a.max.x - a.min.x) * 0.5f,
+            (a.max.y - a.min.y) * 0.5f,
+            (a.max.z - a.min.z) * 0.5f
+        };
+
+        Vector3 bh = {
+            (b.max.x - b.min.x) * 0.5f,
+            (b.max.y - b.min.y) * 0.5f,
+            (b.max.z - b.min.z) * 0.5f
+        };
+
+        Vector3 diff = Vector3Subtract(ac, bc);
+
+        float penX = (ah.x + bh.x) - fabsf(diff.x);
+        float penZ = (ah.z + bh.z) - fabsf(diff.z);
+
+        if (penX < penZ)
+        {
+            d->pos.x += (diff.x >= 0.0f) ? penX + SKIN : -penX - SKIN;
+        }
+        else
+        {
+            d->pos.z += (diff.z >= 0.0f) ? penZ + SKIN : -penZ - SKIN;
+        }
+
+        d->box = UpdateBoundingBox(d->origBB, d->pos);
+        d->innerBox = UpdateBoundingBox(d->origInnerBB, d->pos);
+        d->outerBox = UpdateBoundingBox(d->origOuterBB, d->pos);
+    }
+}
 static BoundingBox MakeCottageDoorBox(Vector3 center)
 {
     return (BoundingBox) {
@@ -3060,6 +3122,11 @@ int main(void) {
         ConsumeMaps(&don);
         //machines
         Machine_Update(dt, &don, &truckPosition);
+        if (donnyMode && !vehicleMode)
+        {
+            PushDonnyOutOfMachineWorldBoxes(&don);
+            disableRoll = true;
+        }
         WaterWheel_Update(dt);
         if (cottageDoorOpen)
         {
