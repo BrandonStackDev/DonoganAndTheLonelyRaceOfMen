@@ -802,7 +802,7 @@ int main(void) {
             npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
             npcs[NPC_WIZARD].targetPos = (Vector3){ 8008, 8008, 8008 };
         }
-        //things that are affected by machines that need save file updates
+        //mostly things that need save file updates
         if (don.unlockedTruck) 
         { 
             gTruckLiftAtFloor = true;
