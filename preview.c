@@ -1047,8 +1047,6 @@ int main(void) {
 
             if (tri && !prevTri && !Menu_IsOpen(&gGame))//handle triangle interactions here
             {
-                prevTalkTri = gpad.btnTriangle;
-                prevTalkX = gpad.btnCross;
                 if (!don.isTalking && Machine_TryInteract(&don, don.pos, don.hasWrench) >= 0)
                 {
                     int mi = Machine_FindInteractable(don.pos, MACHINE_INTERACT_DISTANCE);
@@ -1091,6 +1089,8 @@ int main(void) {
                 {
                     StartTimer(&truckInteractTimer);
                     vehicleMode = true; donnyMode = false;
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking 
                     && Vector3Distance(*InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos, don.pos) < 13
@@ -1107,6 +1107,8 @@ int main(void) {
                         don.xp += 150;
                         missions[MISSION_FIND_TOL].complete = true;
                     }
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_WIZARD].pos, don.pos) < 13
@@ -1117,6 +1119,8 @@ int main(void) {
                     Talk_Reset(don.who);
                     StartTimer(&don.talkStartTimer);
                     npcs[NPC_WIZARD].state = WIZARD_STATE_TALK;
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.02f
@@ -1135,6 +1139,8 @@ int main(void) {
                     }
                     StartTimer(&don.talkStartTimer);
                     Talk_Reset(don.who);
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_DARREL].pos, don.pos) < 11.44f
@@ -1145,6 +1151,8 @@ int main(void) {
                     npcs[NPC_DARREL].state = DARREL_STATE_TALK;
                     StartTimer(&don.talkStartTimer);
                     Talk_Reset(don.who);
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
                 }
                 else if (Vector3Distance(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 12.00f
                     && !don.isTalking) //check !isTalking because we want to make sure we hit the exit talk routine if don is talking
@@ -1174,6 +1182,8 @@ int main(void) {
                         StartTimer(&don.talkStartTimer);
                         Talk_Reset(don.who);
                     }
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_LUCY].pos, don.pos) < 12.00f
@@ -1200,7 +1210,8 @@ int main(void) {
                         don.who = TALK_TYPE_LUCY_ONE;
                         Talk_Reset(don.who);
                     }
-                    
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
                     npcs[NPC_LUCY].state = LUCY_STATE_TALK;
                     StartTimer(&don.talkStartTimer);//debounce triangle
                 }

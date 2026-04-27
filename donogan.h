@@ -2097,7 +2097,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         float lx = padPresent ? pad->normLX : 0.0f;
         float ly = padPresent ? pad->normLY : 0.0f;
         bool cross = padPresent ? pad->btnCross : false;
-        if (d->gs->menuOpen)
+        if (d->gs->menuOpen || d->isTalking)
         {
             cross = 0;
         }
