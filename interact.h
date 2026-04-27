@@ -159,9 +159,10 @@ static TalkData talkData[] = {
         {
             "Clarence my chicken is missing!",
             "Will you help me look for him?",
-            "He is brave, but not especially smart."
+            "He is brave, but not especially smart.",
+            "Im worried he might be taking pot!?"
         },
-        3,
+        4,
         TALK_OPTION_OK
     },
     {
