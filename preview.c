@@ -797,6 +797,11 @@ int main(void) {
                 }
             }
         }
+        if (don.talkedToBlueWizard && npcs[NPC_WIZARD].state != WIZARD_STATE_DONE)
+        {
+            npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
+            npcs[NPC_WIZARD].targetPos = (Vector3){ 8008, 8008, 8008 };
+        }
         //things that are affected by machines that need save file updates
         if (don.unlockedTruck) 
         { 
@@ -1752,10 +1757,10 @@ int main(void) {
             if (IsKeyPressed(KEY_B)) { displayBoxes = !displayBoxes; }
             if (IsKeyPressed(KEY_L)) { displayLod = !displayLod; }
             if (IsKeyPressed(KEY_F12)) { TakeScreenshotWithTimestamp(); }
-            if (IsKeyPressed(KEY_F11)) { reportOn = true; }
-            if (IsKeyPressed(KEY_F10)) { MemoryReport(); }
-            if (IsKeyPressed(KEY_F9)) { GridChunkReport(); }
-            if (IsKeyPressed(KEY_F8)) { GridTileReport(); }
+            //if (IsKeyPressed(KEY_F11)) { reportOn = true; }
+            //if (IsKeyPressed(KEY_F10)) { MemoryReport(); }
+            //if (IsKeyPressed(KEY_F9)) { GridChunkReport(); }
+            //if (IsKeyPressed(KEY_F8)) { GridTileReport(); }
             if (IsKeyPressed(KEY_F2)) { devDisplay = !devDisplay; }
             if (IsKeyPressed(KEY_F1)) {
                 ToggleFullscreen();
