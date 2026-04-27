@@ -4023,7 +4023,7 @@ int main(void) {
         {
             Rectangle box = {
                 40,
-                SCREEN_HEIGHT - 210,
+                SCREEN_HEIGHT - 270,
                 SCREEN_WIDTH - 80,
                 170
             };
