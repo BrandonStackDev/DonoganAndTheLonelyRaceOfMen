@@ -11,6 +11,7 @@
 //me
 #include "core.h"
 #include "texture.h"
+#include "donogan.h"
 
 typedef enum {
     MODEL_HOME_NONE = -1,
@@ -587,15 +588,14 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
     // If it goes in front, flip -2.15f to +2.15f.
     Matrix mountLocal = MatrixTranslate(-3.4f, 0.0f, 0.0f);
 
-    DrawMesh(w->mount.meshes[0], w->mount.materials[0],
-        MatrixMultiply(mountLocal, base));
+    DrawMesh(w->mount.meshes[0], w->mount.materials[0],MatrixMultiply(mountLocal, base));
 }
 
-static inline void WaterWheel_Draw(Donogan* d)
+static void WaterWheel_Draw(Donogan* d)
 {
     for (int i = 0; i < WATER_WHEEL_COUNT; i++)
     {
-        if (Vector3Distance(d->pos, gWaterWheels[i].pos) < 300) { continue; }
+        if (Vector3Distance(d->pos, gWaterWheels[i].pos) > 300) { continue; }
         WaterWheel_DrawOne(&gWaterWheels[i]);
     }
 }
