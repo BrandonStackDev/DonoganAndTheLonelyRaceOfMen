@@ -469,6 +469,7 @@ void Menu_OnCross(GameState* gs, Donogan* d)
                     d->health = (d->health + 30 > d->maxHealth ? d->maxHealth : d->health + 30);
                     d->xp += 40;  //TODO: does not seem to work?
                 }
+                else if (it->type == INV_RX) { d->health = d->maxHealth; d->mana = d->maxMana; }
             }
         }
         return;
