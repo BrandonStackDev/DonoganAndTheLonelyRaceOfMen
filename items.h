@@ -137,6 +137,7 @@ void ConsumeTrackedItems(Donogan* d)
             if (map_tracked_items[i].type == INV_BOOK) { toast = "Found a Good Book!"; }
             else if (map_tracked_items[i].type == INV_EVIL_BOOK) { toast = "Found a Book of Shadows!"; }
             StartTimer(&toastTimer);
+            d->xp += 200;
         }
     }
 }
