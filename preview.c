@@ -313,6 +313,7 @@ static void Store_BuySelected(Donogan* d)
         StartTimer(&toastTimer);
     }
 }
+
 static void FinishTalking(Donogan* d)
 {
     d->isTalking = false;
@@ -337,6 +338,38 @@ static void FinishTalking(Donogan* d)
         npcs[NPC_WIZARD].targetPos = (Vector3){ 8008, 8008, 8008 };
     }
     //abby not needed
+}
+
+static void Abby_GiveMedicine(Donogan* d)
+{
+    if (!d) return;
+
+    if (missions[MISSION_ABBY_RX].complete)
+    {
+        FinishTalking(d);
+        return;
+    }
+
+    if (inventory[INV_RX].count <= 0)
+    {
+        toast = "You do not have medicine.";
+        StartTimer(&toastTimer);
+        FinishTalking(d);
+        return;
+    }
+
+    inventory[INV_RX].count--;
+
+    missions[MISSION_ABBY_RX].complete = true;
+
+    d->xp += 100;
+    d->money += 5;//abby is poor
+
+    toast = "Completed mission! Abby has the medicine.";
+    StartTimer(&toastTimer);
+
+    d->who = TALK_TYPE_ABBY_4;
+    Talk_Reset(d->who);
 }
 
 /// @brief main!
@@ -1232,8 +1265,11 @@ int main(void) {
                         else if (gMachines[mi].scene_type == SCENE_HOME_WINDMILL_11) { plats[123].disabled = false; } //waterwheel
                     }
                     // placeholder toast / sound / animation trigger //play wrenchSound
-                    toast = "Machine activated!";
-                    StartTimer(&toastTimer);
+                    if (HasTimerElapsed(&toastTimer))//do not overwrite other messages with this guy
+                    {
+                        toast = "Machine activated!"; 
+                        StartTimer(&toastTimer);
+                    }
                     //trigger animation, also create animation procedurally, and then put the wrench in his hand (not attached to a bone)
                     DonSetState(&don, DONOGAN_STATE_MACHINE_TURN);
                     don.velXZ = (Vector3){ 0 };
@@ -1420,26 +1456,51 @@ int main(void) {
                 else if (!don.isTalking
                     && Vector3Distance(*InteractivePoints[POI_TYPE_ABBY].pos, don.pos) < 12.00f
                     && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+
+                    // First mission: electricity/windmill
+                    if (!missions[MISSION_ABBY_LIGHT].complete)
                     {
-                        don.isTalking = true;
-                        don.who = TALK_TYPE_ABBY;
-                        if (!missions[MISSION_ABBY_LIGHT].complete && Scenes[SCENE_HOME_WINDMILL_07].active)
+                        if (Scenes[SCENE_HOME_WINDMILL_07].active)
                         {
                             toast = "Completed mission! Abby has Electricity.";
                             StartTimer(&toastTimer);
+
                             don.xp += 100;
-                            don.money += 500;
+                            don.money += 5; //abby is poor
+
                             missions[MISSION_ABBY_LIGHT].complete = true;
+
+                            don.who = TALK_TYPE_ABBY_2; // now she asks for medicine
                         }
-                        if (missions[MISSION_ABBY_LIGHT].complete)
+                        else
                         {
-                            don.who = TALK_TYPE_ABBY_2;
+                            don.who = TALK_TYPE_ABBY; // asks for windmill
                         }
-                        Talk_Reset(don.who);
-                        prevTalkTri = gpad.btnTriangle;
-                        prevTalkX = gpad.btnCross;
-                        StartTimer(&don.talkStartTimer);//debounce triangle
                     }
+                    // Second mission already complete
+                    else if (missions[MISSION_ABBY_RX].complete)
+                    {
+                        don.who = TALK_TYPE_ABBY_4;
+                    }
+                    // Has medicine: ask yes/no
+                    else if (inventory[INV_RX].count > 0)
+                    {
+                        don.who = TALK_TYPE_ABBY_3;
+                    }
+                    // No medicine yet: ask player to find it
+                    else
+                    {
+                        don.who = TALK_TYPE_ABBY_2;
+                    }
+
+                    Talk_Reset(don.who);
+
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
+                    StartTimer(&don.talkStartTimer);
+                }
                 //fire places/pits
                 for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++)
                 {
@@ -1919,13 +1980,18 @@ int main(void) {
             prevTalkX = gpad.btnCross;
             prevTalkTri = gpad.btnTriangle;
 
-            if (don.who != TALK_TYPE_STORE)
+            TalkResult talkResult = Talk_UpdateController(xPressed, triPressed);
+
+            if (talkResult == TALK_RESULT_YES)
             {
-                TalkResult talkResult = Talk_UpdateController(xPressed, triPressed);
-                if (talkResult == TALK_RESULT_FINISHED)
+                if (don.who == TALK_TYPE_ABBY_3)
                 {
-                    FinishTalking(&don);
+                    Abby_GiveMedicine(&don);
                 }
+            }
+            else if (talkResult == TALK_RESULT_NO || talkResult == TALK_RESULT_FINISHED)
+            {
+                FinishTalking(&don);
             }
         }
         

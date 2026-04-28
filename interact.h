@@ -17,8 +17,10 @@ typedef enum {
     TALK_TYPE_LUCY_TWO,
     TALK_TYPE_NICK,
     TALK_TYPE_WIZARD,
-    TALK_TYPE_ABBY,
-    TALK_TYPE_ABBY_2,
+    TALK_TYPE_ABBY, //no electricity
+    TALK_TYPE_ABBY_2, //electricity but needs medicine
+    TALK_TYPE_ABBY_3, //has the medicine, not yet given,
+    TALK_TYPE_ABBY_4, //has given the medicine and the electricity
     TALK_TYPE_STORE
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
@@ -37,6 +39,7 @@ typedef enum {
     MISSION_RESCUE_NICK,
     MISSION_FART_WHALE,
     MISSION_ABBY_LIGHT,
+    MISSION_ABBY_RX,
     MISSION_TOTAL_COUNT
 } MissionType;
 
@@ -115,6 +118,7 @@ typedef struct TalkData {
     TalkOptionType optionType;
 } TalkData;
 
+//must define in order of enum
 static TalkData talkData[] = {
     {
         TALK_TYPE_TOL,
@@ -143,8 +147,8 @@ static TalkData talkData[] = {
         "Atreyu",
         {
             "Here is my bow. You may have it.",
-            "Hold L2 to aim.",
-            "Press R2 to fire."
+            "Hold Bottom Left bumper to aim.",
+            "Press Bottom Right bumper fire."
         },
         3,
         TALK_OPTION_OK
@@ -155,9 +159,10 @@ static TalkData talkData[] = {
         {
             "This is the Tree of Life.",
             "It is kind of small...?",
-            "Sometimes I hear a voice saying, 'I am over here.'"
+            "Oh wow! I cant beleive this tiny tree is the Tree of Life!? The world is so strange.",
+            "[Donogan] You said it pal!"
         },
-        3,
+        4,
         TALK_OPTION_OK
     },
     {
@@ -232,12 +237,33 @@ static TalkData talkData[] = {
         TALK_OPTION_OK
     },
     {
-    TALK_TYPE_STORE,
+        TALK_TYPE_ABBY_3,
+        "Abby",
+        {
+            "Can you spare medicine for my father?"
+        },
+        1,
+        TALK_OPTION_YES_NO
+    },
+    {
+        TALK_TYPE_ABBY_4,
+        "Abby",
+        {
+            "Donogan, Thank you so much. Now we dont have to worry.",
+            "I wanted to tell you, you can use the Bottom Right bumper to shoot spell balls.",
+            "Also, the Top bumper buttons are for melee attacks.",
+            "If you have the wrench or guitar, they will be used inplace of a melee attack."
+        },
+        4,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_STORE,
         "Store Clerk",
         {
             "Welcome to my store.",
             "Use Up and Down to pick an item.",
-            "Press X to buy, or Triangle to leave."
+            "Press Jump to buy, or Interact to leave."
         },
         3,
         TALK_OPTION_STORE
@@ -499,32 +525,23 @@ static void DrawTextBoxed(Font font, const char* text, Rectangle rec, float font
 
 static inline TalkResult Talk_UpdateController(bool xPressed, bool triPressed)
 {
-    if (triPressed)
-    {
-        return TALK_RESULT_FINISHED;
-    }
-
     TalkData* t = GetTalkData(g_currentTalkWho);
     if (!t) return TALK_RESULT_NONE;
 
     switch (t->optionType)
     {
     case TALK_OPTION_OK:
-        if (xPressed)
-        {
-            return Talk_Advance();
-        }
+        if (triPressed) return TALK_RESULT_FINISHED;
+        if (xPressed) return Talk_Advance();
         break;
 
     case TALK_OPTION_YES_NO:
-        // later:
-        // dpad left/right picks yes/no
-        // X confirms
-        if (xPressed)
-        {
-            return TALK_RESULT_YES;
-        }
+        if (xPressed) return TALK_RESULT_YES;
+        if (triPressed) return TALK_RESULT_NO;
         break;
+
+    case TALK_OPTION_STORE:
+        return TALK_RESULT_NONE;
     }
 
     return TALK_RESULT_NONE;
