@@ -841,6 +841,7 @@ int main(void) {
                 toast = "All Windmills Activated!";
                 StartTimer(&toastTimer);
                 don.xp += 400;
+                don.money += 1000;
             }
         }
         if (!missions[MISSION_KILL_GHOST].complete && ghostKillCount >= 10)
@@ -848,6 +849,7 @@ int main(void) {
             toast = "Completed mission! You killed ten Ghosts!";
             StartTimer(&toastTimer);
             don.xp += 100;
+            don.money += 600;
             missions[MISSION_KILL_GHOST].complete = true;
         }
         if (!missions[MISSION_KILL_YETI].complete && yetiKillCount >= 10)
@@ -855,6 +857,7 @@ int main(void) {
             toast = "Completed mission! You killed ten Yetis!";
             StartTimer(&toastTimer);
             don.xp += 150;
+            don.money += 800;
             missions[MISSION_KILL_YETI].complete = true;
         }
         if (!missions[MISSION_KILL_ROBO].complete && roboKillCount >= 10)
@@ -862,6 +865,7 @@ int main(void) {
             toast = "Completed mission! You killed ten Robot Orbs!";
             StartTimer(&toastTimer);
             don.xp += 200;
+            don.money += 1000;
             missions[MISSION_KILL_ROBO].complete = true;
         }
         //handle health and mana re-gen, xp to level conversion as well
@@ -1174,6 +1178,7 @@ int main(void) {
                         toast = "Completed mission! You found The Tree of Life!";
                         StartTimer(&toastTimer);
                         don.xp += 150;
+                        don.money += 500;
                         missions[MISSION_FIND_TOL].complete = true;
                     }
                     prevTalkTri = gpad.btnTriangle;
@@ -1204,6 +1209,7 @@ int main(void) {
                         don.hasBow = true;
                         StartTimer(&toastTimer);
                         don.xp += 150;
+                        don.money += 500;
                         missions[MISSION_FIND_ATREYU].complete = true;
                     }
                     StartTimer(&don.talkStartTimer);
@@ -1238,6 +1244,7 @@ int main(void) {
                         toast = "Completed mission! You Rescued Nick!";
                         StartTimer(&toastTimer);
                         don.xp += 100;
+                        don.money += 700;
                         missions[MISSION_RESCUE_NICK].complete = true;
                     }
                     else if (npcs[NPC_NICK].r_state == RESCUE_STATE_SAFE //talk
@@ -1266,6 +1273,7 @@ int main(void) {
                             toast = "Completed mission! Clarence is home with Lucy";
                             StartTimer(&toastTimer);
                             don.xp += 100;
+                            don.money += 500;
                             missions[MISSION_CLARENCE_CHICKEN].complete = true;
                             //make clarence not follow us anymore
                             npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
@@ -1317,6 +1325,7 @@ int main(void) {
                             toast = "Completed mission! Abby has Electricity.";
                             StartTimer(&toastTimer);
                             don.xp += 100;
+                            don.money += 500;
                             missions[MISSION_ABBY_LIGHT].complete = true;
                         }
                         if (missions[MISSION_ABBY_LIGHT].complete)
@@ -1505,6 +1514,7 @@ int main(void) {
                 vehicleMode = false; 
                 donnyMode = true;
                 don.xp += (int)(points / 1000);
+                don.money += ((float)points/1000.0);
                 points = 0;
                 don.pos = Vector3Add(truckPosition, (Vector3) {6,1,-5});//todo: why did I put a one here for y?
             }
@@ -3286,6 +3296,7 @@ int main(void) {
                     toast = "Completed mission! You farted on a whale!";
                     StartTimer(&toastTimer);
                     don.xp += 100;
+                    don.money += 500;
                     break;
                 }
             }
@@ -3666,6 +3677,8 @@ int main(void) {
                 {
                     missions[MISSION_START_ALL_MILLS].complete = true;
                     toast = "All Windmills Activated!";
+                    don.xp += 500;
+                    don.money += 500;
                     StartTimer(&toastTimer);
                 }
             }
