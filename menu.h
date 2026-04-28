@@ -22,7 +22,7 @@
 
 // --- config ---
 #ifndef MENU_VISIBLE_ROWS
-#define MENU_VISIBLE_ROWS 10
+#define MENU_VISIBLE_ROWS 18
 #endif
 //
 Donogan* donnyBoyInventory;

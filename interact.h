@@ -375,7 +375,7 @@ void InitMissions()
     missions[MISSION_RESCUE_NICK].type = MISSION_RESCUE_NICK;
     missions[MISSION_RESCUE_NICK].name = "Rescue Nick from the Robot Orbs";
     missions[MISSION_RESCUE_NICK].desc = "Press triangle near nick to rescue him.";
-    //far on whale
+    //fart on whale
     missions[MISSION_FART_WHALE].complete = false;
     missions[MISSION_FART_WHALE].type = MISSION_FART_WHALE;
     missions[MISSION_FART_WHALE].name = "Fart on a Whale";
@@ -385,6 +385,11 @@ void InitMissions()
     missions[MISSION_ABBY_LIGHT].type = MISSION_ABBY_LIGHT;
     missions[MISSION_ABBY_LIGHT].name = "Get Electricity to Abby's Home";
     missions[MISSION_ABBY_LIGHT].desc = "Get electricity to Abby's home by starting the windmill nearby.";
+    //abby 2
+    missions[MISSION_ABBY_RX].complete = false;
+    missions[MISSION_ABBY_RX].type = MISSION_ABBY_RX;
+    missions[MISSION_ABBY_RX].name = "Get medicine for Abby's father.";
+    missions[MISSION_ABBY_RX].desc = "Get medicine for Abby's father at a nearby store.";
 }
 
 // Draw text using font inside rectangle limits with support for text selection
