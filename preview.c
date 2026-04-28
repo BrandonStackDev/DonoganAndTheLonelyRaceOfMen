@@ -3220,6 +3220,22 @@ int main(void) {
         don.drawColor = LerpColor(don.drawColor,!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
+        // safety: if Donny is floating after truck/warp/load, force normal falling
+        if (onLoad && donnyMode && !vehicleMode && !don.inWater && !don.gluedToPlatform && !don.inHome)
+        { //todo: this is to handle bugs with floating at a certain hieght like when exiting the truck, does it work tho?
+            float feetY = DonFeetWorldY(&don);
+            float airGap = feetY - don.groundY;
+
+            if (airGap > 1.25f &&
+                (don.state == DONOGAN_STATE_IDLE ||
+                don.state == DONOGAN_STATE_WALK ||
+                don.state == DONOGAN_STATE_RUN))
+            {
+                don.onGround = false;
+                don.velY = 0.0f;
+                DonSetState(&don, DONOGAN_STATE_JUMPING);
+            }
+        }
         UpdateApples(dt);
         ConsumeMaps(&don);
         //machines
