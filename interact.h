@@ -16,7 +16,8 @@ typedef enum {
     TALK_TYPE_LUCY_ONE,
     TALK_TYPE_LUCY_TWO,
     TALK_TYPE_NICK,
-    TALK_TYPE_WIZARD
+    TALK_TYPE_WIZARD,
+    TALK_TYPE_ABBY
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
 
@@ -54,6 +55,7 @@ typedef enum {
     POI_TYPE_LUCY,
     POI_TYPE_NICK,
     POI_TYPE_WIZARD,
+    POI_TYPE_ABBY,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
@@ -200,6 +202,16 @@ static TalkData talkData[] = {
             "No!, I mean ... No, just find the maps and the books. And Hover mode for the Truck is near the castle."
         },
         7,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_ABBY,
+        "Abby",
+        {
+            "Donogan, our electricity is out.",
+            "Can you start that windmill so we have light?"
+        },
+        2,
         TALK_OPTION_OK
     }
 };

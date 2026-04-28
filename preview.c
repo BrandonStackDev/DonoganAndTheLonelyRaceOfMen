@@ -275,6 +275,7 @@ static void FinishTalking(Donogan* d)
         npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
         npcs[NPC_WIZARD].targetPos = (Vector3){ 8008, 8008, 8008 };
     }
+    //abby not needed
 }
 
 /// @brief main!
@@ -709,6 +710,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_LUCY] = (POI){ POI_TYPE_LUCY , &npcs[NPC_LUCY].pos };
     InteractivePoints[POI_TYPE_NICK] = (POI){ POI_TYPE_NICK , &npcs[NPC_NICK].pos }; //rescue mission
     InteractivePoints[POI_TYPE_WIZARD] = (POI){ POI_TYPE_WIZARD , &npcs[NPC_WIZARD].pos }; //wiz
+    InteractivePoints[POI_TYPE_ABBY] = (POI){ POI_TYPE_ABBY , &npcs[NPC_ABBY].pos }; //abby
     //init the stuff before launching thread launcher
     InitMenu(&don);//just for some color stuff
     //INIT
@@ -1304,6 +1306,17 @@ int main(void) {
                         TraceLog(LOG_INFO, "Chicken tenders .... mmmm");
                     }
                 }
+                else if (!don.isTalking
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_ABBY].pos, don.pos) < 12.00f
+                    && HasTimerElapsed(&don.talkStartTimer))
+                    {
+                        don.isTalking = true;
+                        don.who = TALK_TYPE_ABBY;
+                        Talk_Reset(don.who);
+                        prevTalkTri = gpad.btnTriangle;
+                        prevTalkX = gpad.btnCross;
+                        StartTimer(&don.talkStartTimer);//debounce triangle
+                    }
                 //fire places/pits
                 for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++)
                 {
