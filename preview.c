@@ -4206,6 +4206,7 @@ int main(void) {
                 {
                     DrawText(TextFormat("XP: %d", don.xp), 10, 30, 20, RAYWHITE);
                     DrawText(TextFormat("LEVEL: %d", don.level), 10, 50, 20, RAYWHITE);
+                    DrawText(TextFormat("$%.2f", don.money), 10, 70, 20, RAYWHITE);
                 }
                 else if (vehicleMode)
                 {

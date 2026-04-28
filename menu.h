@@ -136,7 +136,7 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     fprintf(f, "don_startmana   = %d\n", d->maxMana);
     fprintf(f, "don_level  = %d\n", d->level);
     fprintf(f, "don_xp     = %d\n", d->xp);
-    fprintf(f, "don_money     = %d\n", d->money);
+    fprintf(f, "don_money     = %f\n", d->money);
     fprintf(f, "don_hover  = %d\n", d->canHasCheeseburger);
     fprintf(f, "don_wiz  = %d\n", d->talkedToBlueWizard);
 
