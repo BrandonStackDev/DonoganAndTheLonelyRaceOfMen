@@ -211,7 +211,7 @@ static TalkData talkData[] = {
         "Abby",
         {
             "Donogan, our electricity is out.",
-            "Can you start that windmill so we have light?"
+            "Can you start that nearby windmill so we have light?"
         },
         2,
         TALK_OPTION_OK
@@ -221,7 +221,7 @@ static TalkData talkData[] = {
         "Abby",
         {
             "Donogan, Thank you so much. Now we dont have to worry.",
-            "Can I as you another favor?",
+            "Can I ask you another favor?",
             "My father is anemic, he needs medicine.",
             "Can you find medicine for my father?"
         },
