@@ -532,6 +532,8 @@ typedef struct {
     bool canHasCheeseburger;
     //wizard
     bool talkedToBlueWizard;
+    //money. its a crime. blah blah blah blah blah blah blah blah, money, its a gas....fart!
+    float money;
 } Donogan;
 
 // Assets (adjust if needed)
@@ -1871,7 +1873,7 @@ static Donogan InitDonogan(void)
     d.mana = 100;
     d.maxMana = 100;
     d.shook = 0.0f;
-
+    d.money = 0;
     d.eatenByShark = false;
     d.eatenTimer = CreateTimer(5.00f);
     PrintModelBones(&d.model);
