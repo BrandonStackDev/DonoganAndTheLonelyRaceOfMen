@@ -1312,6 +1312,17 @@ int main(void) {
                     {
                         don.isTalking = true;
                         don.who = TALK_TYPE_ABBY;
+                        if (!missions[MISSION_ABBY_LIGHT].complete && Scenes[SCENE_HOME_WINDMILL_07].active)
+                        {
+                            toast = "Completed mission! Abby has Electricity.";
+                            StartTimer(&toastTimer);
+                            don.xp += 100;
+                            missions[MISSION_ABBY_LIGHT].complete = true;
+                        }
+                        if (missions[MISSION_ABBY_LIGHT].complete)
+                        {
+                            don.who = TALK_TYPE_ABBY_2;
+                        }
                         Talk_Reset(don.who);
                         prevTalkTri = gpad.btnTriangle;
                         prevTalkX = gpad.btnCross;

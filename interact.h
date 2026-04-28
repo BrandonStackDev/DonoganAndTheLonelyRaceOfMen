@@ -17,7 +17,8 @@ typedef enum {
     TALK_TYPE_LUCY_TWO,
     TALK_TYPE_NICK,
     TALK_TYPE_WIZARD,
-    TALK_TYPE_ABBY
+    TALK_TYPE_ABBY,
+    TALK_TYPE_ABBY_2
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
 
@@ -34,6 +35,7 @@ typedef enum {
     MISSION_START_ALL_MILLS,
     MISSION_RESCUE_NICK,
     MISSION_FART_WHALE,
+    MISSION_ABBY_LIGHT,
     MISSION_TOTAL_COUNT
 } MissionType;
 
@@ -213,6 +215,18 @@ static TalkData talkData[] = {
         },
         2,
         TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_ABBY_2,
+        "Abby",
+        {
+            "Donogan, Thank you so much. Now we dont have to worry.",
+            "Can I as you another favor?",
+            "My father is anemic, he needs medicine.",
+            "Can you find medicine for my father?"
+        },
+        4,
+        TALK_OPTION_OK
     }
 };
 
@@ -326,6 +340,11 @@ void InitMissions()
     missions[MISSION_FART_WHALE].type = MISSION_FART_WHALE;
     missions[MISSION_FART_WHALE].name = "Fart on a Whale";
     missions[MISSION_FART_WHALE].desc = "Blow bubbles under water at a whale.";
+    //abby 1
+    missions[MISSION_ABBY_LIGHT].complete = false;
+    missions[MISSION_ABBY_LIGHT].type = MISSION_ABBY_LIGHT;
+    missions[MISSION_ABBY_LIGHT].name = "Get Electricity to Abby's Home";
+    missions[MISSION_ABBY_LIGHT].desc = "Get electricity to Abby's home by starting the windmill nearby.";
 }
 
 // Draw text using font inside rectangle limits with support for text selection
