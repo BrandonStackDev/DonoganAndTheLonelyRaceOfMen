@@ -3589,7 +3589,7 @@ int main(void) {
             }
             //machines
             Machine_DrawAll(camera.position, frustum);
-            if (Vector3Distance(don.pos,Scenes[SCENE_HOME_CABIN_02].pos) < 150) { Machine_DrawTruckLift(); }
+            if (Vector3Distance(don.pos,Scenes[SCENE_HOME_CABIN_01].pos) < 300) { Machine_DrawTruckLift(); }
             
             //items and maps
             if (onLoad) 
