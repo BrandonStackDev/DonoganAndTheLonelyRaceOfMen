@@ -3431,7 +3431,8 @@ int main(void) {
             }
         }
         //-------------------------------------------------------------------------------
-
+        int sw = GetScreenWidth();
+        int sh = GetScreenHeight();
         BeginDrawing();
         ClearBackground(backGroundColor);
         //skybox separate scene
@@ -3455,15 +3456,15 @@ int main(void) {
         EndMode3D();
         //regular scene of the map
         BeginMode3D(camera);
-            if(onLoad){SetCustomCameraProjection(camera, 45.0f, (float)SCREEN_WIDTH/SCREEN_HEIGHT, 0.3f, 5000.0f);} // Near = 1, Far = 4000
+            if(onLoad){SetCustomCameraProjection(camera, 45.0f, (float)sw/sh, 0.3f, 5000.0f);} // Near = 1, Far = 4000
             //rlDisableBackfaceCulling();
             bool loadedEem = true;
             int loadCnt = 0;
             //int loadTileCnt = 0; -- this one needs to be global so we can update it while loading tiles
             //get frustum
             Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
-            Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 5200.1f);
-            Matrix projChunk8 = MatrixPerspective(DEG2RAD * camera.fovy, SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 16384.0f);//for far away chunks
+            Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, sw / (float)sh, 0.1f, 5200.1f);
+            Matrix projChunk8 = MatrixPerspective(DEG2RAD * camera.fovy, sw / (float)sw, 0.1f, 16384.0f);//for far away chunks
             Matrix vp = MatrixMultiply(view, proj);
             Matrix vpChunk8 = MatrixMultiply(view, projChunk8);
             Frustum frustum = ExtractFrustum(vp);
@@ -4218,7 +4219,7 @@ int main(void) {
         {
             if (don.bowMode && (don.state == DONOGAN_STATE_BOW_PULL || don.state == DONOGAN_STATE_BOW_AIM || don.state == DONOGAN_STATE_BOW_REL))
             {
-                Vector2 center = { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
+                Vector2 center = { sw * 0.5f, sh * 0.5f };
                 DrawCircleLines((int)center.x, (int)center.y, 10, WHITE);
                 DrawLine((int)center.x - 12, (int)center.y, (int)center.x + 12, (int)center.y, WHITE);
                 DrawLine((int)center.x, (int)center.y - 12, (int)center.x, (int)center.y + 12, WHITE);
@@ -4228,15 +4229,15 @@ int main(void) {
         {
             if (!HasTimerElapsed(&toastTimer))
             {
-                DrawText(toast, 24, SCREEN_HEIGHT - 60, 16, YELLOW);
+                DrawText(toast, 24, sh - 60, 16, YELLOW);
             }
-            else if (truckSummonActive) { DrawText("SUMMONING...", 24, SCREEN_HEIGHT - 60, 16, YELLOW); }
+            else if (truckSummonActive) { DrawText("SUMMONING...", 24, sh - 60, 16, YELLOW); }
         }
         if (showMap) {
             // Map drawing area (scaled by zoom)
             //
             Rectangle dest = {
-                SCREEN_WIDTH - (GAME_MAP_SIZE * mapZoom) - 10, //just calculate this x value every time
+                sw - (GAME_MAP_SIZE * mapZoom) - 10, //just calculate this x value every time
                 mapViewport.y,
                 mapViewport.width * mapZoom,
                 mapViewport.height * mapZoom
@@ -4299,10 +4300,10 @@ int main(void) {
             // Optional crisp outline
             // DrawTriangleLines(left, right, tip, BLACK);
             //health bars
-            DrawRectangleLines(SCREEN_WIDTH - (don.maxHealth + 10) - 10, 160, don.maxHealth+4, 10, BLACK);
-            DrawRectangle(SCREEN_WIDTH - (don.maxHealth + 10) - 8, 162, don.health, 6, DARKGREEN);
-            DrawRectangleLines(SCREEN_WIDTH - (don.maxMana + 10) - 10, 180, don.maxMana+4, 10, BLACK);
-            DrawRectangle(SCREEN_WIDTH - (don.maxMana + 10) - 8, 182, don.mana, 6, BLUE);
+            DrawRectangleLines(sw - (don.maxHealth + 10) - 10, 160, don.maxHealth+4, 10, BLACK);
+            DrawRectangle(sw - (don.maxHealth + 10) - 8, 162, don.health, 6, DARKGREEN);
+            DrawRectangleLines(sw - (don.maxMana + 10) - 10, 180, don.maxMana+4, 10, BLACK);
+            DrawRectangle(sw - (don.maxMana + 10) - 8, 182, don.mana, 6, BLUE);
             if (!devDisplay && onLoad)
             {
                 if (donnyMode)
@@ -4326,8 +4327,8 @@ int main(void) {
         {
             Rectangle box = {
                 40,
-                SCREEN_HEIGHT - 270,
-                SCREEN_WIDTH - 80,
+                sh - 270,
+                sw - 80,
                 170
             };
 
@@ -4421,7 +4422,7 @@ int main(void) {
         {
             const Album* a = GM_GetAlbum(&gMusic, gGame.currentAlbumIndex);
             const Song* s = GM_GetSong(a, gGame.currentSongIndex);
-            if (a && s) {DrawText(TextFormat("%s - %s  [%s]", a->artist, a->display, s->display), SCREEN_WIDTH - 400, SCREEN_HEIGHT - 50, 20, RAYWHITE);}
+            if (a && s) {DrawText(TextFormat("%s - %s  [%s]", a->artist, a->display, s->display), sw - 400, sh - 50, 20, RAYWHITE);}
         }
         if(!loadedEem || !wasTilesDocumented)
         {
