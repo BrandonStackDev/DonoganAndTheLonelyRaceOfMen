@@ -536,7 +536,7 @@ static void _DrawInventory(GameState* gs) {
     if (donnyBoyInventory->unlockedTruck) { DrawTextEx(GetFontDefault(), "Truck", (Vector2) { panel.x + 12, panel.y + panel.height - 78 }, 20, 1.0f, MENU_DIM); }
     if (donnyBoyInventory->canHasCheeseburger) { DrawTextEx(GetFontDefault(), "Hover", (Vector2) { panel.x + 12, panel.y + panel.height - 58 }, 20, 1.0f, MENU_DIM); }
     DrawTextEx(GetFontDefault(),
-        "Cross: use  |  Triangle: back",
+        "X: use  |  Triangle: back",
         (Vector2) {panel.x + 12, panel.y + panel.height - 28},
         20.0f, 1.0f, MENU_DIM);
 }
@@ -585,7 +585,7 @@ static void _DrawMissions(GameState* gs) {
         bool done = missions[i].complete;
         Menu_DrawRow(nm, row, gs->menuSel - gs->menuScroll, panel, MENU_TEXT, done);
     }
-    DrawTextEx(GetFontDefault(), "Cross: details   |   Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
+    DrawTextEx(GetFontDefault(), "X: details   |   Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
 }
 
 static void _DrawMissionDetail(GameState* gs) {
@@ -626,7 +626,7 @@ static void _DrawWarp(GameState* gs) {
         Menu_DrawRow(nm, row, gs->menuSel - gs->menuScroll, panel, MENU_TEXT, false);
     }
 
-    DrawTextEx(GetFontDefault(), "Cross: warp  |  Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
+    DrawTextEx(GetFontDefault(), "X: warp  |  Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
 }
 static void _DrawMaps(GameState* gs)
 {
@@ -653,7 +653,7 @@ static void _DrawMaps(GameState* gs)
     }
 
     DrawTextEx(GetFontDefault(),
-        "Cross: toggle map  |  Triangle: back",
+        "X: toggle map  |  Triangle: back",
         (Vector2) {
         panel.x + 12, panel.y + panel.height - 28
     },

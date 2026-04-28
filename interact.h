@@ -147,8 +147,8 @@ static TalkData talkData[] = {
         "Atreyu",
         {
             "Here is my bow. You may have it.",
-            "Hold Bottom Left bumper to aim.",
-            "Press Bottom Right bumper fire."
+            "Hold L2 to aim.",
+            "Press R2 to fire."
         },
         3,
         TALK_OPTION_OK
@@ -182,10 +182,12 @@ static TalkData talkData[] = {
         "Lucy",
         {
             "Thank you for finding Clarence!",
-            "I wanted to tell you a hint.",
-            "The Tree of Life is near the center of the mainland, in a large gorge."
+            "I wanted to tell you a hint or two.",
+            "The Tree of Life is near the center of the mainland, in a large gorge.",
+            "And Atreyu is meditating on a high mountain top.",
+            "Atreyu's canoe can be a clue for you."
         },
-        3,
+        5,
         TALK_OPTION_OK
     },
     {
@@ -203,15 +205,14 @@ static TalkData talkData[] = {
         TALK_TYPE_WIZARD,
         "Blue Wizard",
         {
-            "Ah, Donogan.",
-            "The world is older than your map.",
+            "Ah, Donogan. The world is older than your map.",
             "Find the good books. Beware the shadow books.",
             "[Donogan] Why, what are they for?",
             "Donogan, you are the Queso Cataracts!",
             "[Donogan] You want me to shove cheese into my eyeballs?!",
             "No!, I mean ... No, just find the maps and the books. And Hover mode for the Truck is near the castle."
         },
-        7,
+        6,
         TALK_OPTION_OK
     },
     {
@@ -250,9 +251,9 @@ static TalkData talkData[] = {
         "Abby",
         {
             "Donogan, Thank you so much. Now we dont have to worry.",
-            "I wanted to tell you, you can use the Bottom Right bumper to shoot spell balls.",
-            "Also, the Top bumper buttons are for melee attacks.",
-            "If you have the wrench or guitar, they will be used inplace of a melee attack."
+            "I wanted to tell you, you can use R2 to shoot spell balls.",
+            "Also, R1 and L1 buttons are for melee attacks.",
+            "If you have the wrench or guitar, they will be used in place of a melee attack."
         },
         4,
         TALK_OPTION_OK
