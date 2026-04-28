@@ -17,6 +17,7 @@ typedef enum {
     INV_HEALTH,  //small amount of health, like 20, common
     INV_HEALTH_FULL, //full health, all the way to max health, somewhat rare
     INV_POTION, //full mana, common
+    INV_RX, // medicine
     //special - all rare or special in someway
     //INV_CLOAK, //bad guys don't spawn for 120 seconds (rename this one)
     //INV_NO_DAMAGE, //bad guys cannot hurt you when this is used for 60 seconds
@@ -209,7 +210,8 @@ void InitItems()
     inventory[INV_HEALTH] = (InventoryItem){ INV_HEALTH, "Health Pack", "gives +20 health", 0};
     inventory[INV_HEALTH_FULL] = (InventoryItem){ INV_HEALTH_FULL, "Health Pack (Full)", "gives full health", 0 };
     inventory[INV_POTION] = (InventoryItem){ INV_POTION, "Potion", "gives full mana", 0 };
-    inventory[INV_BERRY] = (InventoryItem){ INV_BERRY, "Berry", "gives +5 health", 0 };
+    inventory[INV_RX] = (InventoryItem){ INV_RX, "Medicine", "gives full mana and full health", 0 };
+    inventory[INV_BERRY] = (InventoryItem){ INV_BERRY, "Berry", "gives +5 mana", 0 };
     inventory[INV_APPLE] = (InventoryItem){ INV_APPLE, "Apple", "gives +30 health and +40 xp", 0 };
     inventory[INV_BOOK] = (InventoryItem){ INV_BOOK, "Book", "collect these, they might be useful.", 0 };
     inventory[INV_EVIL_BOOK] = (InventoryItem){ INV_EVIL_BOOK, "Book of Shadows", "hmmm, one of the many book of shadows?", 0 };

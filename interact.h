@@ -18,7 +18,8 @@ typedef enum {
     TALK_TYPE_NICK,
     TALK_TYPE_WIZARD,
     TALK_TYPE_ABBY,
-    TALK_TYPE_ABBY_2
+    TALK_TYPE_ABBY_2,
+    TALK_TYPE_STORE
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
 
@@ -58,6 +59,7 @@ typedef enum {
     POI_TYPE_NICK,
     POI_TYPE_WIZARD,
     POI_TYPE_ABBY,
+    POI_TYPE_STORE_1,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
@@ -92,6 +94,7 @@ POI InteractivePoints[POI_TYPE_TOTAL_COUNT];
 typedef enum {
     TALK_OPTION_OK = 0,
     TALK_OPTION_YES_NO,
+    TALK_OPTION_STORE
 } TalkOptionType;
 
 typedef enum {
@@ -227,6 +230,17 @@ static TalkData talkData[] = {
         },
         4,
         TALK_OPTION_OK
+    },
+    {
+    TALK_TYPE_STORE,
+        "Store Clerk",
+        {
+            "Welcome to my store.",
+            "Use Up and Down to pick an item.",
+            "Press X to buy, or Triangle to leave."
+        },
+        3,
+        TALK_OPTION_STORE
     }
 };
 

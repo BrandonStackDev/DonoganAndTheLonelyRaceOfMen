@@ -251,7 +251,68 @@ static BoundingBox MakeCottageDoorBox(Vector3 center)
         { center.x + 10.0f, center.y + 8.0f, center.z + 1.67f }
     };
 }
+static int storeSel = 0;
 
+static inline bool Store_CanSell(InventoryType type)
+{
+    return type != INV_BOOK && type != INV_EVIL_BOOK;
+}
+
+static inline int Store_GetPrice(InventoryType type)
+{
+    switch (type)
+    {
+    case INV_BERRY:       return 20;
+    case INV_HEALTH:      return 35;
+    case INV_POTION:      return 45;
+    case INV_APPLE:       return 65;
+    case INV_HEALTH_FULL: return 95;
+    case INV_RX:          return 120;
+    default:              return 50;
+    }
+}
+
+static void Store_MoveSel(int dir)
+{
+    storeSel += dir;
+
+    if (storeSel < 0) storeSel = INV_TOTAL_TYPES - 1;
+    if (storeSel >= INV_TOTAL_TYPES) storeSel = 0;
+
+    // skip books
+    int guard = 0;
+    while (!Store_CanSell(inventory[storeSel].type) && guard++ < INV_TOTAL_TYPES)
+    {
+        storeSel += dir;
+        if (storeSel < 0) storeSel = INV_TOTAL_TYPES - 1;
+        if (storeSel >= INV_TOTAL_TYPES) storeSel = 0;
+    }
+}
+
+static void Store_BuySelected(Donogan* d)
+{
+    if (!d) return;
+
+    InventoryItem* it = &inventory[storeSel];
+    if (!Store_CanSell(it->type)) return;
+
+    int price = Store_GetPrice(it->type);
+
+    if (d->money >= price)
+    {
+        d->money -= price;
+        it->count++;
+
+        toast = "Purchased item!";
+        StartTimer(&toastTimer);
+        PlaySoundVolContinuousAllowed(menuSaveOrLoad);
+    }
+    else
+    {
+        toast = "Not enough money.";
+        StartTimer(&toastTimer);
+    }
+}
 static void FinishTalking(Donogan* d)
 {
     d->isTalking = false;
@@ -711,6 +772,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_NICK] = (POI){ POI_TYPE_NICK , &npcs[NPC_NICK].pos }; //rescue mission
     InteractivePoints[POI_TYPE_WIZARD] = (POI){ POI_TYPE_WIZARD , &npcs[NPC_WIZARD].pos }; //wiz
     InteractivePoints[POI_TYPE_ABBY] = (POI){ POI_TYPE_ABBY , &npcs[NPC_ABBY].pos }; //abby
+    InteractivePoints[POI_TYPE_STORE_1] = (POI){ POI_TYPE_STORE_1, &npcs[NPC_CLERK].pos };// store POI points to the clerk
     //init the stuff before launching thread launcher
     InitMenu(&don);//just for some color stuff
     //INIT
@@ -989,24 +1051,47 @@ int main(void) {
             int dDown = gpad.dpad_down > 0;
             int dLeft = gpad.dpad_left > 0;
             int dRight = gpad.dpad_right > 0;
-            if (!Menu_IsOpen(&gGame))
+            if (don.isTalking && don.who == TALK_TYPE_STORE)
             {
-                // Rising edges = single press
-                if (dUp && !prevDpadUp)    Audio_SelectAlbumRelative(-1); // previous album
-                if (dDown && !prevDpadDown)  Audio_SelectAlbumRelative(+1); // next album
-                if (dLeft && !prevDpadLeft)  Audio_SelectSongRelative(-1);  // previous track
-                if (dRight && !prevDpadRight) Audio_SelectSongRelative(+1);  // next track
+                if (dUp && !prevDpadUp) Store_MoveSel(-1);
+                if (dDown && !prevDpadDown) Store_MoveSel(1);
+
+                if (cross && !prevCross)
+                {
+                    Store_BuySelected(&don);
+                }
+
+                if (tri && !prevTri)
+                {
+                    FinishTalking(&don);
+                }
+            }
+            else if (don.isTalking)
+            {
+                // do nothing here; normal talk is handled in the talking block
+            }
+            else if (!Menu_IsOpen(&gGame))
+            {
+                if (dUp && !prevDpadUp)     Audio_SelectAlbumRelative(-1);
+                if (dDown && !prevDpadDown) Audio_SelectAlbumRelative(+1);
+                if (dLeft && !prevDpadLeft) Audio_SelectSongRelative(-1);
+                if (dRight && !prevDpadRight) Audio_SelectSongRelative(+1);
             }
             else
             {
-                if (dUp && !prevDpadUp)    Menu_OnUp(&gGame);
-                if (dDown && !prevDpadDown)  Menu_OnDown(&gGame);
-                if (dLeft && !prevDpadLeft)  Menu_OnLeft(&gGame);
+                if (dUp && !prevDpadUp)     Menu_OnUp(&gGame);
+                if (dDown && !prevDpadDown) Menu_OnDown(&gGame);
+                if (dLeft && !prevDpadLeft) Menu_OnLeft(&gGame);
                 if (dRight && !prevDpadRight) Menu_OnRight(&gGame);
-                if (cross && !prevCross)      Menu_OnCross(&gGame, &don);
+                if (cross && !prevCross)    Menu_OnCross(&gGame, &don);
                 if (tri && !prevTri)        Menu_OnTriangle(&gGame);
                 StartTimer(&truckInteractTimer);
             }
+
+            prevDpadUp = dUp;
+            prevDpadDown = dDown;
+            prevDpadLeft = dLeft;
+            prevDpadRight = dRight;
             prevDpadUp = dUp; prevDpadDown = dDown; prevDpadLeft = dLeft; prevDpadRight = dRight;
         }
         if (vehicleMode) 
@@ -1226,6 +1311,22 @@ int main(void) {
                     npcs[NPC_DARREL].state = DARREL_STATE_TALK;
                     StartTimer(&don.talkStartTimer);
                     Talk_Reset(don.who);
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
+                }
+                else if (!don.isTalking //todo: can use this for all stores, just share || phrase with distance hook ups
+                    && InteractivePoints[POI_TYPE_STORE_1].pos
+                    && Vector3Distance(*InteractivePoints[POI_TYPE_STORE_1].pos, don.pos) < 12.0f
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_STORE;
+
+                    storeSel = INV_HEALTH; // first selected store item
+
+                    StartTimer(&don.talkStartTimer);
+                    Talk_Reset(don.who);
+
                     prevTalkTri = gpad.btnTriangle;
                     prevTalkX = gpad.btnCross;
                 }
@@ -1816,11 +1917,13 @@ int main(void) {
             prevTalkX = gpad.btnCross;
             prevTalkTri = gpad.btnTriangle;
 
-            TalkResult talkResult = Talk_UpdateController(xPressed, triPressed);
-
-            if (talkResult == TALK_RESULT_FINISHED)
+            if (don.who != TALK_TYPE_STORE)
             {
-                FinishTalking(&don);
+                TalkResult talkResult = Talk_UpdateController(xPressed, triPressed);
+                if (talkResult == TALK_RESULT_FINISHED)
+                {
+                    FinishTalking(&don);
+                }
             }
         }
         
@@ -4266,6 +4369,53 @@ int main(void) {
 
             DrawText("X: OK", box.x + 16, box.y + box.height - 32, 22, DARKGRAY);
             DrawText("Triangle: Close", box.x + 110, box.y + box.height - 32, 22, DARKGRAY);
+            // special store window while talking to store clerk
+            if (don.who == TALK_TYPE_STORE)
+            {
+                Rectangle storeBox = {
+                    box.x + 20,
+                    box.y - 245,
+                    520,
+                    230
+                };
+
+                DrawRectangle(storeBox.x - 4, storeBox.y - 4,
+                    storeBox.width + 8, storeBox.height + 8, BLACK);
+
+                DrawRectangleRec(storeBox, RAYWHITE);
+
+                DrawText("STORE", storeBox.x + 14, storeBox.y + 10, 26, BLACK);
+                DrawText(TextFormat("Money: $%.2f", don.money),
+                    storeBox.x + 330, storeBox.y + 14, 20, DARKGREEN);
+
+                int row = 0;
+
+                for (int i = 0; i < INV_TOTAL_TYPES; i++)
+                {
+                    if (!Store_CanSell(inventory[i].type)) continue;
+
+                    Color c = (i == storeSel) ? RED : BLACK;
+
+                    DrawText(
+                        TextFormat("%s  $%d  owned:%d",
+                            inventory[i].name,
+                            Store_GetPrice(inventory[i].type),
+                            inventory[i].count),
+                        storeBox.x + 18,
+                        storeBox.y + 50 + row * 26,
+                        20,
+                        c
+                    );
+
+                    row++;
+                }
+
+                DrawText("D-Pad Up/Down: select     X: buy     Triangle: leave",
+                    storeBox.x + 18,
+                    storeBox.y + storeBox.height - 28,
+                    18,
+                    GRAY);
+            }
         }
         if (onLoad) 
         {
