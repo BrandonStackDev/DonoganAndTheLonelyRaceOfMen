@@ -17,7 +17,8 @@ typedef enum {
     NPC_MODEL_TYPE_CHICKEN, //darrel is the name of the model + the name of the first chararcter that we are using it with...
     NPC_MODEL_TYPE_LUCY,
     NPC_MODEL_TYPE_WIZARD,
-    NPC_MODEL_TYPE_ABBY
+    NPC_MODEL_TYPE_ABBY,
+    NPC_MODEL_TYPE_CLERK
 } NPC_Model_Type;
 
 typedef enum {
@@ -27,6 +28,7 @@ typedef enum {
     NPC_NICK, //NPC_MODEL_TYPE_DARREL - mark repeats this way for yourself
     NPC_WIZARD,
     NPC_ABBY,
+    NPC_CLERK,
     NPC_TOTAL,
 } NPC_Type;
 
@@ -100,9 +102,14 @@ typedef struct {
     //rescue missions stuff
     bool isRescue;
     RescueState r_state;
+    int cartIndex;
 } NPC;
 
 NPC npcs[NPC_TOTAL];
+#define NUM_CARTS 1
+Model cartModel;
+Texture cartTexture;
+Vector3 cartPositions[NUM_CARTS];
 
 // Optional: tiny helpers
 static inline float NPC_GroundY(Vector3 p) {
@@ -158,6 +165,12 @@ void InitAllNPC()
     Texture abby_tex = LoadMyTexture("textures/abby.png");
     int abby_animCount = 0;
     ModelAnimation* abby_anims = LoadModelAnimations("models/abby_anim.glb", &abby_animCount);
+    //clerk and cart
+    Model clerk_model = LoadModel("models/clerk.obj");
+    Texture clerk_tex = LoadMyTexture("textures/clerk.png");
+    cartModel = LoadModel("models/store.obj");
+    cartTexture = LoadMyTexture("textures/store.png");
+    cartModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = cartTexture;
     //setup darrel
     npcs[NPC_DARREL].type = NPC_DARREL;
     npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
@@ -262,6 +275,25 @@ void InitAllNPC()
     npcs[NPC_ABBY].animFPS = 60.0f;
     npcs[NPC_ABBY].animFrame = 0.0f;
     NPC_AnimSet(&npcs[NPC_ABBY], npcs[NPC_ABBY].curAnim, true, npcs[NPC_ABBY].animFPS); // start correct clip
+    //setup clerk and cart
+    npcs[NPC_CLERK].type = NPC_CLERK;
+    npcs[NPC_CLERK].modelType = NPC_MODEL_TYPE_CLERK;
+    npcs[NPC_CLERK].model = clerk_model;
+    npcs[NPC_CLERK].tex = clerk_tex;
+    npcs[NPC_CLERK].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = clerk_tex;
+    npcs[NPC_CLERK].animCount = 0;
+    npcs[NPC_CLERK].pos = (Vector3){ 2503.90, 338.82, 2335.35 };
+    npcs[NPC_CLERK].targetPos = npcs[NPC_CLERK].pos;
+    npcs[NPC_CLERK].scale = 3.9f;
+    npcs[NPC_CLERK].yaw = 0.0f;
+    npcs[NPC_CLERK].speed = 1.0f;
+    npcs[NPC_CLERK].isRescue = false;
+    npcs[NPC_CLERK].state = 0; //does not matter for this guy
+    npcs[NPC_CLERK].curAnim = 0;
+    npcs[NPC_CLERK].animFPS = 0;
+    npcs[NPC_CLERK].animFrame = 0.0f;
+    cartPositions[0] = (Vector3){ 2503.49, 344.2, 2343.99 };
+    npcs[NPC_CLERK].cartIndex = 0;
 }
 
 bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
@@ -299,7 +331,8 @@ static inline bool NPC_AnimTick(NPC* n, float dt) {
 static inline void NPC_Update_Simple(NPC* n, const Donogan* d, float dt, bool looped) 
 {
     if (n->type == NPC_DARREL) { n->pos.y -= 0.2f; }
-    if (n->type == NPC_ABBY) { n->pos.y += 3; }
+    if (n->modelType == NPC_MODEL_TYPE_ABBY) { n->pos.y += 3; }
+    if (n->modelType == NPC_MODEL_TYPE_CLERK) { n->pos.y += 3.68; }
     // Face Donogan
     float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
     n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
@@ -430,6 +463,7 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     case NPC_NICK: NPC_Update_Rescue(n, d, dt, looped); break;
     case NPC_WIZARD: NPC_Update_Wiz(n,d,dt); break;
     case NPC_ABBY: NPC_Update_Simple(n, d, dt, looped); break;
+    case NPC_CLERK: NPC_Update_Simple(n, d, dt, looped); break;
     default: break;
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);
@@ -444,6 +478,10 @@ static inline void NPC_Draw(const NPC* n)
         n->scale, n->scale, n->scale
     }, WHITE);
     // Optionally: DrawBoundingBox(n->box, YELLOW);
+    if (n->modelType == NPC_MODEL_TYPE_CLERK)
+    {
+        DrawModel(cartModel,cartPositions[n->cartIndex],7,WHITE);
+    }
 }
 
 
