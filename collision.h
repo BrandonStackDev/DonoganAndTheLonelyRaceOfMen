@@ -132,7 +132,7 @@ float GetTerrainHeightFromMeshXZ(float x, float z)
     }
 
     //TraceLog(LOG_WARNING, "Not found in any triangle: (%f , %f)", x, z);
-    TraceLog(LOG_WARNING, "Not found in any triangle: (%.3f , %.3f) (%d %d)", (double)x, (double)z, cx, cy);
+    //TraceLog(LOG_WARNING, "Not found in any triangle: (%.3f , %.3f) (%d %d)", (double)x, (double)z, cx, cy);
     return -10000.0f; // Not found in any triangle
 }
 

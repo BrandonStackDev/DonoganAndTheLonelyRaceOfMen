@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 127
+#define NUM_PLATS 131
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -267,28 +267,6 @@ static inline void Platform_Update(Platform* p, float dt, Platform* all)
     else p->box = UpdateBoundingBox(p->origBox, p->pos);
 }
 
-// ------------------------------------------------------------
-// Collision (character ↔ top surface + ride movers)
-// ------------------------------------------------------------
-////static inline bool Platform_LandableTopOverlapXZ(const Platform* p, const Donogan* d)
-////{
-////    // Build a very thin slab on the top face so we ignore side hits.
-////    const float slab = 0.2f; // meters of thickness used for the test
-////    Vector3 topCenter = p->pos; topCenter.y += (p->dim.y * 0.5f) - (slab * 0.5f);
-////    BoundingBox topBB = BoxFromPlatformProps(topCenter, (Vector3) { p->dim.x, slab, p->dim.z });
-////    return CheckCollisionBoxes(d->outerBox, topBB);
-////}
-//static inline bool Overlap1D(float a0, float a1, float b0, float b1) {
-//    return (a1 >= b0) && (b1 >= a0);
-//}
-//
-//// Replace the whole function body:
-//static inline bool Platform_LandableTopOverlapXZ(const Platform* p, const Donogan* d)
-//{
-//    const float skin = 0.05f; // small forgiveness for fast movers/jumps
-//    return Overlap1D(d->outerBox.min.x, d->outerBox.max.x, p->box.min.x - skin, p->box.max.x + skin) &&
-//        Overlap1D(d->outerBox.min.z, d->outerBox.max.z, p->box.min.z - skin, p->box.max.z + skin);
-//}
 static inline bool Overlap1D(float a0, float a1, float b0, float b1)
 {
     return (a1 >= b0) && (b1 >= a0);
@@ -412,45 +390,6 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
     }
     
 }
-//static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Platform* all)
-//{
-//    if (!p || !d) return;
-//    if (p->disabled) { return; }
-//    if (HasTimerElapsed(&p->t_fellDelay))
-//    {
-//        ResetTimer(&p->t_fallDelay);//need this one too
-//        ResetTimer(&p->t_fellDelay);
-//        p->pos = p->origPos;
-//        p->falling = false;
-//    }
-//
-//    // Update first so p->box and mover deltas are valid
-//    Platform_Update(p, dt, all);
-//
-//    // Fast reject: AABB test against full box
-//    if (!CheckCollisionBoxes(d->outerBox, p->box)) return;
-//
-//    // Consider only landings from above (feet cross the top plane)
-//    const float topY = p->box.max.y;
-//
-//    // LAND: set Don’s ground to the platform top and snap.
-//    d->groundY = topY;       // DonSnapToGround uses groundY as feet plane
-//    DonSnapToGround(d);
-//
-//    // If it’s a faller, arm the delay timer once we step on it
-//    if (p->type == PLATFORM_FALLER && !p->falling) {
-//        if (!p->t_fallDelay.running) { StartTimer(&p->t_fallDelay); }
-//        else if (HasTimerElapsed(&p->t_fallDelay)) { p->falling = true; p->vy = 0.0f; }
-//    }
-//
-//    // If it’s a mover, carry Don by the platform delta this frame
-//    if (p->type == PLATFORM_MOVER) {
-//        Vector3 delta = Vector3Subtract(p->pos, p->mover.oldPos);
-//        d->pos = Vector3Add(d->pos, (Vector3) { delta.x, delta.y, delta.z });
-//        // keep feet stuck to the top after vertical moves
-//        d->groundY = topY; DonSnapToGround(d);
-//    }
-//}
 
 // ------------------------------------------------------------
 // Draw (optional helpers)
@@ -703,6 +642,15 @@ void InitPlats()
     plats[124] = Platform_MakeStill((Vector3) { -1673.10, 395, -1516.90 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     plats[125] = Platform_MakeStill((Vector3) { -1639.99, 390, -1514.37 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     plats[126] = Platform_MakeStill((Vector3) { -1636.25, 380, -1480.48 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE); //todo: put a map on this guy
+    //////////////////////////////////////////////////////STILL SINGLES//////////////////////////////////////////////////////////////////////////
+    //plats[72] = Platform_MakeMover((Vector3) {  }, (Vector3) { 1899.63, 700, -455.70 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    //plats[73] = Platform_MakeMover((Vector3) {  }, (Vector3) { 1899.63, 800, -455.70 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    //plats[74] = Platform_MakeMover((Vector3) {  }, (Vector3) { 1735.15, 700, -1186.69 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    //plats[75] = Platform_MakeMover((Vector3) {  }, (Vector3) { 1735.15, 800, -1186.69 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
+    plats[127] = Platform_MakeStill((Vector3) { 1894.63, 610, -445.70 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[128] = Platform_MakeStill((Vector3) { 1894.63, 710, -445.70 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[129] = Platform_MakeStill((Vector3) { 1731.15, 610, -1176.69 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[130] = Platform_MakeStill((Vector3) { 1731.15, 710, -1176.69 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
