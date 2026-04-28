@@ -3025,6 +3025,79 @@ int main(void) {
                 }
             }
         }
+        // bad guy vs home/building boxes
+        if (onLoad)
+        {
+            for (int bi = 0; bi < act_bg_count; bi++)
+            {
+                int b = act_bg[bi];
+
+                if (!bg[b].active) continue;
+                if (bg[b].dead) continue;
+                if (bg[b].type == BG_GHOST) continue; // ghosts are not corporeal
+                if (bg[b].gbm_index < 0) continue;
+
+                for (int s = 0; s < SCENE_TOTAL_COUNT; s++)
+                {
+                    if (!CheckCollisionBoxes(bg[b].box, Scenes[s].box)) continue;
+
+                    // Orbs die when they hit a building
+                    if (bg[b].type == BG_ROBO)
+                    {
+                        bg[b].health = 0;
+                        bg[b].vel = (Vector3){ 0.0f, -4.0f, 0.0f };
+                        bg[b].state = ROBO_STATE_DYING;
+                        break;
+                    }
+
+                    // Yeti/hopper: push straight away from building center, no sliding
+                    Vector3 sceneCenter = {
+                        (Scenes[s].box.min.x + Scenes[s].box.max.x) * 0.5f,
+                        (Scenes[s].box.min.y + Scenes[s].box.max.y) * 0.5f,
+                        (Scenes[s].box.min.z + Scenes[s].box.max.z) * 0.5f
+                    };
+
+                    Vector3 away = Vector3Subtract(bg[b].pos, sceneCenter);
+                    away.y = 0.0f;
+
+                    if (Vector3Length(away) < 0.001f)
+                    {
+                        away = Vector3Subtract(bg[b].pos, bg[b].spawnPoint);
+                        away.y = 0.0f;
+                    }
+
+                    if (Vector3Length(away) < 0.001f)
+                    {
+                        away = (Vector3){ 0.0f, 0.0f, 1.0f };
+                    }
+
+                    away = Vector3Normalize(away);
+
+                    bg[b].pos = Vector3Add(bg[b].pos, Vector3Scale(away, 4.0f));
+                    bg[b].targetPos = bg[b].pos;
+                    bg[b].vel = (Vector3){ 0 };
+
+                    float gy = BG_GroundY(bg[b].pos);
+                    if (gy > -9000.0f) bg[b].pos.y = gy;
+
+                    bg[b].box = UpdateBoundingBox(bgModelBorrower[bg[b].gbm_index].origBox, bg[b].pos);
+
+                    if (bg[b].type == BG_YETI)
+                    {
+                        bg[b].state = YETI_STATE_PLANNING;
+                        BG_SetAnim(&bg[b], ANIM_YETI_WALK, false);
+                    }
+                    else if (bg[b].type == BG_PUMPKIN_HOPPER)
+                    {
+                        bg[b].state = HOPPER_STATE_WAIT;
+                        ResetTimer(&bg[b].interactionTimer);
+                        StartTimer(&bg[b].interactionTimer);
+                    }
+
+                    break;
+                }
+            }
+        }
         // hopper vs still platforms
         for (int b = 0; b < bg_count; b++)
         {
