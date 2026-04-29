@@ -582,7 +582,6 @@ int main(void) {
         }
         fish[s].fishTarget = fish[s].center;
     }
-
     // ---------------------------------------------------------------------------
 
         // - shaders
@@ -808,6 +807,9 @@ int main(void) {
     InteractivePoints[POI_TYPE_WIZARD] = (POI){ POI_TYPE_WIZARD , &npcs[NPC_WIZARD].pos }; //wiz
     InteractivePoints[POI_TYPE_ABBY] = (POI){ POI_TYPE_ABBY , &npcs[NPC_ABBY].pos }; //abby
     InteractivePoints[POI_TYPE_STORE_1] = (POI){ POI_TYPE_STORE_1, &npcs[NPC_CLERK].pos };// store POI points to the clerk
+    //help maps know things like the important people
+    map_tol = &tolPos;
+    map_atreyu = &atreyuPos;
     //init the stuff before launching thread launcher
     InitMenu(&don);//just for some color stuff
     //INIT

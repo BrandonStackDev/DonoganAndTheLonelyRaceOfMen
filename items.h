@@ -61,7 +61,7 @@ typedef struct {
     bool collected; //this one means collected forever
 } TrackedItem; //for items on the map that do not respawn and are kept in the save file
 
-#define NUM_ITEMS 18
+#define NUM_ITEMS 31
 #define NUM_TRACKED_ITEMS 16
 #define MAX_CLOSE_ITEMS 32
 Item map_items[NUM_ITEMS];
@@ -240,7 +240,21 @@ void InitItems()
     map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -1226.03, 389.0, 599.22 }, INV_HEALTH_FULL, 1);
     map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -1207.41, 389.0, 599.82 }, INV_HEALTH, 1);
     map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -1203.97, 389.0, 611.20 }, INV_POTION, 1);
-    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -1222.47, 389.0, 605.15 }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -1222.47, 389.0, 605.15 }, INV_POTION, 1); //18
+    //tents
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3750.05f, 333.29f, 1346.28f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3754.93f, 333.29f, 1361.80f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3877.11f, 329.53f, 1211.63f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3887.78f, 329.53f, 1207.71f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3883.85f, 329.53f, 1199.91f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3893.04f, 329.53f, 1202.68f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -3853.93f, 329.53f, 952.32f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3846.85f, 329.53f, 957.33f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -3842.94f, 329.53f, 962.97f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3849.97f, 329.53f, 966.29f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -3855.96f, 329.53f, 960.88f }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3848.36f, 329.53f, 956.02f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -3856.60f, 329.53f, 956.69f }, INV_HEALTH, 1); //31
     ////setup tracked map items
     ////for testing: 3022.00f, 322.00f, 4042.42f
     //good book
@@ -261,7 +275,7 @@ void InitItems()
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -2399.84, 421.0, -2579.47 }, INV_EVIL_BOOK, 1); //tree house by windmill
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 1735.15, 806, -1186.69 }, INV_EVIL_BOOK, 1); //pair
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 805.95, 882, -1838.85 }, INV_EVIL_BOOK, 1); //bridge
-    map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -590.53, 802.32, 2830.12 }, INV_EVIL_BOOK, 1); //yetimt
+    map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -590.53, 802.32, 2830.12 }, INV_EVIL_BOOK, 1); //yetimt //31
 }
 
 #endif // ITEMS_H

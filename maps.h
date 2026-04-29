@@ -13,13 +13,24 @@
 #include "game.h"
 #include "jc.h"
 #include "items.h"
+#include "interact.h"
+#include "npc.h"
+
+//holders for important people
+Vector3* map_tol;
+Vector3* map_atreyu;
+//Vector3* map_alister;
+//Vector3* map_galadriel;
+//Vector3* map_wolf;
 
 typedef enum {
     MAP_HOMES = 0,
     MAP_WHALES,
     MAP_BOOKS,
     MAP_WINDMILL,
-    //Alister and Galadriel, TOL, and Atreyu
+    MAP_STORES,
+    MAP_FIRES,
+    MAP_IMPORTANT,
     MAP_TOTAL_COUNT
 } MapTypes;
 
@@ -88,6 +99,9 @@ static inline void InitMaps(void)
     maps[MAP_WHALES] = CreateGameMap("Whales Map", (Vector3) { 2740.00f, 441.00f, 4110.71f }, MAP_WHALES);
     maps[MAP_BOOKS] = CreateGameMap("Books Map", (Vector3) { 2720.00f, 441.00f, 4100.71f }, MAP_BOOKS);
     maps[MAP_WINDMILL] = CreateGameMap("Windmills Map", (Vector3) { -603.88, 577.5, 3695.54 }, MAP_WINDMILL);
+    maps[MAP_STORES] = CreateGameMap("Stores Map", (Vector3) { 2493.04, 341.52, 2422.65 }, MAP_STORES);
+    maps[MAP_FIRES] = CreateGameMap("Fireplace Map", (Vector3) { -1636.03, 382.50, -1480.01 }, MAP_FIRES);
+    maps[MAP_IMPORTANT] = CreateGameMap("Important People", (Vector3) { -3721.90, 329.53, 1108.00 }, MAP_IMPORTANT);
 }
 
 static inline void ConsumeMaps(Donogan* d)
@@ -182,9 +196,41 @@ static inline void DrawDisplayMaps(
         for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
         {
             // skip windmills if you want homes only
-            if (Scenes[i].modelType != MODEL_HOME_WINDMILL) continue;
+            if (Scenes[i].modelType != MODEL_HOME_WINDMILL) { continue; }
             MapDrawWorldCircle(Scenes[i].pos, dest, Scenes[i].active ? MAGENTA: DARKBLUE);
         }
+    }
+    else if (active == MAP_STORES)
+    {
+        for (int i = 0; i < NPC_TOTAL; i++)
+        {
+            if (npcs[i].modelType != NPC_MODEL_TYPE_CLERK) { continue; }
+            MapDrawWorldCircle(npcs[i].pos, dest, DARKPURPLE);
+        }
+    }
+    else if (active == MAP_FIRES)
+    {
+        for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++)
+        {
+            MapDrawWorldCircle(fires[i].pos, dest, fires[i].lit ? ORANGE : DARKGRAY);
+        }
+    }
+    else if (active == MAP_IMPORTANT)
+    {
+        //Vector3* map_tol;
+        //Vector3* map_atreyu;
+        ////Vector3* map_alister;
+        ////Vector3* map_galadriel;
+        ////Vector3* map_wolf;
+        /*
+        *       Color tree_of_life = (Color){ 120, 255, 160, 255 };   // Tree of Life (bright living green, magical)
+                Color atreyu = (Color){ 80, 180, 255, 255 };          // Atreyu (hero blue, calm + brave)
+                Color wolf = (Color){ 200, 200, 220, 255 };           // Wolf (pale silver/ice tone)
+                Color alistair = (Color){ 60, 60, 60, 255 };       // Alistair (bweare he is evil, run away!)
+                Color galadriel = (Color){ 255, 240, 200, 255 };      // Galadriel (soft radiant light, ethereal)
+        */
+        MapDrawWorldCircle(*map_tol, dest, (Color) { 120, 255, 160, 255 });
+        MapDrawWorldCircle(*map_atreyu, dest, (Color) { 80, 180, 255, 255 });
     }
 }
 
