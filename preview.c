@@ -981,6 +981,22 @@ int main(void) {
                     2.8f, 3.6f
                 );
                 madeCorn = true;
+
+                Corn_AddFieldBox(
+                    (Vector3){-2232.95, 448.00, -2192.04},
+                    200, 210,
+                    4.0f, 1.2f,
+                    2.8f, 3.6f
+                );
+                madeCorn = true;
+
+                Corn_AddFieldBox(
+                    (Vector3){2727.29, 416.75, 1916.11},
+                    200, 200,
+                    4.0f, 1.2f,
+                    2.8f, 3.6f
+                );
+                madeCorn = true;
             }
         }
         if (don.talkedToBlueWizard && npcs[NPC_WIZARD].state != WIZARD_STATE_DONE)
