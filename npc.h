@@ -29,6 +29,10 @@ typedef enum {
     NPC_WIZARD,
     NPC_ABBY,
     NPC_CLERK,
+    NPC_CLERK_2,
+    NPC_CLERK_3,
+    NPC_CLERK_4,
+    NPC_CLERK_5,
     NPC_TOTAL,
 } NPC_Type;
 
@@ -106,7 +110,7 @@ typedef struct {
 } NPC;
 
 NPC npcs[NPC_TOTAL];
-#define NUM_CARTS 1
+#define NUM_CARTS 5
 Model cartModel;
 Texture cartTexture;
 Vector3 cartPositions[NUM_CARTS];
@@ -294,6 +298,22 @@ void InitAllNPC()
     npcs[NPC_CLERK].animFrame = 0.0f;
     cartPositions[0] = (Vector3){ 2503.49, 344.2, 2343.99 };
     npcs[NPC_CLERK].cartIndex = 0;
+    npcs[NPC_CLERK_2] = npcs[NPC_CLERK];
+    npcs[NPC_CLERK_3] = npcs[NPC_CLERK];
+    npcs[NPC_CLERK_4] = npcs[NPC_CLERK];
+    npcs[NPC_CLERK_5] = npcs[NPC_CLERK];
+    npcs[NPC_CLERK_2].cartIndex = 1;
+    npcs[NPC_CLERK_3].cartIndex = 2;
+    npcs[NPC_CLERK_4].cartIndex = 3;
+    npcs[NPC_CLERK_5].cartIndex = 4;
+    npcs[NPC_CLERK_2].pos = (Vector3){ -3882.33, 308.71, 3802.42 };
+    cartPositions[1] = (Vector3){ -3887.88, 313.68, 3786.54 };
+    npcs[NPC_CLERK_3].pos = (Vector3){ -1269.04, 382.81, 637.69 };
+    cartPositions[2] = (Vector3){ -1288.39, 385.24, 641.19 };
+    npcs[NPC_CLERK_4].pos = (Vector3){ -2520.94, 409.11, -2373.29 };
+    cartPositions[3] = (Vector3){ -2528.19, 409.58, -2408.55 };
+    npcs[NPC_CLERK_5].pos = (Vector3){ 1876.92, 384.00, -3060.90 };
+    cartPositions[4] = (Vector3){ 1857.41, 398.71, -3082.70 };
 }
 
 bool IsModelAnimationValidMe(Model model, ModelAnimation anim)

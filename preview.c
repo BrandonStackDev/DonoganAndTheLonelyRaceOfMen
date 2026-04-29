@@ -1468,21 +1468,34 @@ int main(void) {
                     prevTalkTri = gpad.btnTriangle;
                     prevTalkX = gpad.btnCross;
                 }
-                else if (!don.isTalking //todo: can use this for all stores, just share || phrase with distance hook ups
-                    && InteractivePoints[POI_TYPE_STORE_1].pos
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_STORE_1].pos, don.pos) < 12.0f
-                    && HasTimerElapsed(&don.talkStartTimer))
-                {
-                    don.isTalking = true;
-                    don.who = TALK_TYPE_STORE;
+                else if (!don.isTalking && HasTimerElapsed(&don.talkStartTimer))
+                { //stores
+                    NPC* clerk = NULL;
 
-                    storeSel = INV_HEALTH; // first selected store item
+                    for (int i = 0; i < NPC_TOTAL; i++)
+                    {
+                        if (npcs[i].modelType != NPC_MODEL_TYPE_CLERK) { continue; }
 
-                    StartTimer(&don.talkStartTimer);
-                    Talk_Reset(don.who);
+                        if (Vector3Distance(npcs[i].pos, don.pos) < 12.0f)
+                        {
+                            clerk = &npcs[i];
+                            break;
+                        }
+                    }
 
-                    prevTalkTri = gpad.btnTriangle;
-                    prevTalkX = gpad.btnCross;
+                    if (clerk)
+                    {
+                        don.isTalking = true;
+                        don.who = TALK_TYPE_STORE;
+
+                        storeSel = INV_HEALTH;
+
+                        StartTimer(&don.talkStartTimer);
+                        Talk_Reset(don.who);
+
+                        prevTalkTri = gpad.btnTriangle;
+                        prevTalkX = gpad.btnCross;
+                    }
                 }
                 else if (Vector3Distance(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 12.00f
                     && !don.isTalking) //check !isTalking because we want to make sure we hit the exit talk routine if don is talking
