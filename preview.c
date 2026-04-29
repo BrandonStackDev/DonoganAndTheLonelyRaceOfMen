@@ -31,6 +31,7 @@
 #include "machine.h"
 #include "frustum.h"
 #include "shark.h"
+#include "corn.h"
 
 //fairly standard things
 #include <float.h>
@@ -410,7 +411,10 @@ int main(void) {
     int oldLevel = 0;
     //day-night timer
     Timer nightTimer = CreateTimer(128); //128 seconds, just above 2 minutes
-
+    //bool to mark if we loading corn yet
+    bool madeCorn = false;
+    
+    //idk
     int pad_axis = 0;
     bool mouse = false;
     int gamepad = 0; // which gamepad to display
@@ -821,6 +825,7 @@ int main(void) {
     //help maps know things like the important people
     map_tol = &tolPos;
     map_atreyu = &atreyuPos;
+    Corn_Init(instancingLightShader);
     //init the stuff before launching thread launcher
     InitMenu(&don);//just for some color stuff
     //INIT
@@ -899,6 +904,7 @@ int main(void) {
         //maps
         if (onLoad)
         {
+            //maps?
             int foundOn = -1;
             for (int i = 0; i < MAP_TOTAL_COUNT; i++) {
                 if (!maps[i].collected) maps[i].display = false;
@@ -907,6 +913,74 @@ int main(void) {
                     if (foundOn < 0) foundOn = i;
                     else maps[i].display = false;
                 }
+            }
+            //corn
+            if (!madeCorn)
+            {
+                // ---------- CORN FIELDS ----------
+                    // Big square split into 4 smaller fields
+                Vector3 bigCornCenter = (Vector3){ -2229.12f, 489.41f, -1807.96f };
+                float bigCornSizeX = 220.0f;
+                float bigCornSizeZ = 180.0f;
+
+                // use smaller measurement so it stays square-ish and does not overreach
+                float bigCornSize = fminf(bigCornSizeX, bigCornSizeZ);
+
+                float gap = 14.0f;
+                float halfField = (bigCornSize - gap) * 0.5f;
+                float quarterOffset = (halfField + gap) * 0.5f;
+
+                Corn_AddFieldBox(
+                    (Vector3) {
+                    bigCornCenter.x - quarterOffset, 0.0f, bigCornCenter.z - quarterOffset
+                },
+                    halfField, halfField,
+                    4.0f, 1.2f,
+                    2.8f, 3.6f
+                );
+
+                Corn_AddFieldBox(
+                    (Vector3) {
+                    bigCornCenter.x + quarterOffset, 0.0f, bigCornCenter.z - quarterOffset
+                },
+                    halfField, halfField,
+                    4.0f, 1.2f,
+                    2.8f, 3.6f
+                );
+
+                Corn_AddFieldBox(
+                    (Vector3) {
+                    bigCornCenter.x - quarterOffset, 0.0f, bigCornCenter.z + quarterOffset
+                },
+                    halfField, halfField,
+                    4.0f, 1.2f,
+                    2.8f, 3.6f
+                );
+
+                Corn_AddFieldBox(
+                    (Vector3) {
+                    bigCornCenter.x + quarterOffset, 0.0f, bigCornCenter.z + quarterOffset
+                },
+                    halfField, halfField,
+                    4.0f, 1.2f,
+                    2.8f, 3.6f
+                );
+
+
+                // Small square as the 5th field
+                Vector3 smallCornCenter = (Vector3){ -2658.74f, 394.61f, -2495.44f };
+                float smallCornSizeX = 80.0f;
+                float smallCornSizeZ = 65.0f;
+
+                float smallCornSize = fminf(smallCornSizeX, smallCornSizeZ);
+
+                Corn_AddFieldBox(
+                    smallCornCenter,
+                    smallCornSize, smallCornSize,
+                    4.0f, 1.2f,
+                    2.8f, 3.6f
+                );
+                madeCorn = true;
             }
         }
         if (don.talkedToBlueWizard && npcs[NPC_WIZARD].state != WIZARD_STATE_DONE)
@@ -4216,6 +4290,8 @@ int main(void) {
             }
             if (onLoad) //handle water last because of its transparency, only draw once loaded
             {
+                //corn
+                DrawCornFields(don.pos, frustumChunk8, displayBoxes);
                 //water
                 for (int cy = 0; cy < CHUNK_COUNT; cy++) {
                     for (int cx = 0; cx < CHUNK_COUNT; cx++) {
@@ -4742,7 +4818,7 @@ int main(void) {
         free(chunks);
         chunks = NULL;
     }
-
+    Corn_Unload();
     // ---- tile manifest / compressed tile entries ----
     if (foundTiles)
     {
