@@ -651,6 +651,8 @@ int main(void) {
     int locGhostTime = GetShaderLocation(ghostShader, "u_time");
     //bg
     InitBadGuys(ghostShader);
+    //tol bloom
+    InitBloomSystem(grassInstancingLightShader);
     // --- Firepit shader + model ---
     Shader fireShader = LoadShader("shaders/120/fire.vs", "shaders/120/fire.fs");
     fireShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(fireShader, "mvp");
@@ -1069,6 +1071,8 @@ int main(void) {
         }
         //controller and truck stuff
         havePad = ReadControllerWindows(0, &gpad);
+        UpdateTreeOfLifeBloomSpell(&don, &gpad, GetFrameTime());
+        UpdateTreeOfLifeBloomGeneration();
         if (!onLoad) 
         { 
             float s_rx = gpad.normRX;
@@ -3709,6 +3713,10 @@ int main(void) {
             }
             if (onLoad)
             {
+                if (Vector3Distance(tolPos, don.pos) < 2048)
+                {
+                    DrawTreeOfLifeBloom();
+                }
                 //tree of life
                 if (IsPointInFrustum(tolPos, frustumChunk8))
                 {
@@ -4746,7 +4754,7 @@ int main(void) {
         foundTiles = NULL;
         foundTileCount = 0;*/
     }
-
+    UnloadBloomSystem();
     // ---- raylib shutdown ----
     MUTEX_DESTROY(mutex);
 

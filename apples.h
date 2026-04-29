@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include "core.h"
 #include "texture.h"
+#include "models.h"
+#include "frustum.h"
 
 #define MAX_APPLES_TOTAL 128
 
@@ -24,6 +26,64 @@ Texture appleTex;
 Apple apples[MAX_APPLES_TOTAL];
 int gAppleIndex = 0;
 
+#define BLOOM_SHADE_COUNT 32
+#define BLOOM_PER_SHADE 8192
+#define BLOOM_RADIUS 1024.0f
+#define BLOOM_HOLD_TIME 2.2f
+#define BLOOM_MANA_COST 30
+
+typedef struct BloomSystem {
+    bool ready;
+    bool bloomed;
+    float hold;
+    int manaPaid;
+
+    Model sphere;
+    Material mats[BLOOM_SHADE_COUNT];
+
+    Matrix* xforms[BLOOM_SHADE_COUNT];
+    int count[BLOOM_SHADE_COUNT];
+
+    bool generating;
+    int genShade;
+    Vector3 genTolPos;
+} BloomSystem;
+
+static BloomSystem gBloom = { 0 };
+
+static Color gBloomColors[BLOOM_SHADE_COUNT] = {
+    // greens, 0-19
+    {  35, 100,  35,255 }, {  45, 120,  40,255 },
+    {  55, 135,  45,255 }, {  65, 150,  50,255 },
+    {  75, 165,  55,255 }, {  85, 180,  60,255 },
+    {  95, 195,  70,255 }, { 105, 210,  75,255 },
+    {  70, 130,  80,255 }, {  85, 150,  90,255 },
+    { 100, 170, 100,255 }, { 115, 190, 110,255 },
+    { 130, 210, 120,255 }, { 145, 225, 130,255 },
+    {  90, 145,  35,255 }, { 110, 165,  45,255 },
+    { 130, 185,  55,255 }, { 150, 205,  65,255 },
+    { 170, 225,  80,255 }, { 190, 240,  95,255 },
+
+    // blues, 20-22
+    {  70, 150, 190,255 }, {  90, 180, 220,255 },
+    { 130, 210, 240,255 },
+
+    // reds / purples, 23-28
+    { 180,  40,  70,255 }, { 210,  55,  90,255 },
+    { 150,  45, 130,255 }, { 175,  70, 170,255 },
+    { 120,  60, 190,255 }, { 155,  90, 220,255 },
+
+    // pinks, 29-31
+    { 235, 100, 165,255 }, { 255, 135, 190,255 },
+    { 255, 175, 220,255 },
+};
+
+static inline bool Bloom_IsDeadTree(Model_Type t)
+{
+    return t == MODEL_TREE_DEAD_01 ||
+        t == MODEL_TREE_DEAD_02 ||
+        t == MODEL_TREE_DEAD_03;
+}
 
 void InitApples()
 {
@@ -146,6 +206,287 @@ static inline void DrawApples(Donogan* d) {
         DrawModel(apple, apples[i].pos, apples[i].scale, WHITE);
         // optional debug
         // DrawBoundingBox(apples[i].box, RED);
+    }
+}
+
+static inline bool FindPropVertexInBand(const StaticGameObject* g, float minAbove, float maxAbove, Vector3* outPos)
+{
+    if (!g || !outPos) return false;
+    if (g->type < 0 || g->type >= MODEL_TOTAL_COUNT) return false;
+
+    Model m = HighFiStaticObjectModels[g->type];
+    if (m.meshCount <= 0) return false;
+
+    Mesh* mesh = &m.meshes[0];
+    if (!mesh || mesh->vertexCount <= 0 || !mesh->vertices) return false;
+
+    Matrix S = MatrixScale(g->scale, g->scale, g->scale);
+    Matrix Rx = MatrixRotateX(g->pitch);
+    Matrix Ry = MatrixRotateY(g->yaw);
+    Matrix Rz = MatrixRotateZ(g->roll);
+    Matrix R = MatrixMultiply(MatrixMultiply(Rx, Ry), Rz);
+    Matrix SR = MatrixMultiply(S, R);
+    Matrix T = MatrixTranslate(g->pos.x, g->pos.y, g->pos.z);
+    Matrix M = MatrixMultiply(SR, T);
+
+    Vector3 cand[256];
+    int candCount = 0;
+
+    const float* v = mesh->vertices;
+    for (int i = 0; i < mesh->vertexCount; i++)
+    {
+        Vector3 p = { v[i * 3 + 0], v[i * 3 + 1], v[i * 3 + 2] };
+        Vector3 w = Vector3Transform(p, M);
+
+        float dy = (w.y - g->pos.y) / g->scale;
+        if (dy >= minAbove && dy <= maxAbove)
+        {
+            if (candCount < 256) cand[candCount++] = w;
+        }
+    }
+
+    if (candCount <= 0) return false;
+    *outPos = cand[GetRandomValue(0, candCount - 1)];
+    return true;
+}
+
+void InitBloomSystem(Shader shader)
+{
+    memset(&gBloom, 0, sizeof(gBloom));
+
+    Mesh mesh = GenMeshSphere(1.0f, 8, 8);
+    gBloom.sphere = LoadModelFromMesh(mesh);
+
+    for (int i = 0; i < BLOOM_SHADE_COUNT; i++)
+    {
+        gBloom.xforms[i] = MemAlloc(sizeof(Matrix) * BLOOM_PER_SHADE);
+        gBloom.count[i] = 0;
+
+        gBloom.mats[i] = LoadMaterialDefault();
+        gBloom.mats[i].shader = shader;
+        gBloom.mats[i].maps[MATERIAL_MAP_DIFFUSE].color = gBloomColors[i];
+    }
+
+    gBloom.ready = true;
+}
+
+void UnloadBloomSystem(void)
+{
+    for (int i = 0; i < BLOOM_SHADE_COUNT; i++)
+    {
+        if (gBloom.xforms[i]) MemFree(gBloom.xforms[i]);
+        gBloom.xforms[i] = NULL;
+    }
+
+    if (gBloom.sphere.meshCount > 0) UnloadModel(gBloom.sphere);
+
+    memset(&gBloom, 0, sizeof(gBloom));
+}
+
+static inline void Bloom_AddInstance(int shade, Vector3 p, float scale)
+{
+    if (shade < 0 || shade >= BLOOM_SHADE_COUNT) return;
+    if (gBloom.count[shade] >= BLOOM_PER_SHADE) return;
+
+    Matrix S = MatrixScale(scale, scale, scale);
+    Matrix T = MatrixTranslate(p.x, p.y, p.z);
+    gBloom.xforms[shade][gBloom.count[shade]++] = MatrixMultiply(S, T);
+}
+
+void UpdateTreeOfLifeBloomGeneration(void)
+{
+    if (!gBloom.ready || !gBloom.generating) return;
+
+    int shade = gBloom.genShade;
+
+    bool isGreen = shade < 20;
+    bool isBlue = shade >= 20 && shade <= 22;
+    bool isFlower = shade >= 23;
+
+    int perTree = isGreen ? 90 : isBlue ? 22 : 34;
+
+    float minBand = isGreen ? 1.35f : 2.15f;
+    float maxBand = isGreen ? 9.25f : 9.75f;
+
+    for (int i = 0; i < numCloseProps; i++)
+    {
+        StaticGameObject* g = CloseProps[i];
+        if (!g) continue;
+        if (!Bloom_IsDeadTree(g->type)) continue;
+        if (Vector3Distance(g->pos, gBloom.genTolPos) > BLOOM_RADIUS) continue;
+
+        int madeForThisTree = 0;
+
+        for (int tries = 0; tries < perTree * 4 && madeForThisTree < perTree; tries++)
+        {
+            Vector3 p;
+            if (!FindPropVertexInBand(g, minBand, maxBand, &p)) continue;
+
+            p.x += GetRandomValue(-38, 38) * 0.01f;
+            p.y += GetRandomValue(-8, 55) * 0.01f;
+            p.z += GetRandomValue(-38, 38) * 0.01f;
+
+            float scale = isGreen
+                ? GetRandomValue(25, 48) * 0.01f
+                : GetRandomValue(17, 34) * 0.01f;
+
+            Bloom_AddInstance(shade, p, scale);
+            madeForThisTree++;
+        }
+    }
+
+    gBloom.genShade++;
+
+    if (gBloom.genShade >= BLOOM_SHADE_COUNT)
+    {
+        gBloom.generating = false;
+        gBloom.bloomed = true;
+        TraceLog(LOG_INFO, "Tree of Life bloom generation finished.");
+    }
+}
+
+void GenerateTreeOfLifeBloom(Vector3 tolPos)
+{
+    if (!gBloom.ready || gBloom.bloomed) return;
+
+    for (int i = 0; i < BLOOM_SHADE_COUNT; i++) gBloom.count[i] = 0;
+
+    for (int i = 0; i < numCloseProps; i++)
+    {
+        StaticGameObject* g = CloseProps[i];
+        if (!g || !Bloom_IsDeadTree(g->type)) continue;
+
+        float d = Vector3Distance(g->pos, tolPos);
+        if (d > BLOOM_RADIUS) continue;
+
+        // Leaves: 8 green shades
+        // per tree limits, but much denser overall
+        const int LEAVES_PER_SHADE_PER_TREE = 220;
+        const int FLOWERS_PER_SHADE_PER_TREE = 70;
+
+        // Leaves: higher on the tree now
+        for (int shade = 0; shade < 8; shade++)
+        {
+            int madeForThisTree = 0;
+
+            for (int tries = 0; tries < LEAVES_PER_SHADE_PER_TREE * 4 &&
+                madeForThisTree < LEAVES_PER_SHADE_PER_TREE; tries++)
+            {
+                Vector3 p;
+                if (!FindPropVertexInBand(g, 1.25f, 8.5f, &p)) continue;
+
+                p.x += GetRandomValue(-35, 35) * 0.01f;
+                p.y += GetRandomValue(-10, 50) * 0.01f;
+                p.z += GetRandomValue(-35, 35) * 0.01f;
+
+                Bloom_AddInstance(shade, p, GetRandomValue(24, 46) * 0.01f);
+                madeForThisTree++;
+            }
+        }
+
+        // Flowers: even higher, mostly crown / branch tips
+        for (int shade = 8; shade < BLOOM_SHADE_COUNT; shade++)
+        {
+            int madeForThisTree = 0;
+
+            for (int tries = 0; tries < FLOWERS_PER_SHADE_PER_TREE * 4 &&
+                madeForThisTree < FLOWERS_PER_SHADE_PER_TREE; tries++)
+            {
+                Vector3 p;
+                if (!FindPropVertexInBand(g, 2.0f, 9.0f, &p)) continue;
+
+                p.x += GetRandomValue(-28, 28) * 0.01f;
+                p.y += GetRandomValue(-5, 40) * 0.01f;
+                p.z += GetRandomValue(-28, 28) * 0.01f;
+
+                Bloom_AddInstance(shade, p, GetRandomValue(17, 30) * 0.01f);
+                madeForThisTree++;
+            }
+        }
+    }
+
+    gBloom.bloomed = true;
+    TraceLog(LOG_INFO, "Tree of Life bloom generated.");
+}
+
+void DrawTreeOfLifeBloom()
+{
+    if (!gBloom.ready) return;
+    if (!gBloom.bloomed && !gBloom.generating) return;
+
+    for (int shade = 0; shade < BLOOM_SHADE_COUNT; shade++)
+    {
+        if (gBloom.count[shade] <= 0) continue;
+
+        DrawMeshInstanced(
+            gBloom.sphere.meshes[0],
+            gBloom.mats[shade],
+            gBloom.xforms[shade],
+            gBloom.count[shade]
+        );
+    }
+}
+
+void StartTreeOfLifeBloomGeneration(Vector3 tolPos)
+{
+    if (!gBloom.ready || gBloom.bloomed || gBloom.generating) return;
+
+    for (int i = 0; i < BLOOM_SHADE_COUNT; i++)
+    {
+        gBloom.count[i] = 0;
+    }
+
+    gBloom.genTolPos = tolPos;
+    gBloom.genShade = 0;
+    gBloom.generating = true;
+
+    TraceLog(LOG_INFO, "Tree of Life bloom generation started.");
+}
+
+void UpdateTreeOfLifeBloomSpell(Donogan* d, ControllerData* pad, float dt)
+{
+    if (!d || !pad) return;
+    if (!gBloom.ready || gBloom.bloomed) return;
+    if (!missions[MISSION_FIND_TOL].complete) return;
+
+    Vector3 tolPos = *InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos;
+
+    if (Vector3Distance(d->pos, tolPos) > BLOOM_RADIUS)
+    {
+        gBloom.hold = 0.0f;
+        gBloom.manaPaid = 0;
+        return;
+    }
+
+    if (!pad->btnSquare)
+    {
+        gBloom.hold = 0.0f;
+        gBloom.manaPaid = 0;
+        return;
+    }
+
+    gBloom.hold += dt;
+
+    int targetPaid = (int)((gBloom.hold / BLOOM_HOLD_TIME) * BLOOM_MANA_COST);
+    if (targetPaid > BLOOM_MANA_COST) targetPaid = BLOOM_MANA_COST;
+
+    int chunk = targetPaid - gBloom.manaPaid;
+    if (chunk > 0)
+    {
+        if (d->mana < chunk)
+        {
+            gBloom.hold = 0.0f;
+            gBloom.manaPaid = 0;
+            return;
+        }
+
+        d->mana -= chunk;
+        gBloom.manaPaid += chunk;
+    }
+
+    if (gBloom.hold >= BLOOM_HOLD_TIME && gBloom.manaPaid >= BLOOM_MANA_COST)
+    {
+        StartTreeOfLifeBloomGeneration(tolPos);
     }
 }
 
