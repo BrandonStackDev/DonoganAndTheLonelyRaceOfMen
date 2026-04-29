@@ -254,7 +254,7 @@ void InitBloomSystem(Shader shader)
 {
     memset(&gBloom, 0, sizeof(gBloom));
 
-    Mesh mesh = GenMeshSphere(1.0f, 8, 8);
+    Mesh mesh = GenMeshSphere(1.0f, 3, 5);
     gBloom.sphere = LoadModelFromMesh(mesh);
 
     for (int i = 0; i < BLOOM_SHADE_COUNT; i++)
@@ -303,10 +303,10 @@ void UpdateTreeOfLifeBloomGeneration(void)
     bool isBlue = shade >= 20 && shade <= 22;
     bool isFlower = shade >= 23;
 
-    int perTree = isGreen ? 90 : isBlue ? 22 : 34;
+    int perTree = isGreen ? 28 : isBlue ? 5 : 8;
 
-    float minBand = isGreen ? 1.35f : 2.15f;
-    float maxBand = isGreen ? 9.25f : 9.75f;
+    float minBand = isGreen ? 2.8f : 3.5f;
+    float maxBand = isGreen ? 11.5f : 12.5f;
 
     for (int i = 0; i < numCloseProps; i++)
     {
@@ -315,20 +315,41 @@ void UpdateTreeOfLifeBloomGeneration(void)
         if (!Bloom_IsDeadTree(g->type)) continue;
         if (Vector3Distance(g->pos, gBloom.genTolPos) > BLOOM_RADIUS) continue;
 
+        float treeScale = g->scale;
+
+        // 16-ish = normal tree.
+        // bigger trees get BIGGER bloom balls.
+        float sizeMul = Clamp(treeScale / 16.0f, 0.75f, 3.5f);
+        float countMul = Clamp(treeScale / 16.0f, 0.35f, 1.25f);
+
+        int treePerTree = (int)((float)perTree * countMul);
+        if (treePerTree < 4) treePerTree = 4;
+
         int madeForThisTree = 0;
 
-        for (int tries = 0; tries < perTree * 4 && madeForThisTree < perTree; tries++)
+        for (int tries = 0; tries < treePerTree * 4 && madeForThisTree < treePerTree; tries++)
         {
             Vector3 p;
             if (!FindPropVertexInBand(g, minBand, maxBand, &p)) continue;
 
-            p.x += GetRandomValue(-38, 38) * 0.01f;
-            p.y += GetRandomValue(-8, 55) * 0.01f;
-            p.z += GetRandomValue(-38, 38) * 0.01f;
+            float treeScale = g->scale;
+
+            float sizeMul = Clamp(treeScale / 10.0f, 1.0f, 7.5f);
+            float spreadXZ = Clamp(treeScale * 0.22f, 1.2f, 6.5f);
+            float spreadY = Clamp(treeScale * 0.12f, 0.8f, 4.0f);
+
+            float a = GetRandomValue(0, 359) * DEG2RAD;
+            float rr = sqrtf(GetRandomValue(0, 10000) / 10000.0f) * spreadXZ;
+
+            p.x += cosf(a) * rr;
+            p.z += sinf(a) * rr;
+            p.y += GetRandomValue(0, 10000) / 10000.0f * spreadY;
 
             float scale = isGreen
-                ? GetRandomValue(25, 48) * 0.01f
-                : GetRandomValue(17, 34) * 0.01f;
+                ? GetRandomValue(65, 140) * 0.01f
+                : GetRandomValue(35, 80) * 0.01f;
+
+            scale *= sizeMul;
 
             Bloom_AddInstance(shade, p, scale);
             madeForThisTree++;
