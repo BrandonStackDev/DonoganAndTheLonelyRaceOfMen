@@ -440,7 +440,7 @@ void InitHomes() {
     Scenes[SCENE_HOME_COTTAGE_03] = (Scene){ ////cottage near middle of map
         .type = SCENE_HOME_COTTAGE_03,
         .modelType = MODEL_HOME_COTTAGE,
-        .pos = (Vector3){ 2500.96, 345, 2418.06},
+        .pos = (Vector3){ 2500.96, 347, 2418.06},
         .yaw = PI, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 30.0f,
         .origBox = (BoundingBox){0},
