@@ -26,6 +26,7 @@ typedef enum {
     MODEL_TREE_HOUSE,
     MODEL_HOME_COTTAGE,
     MODEL_HOME_COZY,
+    MODEL_HOME_OLE_HOOSE,
     MODEL_HOME_TOTAL_COUNT
 } Model_Home_Type;
 
@@ -58,7 +59,10 @@ typedef enum {
     SCENE_TREE_HOUSE_02,
     SCENE_HOME_COTTAGE_01,
     SCENE_HOME_COTTAGE_02,
+    SCENE_HOME_COTTAGE_03,
     SCENE_HOME_COZY_01,
+    SCENE_HOME_COZY_02,
+    SCENE_HOME_OLE_01,
     SCENE_TOTAL_COUNT
 } Scene_Type;
 
@@ -185,6 +189,9 @@ void InitHomes() {
     Model home011 = LoadModel("models/cozy.obj");
     home011.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/cozy.png");
     HomeModels[MODEL_HOME_COZY] = home011;
+    Model home012 = LoadModel("models/oleHoose.obj");
+    home012.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/oleHoose.png");
+    HomeModels[MODEL_HOME_OLE_HOOSE] = home012;
 
     // Populate the scene list (the important part)
     Scenes[SCENE_HOME_CABIN_01] = (Scene){ //where the truck is
@@ -424,8 +431,17 @@ void InitHomes() {
     Scenes[SCENE_HOME_COTTAGE_02] = (Scene){ ////cottage near middle of map
         .type = SCENE_HOME_COTTAGE_02,
         .modelType = MODEL_HOME_COTTAGE,
-        .pos = (Vector3){ -600.53, 810.34, 2838.54},
+        .pos = (Vector3){ -600.53, 810.34, 2838.54 },
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 30.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_COTTAGE_03] = (Scene){ ////cottage near middle of map
+        .type = SCENE_HOME_COTTAGE_03,
+        .modelType = MODEL_HOME_COTTAGE,
+        .pos = (Vector3){ 2500.96, 345, 2418.06},
+        .yaw = PI, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 30.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
@@ -433,9 +449,27 @@ void InitHomes() {
     Scenes[SCENE_HOME_COZY_01] = (Scene){ ////abby's?
         .type = SCENE_HOME_COZY_01,
         .modelType = MODEL_HOME_COZY,
-        .pos = (Vector3){ 2267.08, 345, -3420.73},
+        .pos = (Vector3){ 2267.08, 345, -3420.73 },
         .yaw = PI, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 24.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_COZY_02] = (Scene){ ////abby's?
+        .type = SCENE_HOME_COZY_02,
+        .modelType = MODEL_HOME_COZY,
+        .pos = (Vector3){ 2622.03, 345, 2466.80 },
+        .yaw = PI / 2.0f, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 24.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_HOME_OLE_01] = (Scene){ ////near store 1
+        .type = SCENE_HOME_OLE_01,
+        .modelType = MODEL_HOME_OLE_HOOSE,
+        .pos = (Vector3){ 2550, 354, 2280 },
+        .yaw = PI, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 32.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
