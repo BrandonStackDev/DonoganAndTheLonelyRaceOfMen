@@ -1,16 +1,16 @@
 DON_SAVE_V1
-don_pos = -355.619 545.882 -336.584
+don_pos = 2523.239 480.762 1449.456
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
-don_health = 108
-don_mana   = 108
-don_starthealth = 108
-don_startmana   = 108
-don_level  = 24
-don_xp     = 2979
-don_money     = 52.750000
-don_hover  = 0
+don_health = 103
+don_mana   = 98
+don_starthealth = 104
+don_startmana   = 104
+don_level  = 10
+don_xp     = 1170
+don_money     = 100.849899
+don_hover  = 1
 don_wiz  = 1
 invY = 0
 invX = 0
@@ -20,22 +20,22 @@ difficulty = 1
 --FIREPLACES-BEGIN--
 FIRE[0] = 1
 FIRE[1] = 1
-FIRE[2] = 1
+FIRE[2] = 0
 FIRE[3] = 0
-FIRE[4] = 1
+FIRE[4] = 0
 FIRE[5] = 0
 FIRE[6] = 0
-FIRE[7] = 1
+FIRE[7] = 0
 --FIREPLACES-END--
 --MACHINES-BEGIN--
-MACHINES[0] = 1
-MACHINES[1] = 0
+MACHINES[0] = 0
+MACHINES[1] = 1
 MACHINES[2] = 0
 MACHINES[3] = 0
 MACHINES[4] = 0
 MACHINES[5] = 1
 MACHINES[6] = 1
-MACHINES[7] = 1
+MACHINES[7] = 0
 MACHINES[8] = 1
 MACHINES[9] = 0
 MACHINES[10] = 0
@@ -51,37 +51,37 @@ MISSION[5] = 0
 MISSION[6] = 0
 MISSION[7] = 0
 MISSION[8] = 1
-MISSION[9] = 1
+MISSION[9] = 0
 MISSION[10] = 1
-MISSION[11] = 1
+MISSION[11] = 0
 --MISSIONS-END--
 --ITEMS-BEGIN--
 ITEM[0] = 0
-ITEM[1] = 1
+ITEM[1] = 0
 ITEM[2] = 0
 ITEM[3] = 0
-ITEM[4] = 1
+ITEM[4] = 0
 ITEM[5] = 0
 ITEM[6] = 0
 ITEM[7] = 0
 ITEM[8] = 0
-ITEM[9] = 1
+ITEM[9] = 0
 ITEM[10] = 0
 ITEM[11] = 0
-ITEM[12] = 1
+ITEM[12] = 0
 ITEM[13] = 0
 ITEM[14] = 0
 ITEM[15] = 0
 --ITEMS-END--
 --INV-BEGIN--
-INV[0] = 10
-INV[1] = 10
-INV[2] = 9
-INV[3] = 6
-INV[4] = 22
-INV[5] = 20
-INV[6] = 2
-INV[7] = 2
+INV[0] = 0
+INV[1] = 1
+INV[2] = 0
+INV[3] = 14
+INV[4] = 0
+INV[5] = 0
+INV[6] = 0
+INV[7] = 0
 --INV-END--
 --MAPS-BEGIN--
 MAP[0] = 1 0
@@ -89,6 +89,6 @@ MAP[1] = 1 0
 MAP[2] = 1 0
 MAP[3] = 0 0
 MAP[4] = 1 0
-MAP[5] = 0 0
-MAP[6] = 1 0
+MAP[5] = 1 0
+MAP[6] = 0 0
 --MAPS-END--
