@@ -1468,35 +1468,6 @@ int main(void) {
                     prevTalkTri = gpad.btnTriangle;
                     prevTalkX = gpad.btnCross;
                 }
-                else if (!don.isTalking && HasTimerElapsed(&don.talkStartTimer))
-                { //stores
-                    NPC* clerk = NULL;
-
-                    for (int i = 0; i < NPC_TOTAL; i++)
-                    {
-                        if (npcs[i].modelType != NPC_MODEL_TYPE_CLERK) { continue; }
-
-                        if (Vector3Distance(npcs[i].pos, don.pos) < 12.0f)
-                        {
-                            clerk = &npcs[i];
-                            break;
-                        }
-                    }
-
-                    if (clerk)
-                    {
-                        don.isTalking = true;
-                        don.who = TALK_TYPE_STORE;
-
-                        storeSel = INV_HEALTH;
-
-                        StartTimer(&don.talkStartTimer);
-                        Talk_Reset(don.who);
-
-                        prevTalkTri = gpad.btnTriangle;
-                        prevTalkX = gpad.btnCross;
-                    }
-                }
                 else if (Vector3Distance(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 12.00f
                     && !don.isTalking) //check !isTalking because we want to make sure we hit the exit talk routine if don is talking
                 {
@@ -1629,6 +1600,35 @@ int main(void) {
                     prevTalkTri = gpad.btnTriangle;
                     prevTalkX = gpad.btnCross;
                     StartTimer(&don.talkStartTimer);
+                }
+                if (!don.isTalking && HasTimerElapsed(&don.talkStartTimer))
+                { //stores
+                    NPC* clerk = NULL;
+
+                    for (int i = 0; i < NPC_TOTAL; i++)
+                    {
+                        if (npcs[i].modelType != NPC_MODEL_TYPE_CLERK) { continue; }
+
+                        if (Vector3Distance(npcs[i].pos, don.pos) < 12.0f)
+                        {
+                            clerk = &npcs[i];
+                            break;
+                        }
+                    }
+
+                    if (clerk)
+                    {
+                        don.isTalking = true;
+                        don.who = TALK_TYPE_STORE;
+
+                        storeSel = INV_HEALTH;
+
+                        StartTimer(&don.talkStartTimer);
+                        Talk_Reset(don.who);
+
+                        prevTalkTri = gpad.btnTriangle;
+                        prevTalkX = gpad.btnCross;
+                    }
                 }
                 //fire places/pits
                 for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++)
