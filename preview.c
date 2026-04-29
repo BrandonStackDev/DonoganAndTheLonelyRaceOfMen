@@ -996,6 +996,13 @@ int main(void) {
                     4.0f, 1.2f,
                     2.8f, 3.6f
                 );
+
+                Corn_AddFieldBox(
+                    (Vector3){2137.45, 338.82, 4824.10},
+                    200, 200,
+                    4.0f, 1.2f,
+                    2.8f, 3.6f
+                );
                 madeCorn = true;
             }
         }
