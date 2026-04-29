@@ -10,6 +10,7 @@
 
 typedef enum {
     TALK_TYPE_TOL,
+    TALK_TYPE_TOL_2,
     TALK_TYPE_ATREYU,
     TALK_TYPE_ATREYU_BOW,
     TALK_TYPE_DARREL,
@@ -126,10 +127,22 @@ static TalkData talkData[] = {
         "Tree of Life",
         {
             "I am the Tree of Life, old and wise.",
-            "The books you seek are scattered across this lonely world.",
-            "Some books heal the soul. Some books darken it."
+            "But this land tires me. I am so old. I cant keep the trees as pretty as I used to.",
+            "Could you try to hold your square spell for a while? Maybe you can help me bloom."
         },
         3,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_TOL_2,
+        "Tree of Life",
+        {
+            "Thank you Donogan. I have bloomed, and now ... it is my time to die, to become mulch, in the soil...",
+            "[Donogan] No! Wait! I...",
+            "Im just kidding. I totally had you going. Im fine. Everything is wonderful.",
+            "If you need to find him, Atreyu used to meditate on a mountain top kind of near his old village."
+        },
+        4,
         TALK_OPTION_OK
     },
     {
@@ -209,11 +222,13 @@ static TalkData talkData[] = {
             "Ah, Donogan. The world is older than your map.",
             "Find the good books. Beware the shadow books.",
             "[Donogan] Why, what are they for?",
-            "Donogan, you are the Queso Cataracts!",
+            "Because Donogan, you are the Queso Cataracts!",
             "[Donogan] You want me to shove cheese into my eyeballs?!",
-            "No!, I mean ... No, just find the maps and the books. And Hover mode for the Truck is near the castle."
+            "No!, I mean ... No, just find the maps and the books. You'll want to use X to jump, and O to roll.",
+            "L3 lets you run and jump higher. Left joystick is mostly to move and Right joystick is for the camera.",
+            "Use square for your freeze attack spell and sometimes to cast spells. Also... Hover mode for the Truck is near the castle."
         },
-        6,
+        8,
         TALK_OPTION_OK
     },
     {

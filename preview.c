@@ -1303,6 +1303,10 @@ int main(void) {
                 {
                     don.isTalking = true;
                     don.who = TALK_TYPE_TOL;
+                    if (gBloom.bloomed)
+                    {
+                        don.who = TALK_TYPE_TOL_2;
+                    }
                     StartTimer(&don.talkStartTimer);
                     Talk_Reset(don.who);
                     if (!missions[MISSION_FIND_TOL].complete)
