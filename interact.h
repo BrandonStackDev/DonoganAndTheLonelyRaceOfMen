@@ -80,6 +80,7 @@ typedef enum {
     FIREPIT_BARN,
     FIREPIT_YETI_MT,
     FIREPIT_RAP,
+    FIREPIT_WRENVILLE,
     FIREPIT_TOTAL_COUNT
 } FirepitLocation;
 

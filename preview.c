@@ -796,6 +796,9 @@ int main(void) {
     fires[FIREPIT_RAP].location = FIREPIT_RAP;
     fires[FIREPIT_RAP].pos = (Vector3){ 788.23, 877.18, -1849.37 };
     fires[FIREPIT_RAP].name = "Reach Around Point";
+    fires[FIREPIT_WRENVILLE].location = FIREPIT_WRENVILLE;
+    fires[FIREPIT_WRENVILLE].pos = (Vector3){ -2624.41, 406.59, -2408.02 };
+    fires[FIREPIT_WRENVILLE].name = "Town of Wrenville";
     // INIT INTERACTIVE POINTS OF INTEREST
     InteractivePoints[POI_TYPE_TRUCK] = (POI){ POI_TYPE_TRUCK , &truckPosition};
     InteractivePoints[POI_TYPE_TREE_OF_LIFE] = (POI){ POI_TYPE_TREE_OF_LIFE , &tolPos };
