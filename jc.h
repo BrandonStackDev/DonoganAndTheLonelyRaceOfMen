@@ -475,7 +475,7 @@ void InitHomes() {
     };
     for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
     {
-        BoundingBox original = GetModelBoundingBox(HomeModels[Scenes[i].modelType]); // ScaleBoundingBox(_, Scenes[i].scale);
+        BoundingBox original = GetModelBoundingBox(HomeModels[Scenes[i].modelType]);
         Scenes[i].origBox = RotateScaleTranslateBoundingBoxY(original, (Vector3) {0,0,0}, Scenes[i].scale, Scenes[i].yaw);
         Scenes[i].box = UpdateBoundingBox(Scenes[i].origBox, Scenes[i].pos);
     }
