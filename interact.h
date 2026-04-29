@@ -150,10 +150,15 @@ static TalkData talkData[] = {
         "Atreyu",
         {
             "(uhg!) Hello, I am Atreyu.",
-            "Please be quiet. I am trying to meditate.",
-            "The wind carries old names through these mountains."
+            "Please... keep your voice low. I am trying to listen.",
+            "Not to you. To everything else.",
+            "The wind, the grass... even the silence between them.",
+            "People think the world is quiet when they stop talking.",
+            "But it is only then that it finally begins to speak.",
+            "Out here, nothing is alone. Not the trees, not the sky... not even us.",
+            "If we learn to listen, we might remember how to belong again."
         },
-        3,
+        8,
         TALK_OPTION_OK
     },
     {
