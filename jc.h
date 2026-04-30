@@ -643,7 +643,7 @@ static void WaterWheel_Draw(Donogan* d)
 {
     for (int i = 0; i < WATER_WHEEL_COUNT; i++)
     {
-        if (Vector3Distance(d->pos, gWaterWheels[i].pos) > 300) { continue; }
+        if (Vector3Distance(d->pos, gWaterWheels[i].pos) > 888) { continue; }
         WaterWheel_DrawOne(&gWaterWheels[i]);
     }
 }
