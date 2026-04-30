@@ -32,6 +32,7 @@
 #include "frustum.h"
 #include "shark.h"
 #include "corn.h"
+#include "garden.h"
 
 //fairly standard things
 #include <float.h>
@@ -299,7 +300,36 @@ static void Store_BuySelected(Donogan* d)
 
     int price = Store_GetPrice(it->type);
 
-    if (d->money >= price)
+    
+    if (it->type == INV_BERRY) // SELL BERRY
+    {
+        if (it->count > 0)
+        {
+            it->count--;
+            d->money += price;
+            PlaySoundVolContinuousAllowed(menuSaveOrLoad);
+        }
+        else
+        {
+            toast = "Not enough berries.";
+            StartTimer(&toastTimer);
+        }
+    }
+    else if (it->type == INV_APPLE)  // SELL APPLE
+    {
+        if (it->count > 0)
+        {
+            it->count--;
+            d->money += price;
+            PlaySoundVolContinuousAllowed(menuSaveOrLoad);
+        }
+        else
+        {
+            toast = "Not enough apples.";
+            StartTimer(&toastTimer);
+        }
+    }
+    else if (d->money >= price)
     {
         d->money -= price;
         it->count++;
@@ -657,6 +687,7 @@ int main(void) {
     InitBadGuys(ghostShader);
     //tol bloom
     InitBloomSystem(instancingLightShader);
+    bool genesis = false;
     // --- Firepit shader + model ---
     Shader fireShader = LoadShader("shaders/120/fire.vs", "shaders/120/fire.fs");
     fireShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(fireShader, "mvp");
@@ -904,6 +935,8 @@ int main(void) {
         //maps
         if (onLoad)
         {
+            //garden setup
+            if (!genesis) { Garden_Init(); genesis = true; }
             //maps?
             int foundOn = -1;
             for (int i = 0; i < MAP_TOTAL_COUNT; i++) {
@@ -3530,6 +3563,7 @@ int main(void) {
         don.drawColor = LerpColor(don.drawColor,!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
+        Garden_Update(&don, gpad.btnSquare);
         // safety: if Donny is floating after truck/warp/load, force normal falling
         if (onLoad && donnyMode && !vehicleMode && !don.inWater && !don.gluedToPlatform && !don.inHome)
         { //todo: this is to handle bugs with floating at a certain hieght like when exiting the truck, does it work tho?
@@ -3833,6 +3867,7 @@ int main(void) {
             }
             if (onLoad)
             {
+                Garden_Draw(&don, frustum);
                 if (Vector3Distance(tolPos, don.pos) < 2048)
                 {
                     DrawTreeOfLifeBloom();
@@ -4607,7 +4642,8 @@ int main(void) {
                     Color c = (i == storeSel) ? RED : BLACK;
 
                     DrawText(
-                        TextFormat("%s  $%d  owned:%d",
+                        TextFormat("%s%s  $%d  owned:%d",
+                            inventory[i].type==INV_APPLE||inventory[i].type==INV_BERRY?"(SELL) ":"",
                             inventory[i].name,
                             Store_GetPrice(inventory[i].type),
                             inventory[i].count),
