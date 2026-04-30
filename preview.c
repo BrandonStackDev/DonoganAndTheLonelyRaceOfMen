@@ -656,7 +656,7 @@ int main(void) {
     //bg
     InitBadGuys(ghostShader);
     //tol bloom
-    InitBloomSystem(grassInstancingLightShader);
+    InitBloomSystem(instancingLightShader);
     // --- Firepit shader + model ---
     Shader fireShader = LoadShader("shaders/120/fire.vs", "shaders/120/fire.fs");
     fireShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(fireShader, "mvp");

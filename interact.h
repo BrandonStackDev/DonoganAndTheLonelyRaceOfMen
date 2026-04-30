@@ -130,7 +130,7 @@ static TalkData talkData[] = {
         {
             "I am the Tree of Life, old and wise.",
             "But this land tires me. I am so old. I cant keep the trees as pretty as I used to.",
-            "Could you try to hold your square spell for a while? Maybe you can help me bloom."
+            "Could you try to hold your square spell for a while? Maybe you can help the dead trees grow again?"
         },
         3,
         TALK_OPTION_OK
