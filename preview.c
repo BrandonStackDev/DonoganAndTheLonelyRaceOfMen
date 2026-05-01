@@ -423,6 +423,7 @@ static TALK_TYPE Galadriel_GetTalkType(Donogan* d)
     return TALK_TYPE_GAL_1;
 }
 
+char galToast[128];
 static void Galadriel_GiveBooks(Donogan* d)
 {
     if (!d) return;
@@ -452,9 +453,8 @@ static void Galadriel_GiveBooks(Donogan* d)
     d->galBooksGiven += giveCount;
     d->money += (float)giveCount * GALADRIEL_BOOK_PRICE;
 
-    char galToast[128];
     snprintf(galToast, sizeof(galToast), "Sold %d good book%s to Galadriel.", giveCount, giveCount == 1 ? "" : "s");
-    toast = galToast; // WARNING: local buffer dies after function
+    toast = galToast;
     StartTimer(&toastTimer);
     PlaySoundVolContinuousAllowed(menuSaveOrLoad);
 
@@ -824,6 +824,10 @@ int main(void) {
     Texture wiz_head = LoadMyTexture("textures/wiz_head.png");
     Texture abby_head = LoadMyTexture("textures/abby_head.png");
     Texture clerk_head = LoadMyTexture("textures/clerk_head.png");
+    Texture gal_head = LoadMyTexture("textures/gal_head.png");
+    Texture roger_head = LoadMyTexture("textures/roger_head.png");
+    Texture geoff_head = LoadMyTexture("textures/geoff_head.png");
+    Texture mary_head = LoadMyTexture("textures/mary_head.png");
     //truck
     InitTruck();
     //more lb stuff
@@ -4738,6 +4742,18 @@ int main(void) {
             }
             else if (don.who == TALK_TYPE_STORE) {
                 talkee = clerk_head;
+            }
+            else if (don.who == TALK_TYPE_GAL_1 || don.who == TALK_TYPE_GAL_2 || don.who == TALK_TYPE_GAL_3) {
+                talkee = gal_head;
+            }
+            else if (don.who == TALK_TYPE_ROGER) {
+                talkee = roger_head;
+            }
+            else if (don.who == TALK_TYPE_GEOFF) {
+                talkee = geoff_head;
+            }
+            else if (don.who == TALK_TYPE_MARY) {
+                talkee = mary_head;
             }
 
             Rectangle src = { 0, 0, talkee.width, talkee.height };
