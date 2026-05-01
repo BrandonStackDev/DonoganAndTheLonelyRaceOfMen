@@ -253,6 +253,32 @@ static BoundingBox MakeCottageDoorBox(Vector3 center)
         { center.x + 10.0f, center.y + 8.0f, center.z + 1.67f }
     };
 }
+static inline bool IsInCaveMode(Donogan* d)
+{
+    if (!d) return false;
+
+    // Special trigger boxes, like Cinder Spire entrance/drop zone
+    for (int i = 0; i < gEnvBoundingBoxCount; i++)
+    {
+        if (gEnvBoundingBoxes[i].disable) continue;
+        if (gEnvBoundingBoxes[i].type != EBBT_CAVE_START) continue;
+
+        if (CheckCollisionBoxes(d->box, gEnvBoundingBoxes[i].box))
+        {
+            return true;
+        }
+    }
+
+    // Cinder Spire itself counts as cave mode for now.
+    // Later you can add SCENE_CAVE_01 here too.
+    /*if (CheckCollisionBoxes(d->box, Scenes[SCENE_CINDER].box))
+    {
+        return true;
+    }*/
+
+    return false;
+}
+
 static int storeSel = 0;
 
 static inline bool Store_CanSell(InventoryType type)
@@ -489,6 +515,8 @@ int main(void) {
     bool displayBoxes = false;
     bool displayLod = false;
     bool dropped_firepits = false;
+    bool caveMode = false;
+    bool wasCaveMode = false;
     LightningBug *bugs;
     Star *stars;
     bool vehicleMode = false;
@@ -2606,7 +2634,7 @@ int main(void) {
                             don.groundY = groundY;
                         }
                     }
-                    else
+                    else if(!caveMode)
                     {
                         don.groundY = groundY;
                         alreadyHandledY = true;
@@ -2614,6 +2642,14 @@ int main(void) {
                         Vector3 nrm = GetTerrainNormalFromMeshXZ(don.pos.x, don.pos.z);
                         if (nrm.x == 0 && nrm.y == 0 && nrm.z == 0) nrm = (Vector3){ 0,1,0 }; // fallback
                         don.groundNormal = nrm;
+                    }
+                    else if (caveMode)
+                    {
+                        // Cave mode: do not let terrain force Donogan back up.
+                        // Keep gravity/freefall working by placing fake ground far below him.
+                        don.groundY = don.pos.y - 500.0f;
+                        alreadyHandledY = false;
+                        don.groundNormal = (Vector3){ 0, 1, 0 };
                     }
                 }
             }
@@ -3711,6 +3747,18 @@ int main(void) {
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         Garden_Update(&don, gpad.btnSquare);
+        wasCaveMode = caveMode;
+        caveMode = donnyMode && IsInCaveMode(&don);
+
+        if (caveMode && !wasCaveMode)
+        {
+            TraceLog(LOG_INFO, "Entering cave mode");
+        }
+
+        if (!caveMode && wasCaveMode)
+        {
+            TraceLog(LOG_INFO, "Leaving cave mode");
+        }
         // safety: if Donny is floating after truck/warp/load, force normal falling
         if (onLoad && donnyMode && !vehicleMode && !don.inWater && !don.gluedToPlatform && !don.inHome)
         { //todo: this is to handle bugs with floating at a certain hieght like when exiting the truck, does it work tho?
@@ -4181,7 +4229,7 @@ int main(void) {
                 }
             }
             //bg
-            if (onLoad)
+            if (onLoad && !caveMode)
             {
                 for (int i = 0; i < act_bg_count; i++)
                 {
@@ -4195,7 +4243,7 @@ int main(void) {
                 }
             }
             //whales and fish
-            if (onLoad)
+            if (onLoad && !caveMode)
             {
                 //shark
                 Shark_Draw(&shark, &don);
@@ -4259,7 +4307,7 @@ int main(void) {
                 }
                 // ============================================================================
             }
-            if (onLoad)
+            if (onLoad && !caveMode)
             {
                 DrawMesh(truck.meshes[0], truckMaterial, rotationTruck);
                 for (int i = 0; i < 4; i++)
@@ -4328,7 +4376,7 @@ int main(void) {
                 }
             }
             //lightning bugs &&&&&&&&&
-            if(!dayTime)
+            if(!dayTime && !caveMode)
             {
                 if(onLoad) //fire flies
                 {
@@ -4400,147 +4448,152 @@ int main(void) {
                     //** ** ** ** ** **** ** ** ** ** **** ** ** ** ** **** ** ** ** ** **** ** ** ** ** **
                 }
             }
-            //TraceLog(LOG_INFO, "-------TILES DRAWING-----------");
-            for(int te = 0; te < foundTileCount; te++)
+            if (!caveMode)
             {
-                if (!wasTilesDocumented) { break; }
-                if(foundTiles[te].state!=TS_IN_GPU){continue;}
-                //TraceLog(LOG_INFO, "TEST - Maybe - Drawing tile model: chunk %02d_%02d, tile %02d_%02d", foundTiles[te].cx, foundTiles[te].cy, foundTiles[te].tx, foundTiles[te].ty);
-                if(chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64 //this one first because its quick, although it might get removed later
-                    && (!IsTileActive(foundTiles[te].cx,foundTiles[te].cy,foundTiles[te].tx,foundTiles[te].ty, gx, gy) || USE_TILES_ONLY) 
-                    && IsBoxInFrustum(foundTiles[te].box , frustumChunk8))
+                //TraceLog(LOG_INFO, "-------TILES DRAWING-----------");
+                for (int te = 0; te < foundTileCount; te++)
                 {
-                    BeginShaderMode(foundTiles[te].model.materials[0].shader);
-                    SetMaterialTexture(&foundTiles[te].model.materials[0], MATERIAL_MAP_DIFFUSE, foundTiles[te].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture);//added this because I was having tiles draw with the wrong texture
-                    if(reportOn){tileBcCount++;tileTriCount+=foundTiles[te].model.meshes[0].triangleCount;};
-                    DrawModel(foundTiles[te].model, (Vector3){0,0,0}, 1.0f, lightTileColor);
-                    if(displayBoxes){DrawBoundingBox(foundTiles[te].box,RED);}
-                    EndShaderMode();
-                }
-            }
-            //TraceLog(LOG_INFO, "-------END TILES DRAWING END-----------");
-            for (int cy = 0; cy < CHUNK_COUNT; cy++) {
-                for (int cx = 0; cx < CHUNK_COUNT; cx++) {
-                    if(chunks[cx][cy].isLoaded)
+                    if (!wasTilesDocumented) { break; }
+                    if (foundTiles[te].state != TS_IN_GPU) { continue; }
+                    //TraceLog(LOG_INFO, "TEST - Maybe - Drawing tile model: chunk %02d_%02d, tile %02d_%02d", foundTiles[te].cx, foundTiles[te].cy, foundTiles[te].tx, foundTiles[te].ty);
+                    if (chunks[foundTiles[te].cx][foundTiles[te].cy].lod == LOD_64 //this one first because its quick, although it might get removed later
+                        && (!IsTileActive(foundTiles[te].cx, foundTiles[te].cy, foundTiles[te].tx, foundTiles[te].ty, gx, gy) || USE_TILES_ONLY)
+                        && IsBoxInFrustum(foundTiles[te].box, frustumChunk8))
                     {
-                        loadCnt++;
-                        //TraceLog(LOG_INFO, "drawing chunk: %d,%d", cx, cy);
-                        if(chunks[cx][cy].lod == LOD_64) 
-                        {
-                            chunkBcCount++;
-                            chunkTriCount+=chunks[cx][cy].model.meshes[0].triangleCount;
-                            Matrix mvp = MatrixMultiply(proj, MatrixMultiply(view, chunks[cx][cy].model.transform));
-                            SetShaderValueMatrix(heightShaderLight, mvpLocLight, mvp);
-                            //SetShaderValueMatrix(heightShaderLight, modelLocLight, MatrixIdentity());
-                            Matrix chunkModelMatrix = MatrixTranslate(chunks[cx][cy].position.x, chunks[cx][cy].position.y, chunks[cx][cy].position.z);
-                            SetShaderValueMatrix(heightShaderLight, modelLocLight, chunkModelMatrix);
-                            Vector3 camPos = camera.position;
-                            SetShaderValue(heightShaderLight, GetShaderLocation(heightShaderLight, "cameraPosition"), &camPos, SHADER_UNIFORM_VEC3);
-                            BeginShaderMode(heightShaderLight);
-                            DrawModel(chunks[cx][cy].model, chunks[cx][cy].position, MAP_SCALE, WHITE);
-                            EndShaderMode();
-                            if(onLoad)//only once we have fully loaded everything
-                            {
-                                if(USE_GPU_INSTANCING) //GPU INSTANCING FOR CLOSE STATIC PROPS
-                                {
-                                    int counter[MODEL_TOTAL_COUNT] = {0,0};
-                                    //- loop through all of the static props that are in the active active tile zone
-                                    for(int pInd = 0; pInd<chunks[cx][cy].treeCount; pInd++)
-                                    {
-                                        //culling
-                                        if((!IsTreeInActiveTile(chunks[cx][cy].props[pInd].pos, gx, gy) || USE_TILES_ONLY)
-                                            || !IsBoxInFrustum(chunks[cx][cy].props[pInd].outerBox, frustum)){continue;}
-                                        //get ready to draw
-                                        StaticGameObject *obj = &chunks[cx][cy].props[pInd];
-                                        Matrix scaleMatrix = MatrixScale(obj->scale, obj->scale, obj->scale);
-                                        Matrix pitchMatrix = MatrixRotateX(obj->pitch);
-                                        Matrix yawMatrix   = MatrixRotateY(obj->yaw);
-                                        Matrix rollMatrix  = MatrixRotateZ(obj->roll);
-                                        Matrix rotationMatrix = MatrixMultiply(MatrixMultiply(pitchMatrix, yawMatrix), rollMatrix);
-                                        Matrix transform = MatrixMultiply(scaleMatrix, rotationMatrix);
-                                        transform = MatrixMultiply(transform, MatrixTranslate(obj->pos.x, obj->pos.y, obj->pos.z));
-                                        HighFiTransforms[chunks[cx][cy].props[pInd].type][counter[chunks[cx][cy].props[pInd].type]] = transform;//well this is kind of insane
-                                        counter[chunks[cx][cy].props[pInd].type]++;
-                                        if(displayBoxes)
-                                        {
-                                            DrawBoundingBox(chunks[cx][cy].props[pInd].outerBox,BLUE);
-                                            DrawBoundingBox(chunks[cx][cy].props[pInd].box, PINK);
-                                        }
-                                        if(reportOn){treeTriCount+=HighFiStaticObjectModels[chunks[cx][cy].props[pInd].type].meshes[0].triangleCount;}
-                                    }
-                                    //draw
-                                    for(int mt=0; mt<MODEL_TOTAL_COUNT; mt++)
-                                    {
-                                        BeginShaderMode(HighFiStaticObjectMaterials[mt].shader);
-                                        //TraceLog(LOG_INFO, "Model %s Texture ID: %d", GetModelName(mt), HighFiStaticObjectModels[mt].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture.id);
-                                        treeBcCount++;
-                                        DrawMeshInstanced(
-                                            HighFiStaticObjectModels[mt].meshes[0], 
-                                            HighFiStaticObjectMaterials[mt], 
-                                            HighFiTransforms[mt], 
-                                            counter[mt]
-                                        );//windows
-                                        EndShaderMode();
-                                    }
-                                }
-                            }
-                        }
-                        else if(chunks[cx][cy].lod == LOD_32 && IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8)) {
-                            chunkBcCount++;
-                            chunkTriCount+=chunks[cx][cy].model32.meshes[0].triangleCount;
-                            Matrix mvp = MatrixMultiply(proj, MatrixMultiply(view, chunks[cx][cy].model.transform));
-                            SetShaderValueMatrix(heightShaderLight, mvpLocLight, mvp);
-                            BeginShaderMode(heightShaderLight);
-                            DrawModel(chunks[cx][cy].model32, chunks[cx][cy].position, MAP_SCALE, displayLod?BLUE:WHITE);
-                            EndShaderMode();
-                        }
-                        else if(chunks[cx][cy].lod == LOD_16 && IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8) && cx!=0 && cx!=15 && cy!=0 && cy!=15) {
-                            chunkBcCount++;
-                            chunkTriCount+=chunks[cx][cy].model16.meshes[0].triangleCount;
-                            DrawModel(chunks[cx][cy].model16, chunks[cx][cy].position, MAP_SCALE, displayLod?PURPLE:chunk_16_color);
-                        }
-                        else if((IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8) || !onLoad) && cx != 0 && cx != 15 && cy != 0 && cy != 15) {
-                            chunkBcCount++;
-                            chunkTriCount+=chunks[cx][cy].model8.meshes[0].triangleCount;
-                            DrawModel(chunks[cx][cy].model8, chunks[cx][cy].position, MAP_SCALE, displayLod?RED:chunk_08_color);
-                        }
-                        if(displayBoxes){DrawBoundingBox(chunks[cx][cy].box,YELLOW);}
+                        BeginShaderMode(foundTiles[te].model.materials[0].shader);
+                        SetMaterialTexture(&foundTiles[te].model.materials[0], MATERIAL_MAP_DIFFUSE, foundTiles[te].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture);//added this because I was having tiles draw with the wrong texture
+                        if (reportOn) { tileBcCount++; tileTriCount += foundTiles[te].model.meshes[0].triangleCount; };
+                        DrawModel(foundTiles[te].model, (Vector3) { 0, 0, 0 }, 1.0f, lightTileColor);
+                        if (displayBoxes) { DrawBoundingBox(foundTiles[te].box, RED); }
+                        EndShaderMode();
                     }
-                    else {loadedEem = false;}
                 }
-            }
-            if (onLoad) //handle water last because of its transparency, only draw once loaded
-            {
-                //corn
-                DrawCornFields(don.pos, frustumChunk8, displayBoxes);
-                //water
+                //TraceLog(LOG_INFO, "-------END TILES DRAWING END-----------");
                 for (int cy = 0; cy < CHUNK_COUNT; cy++) {
                     for (int cx = 0; cx < CHUNK_COUNT; cx++) {
                         if (chunks[cx][cy].isLoaded)
                         {
-                            //handle water last
-                            for (int w = 0; w < chunks[cx][cy].waterCount; w++)
+                            loadCnt++;
+                            //TraceLog(LOG_INFO, "drawing chunk: %d,%d", cx, cy);
+                            if (chunks[cx][cy].lod == LOD_64)
                             {
-                                if (chunks[cx][cy].lod!=LOD_64 && !IsBoxInFrustum(chunks[cx][cy].water[w].box, frustumChunk8)) { continue; }
-                                glEnable(GL_POLYGON_OFFSET_FILL);
-                                glPolygonOffset(-1.0f, -1.0f); // Push water slightly forward in Z-buffer
-                                rlDisableBackfaceCulling();
-                                Vector3 cameraPos = camera.position;
-                                Vector3 waterPos = { 0, WATER_Y_OFFSET, 0 };
-                                // Get direction from patch to camera
-                                Vector3 toCamera = Vector3Subtract(waterPos, cameraPos);
-                                // Scale it down to something subtle, like 5%
-                                Vector3 shift = Vector3Scale(toCamera, 0.05f);
-                                // Final draw position is nudged toward the player
-                                Vector3 drawPos = Vector3Add(waterPos, shift);
-                                Vector2 offset = (Vector2){ w * cx, w * cy };
-                                SetShaderValue(waterShader, offsetLoc, &offset, SHADER_UNIFORM_VEC2);
-                                BeginShaderMode(waterShader);
-                                DrawModel(chunks[cx][cy].water[w].model, drawPos, 1.0f, (Color) { 0, 100, 253, 232 });
+                                chunkBcCount++;
+                                chunkTriCount += chunks[cx][cy].model.meshes[0].triangleCount;
+                                Matrix mvp = MatrixMultiply(proj, MatrixMultiply(view, chunks[cx][cy].model.transform));
+                                SetShaderValueMatrix(heightShaderLight, mvpLocLight, mvp);
+                                //SetShaderValueMatrix(heightShaderLight, modelLocLight, MatrixIdentity());
+                                Matrix chunkModelMatrix = MatrixTranslate(chunks[cx][cy].position.x, chunks[cx][cy].position.y, chunks[cx][cy].position.z);
+                                SetShaderValueMatrix(heightShaderLight, modelLocLight, chunkModelMatrix);
+                                Vector3 camPos = camera.position;
+                                SetShaderValue(heightShaderLight, GetShaderLocation(heightShaderLight, "cameraPosition"), &camPos, SHADER_UNIFORM_VEC3);
+                                BeginShaderMode(heightShaderLight);
+                                DrawModel(chunks[cx][cy].model, chunks[cx][cy].position, MAP_SCALE, WHITE);
                                 EndShaderMode();
-                                rlEnableBackfaceCulling();
-                                glDisable(GL_POLYGON_OFFSET_FILL);
-                                if (displayBoxes) { DrawBoundingBox(chunks[cx][cy].water[w].box, VIOLET); }
+                                if (onLoad)//only once we have fully loaded everything
+                                {
+                                    if (USE_GPU_INSTANCING) //GPU INSTANCING FOR CLOSE STATIC PROPS
+                                    {
+                                        int counter[MODEL_TOTAL_COUNT] = { 0,0 };
+                                        //- loop through all of the static props that are in the active active tile zone
+                                        for (int pInd = 0; pInd < chunks[cx][cy].treeCount; pInd++)
+                                        {
+                                            //culling
+                                            if ((!IsTreeInActiveTile(chunks[cx][cy].props[pInd].pos, gx, gy) || USE_TILES_ONLY)
+                                                || !IsBoxInFrustum(chunks[cx][cy].props[pInd].outerBox, frustum)) {
+                                                continue;
+                                            }
+                                            //get ready to draw
+                                            StaticGameObject* obj = &chunks[cx][cy].props[pInd];
+                                            Matrix scaleMatrix = MatrixScale(obj->scale, obj->scale, obj->scale);
+                                            Matrix pitchMatrix = MatrixRotateX(obj->pitch);
+                                            Matrix yawMatrix = MatrixRotateY(obj->yaw);
+                                            Matrix rollMatrix = MatrixRotateZ(obj->roll);
+                                            Matrix rotationMatrix = MatrixMultiply(MatrixMultiply(pitchMatrix, yawMatrix), rollMatrix);
+                                            Matrix transform = MatrixMultiply(scaleMatrix, rotationMatrix);
+                                            transform = MatrixMultiply(transform, MatrixTranslate(obj->pos.x, obj->pos.y, obj->pos.z));
+                                            HighFiTransforms[chunks[cx][cy].props[pInd].type][counter[chunks[cx][cy].props[pInd].type]] = transform;//well this is kind of insane
+                                            counter[chunks[cx][cy].props[pInd].type]++;
+                                            if (displayBoxes)
+                                            {
+                                                DrawBoundingBox(chunks[cx][cy].props[pInd].outerBox, BLUE);
+                                                DrawBoundingBox(chunks[cx][cy].props[pInd].box, PINK);
+                                            }
+                                            if (reportOn) { treeTriCount += HighFiStaticObjectModels[chunks[cx][cy].props[pInd].type].meshes[0].triangleCount; }
+                                        }
+                                        //draw
+                                        for (int mt = 0; mt < MODEL_TOTAL_COUNT; mt++)
+                                        {
+                                            BeginShaderMode(HighFiStaticObjectMaterials[mt].shader);
+                                            //TraceLog(LOG_INFO, "Model %s Texture ID: %d", GetModelName(mt), HighFiStaticObjectModels[mt].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture.id);
+                                            treeBcCount++;
+                                            DrawMeshInstanced(
+                                                HighFiStaticObjectModels[mt].meshes[0],
+                                                HighFiStaticObjectMaterials[mt],
+                                                HighFiTransforms[mt],
+                                                counter[mt]
+                                            );//windows
+                                            EndShaderMode();
+                                        }
+                                    }
+                                }
+                            }
+                            else if (chunks[cx][cy].lod == LOD_32 && IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8)) {
+                                chunkBcCount++;
+                                chunkTriCount += chunks[cx][cy].model32.meshes[0].triangleCount;
+                                Matrix mvp = MatrixMultiply(proj, MatrixMultiply(view, chunks[cx][cy].model.transform));
+                                SetShaderValueMatrix(heightShaderLight, mvpLocLight, mvp);
+                                BeginShaderMode(heightShaderLight);
+                                DrawModel(chunks[cx][cy].model32, chunks[cx][cy].position, MAP_SCALE, displayLod ? BLUE : WHITE);
+                                EndShaderMode();
+                            }
+                            else if (chunks[cx][cy].lod == LOD_16 && IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8) && cx != 0 && cx != 15 && cy != 0 && cy != 15) {
+                                chunkBcCount++;
+                                chunkTriCount += chunks[cx][cy].model16.meshes[0].triangleCount;
+                                DrawModel(chunks[cx][cy].model16, chunks[cx][cy].position, MAP_SCALE, displayLod ? PURPLE : chunk_16_color);
+                            }
+                            else if ((IsBoxInFrustum(chunks[cx][cy].box, frustumChunk8) || !onLoad) && cx != 0 && cx != 15 && cy != 0 && cy != 15) {
+                                chunkBcCount++;
+                                chunkTriCount += chunks[cx][cy].model8.meshes[0].triangleCount;
+                                DrawModel(chunks[cx][cy].model8, chunks[cx][cy].position, MAP_SCALE, displayLod ? RED : chunk_08_color);
+                            }
+                            if (displayBoxes) { DrawBoundingBox(chunks[cx][cy].box, YELLOW); }
+                        }
+                        else { loadedEem = false; }
+                    }
+                }
+                if (onLoad) //handle water last because of its transparency, only draw once loaded
+                {
+                    //corn
+                    DrawCornFields(don.pos, frustumChunk8, displayBoxes);
+                    //water
+                    for (int cy = 0; cy < CHUNK_COUNT; cy++) {
+                        for (int cx = 0; cx < CHUNK_COUNT; cx++) {
+                            if (chunks[cx][cy].isLoaded)
+                            {
+                                //handle water last
+                                for (int w = 0; w < chunks[cx][cy].waterCount; w++)
+                                {
+                                    if (chunks[cx][cy].lod != LOD_64 && !IsBoxInFrustum(chunks[cx][cy].water[w].box, frustumChunk8)) { continue; }
+                                    glEnable(GL_POLYGON_OFFSET_FILL);
+                                    glPolygonOffset(-1.0f, -1.0f); // Push water slightly forward in Z-buffer
+                                    rlDisableBackfaceCulling();
+                                    Vector3 cameraPos = camera.position;
+                                    Vector3 waterPos = { 0, WATER_Y_OFFSET, 0 };
+                                    // Get direction from patch to camera
+                                    Vector3 toCamera = Vector3Subtract(waterPos, cameraPos);
+                                    // Scale it down to something subtle, like 5%
+                                    Vector3 shift = Vector3Scale(toCamera, 0.05f);
+                                    // Final draw position is nudged toward the player
+                                    Vector3 drawPos = Vector3Add(waterPos, shift);
+                                    Vector2 offset = (Vector2){ w * cx, w * cy };
+                                    SetShaderValue(waterShader, offsetLoc, &offset, SHADER_UNIFORM_VEC2);
+                                    BeginShaderMode(waterShader);
+                                    DrawModel(chunks[cx][cy].water[w].model, drawPos, 1.0f, (Color) { 0, 100, 253, 232 });
+                                    EndShaderMode();
+                                    rlEnableBackfaceCulling();
+                                    glDisable(GL_POLYGON_OFFSET_FILL);
+                                    if (displayBoxes) { DrawBoundingBox(chunks[cx][cy].water[w].box, VIOLET); }
+                                }
                             }
                         }
                     }
