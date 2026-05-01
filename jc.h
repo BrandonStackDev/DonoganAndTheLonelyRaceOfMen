@@ -28,6 +28,7 @@ typedef enum {
     MODEL_HOME_COZY,
     MODEL_HOME_OLE_HOOSE,
     MODEL_HOME_OLE_STONE,
+    MODEL_CINDER,
     MODEL_HOME_TOTAL_COUNT
 } Model_Home_Type;
 
@@ -69,6 +70,7 @@ typedef enum {
     SCENE_HOME_BARN_02,
     SCENE_HOME_COTTAGE_04,
     SCENE_HOME_COZY_03,
+    SCENE_CINDER,
     SCENE_TOTAL_COUNT
 } Scene_Type;
 
@@ -201,6 +203,9 @@ void InitHomes() {
     Model home013 = LoadModel("models/old-stone.obj");
     home013.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/old-stone.png");
     HomeModels[MODEL_HOME_OLE_STONE] = home013;
+    Model home014 = LoadModel("models/cinder.obj");
+    home014.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/cinder.png");
+    HomeModels[MODEL_CINDER] = home014;
 
     // Populate the scene list (the important part)
     Scenes[SCENE_HOME_CABIN_01] = (Scene){ //where the truck is
@@ -525,6 +530,15 @@ void InitHomes() {
         .pos = (Vector3){ -2120.97, 451, -2376.71 },
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 24.0f,
+        .origBox = (BoundingBox){0},
+        .box = (BoundingBox){0}
+    };
+    Scenes[SCENE_CINDER] = (Scene){ //cinder spire
+        .type = SCENE_CINDER,
+        .modelType = MODEL_CINDER,
+        .pos = (Vector3){ -424, 716, -1142 },
+        .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
+        .scale = 64.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
