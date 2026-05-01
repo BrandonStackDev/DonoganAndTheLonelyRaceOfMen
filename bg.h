@@ -202,7 +202,7 @@ typedef struct {
 
     Vector3 pos;
     float yaw, pitch, roll;
-    float scale;
+    float scale, desiredScale;
     BoundingBox box, bodyBox, headBox;
     int health, startHealth;
 
@@ -1063,7 +1063,8 @@ static inline BadGuy CreatePumpkinHopper(Vector3 pos)
     b.type = BG_PUMPKIN_HOPPER;
     b.spawnPoint = pos;
     b.pos = pos;
-    b.scale = 1.8f;
+    b.scale = 0.001f;
+    b.desiredScale = 1.8;
     b.state = HOPPER_STATE_SLEEP;
     b.spawnRadius = 120.0f;
     b.awareRadius = 35.0f;
@@ -1373,6 +1374,10 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         else if (bg[i].type == BG_PUMPKIN_HOPPER)
         {
             BG_Update_PumpkinHopper(d, &bg[i], dt);
+            if (bg[i].scale < bg[i].desiredScale)
+            {
+                bg[i].scale += 0.0123;
+            }
         }
         //update general stuff
         bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);

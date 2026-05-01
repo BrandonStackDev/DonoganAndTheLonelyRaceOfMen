@@ -225,6 +225,8 @@ static inline bool Garden_CommandeerHopper(Garden* g, Donogan* d)
         b->awareRadius = 999.0f;
         b->tetherRadius = 140.0f;
 
+        b->scale = 0.001;
+
         b->health = b->startHealth;
         if (b->health <= 0) b->health = 20;
 
