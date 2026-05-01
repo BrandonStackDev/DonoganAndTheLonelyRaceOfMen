@@ -217,17 +217,11 @@ static inline void DrawDisplayMaps(
     }
     else if (active == MAP_IMPORTANT)
     {
-        //Vector3* map_tol;
-        //Vector3* map_atreyu;
         ////Vector3* map_alister;
-        ////Vector3* map_galadriel;
         ////Vector3* map_wolf;
         /*
-        *       Color tree_of_life = (Color){ 120, 255, 160, 255 };   // Tree of Life (bright living green, magical)
-                Color atreyu = (Color){ 80, 180, 255, 255 };          // Atreyu (hero blue, calm + brave)
                 Color wolf = (Color){ 200, 200, 220, 255 };           // Wolf (pale silver/ice tone)
                 Color alistair = (Color){ 60, 60, 60, 255 };       // Alistair (bweare he is evil, run away!)
-                Color galadriel = (Color){ 255, 240, 200, 255 };      // Galadriel (soft radiant light, ethereal)
         */
         MapDrawWorldCircle(*map_tol, dest, (Color) { 120, 255, 160, 255 });
         MapDrawWorldCircle(*map_atreyu, dest, (Color) { 80, 180, 255, 255 });
