@@ -2889,6 +2889,13 @@ int main(void) {
                 truckRoll = Lerp(truckRoll, -atan2f(rightAvg - leftAvg, truckWidth),GetFrameTime()*16.0f);//todo: do we need to lerp this, does it make it better or worse
                 //--rebuild end ...
             }
+            if (hoverMode)
+            {
+                float airBankMax = 38.0f * DEG2RAD;
+                // negative or positive may need flipped depending on your feel
+                float targetAirRoll = gpad.normLX * airBankMax;
+                truckRoll = Lerp(truckRoll, targetAirRoll, GetFrameTime() * 5.5f);
+            }
             if(truckRoll>PI){truckRoll=PI;}
             if(truckRoll<-PI){truckRoll=-PI;}
             if (hoverMode && truckPitch > 0){truckPitch = 0;}
@@ -4127,7 +4134,7 @@ int main(void) {
                     if (hoverMode)
                     {
                         truckPitch = Lerp(truckPitch, 0.0f, dt * 4.0f);
-                        truckRoll = Lerp(truckRoll, 0.0f, dt * 4.0f);
+                        //truckRoll = Lerp(truckRoll, 0.0f, dt * 4.0f);
                     }
                     // First apply spin around X (wheel axis), then steering around Y
                     // Step 1: Create rotation matrices for yaw (Y), pitch (X), and roll (Z)
