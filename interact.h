@@ -25,6 +25,9 @@ typedef enum {
     TALK_TYPE_GAL_1, //if the user has no good books
     TALK_TYPE_GAL_2, //if the user has any good books, and has not given any to galadriel
     TALK_TYPE_GAL_3, //the user has given all 10 good books to galadriel
+    TALK_TYPE_ROGER,
+    TALK_TYPE_GEOFF,
+    TALK_TYPE_MARY,
     TALK_TYPE_STORE
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
@@ -68,6 +71,9 @@ typedef enum {
     POI_TYPE_ABBY,
     POI_TYPE_STORE_1,
     POI_TYPE_GALADRIEL,
+    POI_TYPE_ROGER,
+    POI_TYPE_GEOFF,
+    POI_TYPE_MARY,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
@@ -328,7 +334,46 @@ static TalkData talkData[] = {
         },
         4,
         TALK_OPTION_OK
-    }
+    },
+    {
+    TALK_TYPE_ROGER,
+    "Roger",
+    {
+        "Did you know, there are maps hidden across the islands?",
+        "Not all of them are easy to find... some are tucked away in strange places.",
+        "Old ruins, quiet cliffs, even places people stopped visiting long ago.",
+        "If you collect them, they will reveal more of the world to you."
+    },
+    4,
+    TALK_OPTION_OK
+    },
+{
+    TALK_TYPE_GEOFF,
+    "Geoff",
+    {
+        "Hey Donogan, I think I saw something you might want.",
+        "Near the water wheel just outside of Wrenville.",
+        "It looked like a map, just sitting up high... kind of strange, honestly.",
+        "I didnt grab it because the windmill needs to be started to get up on the platforms.",
+        "You should check out there if you havent already."
+    },
+    5,
+    TALK_OPTION_OK
+},
+{
+    TALK_TYPE_MARY,
+    "Mary",
+    {
+        "Donogan, your square spell can freeze enemies.",
+        "If you spin, then you can throw them.",
+        "But it can do more than that. It can even grow things.",
+        "You can grow pumpkins and flowers from small garden patches.",
+        "Also certain trees let you grow berries and apples. You press triangle (interact) to collect them.",
+        "But the apples youll have to find a way to get them down from the tree...Sorry I dont have a ladder."
+    },
+    6,
+    TALK_OPTION_OK
+},
 };
 
 static int talkLineIndex = 0;

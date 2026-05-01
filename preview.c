@@ -368,7 +368,7 @@ static void FinishTalking(Donogan* d)
         npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
         npcs[NPC_WIZARD].targetPos = (Vector3){ 8008, 8008, 8008 };
     }
-    //abby not needed
+    //abby not needed, galdriel not needed?, new guys not needed
 }
 
 static void Abby_GiveMedicine(Donogan* d)
@@ -925,6 +925,9 @@ int main(void) {
     InteractivePoints[POI_TYPE_ABBY] = (POI){ POI_TYPE_ABBY , &npcs[NPC_ABBY].pos }; //abby
     InteractivePoints[POI_TYPE_STORE_1] = (POI){ POI_TYPE_STORE_1, &npcs[NPC_CLERK].pos };// store POI points to the clerk
     InteractivePoints[POI_TYPE_GALADRIEL] = (POI){ POI_TYPE_GALADRIEL, &npcs[NPC_GALADRIEL].pos }; //galadriel
+    InteractivePoints[POI_TYPE_ROGER] = (POI){ POI_TYPE_ROGER, &npcs[NPC_ROGER].pos }; //roger
+    InteractivePoints[POI_TYPE_GEOFF] = (POI){ POI_TYPE_GEOFF, &npcs[NPC_GEOFF].pos }; //geoff
+    InteractivePoints[POI_TYPE_MARY] = (POI){ POI_TYPE_MARY, &npcs[NPC_MARY].pos }; //mary
     //help maps know things like the important people
     map_tol = &tolPos;
     map_atreyu = &atreyuPos;
@@ -1569,6 +1572,39 @@ int main(void) {
                     don.isTalking = true;
                     don.who = TALK_TYPE_DARREL;
                     npcs[NPC_DARREL].state = DARREL_STATE_TALK;
+                    StartTimer(&don.talkStartTimer);
+                    Talk_Reset(don.who);
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
+                }
+                else if (!don.isTalking
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_ROGER].pos, don.pos) < 11.44f * 12
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_ROGER;
+                    StartTimer(&don.talkStartTimer);
+                    Talk_Reset(don.who);
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
+                }
+                else if (!don.isTalking
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_GEOFF].pos, don.pos) < 11.44f * 12
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_GEOFF;
+                    StartTimer(&don.talkStartTimer);
+                    Talk_Reset(don.who);
+                    prevTalkTri = gpad.btnTriangle;
+                    prevTalkX = gpad.btnCross;
+                }
+                else if (!don.isTalking
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_MARY].pos, don.pos) < 11.44f * 12
+                    && HasTimerElapsed(&don.talkStartTimer))
+                {
+                    don.isTalking = true;
+                    don.who = TALK_TYPE_MARY;
                     StartTimer(&don.talkStartTimer);
                     Talk_Reset(don.who);
                     prevTalkTri = gpad.btnTriangle;
