@@ -253,7 +253,7 @@ static BoundingBox MakeCottageDoorBox(Vector3 center)
         { center.x + 10.0f, center.y + 8.0f, center.z + 1.67f }
     };
 }
-static inline bool IsInCaveMode(Donogan* d)
+static inline bool IsInCaveMode(Donogan* d, bool caveMode)
 {
     if (!d) return false;
 
@@ -271,10 +271,10 @@ static inline bool IsInCaveMode(Donogan* d)
 
     // Cinder Spire itself counts as cave mode for now.
     // Later you can add SCENE_CAVE_01 here too.
-    /*if (CheckCollisionBoxes(d->box, Scenes[SCENE_CINDER].box))
+    if (caveMode && CheckCollisionBoxes(d->box, Scenes[SCENE_CINDER].box))
     {
         return true;
-    }*/
+    }
 
     return false;
 }
@@ -3748,7 +3748,7 @@ int main(void) {
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         Garden_Update(&don, gpad.btnSquare);
         wasCaveMode = caveMode;
-        caveMode = donnyMode && IsInCaveMode(&don);
+        caveMode = donnyMode && IsInCaveMode(&don, (caveMode || wasCaveMode));
 
         if (caveMode && !wasCaveMode)
         {
