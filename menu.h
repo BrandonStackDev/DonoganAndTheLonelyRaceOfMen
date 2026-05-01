@@ -139,6 +139,8 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     fprintf(f, "don_money     = %f\n", d->money);
     fprintf(f, "don_hover  = %d\n", d->canHasCheeseburger);
     fprintf(f, "don_wiz  = %d\n", d->talkedToBlueWizard);
+    fprintf(f, "don_gal_books = %d\n", d->galBooksGiven);
+    fprintf(f, "don_guitar = %d\n", d->hasGuitar ? 1 : 0);
 
     // GameState
     fprintf(f, "invY = %d\n", gs->invY ? 1 : 0);
@@ -300,6 +302,17 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
         }
         else if (!strncmp(s, "don_wiz", 7)) {
             sscanf(s, "don_wiz = %d", &d->talkedToBlueWizard);
+        }
+        else if (!strncmp(s, "don_gal_books", 13)) {
+            sscanf(s, "don_gal_books = %d", &d->galBooksGiven);
+
+            if (d->galBooksGiven < 0) d->galBooksGiven = 0;
+            if (d->galBooksGiven > 10) d->galBooksGiven = 10;//GALADRIEL_BOOK_GOAL
+        }
+        else if (!strncmp(s, "don_guitar", 10)) {
+            int v = 0;
+            sscanf(s, "don_guitar = %d", &v);
+            d->hasGuitar = (v != 0);
         }
         else if (!strncmp(s, "invY", 4)) {
             int v = 0; sscanf(s, "invY = %d", &v); gs->invY = (v != 0);
@@ -531,7 +544,24 @@ static void _DrawInventory(GameState* gs) {
         DrawTextEx(GetFontDefault(), buf, (Vector2) { rightX, y }, textSize, 1.0f, rightColor);
     }
 
-    //
+    //todo: one of these for alister
+    if (donnyBoyInventory->galBooksGiven > 0)
+    {
+        char galBooksText[64];
+        snprintf(galBooksText, sizeof(galBooksText),
+            "Galadriel Books: %d / 10",
+            donnyBoyInventory->galBooksGiven);
+
+        DrawTextEx(GetFontDefault(),
+            galBooksText,
+            (Vector2) {
+            panel.x + 12, panel.y + panel.height - 158
+        },
+            20,
+            1.0f,
+            MENU_DIM);
+    }
+    if (donnyBoyInventory->hasGuitar) { DrawTextEx(GetFontDefault(), "Guitar", (Vector2) { panel.x + 12, panel.y + panel.height - 138 }, 20, 1.0f, MENU_DIM); }
     if (donnyBoyInventory->hasBow) { DrawTextEx(GetFontDefault(), "Bow", (Vector2) { panel.x + 12, panel.y + panel.height - 118 }, 20, 1.0f, MENU_DIM); }
     if (donnyBoyInventory->hasWrench) { DrawTextEx(GetFontDefault(), "Wrench", (Vector2) { panel.x + 12, panel.y + panel.height - 98 }, 20, 1.0f, MENU_DIM); }
     if (donnyBoyInventory->unlockedTruck) { DrawTextEx(GetFontDefault(), "Truck", (Vector2) { panel.x + 12, panel.y + panel.height - 78 }, 20, 1.0f, MENU_DIM); }

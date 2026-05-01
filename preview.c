@@ -403,6 +403,78 @@ static void Abby_GiveMedicine(Donogan* d)
     Talk_Reset(d->who);
 }
 
+#define GALADRIEL_BOOK_GOAL 10
+#define GALADRIEL_BOOK_PRICE 80.0f
+
+static TALK_TYPE Galadriel_GetTalkType(Donogan* d)
+{
+    if (!d) return TALK_TYPE_GAL_1;
+
+    if (d->galBooksGiven >= GALADRIEL_BOOK_GOAL)
+    {
+        return TALK_TYPE_GAL_3;
+    }
+
+    if (inventory[INV_BOOK].count > 0)
+    {
+        return TALK_TYPE_GAL_2;
+    }
+
+    return TALK_TYPE_GAL_1;
+}
+
+static void Galadriel_GiveBooks(Donogan* d)
+{
+    if (!d) return;
+
+    if (d->galBooksGiven >= GALADRIEL_BOOK_GOAL)
+    {
+        d->who = TALK_TYPE_GAL_3;
+        Talk_Reset(d->who);
+        return;
+    }
+
+    int needed = GALADRIEL_BOOK_GOAL - d->galBooksGiven;
+    int available = inventory[INV_BOOK].count;
+
+    if (available <= 0)
+    {
+        toast = "You do not have any good books.";
+        StartTimer(&toastTimer);
+        FinishTalking(d);
+        return;
+    }
+
+    int giveCount = available;
+    if (giveCount > needed) giveCount = needed;
+
+    inventory[INV_BOOK].count -= giveCount;
+    d->galBooksGiven += giveCount;
+    d->money += (float)giveCount * GALADRIEL_BOOK_PRICE;
+
+    char galToast[128];
+    snprintf(galToast, sizeof(galToast), "Sold %d good book%s to Galadriel.", giveCount, giveCount == 1 ? "" : "s");
+    toast = galToast; // WARNING: local buffer dies after function
+    StartTimer(&toastTimer);
+    PlaySoundVolContinuousAllowed(menuSaveOrLoad);
+
+    if (d->galBooksGiven >= GALADRIEL_BOOK_GOAL)
+    {
+        d->galBooksGiven = GALADRIEL_BOOK_GOAL;
+        d->hasGuitar = true;
+
+        toast = "Galadriel gave you the Guitar!";
+        StartTimer(&toastTimer);
+
+        d->who = TALK_TYPE_GAL_3;
+        Talk_Reset(d->who);
+    }
+    else
+    {
+        FinishTalking(d);
+    }
+}
+
 /// @brief main!
 /// @param  
 /// @return 
@@ -852,6 +924,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_WIZARD] = (POI){ POI_TYPE_WIZARD , &npcs[NPC_WIZARD].pos }; //wiz
     InteractivePoints[POI_TYPE_ABBY] = (POI){ POI_TYPE_ABBY , &npcs[NPC_ABBY].pos }; //abby
     InteractivePoints[POI_TYPE_STORE_1] = (POI){ POI_TYPE_STORE_1, &npcs[NPC_CLERK].pos };// store POI points to the clerk
+    InteractivePoints[POI_TYPE_GALADRIEL] = (POI){ POI_TYPE_GALADRIEL, &npcs[NPC_GALADRIEL].pos }; //galadriel
     //help maps know things like the important people
     map_tol = &tolPos;
     map_atreyu = &atreyuPos;
@@ -1633,6 +1706,21 @@ int main(void) {
                     prevTalkX = gpad.btnCross;
                     StartTimer(&don.talkStartTimer);
                 }
+                else if (!don.isTalking
+                    && InteractivePoints[POI_TYPE_GALADRIEL].pos
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_GALADRIEL].pos, don.pos) < 144
+                    && HasTimerElapsed(&don.talkStartTimer))
+                    {
+                        don.isTalking = true;
+
+                        don.who = Galadriel_GetTalkType(&don);
+
+                        Talk_Reset(don.who);
+
+                        prevTalkTri = gpad.btnTriangle;
+                        prevTalkX = gpad.btnCross;
+                        StartTimer(&don.talkStartTimer);
+                        }
                 if (!don.isTalking && HasTimerElapsed(&don.talkStartTimer))
                 { //stores
                     NPC* clerk = NULL;
@@ -2149,6 +2237,10 @@ int main(void) {
                 if (don.who == TALK_TYPE_ABBY_3)
                 {
                     Abby_GiveMedicine(&don);
+                }
+                else if (don.who == TALK_TYPE_GAL_2)
+                {
+                    Galadriel_GiveBooks(&don);
                 }
             }
             else if (talkResult == TALK_RESULT_NO || talkResult == TALK_RESULT_FINISHED)

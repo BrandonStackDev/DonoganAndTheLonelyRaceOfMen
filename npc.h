@@ -18,7 +18,8 @@ typedef enum {
     NPC_MODEL_TYPE_LUCY,
     NPC_MODEL_TYPE_WIZARD,
     NPC_MODEL_TYPE_ABBY,
-    NPC_MODEL_TYPE_CLERK
+    NPC_MODEL_TYPE_CLERK,
+    NPC_MODEL_TYPE_GALADRIEL
 } NPC_Model_Type;
 
 typedef enum {
@@ -33,6 +34,7 @@ typedef enum {
     NPC_CLERK_3,
     NPC_CLERK_4,
     NPC_CLERK_5,
+    NPC_GALADRIEL,
     NPC_TOTAL,
 } NPC_Type;
 
@@ -77,6 +79,10 @@ typedef enum {
     ABBY_STATE_HELLO = 0,
     ABBY_STATE_TALK
 } AbbyState;
+
+typedef enum {
+    GAL_STATE_HELLO = 0,
+} GaladrielState;
 
 typedef struct {
     NPC_Type type;
@@ -175,6 +181,9 @@ void InitAllNPC()
     cartModel = LoadModel("models/store.obj");
     cartTexture = LoadMyTexture("textures/store.png");
     cartModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = cartTexture;
+    //galadriel
+    Model gal_model = LoadModel("models/galadriel.obj");
+    Texture gal_tex = LoadMyTexture("textures/galadriel.png");
     //setup darrel
     npcs[NPC_DARREL].type = NPC_DARREL;
     npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
@@ -314,6 +323,23 @@ void InitAllNPC()
     cartPositions[3] = (Vector3){ -2528.19, 409.58, -2408.55 };
     npcs[NPC_CLERK_5].pos = (Vector3){ 1876.92, 384.00, -3060.90 };
     cartPositions[4] = (Vector3){ 1857.41, 398.71, -3082.70 };
+    //setup galadriel
+    npcs[NPC_GALADRIEL].type = NPC_GALADRIEL;
+    npcs[NPC_GALADRIEL].modelType = NPC_MODEL_TYPE_GALADRIEL;
+    npcs[NPC_GALADRIEL].model = gal_model;
+    npcs[NPC_GALADRIEL].tex = gal_tex;
+    npcs[NPC_GALADRIEL].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = gal_tex;
+    npcs[NPC_GALADRIEL].animCount = 0;
+    npcs[NPC_GALADRIEL].pos = (Vector3){ -396, 334, -4007 }; //test pos = (Vector3){ 3022.00f, 322.00f, 4042.42f };
+    npcs[NPC_GALADRIEL].targetPos = npcs[NPC_GALADRIEL].pos;
+    npcs[NPC_GALADRIEL].scale = 2.67f;
+    npcs[NPC_GALADRIEL].yaw = 0.0f;
+    npcs[NPC_GALADRIEL].speed = 6.0f;
+    npcs[NPC_GALADRIEL].isRescue = false;
+    npcs[NPC_GALADRIEL].state = WIZARD_STATE_HELLO;
+    npcs[NPC_GALADRIEL].curAnim = 0;
+    npcs[NPC_GALADRIEL].animFPS = 0;
+    npcs[NPC_GALADRIEL].animFrame = 0.0f;
 }
 
 bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
@@ -350,9 +376,10 @@ static inline bool NPC_AnimTick(NPC* n, float dt) {
 // --- Case-specific handler for Darrel ---
 static inline void NPC_Update_Simple(NPC* n, const Donogan* d, float dt, bool looped) 
 {
-    if (n->type == NPC_DARREL) { n->pos.y -= 0.2f; }
-    if (n->modelType == NPC_MODEL_TYPE_ABBY) { n->pos.y += 3; }
     if (n->modelType == NPC_MODEL_TYPE_CLERK) { n->pos.y += 3.68; }
+    else if (n->type == NPC_DARREL) { n->pos.y -= 0.2f; }
+    else if (n->modelType == NPC_MODEL_TYPE_ABBY) { n->pos.y += 3; }
+    else if (n->modelType == NPC_MODEL_TYPE_GALADRIEL) { n->pos.y += 2.5; }
     // Face Donogan
     float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
     n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
@@ -484,6 +511,7 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     case NPC_WIZARD: NPC_Update_Wiz(n,d,dt); break;
     case NPC_ABBY: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_CLERK: NPC_Update_Simple(n, d, dt, looped); break;
+    case NPC_GALADRIEL: NPC_Update_Simple(n, d, dt, looped); break;
     default: break;
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);

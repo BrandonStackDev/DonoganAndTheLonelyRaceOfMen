@@ -20,8 +20,11 @@ typedef enum {
     TALK_TYPE_WIZARD,
     TALK_TYPE_ABBY, //no electricity
     TALK_TYPE_ABBY_2, //electricity but needs medicine
-    TALK_TYPE_ABBY_3, //has the medicine, not yet given,
+    TALK_TYPE_ABBY_3, //has the medicine, not yet given, (yes,no)
     TALK_TYPE_ABBY_4, //has given the medicine and the electricity
+    TALK_TYPE_GAL_1, //if the user has no good books
+    TALK_TYPE_GAL_2, //if the user has any good books, and has not given any to galadriel
+    TALK_TYPE_GAL_3, //the user has given all 10 good books to galadriel
     TALK_TYPE_STORE
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
@@ -64,6 +67,7 @@ typedef enum {
     POI_TYPE_WIZARD,
     POI_TYPE_ABBY,
     POI_TYPE_STORE_1,
+    POI_TYPE_GALADRIEL,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
@@ -291,6 +295,39 @@ static TalkData talkData[] = {
         },
         3,
         TALK_OPTION_STORE
+    },
+    {
+        TALK_TYPE_GAL_1,
+        "Galadriel",
+        {
+            "Donogan, I seek the good books.",
+            "Bring them to me, and I will pay you $80 for each one.",
+            "Beware the shadow books. I have no use for those."
+        },
+        3,
+        TALK_OPTION_OK
+    },
+    {
+        TALK_TYPE_GAL_2,
+        "Galadriel",
+        {
+            "Ah, you have found good books.",
+            "Will you sell them to me for $80 each?"
+        },
+        2,
+        TALK_OPTION_YES_NO
+    },
+    {
+        TALK_TYPE_GAL_3,
+        "Galadriel",
+        {
+            "You have brought me all ten good books.",
+            "Take this guitar, Donogan.",
+            "Press L1 to use it as an attack.",
+            "May its song bonk evil directly in the forehead."
+        },
+        4,
+        TALK_OPTION_OK
     }
 };
 
