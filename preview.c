@@ -424,7 +424,6 @@ int main(void) {
     bool prevHoverR3 = false;
     float hoverLift = 0.0f;        // current visual/physics lift
     float hoverLiftTarget = 0.0f;  // 0 normal, 3-ish hover
-    float hoverFallVel = 0.0f;
     float hoverTireFold = 0.0f;    // 0 normal tires, 1 flat tires
     // --- Donny mode state ---
     bool donnyMode = true;
@@ -1742,7 +1741,7 @@ int main(void) {
             {
                 truckAirState = AIRBORNE;
                 gravityCollected = -2.8f;   // upward burst; tune
-                hoverFallVel = -11.0f;      // optional if you use custom hover falling
+                truckSpeed += 128 * GetFrameTime();
             }
             if (hoverMode && truckAirState == AIRBORNE)
             {
@@ -2322,8 +2321,11 @@ int main(void) {
                     truckForward.y = 0;
                 }
             }
-            if (truckSpeed > maxSpeed) { truckSpeed = maxSpeed; }
-            if (truckSpeed < maxSpeedReverse) { truckSpeed = maxSpeedReverse; printf("max truck speed reverse\n"); }
+            float maxHoverSpeed = 2.3210456;
+            if (hoverMode && truckSpeed > maxHoverSpeed) { truckSpeed = maxHoverSpeed; }
+            else if (truckSpeed > maxSpeed) { truckSpeed = maxSpeed; }
+            if (truckSpeed < maxSpeedReverse) { truckSpeed = maxSpeedReverse;}
+            if (hoverMode && truckSpeed < 0) { truckSpeed = 0; }
 
             //sliding
             if (truckAirState == GROUND && truckSlideSpeed >= 0) // sliding, shut off if not on the ground or the slide is complete
