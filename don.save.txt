@@ -14,7 +14,7 @@ don_hover  = 1
 don_wiz  = 1
 invY = 0
 invX = 0
-musicVol = 0.0000
+musicVol = 0.8000
 soundVol = 1.0000
 difficulty = 1
 --FIREPLACES-BEGIN--

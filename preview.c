@@ -1737,13 +1737,13 @@ int main(void) {
                 StartTimer(&toastTimer);
             }
             prevHoverR3 = r3;
-            if (hoverMode && gpad.btnCross && !prevCross)
+            if (hoverMode && gpad.btnCross) //&& !prevCross, I dont want pump, I want press
             {
                 truckAirState = AIRBORNE;
                 gravityCollected = -2.8f;   // upward burst; tune
                 truckSpeed += 128 * GetFrameTime();
             }
-            if (hoverMode && truckAirState == AIRBORNE)
+            if (hoverMode && truckAirState == AIRBORNE) //glide
             {
                 truckPitch += 0.00004f * GetFrameTime();
 
@@ -1753,6 +1753,7 @@ int main(void) {
                 // when near hover height again, land back into hover
                 float gy = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
                 float hoverY = gy + TRUCK_Y_OFFSET_DRAW + hoverLift;
+                if (hoverY < WHALE_SURFACE + 3.2) { hoverY = WHALE_SURFACE + 3.2; }
                 if (truckPosition.y <= hoverY)
                 {
                     truckPosition.y = hoverY;
@@ -2761,7 +2762,7 @@ int main(void) {
                     float pitch = -atanf(deltaY / deltaZ);  // In radians
                     truckPitch = pitch;//set it directly here
                 }
-                if (truckAirState==AIRBORNE) {
+                if (truckAirState==AIRBORNE && !hoverMode) {
                     verticalVelocity -= GRAVITY * GetFrameTime();  // e.g. gravity = 9.8f
                     truckPosition.y += verticalVelocity * truckSpeed * GetFrameTime();
 
@@ -2794,7 +2795,7 @@ int main(void) {
                         }
                     }
                 } 
-                else
+                else if (!hoverMode)
                 { //not airborne, either landing or ground
                     if(!Menu_IsOpen(&gGame) && gpad.btnCross>0)
                     {
@@ -2847,21 +2848,24 @@ int main(void) {
             if (hoverMode)
             {
                 rebuildFromTires = false;
-                float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
-                if (groundY > -9000.0f)
+                if (truckAirState != AIRBORNE)
                 {
-                    float desiredY = groundY + TRUCK_Y_OFFSET_DRAW + hoverLift;
-                    float minHoverY = WHALE_SURFACE + 3.2f; // slight above water
-                    if (desiredY < minHoverY)
+                    float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
+                    if (groundY > -9000.0f)
                     {
-                        desiredY = minHoverY;
+                        float desiredY = groundY + TRUCK_Y_OFFSET_DRAW + hoverLift;
+                        float minHoverY = WHALE_SURFACE + 3.2f;
+
+                        if (desiredY < minHoverY)
+                        {
+                            desiredY = minHoverY;
+                        }
+
+                        truckPosition.y = Lerp(truckPosition.y, desiredY, dt * 6.0f);
+                        truckAirState = GROUND;
+                        gravityCollected = 0.0f;
+                        truckForward.y = 0.0f;
                     }
-                    // soft hover spring
-                    truckPosition.y = Lerp(truckPosition.y, desiredY, dt * 6.0f);
-                    truckAirState = GROUND;
-                    gravityCollected = 0.0f;
-                    truckForward.y = 0.0f;
-                    
                 }
             }
             if(rebuildFromTires && !hoverMode)
