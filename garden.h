@@ -308,8 +308,9 @@ static inline void Garden_Update(Donogan* d, bool squareDown)
 static inline void Garden_DrawFlower(const Garden* g)
 {
     Vector3 base = g->pos;
+    base.y -= 2;
     float h = 2.0f;
-    float topY = base.y + (h+1.5);
+    float topY = base.y + (h+1.2);
 
     DrawCylinder(
         (Vector3) {
@@ -352,6 +353,7 @@ static inline void Garden_DrawFlower(const Garden* g)
     DrawSphere(center, 0.12f, YELLOW);
 
     // polygon petals around the center
+    rlDisableBackfaceCulling();
     const int petals = 8;
     for (int p = 0; p < petals; p++)
     {
@@ -384,9 +386,11 @@ static inline void Garden_DrawFlower(const Garden* g)
         pc.r = (unsigned char)Clamp(pc.r + GetRandomValue(-10, 10), 0, 255);
         pc.g = (unsigned char)Clamp(pc.g + GetRandomValue(-10, 10), 0, 255);
         pc.b = (unsigned char)Clamp(pc.b + GetRandomValue(-10, 10), 0, 255);
-
         DrawTriangle3D(v0, tip, v1, pc);
+        DrawTriangle3D(v1, tip, v0, pc); // reverse side
+        
     }
+    rlEnableBackfaceCulling();
 }
 
 static inline void Garden_Draw(Donogan* d, Frustum frustum)
