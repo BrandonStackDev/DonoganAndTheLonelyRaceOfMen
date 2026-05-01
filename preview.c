@@ -3877,6 +3877,7 @@ int main(void) {
                 DonDrawArrows(&don);
                 DrawBalls(camera, ball, lightningBall);
                 DrawLasers();
+                DrawDonShadow(&don);
                 //bubbles
                 if (don.inWater) { DonDrawBubbles(&don, displayBoxes); }
             }

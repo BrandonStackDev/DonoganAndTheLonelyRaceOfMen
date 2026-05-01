@@ -2935,4 +2935,46 @@ void DrawBalls(Camera3D cam, Model ball, Shader lightningBall) {
     EndBlendMode();
 }
 
+static void DrawDonShadow(Donogan* d)
+{
+    if (!d) return;
+
+    float gy = GetTerrainHeightFromMeshXZ(d->pos.x, d->pos.z);
+    if (gy < -9000.0f) return;
+
+    Vector3 n = GetTerrainNormalFromMeshXZ(d->pos.x, d->pos.z);
+    if (Vector3Length(n) < 0.001f) n = (Vector3){ 0, 1, 0 };
+    n = Vector3Normalize(n);
+
+    float heightAboveGround = d->pos.y - gy;
+
+    float radius = 0.8f;
+    float alpha = 220.0f;
+
+    if (heightAboveGround > 1.0f)
+    {
+        radius = Clamp(0.8f - heightAboveGround * 0.08f, 0.001f, 0.8f);
+        alpha = Clamp(220.0f - heightAboveGround * 12.0f, 25.0f, 220.0f);
+    }
+
+    Vector3 center = (Vector3){ d->pos.x, gy, d->pos.z };
+
+    // lift off the ground along the slope normal to avoid z-fighting
+    center = Vector3Add(center, Vector3Scale(n, 0.05f));
+
+    Vector3 a = Vector3Subtract(center, Vector3Scale(n, 0.01f));
+    Vector3 b = Vector3Add(center, Vector3Scale(n, 0.01f));
+
+    DrawCylinderEx(
+        a,
+        b,
+        radius,
+        radius,
+        18,
+        (Color) {
+        0, 0, 0, (unsigned char)alpha
+    }
+    );
+}
+
 #endif // DONOGAN_H
