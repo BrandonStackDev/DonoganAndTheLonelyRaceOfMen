@@ -11,7 +11,7 @@
 #include "frustum.h"
 
 #define MAX_GARDENS 64
-#define GARDEN_INTERACT_DIST 12.0f
+#define GARDEN_INTERACT_DIST 16.0f
 #define GARDEN_DRAW_DIST 650.0f
 
 typedef enum {
@@ -284,7 +284,7 @@ static inline void Garden_Update(Donogan* d, bool squareDown)
         if (!squarePressed) continue;
         if (g->grown) continue;
 
-        if (Vector3Distance(d->pos, g->pos) > GARDEN_INTERACT_DIST) continue;
+        if (Vector3DistanceSqr(d->pos, g->pos) > GARDEN_INTERACT_DIST * GARDEN_INTERACT_DIST) continue;
 
         if (g->type == GARDEN_HOME)
         {
@@ -401,7 +401,7 @@ static inline void Garden_Draw(Donogan* d, Frustum frustum)
         if (!g->active) continue;
 
         if(IsPointInFrustum(g->pos, frustum))
-        if (d && Vector3Distance(d->pos, g->pos) > GARDEN_DRAW_DIST) continue;
+        if (d && Vector3DistanceSqr(d->pos, g->pos) > GARDEN_DRAW_DIST * GARDEN_DRAW_DIST) continue;
 
         Model* m = (g->type == GARDEN_HOME) ? &gGardenHomeModel : &gGardenWildModel;
 

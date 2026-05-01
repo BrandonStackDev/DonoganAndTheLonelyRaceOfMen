@@ -350,7 +350,7 @@ static inline int Machine_TryInteract(Donogan * d, Vector3 playerPos, bool hasWr
 
 static inline bool Machine_ShouldDraw(Vector3 camPos, Vector3 objectPos, float maxDistance)
 {
-    return (Vector3Distance(camPos, objectPos) <= maxDistance);
+    return (Vector3DistanceSqr(camPos, objectPos) <= maxDistance * maxDistance);
 }
 
 static inline void Machine_DrawSingle(const Machine* m)

@@ -284,7 +284,6 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
 {
     if (!p || !d) return;
     if (p->disabled) return;
-    //if (Vector3Distance(p->pos, d->pos) > 100) { return; } //chatGPT says this is evil
 
     int platId = (int)(p - all);
 

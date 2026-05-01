@@ -373,7 +373,7 @@ static inline void NPC_Update_Wiz(NPC* n, const Donogan* d, float dt)
         float targetYaw = atan2f(n->targetPos.x - n->pos.x, n->targetPos.z - n->pos.z);
         n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f);
 
-        if (Vector3Distance(n->pos, d->pos) > 600.0f)
+        if (Vector3DistanceSqr(n->pos, d->pos) > 600*600.0f)
         {
             n->state = WIZARD_STATE_DONE;
         }
@@ -402,7 +402,7 @@ static inline void NPC_Update_Rescue(NPC* n, const Donogan* d, float dt, bool lo
         }
         //set ground for y
         n->pos.y = NPC_GroundY(n->pos);
-        if (Vector3Distance(n->pos, n->targetPos) < 8.0f)
+        if (Vector3DistanceSqr(n->pos, n->targetPos) < 64.0f)
         {
             n->r_state = RESCUE_STATE_SAFE;
             if (n->type == NPC_NICK)
@@ -438,7 +438,7 @@ static inline void NPC_Update_Chicken(NPC* n, const Donogan* d, float dt, bool l
     }
     else if (n->state == CHICKEN_STATE_WALK) 
     {
-        if (Vector3Distance(n->pos, n->targetPos) < 2.4)
+        if (Vector3DistanceSqr(n->pos, n->targetPos) < 2.4*2.4)
         {
             n->state = CHICKEN_STATE_PLAN;
         }

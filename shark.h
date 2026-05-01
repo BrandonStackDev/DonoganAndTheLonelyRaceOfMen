@@ -391,7 +391,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
         s->state = SHARK_STATE_STALK;
         s->stateTime = 0.0f;
     }
-    else if (Vector3Distance(s->pos, d->pos) > SHARK_FAR_REPATH_DIST)
+    else if (Vector3DistanceSqr(s->pos, d->pos) > SHARK_FAR_REPATH_DIST * SHARK_FAR_REPATH_DIST)
     {
         s->usingFarRing = true;
         s->farRingGoal = Shark_PickOuterRingGoalTowardTarget(s, d->pos);
@@ -410,7 +410,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
     {
         if (s->state == SHARK_STATE_STALK || s->state == SHARK_STATE_ATTACK)
         {
-            if (Vector3Distance(s->pos, d->pos) > SHARK_FAR_REPATH_DIST) 
+            if (Vector3DistanceSqr(s->pos, d->pos) > SHARK_FAR_REPATH_DIST * SHARK_FAR_REPATH_DIST)
             { 
                 s->usingFarRing = true; 
                 s->farRingGoal = Shark_PickOuterRingGoalTowardTarget(s, d->pos);
@@ -448,7 +448,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
     {
         s->speed = s->wanderSpeed;
 
-        if (Vector3Distance(s->pos, s->goal) < 5.0f || s->stateTime > 6.0f)
+        if (Vector3DistanceSqr(s->pos, s->goal) < 25.0f || s->stateTime > 6.0f)
         {
             s->goal = SharkPickGoal(s);
             s->stateTime = 0.0f;
@@ -468,11 +468,11 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
         Vector3 toDon = Vector3Subtract(d->pos, s->pos);
         toDon.y = 0.0f; // keep chase calmer in yaw
         float dist = Vector3Length(toDon);
-        float worldDistToDon = Vector3Distance(s->pos, d->pos);
+        float worldDistToDon = Vector3DistanceSqr(s->pos, d->pos);
 
-        if (worldDistToDon > SHARK_FAR_REPATH_DIST && !s->usingFarRing && !Shark_IsWaterDeepEnough(s, s->pos.x, s->pos.z))
+        if (worldDistToDon > SHARK_FAR_REPATH_DIST * SHARK_FAR_REPATH_DIST && !s->usingFarRing && !Shark_IsWaterDeepEnough(s, s->pos.x, s->pos.z))
         {
-            if (Vector3Distance(s->pos, d->pos) > SHARK_FAR_REPATH_DIST) { s->usingFarRing = true; }
+            if (Vector3DistanceSqr(s->pos, d->pos) > SHARK_FAR_REPATH_DIST * SHARK_FAR_REPATH_DIST) { s->usingFarRing = true; }
             s->farRingGoal = Shark_PickOuterRingGoalTowardTarget(s, d->pos);
             s->goal = s->farRingGoal;
             s->pos = s->goal;
@@ -483,7 +483,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
             s->goal = s->farRingGoal;
             s->pos = s->goal;
 
-            if (Vector3Distance(s->pos, s->farRingGoal) < SHARK_RING_REACHED_DIST)
+            if (Vector3DistanceSqr(s->pos, s->farRingGoal) < SHARK_RING_REACHED_DIST * SHARK_RING_REACHED_DIST)
             {
                 s->usingFarRing = false;
                 s->steerTimer = 0.0f;
@@ -503,7 +503,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
                     //*s->goal = Shark_PickSteerGoalTowardTarget(s, d->pos);
                     s->steerTimer = 0.0f;
                     Vector3 steer = Shark_PickSteerGoalTowardTarget(s, d->pos);
-                    if (Vector3Distance(steer, s->home) < 1.0f)
+                    if (Vector3DistanceSqr(steer, s->home) < 1.0f) //todo: Vector3Distance-finder 
                     {
                         s->state = SHARK_STATE_WANDER;
                         s->stateTime = 0.0f;

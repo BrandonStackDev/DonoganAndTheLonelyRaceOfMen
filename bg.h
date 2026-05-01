@@ -408,7 +408,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     float yawToTarget = (distToTarget > 1e-4f) ? (RAD2DEG * atan2f(dxT, dzT)) : b->yaw;
     b->targetYaw = yawToTarget;
     //first check if he is outside of the activation radius, for ghosts they die if this is true
-    if (Vector3Distance(b->pos, b->spawnPoint) > b->spawnRadius)
+    if (Vector3DistanceSqr(b->pos, b->spawnPoint) > b->spawnRadius * b->spawnRadius)
     {
         b->targetPitch = 0;
         b->speed = 0.4f;
@@ -416,11 +416,11 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         b->targetPos.y = groundY - 20;
         b->state = GHOST_STATE_DEATH;
     }
-    if (Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
+    if (Vector3DistanceSqr(d->pos, b->spawnPoint) > b->spawnRadius * b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
     {
         StartTimer(&b->interactionTimer);
     }
-    else if (HasTimerElapsed(&b->interactionTimer) && Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius)
+    else if (HasTimerElapsed(&b->interactionTimer) && Vector3DistanceSqr(d->pos, b->spawnPoint) > b->spawnRadius * b->spawnRadius)
     {
         b->targetPitch = 0;
         b->speed = 0.4f;
@@ -443,7 +443,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         }
     }break;
     case GHOST_STATE_PLAN: {
-        if (Vector3Distance(d->pos, b->pos) < b->awareRadius || b->aware) //if aware of donogan
+        if (Vector3DistanceSqr(d->pos, b->pos) < b->awareRadius * b->awareRadius || b->aware) //if aware of donogan
         {
             b->speed = 1;
             b->aware = true;
@@ -469,21 +469,21 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         }
     }break;
     case GHOST_STATE_FLY: {
-        if (Vector3Distance(b->targetPos, b->pos) < 8)
+        if (Vector3DistanceSqr(b->targetPos, b->pos) < 64)
         {
             b->targetPitch = -10;
             b->state = GHOST_STATE_FLY_DEC;
         }
     }break;
     case GHOST_STATE_FLY_DEC: {
-        if (Vector3Distance(b->targetPos, b->pos) < 3)
+        if (Vector3DistanceSqr(b->targetPos, b->pos) < 9)
         {
             b->targetPitch = 0;
             b->state = GHOST_STATE_PLAN;
         }
     }break;
     case GHOST_STATE_WANDER: {
-        if (Vector3Distance(b->targetPos, b->pos) < 4)
+        if (Vector3DistanceSqr(b->targetPos, b->pos) < 16)
         {
             b->targetPitch = 0;
             b->state = GHOST_STATE_PLAN;
@@ -497,7 +497,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
         b->state = GHOST_STATE_DEATH;
     }break;
     case GHOST_STATE_DEATH: {
-        if (Vector3Distance(b->targetPos, b->pos) < 3)
+        if (Vector3DistanceSqr(b->targetPos, b->pos) < 9)
         {
             b->targetPitch = 0;
             b->active = false;
@@ -539,11 +539,11 @@ static inline void Yeti_KnockBackFromDonogan(BadGuy* b, Donogan* d)
 }
 static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
 {
-    if (Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
+    if (Vector3DistanceSqr(d->pos, b->spawnPoint) > b->spawnRadius * b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
     {
         StartTimer(&b->interactionTimer);
     }
-    else if (HasTimerElapsed(&b->interactionTimer) && Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius)//if it expires and donny is still outisde the radius, kill him
+    else if (HasTimerElapsed(&b->interactionTimer) && Vector3DistanceSqr(d->pos, b->spawnPoint) > b->spawnRadius * b->spawnRadius)//if it expires and donny is still outisde the radius, kill him
     {
         b->targetPitch = 0;
         b->targetPos = b->pos;
@@ -653,7 +653,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
             // Post-attack behavior: roar then continue hunting/roaming
             BG_SetAnim(b, ANIM_YETI_ROAR, true);
             b->state = YETI_STATE_PLANNING;
-            if (Vector3Distance(d->pos, b->pos) < 25)
+            if (Vector3DistanceSqr(d->pos, b->pos) < 25*25)
             {
                 d->shook += dt;
                 d->health -= 5;
@@ -724,11 +724,11 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
 static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
 {
     //pre guard stuff
-    if (Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
+    if (Vector3DistanceSqr(d->pos, b->spawnPoint) > b->spawnRadius * b->spawnRadius && !b->interactionTimer.running)//is donogan outside of our radius
     {
         StartTimer(&b->interactionTimer);
     }
-    else if (HasTimerElapsed(&b->interactionTimer) && Vector3Distance(d->pos, b->spawnPoint) > b->spawnRadius)//if it expires and donny is still outisde the radius, kill him
+    else if (HasTimerElapsed(&b->interactionTimer) && Vector3DistanceSqr(d->pos, b->spawnPoint) > b->spawnRadius * b->spawnRadius)//if it expires and donny is still outisde the radius, kill him
     {
         b->targetPitch = 0;
         b->targetPos = b->pos;
@@ -752,7 +752,7 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
         b->state = ROBO_STATE_PLAN;
     } break;
     case ROBO_STATE_PLAN: {
-        b->aware = Vector3Distance(d->pos,b->pos)<b->awareRadius;
+        b->aware = Vector3DistanceSqr(d->pos,b->pos)<b->awareRadius*b->awareRadius;
         if (b->aware)
         {
             if (GetRandomValue(0, 3) == 3)
@@ -786,7 +786,7 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
     case ROBO_STATE_SPIN: {
         if (fabsf(b->targetYaw - b->yaw) < 10) 
         { 
-            if (b->aware && GetRandomValue(0, 4) == 4 && Vector3Distance(d->pos, b->pos) < 50) //they need to be close to shoot, other wise you can spawn one and get shot really far away...
+            if (b->aware && GetRandomValue(0, 4) == 4 && Vector3DistanceSqr(d->pos, b->pos) < 50*50) //they need to be close to shoot, other wise you can spawn one and get shot really far away...
             {
                 b->state = ROBO_STATE_SHOOT;
             }
@@ -797,7 +797,7 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
         }
     } break;
     case ROBO_STATE_ZIP: {
-        if (Vector3Distance(b->pos, b->targetPos) < 3.4f){b->state = ROBO_STATE_PLAN;}
+        if (Vector3DistanceSqr(b->pos, b->targetPos) < 3.4 * 3.5){b->state = ROBO_STATE_PLAN;}
     } break;
     case ROBO_STATE_SHOOT: {
         // Spawn an instant beam aimed at Don’s torso (no collision tests)
@@ -896,7 +896,7 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
     {
     case HOPPER_STATE_SLEEP:
     {
-        if (Vector3Distance(d->pos, b->pos) < b->awareRadius)
+        if (Vector3DistanceSqr(d->pos, b->pos) < b->awareRadius * b->awareRadius)
         {
             b->aware = true;
             b->state = HOPPER_STATE_WAIT;
@@ -1273,7 +1273,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
     for (int b = 0; b < act_bg_count; b++) {
         int i = act_bg[b];
         if (!bg[i].active) { continue; }
-        if (Vector3Distance(d->pos, bg[i].pos) > 800) //general guard to help enforce that when don is far away, bad guys get put away
+        if (Vector3DistanceSqr(d->pos, bg[i].pos) > 800*800) //general guard to help enforce that when don is far away, bad guys get put away
         {
             bg[i].active = false;
             bg[i].dead = true;
@@ -1405,7 +1405,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             if ((*CloseProps[i]).type != MODEL_TREE_2 && (*CloseProps[i]).type != MODEL_TREE) { continue; }
             if ((*CloseProps[i]).type == MODEL_TREE_2)
             {
-                if (!(*CloseProps[i]).hasBerries && Vector3Distance((*CloseProps[i]).pos, d->pos) < 12)
+                if (!(*CloseProps[i]).hasBerries && Vector3DistanceSqr((*CloseProps[i]).pos, d->pos) < 144)
                 {
                     (*CloseProps[i]).hasBerries = true;
                     PlaySoundVol(grow);
@@ -1413,7 +1413,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             }
             else if((*CloseProps[i]).type == MODEL_TREE)//tree regular, single apple
             {
-                if ((*CloseProps[i]).type == MODEL_TREE && Vector3Distance((*CloseProps[i]).pos, d->pos) < 12) {
+                if ((*CloseProps[i]).type == MODEL_TREE && Vector3DistanceSqr((*CloseProps[i]).pos, d->pos) < 144) {
                     if (SpawnAppleOnTree(CloseProps[i], 4.0f, 8.0f)) {
                         PlaySoundVol(grow);
                     }
@@ -1436,7 +1436,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
         if (bg[b].active) { continue; }//if its turned on, dont turn it on again
         else 
         {
-            if (Vector3Distance(pos, bg[b].spawnPoint) < bg[b].spawnRadius && (!bg[b].respawnTimer.running || HasTimerElapsed(&bg[b].respawnTimer)))
+            if (Vector3DistanceSqr(pos, bg[b].spawnPoint) < bg[b].spawnRadius * bg[b].spawnRadius && (!bg[b].respawnTimer.running || HasTimerElapsed(&bg[b].respawnTimer)))
             {
                 for (int i = 0; i < MAX_BG_PER_TYPE_AT_ONCE; i++)
                 {

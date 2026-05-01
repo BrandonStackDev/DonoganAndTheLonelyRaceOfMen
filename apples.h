@@ -201,7 +201,7 @@ void UpdateApples(float dt) {
 static inline void DrawApples(Donogan* d) {
     for (int i = 0; i < MAX_APPLES_TOTAL; ++i) {
         if (!apples[i].spawned) { continue; }
-        if (Vector3Distance(d->pos,apples[i].pos) > 200) { continue; }
+        if (Vector3DistanceSqr(d->pos,apples[i].pos) > 200 * 200) { continue; }
         //TraceLog(LOG_INFO, "drawing spawned apple...%d", i);
         DrawModel(apple, apples[i].pos, apples[i].scale, WHITE);
         // optional debug
@@ -313,7 +313,7 @@ void UpdateTreeOfLifeBloomGeneration(void)
         StaticGameObject* g = CloseProps[i];
         if (!g) continue;
         if (!Bloom_IsDeadTree(g->type)) continue;
-        if (Vector3Distance(g->pos, gBloom.genTolPos) > BLOOM_RADIUS) continue;
+        if (Vector3DistanceSqr(g->pos, gBloom.genTolPos) > BLOOM_RADIUS * BLOOM_RADIUS) continue;
 
         float treeScale = g->scale;
 
@@ -377,8 +377,8 @@ void GenerateTreeOfLifeBloom(Vector3 tolPos)
         StaticGameObject* g = CloseProps[i];
         if (!g || !Bloom_IsDeadTree(g->type)) continue;
 
-        float d = Vector3Distance(g->pos, tolPos);
-        if (d > BLOOM_RADIUS) continue;
+        float d = Vector3DistanceSqr(g->pos, tolPos);
+        if (d > BLOOM_RADIUS * BLOOM_RADIUS) continue;
 
         // Leaves: 8 green shades
         // per tree limits, but much denser overall
@@ -472,7 +472,7 @@ void UpdateTreeOfLifeBloomSpell(Donogan* d, ControllerData* pad, float dt)
 
     Vector3 tolPos = *InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos;
 
-    if (Vector3Distance(d->pos, tolPos) > BLOOM_RADIUS)
+    if (Vector3DistanceSqr(d->pos, tolPos) > BLOOM_RADIUS * BLOOM_RADIUS)
     {
         gBloom.hold = 0.0f;
         gBloom.manaPaid = 0;

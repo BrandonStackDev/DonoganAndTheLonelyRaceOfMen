@@ -1,15 +1,15 @@
 DON_SAVE_V1
-don_pos = 1496.698 364.603 -3259.136
+don_pos = 2986.617 320.000 4042.229
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
-don_health = 81
-don_mana   = 94
-don_starthealth = 108
-don_startmana   = 108
-don_level  = 28
-don_xp     = 3603
-don_money     = 11.625000
+don_health = 110
+don_mana   = 110
+don_starthealth = 110
+don_startmana   = 110
+don_level  = 33
+don_xp     = 4387
+don_money     = 5.675002
 don_hover  = 1
 don_wiz  = 1
 invY = 0
@@ -76,12 +76,12 @@ ITEM[14] = 0
 ITEM[15] = 0
 --ITEMS-END--
 --INV-BEGIN--
-INV[0] = 6
-INV[1] = 4
-INV[2] = 8
-INV[3] = 12
+INV[0] = 8
+INV[1] = 5
+INV[2] = 20
+INV[3] = 27
 INV[4] = 2
-INV[5] = 4
+INV[5] = 5
 INV[6] = 3
 INV[7] = 3
 --INV-END--
@@ -92,5 +92,5 @@ MAP[2] = 1 0
 MAP[3] = 0 0
 MAP[4] = 0 0
 MAP[5] = 1 0
-MAP[6] = 0 0
+MAP[6] = 1 0
 --MAPS-END--

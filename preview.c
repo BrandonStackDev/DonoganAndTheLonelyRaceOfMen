@@ -1158,7 +1158,7 @@ int main(void) {
                         else if (vehicleMode) { ps = truckPosition; }
                         else { ps = camera.position; }
                         //test closeness
-                        if (Vector3Distance(ps, tree.pos) < MAX_CLOSE_PROPS_DISTANCE)
+                        if (Vector3DistanceSqr(ps, tree.pos) < MAX_CLOSE_PROPS_DISTANCE * MAX_CLOSE_PROPS_DISTANCE)
                         {
                             CloseProps[j] = &chunks[cx][cy].props[i];
                             j++;
@@ -1424,7 +1424,7 @@ int main(void) {
                 }
                 if (!don.isTalking
                     && don.unlockedTruck
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4f
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_TRUCK].pos, don.pos) < 12.4 * 12.4
                     && HasTimerElapsed(&truckInteractTimer))
                 {
                     StartTimer(&truckInteractTimer);
@@ -1433,7 +1433,7 @@ int main(void) {
                     prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking 
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos, don.pos) < 13
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos, don.pos) < 13*13
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
@@ -1456,7 +1456,7 @@ int main(void) {
                     prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_WIZARD].pos, don.pos) < 13
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_WIZARD].pos, don.pos) < 13*13
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
@@ -1468,7 +1468,7 @@ int main(void) {
                     prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.02f
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_ATREYU].pos, don.pos) < 11.02 * 12
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
@@ -1489,7 +1489,7 @@ int main(void) {
                     prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_DARREL].pos, don.pos) < 11.44f
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_DARREL].pos, don.pos) < 11.44f * 12
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
@@ -1500,7 +1500,7 @@ int main(void) {
                     prevTalkTri = gpad.btnTriangle;
                     prevTalkX = gpad.btnCross;
                 }
-                else if (Vector3Distance(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 12.00f
+                else if (Vector3DistanceSqr(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 144
                     && !don.isTalking) //check !isTalking because we want to make sure we hit the exit talk routine if don is talking
                 {
                     if (npcs[NPC_NICK].r_state == RESCUE_STATE_SCARED) //begin run
@@ -1533,11 +1533,11 @@ int main(void) {
                     prevTalkX = gpad.btnCross;
                 }
                 else if (!don.isTalking
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_LUCY].pos, don.pos) < 12.00f
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_LUCY].pos, don.pos) < 144
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
-                    if (Vector3Distance(npcs[NPC_CHICKEN].pos, npcs[NPC_LUCY].pos) < 40 || missions[MISSION_CLARENCE_CHICKEN].complete)
+                    if (Vector3DistanceSqr(npcs[NPC_CHICKEN].pos, npcs[NPC_LUCY].pos) < 40*40 || missions[MISSION_CLARENCE_CHICKEN].complete)
                     {
                         if (!missions[MISSION_CLARENCE_CHICKEN].complete)
                         {
@@ -1566,7 +1566,7 @@ int main(void) {
                 else if (!missions[MISSION_CLARENCE_CHICKEN].complete //clarence the chicken mission
                     && HasTimerElapsed(&don.interactionLimitTimer)
                     && HasTimerElapsed(&don.talkStartTimer) //make sure talking to lucy doesnt trigger this on the next pass
-                    && (npcs[NPC_CHICKEN].state == CHICKEN_STATE_FOLLOW || Vector3Distance(*InteractivePoints[POI_TYPE_CHICKEN].pos, don.pos) < 12.0f))
+                    && (npcs[NPC_CHICKEN].state == CHICKEN_STATE_FOLLOW || Vector3DistanceSqr(*InteractivePoints[POI_TYPE_CHICKEN].pos, don.pos) < 144))
                 {
                     StartTimer(&don.interactionLimitTimer);//make sure we dont toggle the state of the chicken really fast
                     if (npcs[NPC_CHICKEN].state != CHICKEN_STATE_FOLLOW)
@@ -1586,7 +1586,7 @@ int main(void) {
                     }
                 }
                 else if (!don.isTalking
-                    && Vector3Distance(*InteractivePoints[POI_TYPE_ABBY].pos, don.pos) < 12.00f
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_ABBY].pos, don.pos) < 144
                     && HasTimerElapsed(&don.talkStartTimer))
                 {
                     don.isTalking = true;
@@ -1641,7 +1641,7 @@ int main(void) {
                     {
                         if (npcs[i].modelType != NPC_MODEL_TYPE_CLERK) { continue; }
 
-                        if (Vector3Distance(npcs[i].pos, don.pos) < 12.0f)
+                        if (Vector3DistanceSqr(npcs[i].pos, don.pos) < 144)
                         {
                             clerk = &npcs[i];
                             break;
@@ -1665,7 +1665,7 @@ int main(void) {
                 //fire places/pits
                 for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++)
                 {
-                    if (Vector3Distance(don.pos,fires[i].pos)<14.3f)
+                    if (Vector3DistanceSqr(don.pos,fires[i].pos)<200)
                     {
                         TraceLog(LOG_INFO, "%s firepit lit!", fires[i].name);
                         fires[i].lit = true;
@@ -1677,7 +1677,7 @@ int main(void) {
                     if (CloseProps[i]->type == MODEL_TREE_2                      // gate by tree type
                         && CloseProps[i]->hasBerries                             // must be enabled
                         && CloseProps[i]->berryCount > 0                         // must have some to collect
-                        && Vector3Distance(don.pos, CloseProps[i]->pos) < 12.0f) // in range
+                        && Vector3DistanceSqr(don.pos, CloseProps[i]->pos) < 144) // in range
                     {
                         CloseProps[i]->berriesSpawned = false;
                         if (gGame.diff == DIFF_EASY)
@@ -1698,7 +1698,7 @@ int main(void) {
                 for (int i = 0; i < MAX_APPLES_TOTAL; ++i) {
                     Apple* a = &apples[i];
                     if (!a->spawned || !a->fallen) { continue; }
-                    if (Vector3Distance(don.pos, a->pos) < 7.3f) {
+                    if (Vector3DistanceSqr(don.pos, a->pos) < 7.3*8) {
                         inventory[INV_APPLE].count++;   // apple exists ready to consume baby!
                         a->spawned = false;             // free slot
                         a->fallen = false;
@@ -2431,7 +2431,7 @@ int main(void) {
                 bugs = GenerateLightningBugs(camera.position, BUG_COUNT, 256.0256f);
                 bugGenHappened=true;
             }
-            else if (bugGenHappened && Vector3Distance(camera.position,lastLBSpawnPosition)>360.12f)
+            else if (bugGenHappened && Vector3DistanceSqr(camera.position,lastLBSpawnPosition)>360.12f*360)
             {
                 TraceLog(LOG_INFO, "bug re-gen");
                 RegenerateLightningBugs(bugs, camera.position, BUG_COUNT, 256.0256f);
@@ -3198,7 +3198,7 @@ int main(void) {
         {
             for (int i = 0; i < NUM_PLATS; i++)
             {
-                if (Vector3Distance(plats[i].pos, don.pos) > 200) { continue; }
+                if (Vector3DistanceSqr(plats[i].pos, don.pos) > 200*200) { continue; }
                 Platform_CollideAndRide(&plats[i], &don, dt, plats);
             }
         }
@@ -3569,7 +3569,7 @@ int main(void) {
         {
             for (int i = 0; i < NPC_TOTAL; i++)
             {
-                if (Vector3Distance(don.pos, npcs[i].pos) > 1000.0f) { continue; }
+                if (Vector3DistanceSqr(don.pos, npcs[i].pos) > 1000.0f*1000) { continue; }
                 NPC_Update(&npcs[i], &don, GetFrameTime());
             }
             BG_UpdateAll(&don, dt);
@@ -3884,7 +3884,7 @@ int main(void) {
             if (onLoad)
             {
                 Garden_Draw(&don, frustum);
-                if (Vector3Distance(tolPos, don.pos) < 2048)
+                if (Vector3DistanceSqr(tolPos, don.pos) < 2048*3000)
                 {
                     DrawTreeOfLifeBloom();
                 }
@@ -3913,7 +3913,7 @@ int main(void) {
                 {
                     for (int i = 0; i < NPC_TOTAL; i++)
                     {
-                        if (Vector3Distance(don.pos, npcs[i].pos) > 600.0f) { continue; } //todo: add frustum culling here also
+                        if (Vector3DistanceSqr(don.pos, npcs[i].pos) > 600.0f*600) { continue; } //todo: add frustum culling here also
                         NPC_Draw(&npcs[i]);
                     }
                 }
@@ -3927,7 +3927,7 @@ int main(void) {
                     {
                         fires[i].pos.y = GetTerrainHeightFromMeshXZ(fires[i].pos.x, fires[i].pos.z) + 0.8f;//+offset
                     }
-                    if (Vector3Distance(don.pos, fires[i].pos) > 800) { continue; }
+                    if (Vector3DistanceSqr(don.pos, fires[i].pos) > 800*900) { continue; }
                     DrawModel(firepit,fires[i].pos, 3, WHITE);
                     if (fires[i].lit)//if its lit, draw flame
                     {
@@ -3972,7 +3972,7 @@ int main(void) {
             }
             //machines
             Machine_DrawAll(camera.position, frustum);
-            if (Vector3Distance(don.pos,Scenes[SCENE_HOME_CABIN_01].pos) < 300) { Machine_DrawTruckLift(); }
+            if (Vector3DistanceSqr(don.pos,Scenes[SCENE_HOME_CABIN_01].pos) < 300*300) { Machine_DrawTruckLift(); }
             
             //items and maps
             if (onLoad) 
@@ -3984,7 +3984,7 @@ int main(void) {
             if (onLoad)
             {
                 Vector3 doorPos = Vector3Lerp(cottageDoorClosed, cottageDoorOpenPos, cottageDoorSlide);
-                if (Vector3Distance(doorPos,don.pos)<100) // cottage sliding door draw
+                if (Vector3DistanceSqr(doorPos,don.pos)<100*101) // cottage sliding door draw
                 {
                     DrawCube(doorPos, 16.0f, 16.0f, 2.5f, BROWN);
                     if (displayBoxes)
@@ -4043,7 +4043,7 @@ int main(void) {
             {
                 for (int i = 0; i < NUM_PLATS; i++)
                 {
-                    if (Vector3Distance(don.pos,plats[i].pos) > 600 || !IsBoxInFrustum(plats[i].box, frustum)) { continue; }
+                    if (Vector3DistanceSqr(don.pos,plats[i].pos) > 600*600 || !IsBoxInFrustum(plats[i].box, frustum)) { continue; }
                     Platform_Draw(&plats[i], displayBoxes);
                 }
             }
@@ -4085,7 +4085,7 @@ int main(void) {
                 // === FISH UPDATE + DRAW ======================================================
                 for (int s = 0; s < numSchools; s++)
                 {
-                    if (Vector3Distance(donnyMode?don.pos:camera.position, fish[s].fishTarget) > 890) { continue; }//good culling on fish because they are expensive
+                    if (Vector3DistanceSqr(donnyMode?don.pos:camera.position, fish[s].fishTarget) > 890*900) { continue; }//good culling on fish because they are expensive
                     // 1) steer the school target a bit each frame (orbit + optional player nudge)
                     static float schoolTheta = 0.0f;
                     float dt = GetFrameTime();
