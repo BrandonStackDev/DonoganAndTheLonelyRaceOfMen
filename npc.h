@@ -14,12 +14,15 @@
 // Type Definitions
 typedef enum {
     NPC_MODEL_TYPE_DARREL,
-    NPC_MODEL_TYPE_CHICKEN, //darrel is the name of the model + the name of the first chararcter that we are using it with...
+    NPC_MODEL_TYPE_CHICKEN, //darrel is the name of the model + the name of the first character that we are using it with...
     NPC_MODEL_TYPE_LUCY,
     NPC_MODEL_TYPE_WIZARD,
     NPC_MODEL_TYPE_ABBY,
     NPC_MODEL_TYPE_CLERK,
-    NPC_MODEL_TYPE_GALADRIEL
+    NPC_MODEL_TYPE_GALADRIEL,
+    NPC_MODEL_TYPE_ROGER,
+    NPC_MODEL_TYPE_GEOFF,
+    NPC_MODEL_TYPE_MARY,
 } NPC_Model_Type;
 
 typedef enum {
@@ -35,6 +38,9 @@ typedef enum {
     NPC_CLERK_4,
     NPC_CLERK_5,
     NPC_GALADRIEL,
+    NPC_ROGER,
+    NPC_GEOFF,
+    NPC_MARY,
     NPC_TOTAL,
 } NPC_Type;
 
@@ -184,6 +190,13 @@ void InitAllNPC()
     //galadriel
     Model gal_model = LoadModel("models/galadriel.obj");
     Texture gal_tex = LoadMyTexture("textures/galadriel.png");
+    //3 last guys for now
+    Model roger_model = LoadModel("models/roger.obj");
+    Texture roger_tex = LoadMyTexture("textures/roger.png");
+    Model geoff_model = LoadModel("models/geoff.obj");
+    Texture geoff_tex = LoadMyTexture("textures/geoff.png");
+    Model mary_model = LoadModel("models/mary.obj");
+    Texture mary_tex = LoadMyTexture("textures/mary.png");
     //setup darrel
     npcs[NPC_DARREL].type = NPC_DARREL;
     npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
@@ -340,6 +353,57 @@ void InitAllNPC()
     npcs[NPC_GALADRIEL].curAnim = 0;
     npcs[NPC_GALADRIEL].animFPS = 0;
     npcs[NPC_GALADRIEL].animFrame = 0.0f;
+    //setup roger
+    npcs[NPC_ROGER].type = NPC_ROGER;
+    npcs[NPC_ROGER].modelType = NPC_MODEL_TYPE_ROGER;
+    npcs[NPC_ROGER].model = roger_model;
+    npcs[NPC_ROGER].tex = roger_tex;
+    npcs[NPC_ROGER].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = roger_tex;
+    npcs[NPC_ROGER].animCount = 0;
+    npcs[NPC_ROGER].pos = (Vector3){ 2578.58, 339.06, 2320.00 }; //test pos = (Vector3){ 3022.00f, 322.00f, 4042.42f };
+    npcs[NPC_ROGER].targetPos = npcs[NPC_ROGER].pos;
+    npcs[NPC_ROGER].scale = 3.2;
+    npcs[NPC_ROGER].yaw = 0.0f;
+    npcs[NPC_ROGER].speed = 6.0f;
+    npcs[NPC_ROGER].isRescue = false;
+    npcs[NPC_ROGER].state = WIZARD_STATE_HELLO;
+    npcs[NPC_ROGER].curAnim = 0;
+    npcs[NPC_ROGER].animFPS = 0;
+    npcs[NPC_ROGER].animFrame = 0.0f;
+    //setup geoff
+    npcs[NPC_GEOFF].type = NPC_GEOFF;
+    npcs[NPC_GEOFF].modelType = NPC_MODEL_TYPE_GEOFF;
+    npcs[NPC_GEOFF].model = geoff_model;
+    npcs[NPC_GEOFF].tex = geoff_tex;
+    npcs[NPC_GEOFF].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = geoff_tex;
+    npcs[NPC_GEOFF].animCount = 0;
+    npcs[NPC_GEOFF].pos = (Vector3){ -2603.73, 403, -2456.85 }; //test pos = (Vector3){ 3022.00f, 322.00f, 4042.42f };
+    npcs[NPC_GEOFF].targetPos = npcs[NPC_GEOFF].pos;
+    npcs[NPC_GEOFF].scale = 3.2;
+    npcs[NPC_GEOFF].yaw = 0.0f;
+    npcs[NPC_GEOFF].speed = 6.0f;
+    npcs[NPC_GEOFF].isRescue = false;
+    npcs[NPC_GEOFF].state = WIZARD_STATE_HELLO;
+    npcs[NPC_GEOFF].curAnim = 0;
+    npcs[NPC_GEOFF].animFPS = 0;
+    npcs[NPC_GEOFF].animFrame = 0.0f;
+    //setup mary
+    npcs[NPC_MARY].type = NPC_MARY;
+    npcs[NPC_MARY].modelType = NPC_MODEL_TYPE_MARY;
+    npcs[NPC_MARY].model = mary_model;
+    npcs[NPC_MARY].tex = mary_tex;
+    npcs[NPC_MARY].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = mary_tex;
+    npcs[NPC_MARY].animCount = 0;
+    npcs[NPC_MARY].pos = (Vector3){ -2401.56, 448.24, -2137.88 }; //test pos = (Vector3){ 3022.00f, 322.00f, 4042.42f };
+    npcs[NPC_MARY].targetPos = npcs[NPC_MARY].pos;
+    npcs[NPC_MARY].scale = 3.2;
+    npcs[NPC_MARY].yaw = 0.0f;
+    npcs[NPC_MARY].speed = 6.0f;
+    npcs[NPC_MARY].isRescue = false;
+    npcs[NPC_MARY].state = WIZARD_STATE_HELLO;
+    npcs[NPC_MARY].curAnim = 0;
+    npcs[NPC_MARY].animFPS = 0;
+    npcs[NPC_MARY].animFrame = 0.0f;
 }
 
 bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
@@ -380,6 +444,9 @@ static inline void NPC_Update_Simple(NPC* n, const Donogan* d, float dt, bool lo
     else if (n->type == NPC_DARREL) { n->pos.y -= 0.2f; }
     else if (n->modelType == NPC_MODEL_TYPE_ABBY) { n->pos.y += 3; }
     else if (n->modelType == NPC_MODEL_TYPE_GALADRIEL) { n->pos.y += 2.5; }
+    else if (n->modelType == NPC_MODEL_TYPE_ROGER) { n->pos.y += 3.33; }
+    else if (n->modelType == NPC_MODEL_TYPE_GEOFF) { n->pos.y += 3.33; }
+    else if (n->modelType == NPC_MODEL_TYPE_MARY) { n->pos.y += 3.33; }
     // Face Donogan
     float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
     n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
@@ -512,6 +579,9 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     case NPC_ABBY: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_CLERK: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_GALADRIEL: NPC_Update_Simple(n, d, dt, looped); break;
+    case NPC_ROGER: NPC_Update_Simple(n, d, dt, looped); break;
+    case NPC_GEOFF: NPC_Update_Simple(n, d, dt, looped); break;
+    case NPC_MARY: NPC_Update_Simple(n, d, dt, looped); break;
     default: break;
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);
