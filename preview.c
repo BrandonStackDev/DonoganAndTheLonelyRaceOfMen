@@ -3725,6 +3725,7 @@ int main(void) {
             //printf("truckAngle: %f\n", truckAngle);
             Matrix scaleTruckMatrix = MatrixScale(4.8f,4.8f,4.8f);
             float finalTruckYaw = truckAngle+truckTrickYaw;
+            if (hoverMode){truckPitch /= 2;}
             float finalTruckPitch = truckPitch - truckTrickPitch;
             float finalTruckRoll = truckRoll+truckTrickRoll;
             Quaternion qYaw   = QuaternionFromAxisAngle((Vector3){ 0, 1, 0 }, finalTruckYaw);
@@ -4131,11 +4132,12 @@ int main(void) {
                         // Front tires only — steer left/right
                         steerAngle = PI / 8.0f * gpad.normLX; // tweak max angle
                     }
-                    if (hoverMode)
-                    {
-                        truckPitch = Lerp(truckPitch, 0.0f, dt * 4.0f);
-                        //truckRoll = Lerp(truckRoll, 0.0f, dt * 4.0f);
-                    }
+                    //if (hoverMode)
+                    //{
+                    //    truckPitch /= 2;
+                    //    //truckPitch = Lerp(truckPitch, 0.0f, dt * 4.0f);
+                    //    //truckRoll = Lerp(truckRoll, 0.0f, dt * 4.0f);
+                    //}
                     // First apply spin around X (wheel axis), then steering around Y
                     // Step 1: Create rotation matrices for yaw (Y), pitch (X), and roll (Z)
                     //printf("steerAngle : %f\n",steerAngle);
