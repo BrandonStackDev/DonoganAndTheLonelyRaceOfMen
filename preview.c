@@ -2862,7 +2862,7 @@ int main(void) {
                     
                 }
             }
-            if(rebuildFromTires)
+            if(rebuildFromTires && !hoverMode)
             {
                 // - rebuild truck from tires
                 // Get corrected tire heights
@@ -2891,7 +2891,8 @@ int main(void) {
             }
             if(truckRoll>PI){truckRoll=PI;}
             if(truckRoll<-PI){truckRoll=-PI;}
-            if(truckPitch>PI){truckPitch=PI;}
+            if (hoverMode && truckPitch > 0){truckPitch = 0;}
+            else if(truckPitch>PI){truckPitch=PI;}
             if(truckPitch<-PI){truckPitch=-PI;}
             if (vehicleMode)
             {
