@@ -928,6 +928,7 @@ int main(void) {
     //help maps know things like the important people
     map_tol = &tolPos;
     map_atreyu = &atreyuPos;
+    map_gal = &npcs[NPC_GALADRIEL].pos;
     Corn_Init(instancingLightShader);
     //init the stuff before launching thread launcher
     InitMenu(&don);//just for some color stuff
