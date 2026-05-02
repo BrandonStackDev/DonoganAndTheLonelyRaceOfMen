@@ -547,7 +547,8 @@ int main(void) {
     toastTimer = CreateTimer(8);
     StartTimer(&toastTimer);
     bool devDisplay = false;
-    SetTraceLogLevel(LOG_ALL);
+    //SetTraceLogLevel(LOG_ALL);
+    SetTraceLogLevel(LOG_WARNING);
     MUTEX_INIT(mutex);
     bool displayBoxes = false;
     bool displayLod = false;

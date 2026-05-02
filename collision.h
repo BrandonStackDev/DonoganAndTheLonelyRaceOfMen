@@ -324,13 +324,13 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
                                 fmaxf(a.z, fmaxf(b.z, c3.z)) };
         triBox.min.x -= SKIN; triBox.max.x += SKIN;
         triBox.min.z -= SKIN; triBox.max.z += SKIN;
-        if (!AabbOverlap(box, triBox)) continue;
+        if (!AabbOverlap(box, triBox)) { continue; }
 
         // --- the rest of your existing normal/ground/wall logic stays the same ---
         Vector3 e1 = Vector3Subtract(b, a);
         Vector3 e2 = Vector3Subtract(c3, a);
         Vector3 n = Vector3Normalize(Vector3CrossProduct(e1, e2));
-        if (n.y < 0.0f) n = Vector3Negate(n);
+        if (n.y < 0.0f) n = { Vector3Negate(n); }
 
         if (n.y >= groundSlopeCos) {
             float y = GetHeightOnTriangle((Vector3) { boxCenter.x, 0, boxCenter.z }, a, b, c3);
@@ -351,8 +351,8 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
             if (triYSpan < 0.6 && triYSpan > 0)
             {
                 lookForFloor = true;
-                minAcceptableY = triBox.max.y + 0.02;
-                TraceLog(LOG_INFO, "lookForFloor!");
+                if (triBox.max.y + 0.02 > minAcceptableY) { minAcceptableY = triBox.max.y + 0.02; }
+                TraceLog(LOG_WARNING, "lookForFloor!");
             }
             if ((box.min.y <= triBox.max.y) && (box.max.y >= triBox.min.y)) {
                 float ox = AxisOverlap(box.min.x, box.max.x, triBox.min.x, triBox.max.x);
