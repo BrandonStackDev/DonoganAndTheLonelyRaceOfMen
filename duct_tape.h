@@ -60,7 +60,7 @@ void GoGoGadgetDuctTape()
     gEnvBoundingBoxes[25] = (EnvBoundingBox){ EBBT_WALL, (BoundingBox) { (Vector3) { -596.3f, 793.0f, 2866.8f }, (Vector3) { -576.5f, 809.0f, 2870.2f } } };
     gEnvBoundingBoxes[26] = (EnvBoundingBox){ EBBT_WALL, (BoundingBox) { (Vector3) { -627.5f, 793.0f, 2866.8f }, (Vector3) { -576.5f, 809.0f, 2870.2f } } };
     //cinderSpire
-    gEnvBoundingBoxes[27] = (EnvBoundingBox){ EBBT_CAVE_START, (BoundingBox) { (Vector3) { -460.0f, 655.0f, -1140.0f },(Vector3) { -400.0f, 670.0f, -1122.0f } } }; //cinderspire
+    gEnvBoundingBoxes[27] = (EnvBoundingBox){ EBBT_CAVE_START, (BoundingBox) { (Vector3) { -460.0f, 655.0f, -1140.0f },(Vector3) { -410.0f, 670.0f, -1122.0f } } }; //cinderspire
 }
 
 #endif // DUCT_TAPE_H

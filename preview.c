@@ -1476,7 +1476,7 @@ int main(void) {
             camera.position.x = camera.target.x + radius * cosf(pitch) * sinf(yaw);
             camera.position.y = camera.target.y + radius * sinf(pitch);
             camera.position.z = camera.target.z + radius * cosf(pitch) * cosf(yaw);
-            if (!inBowCam)
+            if (!inBowCam && !caveMode)
             {
                 float camGroundY = GetTerrainHeightFromMeshXZ(camera.position.x, camera.position.z);
                 if (camGroundY + 0.6f > camera.position.y)
