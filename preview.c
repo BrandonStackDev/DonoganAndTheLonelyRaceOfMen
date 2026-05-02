@@ -268,13 +268,11 @@ static inline bool IsInCaveMode(Donogan* d, bool caveMode)
             return true;
         }
     }
-
-    // Cinder Spire itself counts as cave mode for now.
-    // Later you can add SCENE_CAVE_01 here too.
     if (caveMode && CheckCollisionBoxes(d->box, Scenes[SCENE_CINDER].box))
     {
         return true;
     }
+    if (caveMode && CheckCollisionBoxes(d->box, Scenes[SCENE_CINDER_CAVE].box)) { return true;}
 
     return false;
 }
