@@ -2,7 +2,7 @@
 
 precision highp float;
 
-#define MAX_LIGHTS             32
+#define MAX_LIGHTS             16
 #define LIGHT_DIRECTIONAL       0
 #define LIGHT_POINT             1
 #define PI 3.14159265358979323846

@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define CAVE_TORCH_MAX 32
-#define CAVE_SHADER_LIGHT_MAX 32
+#define CAVE_TORCH_MAX 16
+#define CAVE_SHADER_LIGHT_MAX 16
 
 typedef struct CaveTorch {
     Vector3 pos;
@@ -83,8 +83,8 @@ static inline void CaveLight_AddTorch(Vector3 pos, bool lit)
     t->pos = pos;
     t->lit = lit;
     t->startsLit = lit;
-    t->radius = 16;
-    t->strength = 2;
+    t->radius = 55;
+    t->strength = 8;
 }
 
 static inline void CaveLight_Init(void)
@@ -161,6 +161,13 @@ static inline void CaveLight_Init(void)
     CaveLight_AddTorch((Vector3) { -376.59, 613.16, -1157.61 }, false);
     CaveLight_AddTorch((Vector3) { -462.88, 612.97, -1118.36 }, false);
     CaveLight_AddTorch((Vector3) { -423.84, 613.06, -1117.81 }, false);
+    //bottom
+    CaveLight_AddTorch((Vector3) { -458.61, 566.95, -1123.05 }, false);
+    CaveLight_AddTorch((Vector3) { -372.36, 568.64, -1133.93 }, false);
+    CaveLight_AddTorch((Vector3) { -451.36, 566.97, -1158.41 }, false);
+    CaveLight_AddTorch((Vector3) { -381.59, 567.12, -1212.85 }, false);
+    CaveLight_AddTorch((Vector3) { -449.49, 566.97, -1203.50 }, false);
+    CaveLight_AddTorch((Vector3) { -442.59, 566.99, -1181.10 }, false);
 
     gCaveLight.ready = true;
 }
@@ -208,11 +215,9 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
     float aoValue = 1.0f;
     float emissivePower = 1.25f;
 
-    Vector3 ambientColor = caveMode
-        ? (Vector3) { 0.0005f, 0.00045f, 0.0007f }
-        : (Vector3) { 0.25f, 0.25f, 0.25f };
+    Vector3 ambientColor = (Vector3) { 0.0004f, 0.00025f, 0.0009f };
 
-    float ambient = caveMode ? 0.15f : 1.0f;
+    float ambient = 0.0000002;
 
     SetShaderValue(gCaveLight.pbrShader, gCaveLight.locViewPos, &viewPos, SHADER_UNIFORM_VEC3);
 
@@ -309,12 +314,12 @@ static inline void CaveLight_DrawTorches(Model fireModel, Shader fireShader, int
         Vector3 polePos = t->pos;
         polePos.y += 1.5f;
 
-        DrawModel(gCaveLight.torchPole, polePos, 1.0f, WHITE);
+        DrawModel(gCaveLight.torchPole, polePos, 1.0f, DARKBLUE);
 
         Vector3 headPos = t->pos;
         headPos.y += 3.48f;
 
-        DrawModel(gCaveLight.torchHead, headPos, 1.0f, WHITE);
+        DrawModel(gCaveLight.torchHead, headPos, 1.0f, DARKPURPLE);
 
         if (t->lit)
         {
@@ -352,7 +357,7 @@ static inline void CaveLight_DrawTorches(Model fireModel, Shader fireShader, int
                 (Vector3) {
                 0.85f, 0.55f, 0.85f
             },
-                WHITE
+                YELLOW
             );
 
             EndBlendMode();
