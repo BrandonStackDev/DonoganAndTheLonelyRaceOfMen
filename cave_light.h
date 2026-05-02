@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 #define CAVE_TORCH_MAX 32
-#define CAVE_SHADER_LIGHT_MAX 4
+#define CAVE_SHADER_LIGHT_MAX 32
 
 typedef struct CaveTorch {
     Vector3 pos;
@@ -83,8 +83,8 @@ static inline void CaveLight_AddTorch(Vector3 pos, bool lit)
     t->pos = pos;
     t->lit = lit;
     t->startsLit = lit;
-    t->radius = 85.0f;
-    t->strength = 3000.5f;
+    t->radius = 16;
+    t->strength = 2;
 }
 
 static inline void CaveLight_Init(void)
@@ -152,15 +152,15 @@ static inline void CaveLight_Init(void)
     // TEMP POSITIONS.
     // Replace these when you grab real cave positions.
     CaveLight_AddTorch((Vector3) { -437.22, 660.94, -1124.01 }, true);
-    CaveLight_AddTorch((Vector3) { -388.66, 660.96, -1124.75 }, true);
-    CaveLight_AddTorch((Vector3) { -418.29, 660.93, -1132.54 }, true);
-    CaveLight_AddTorch((Vector3) { -463.38, 612.97, -1151.04 }, true);
+    CaveLight_AddTorch((Vector3) { -388.66, 660.96, -1124.75 }, false);
+    CaveLight_AddTorch((Vector3) { -418.29, 660.93, -1132.54 }, false);
+    CaveLight_AddTorch((Vector3) { -463.38, 612.97, -1151.04 }, false);
     CaveLight_AddTorch((Vector3) { -463.41, 612.97, -1211.26 }, true);
     CaveLight_AddTorch((Vector3) { -378.39, 613.15, -1212.42 }, false);
-    CaveLight_AddTorch((Vector3) { -378.38, 613.15, -1119.28 }, true);
+    CaveLight_AddTorch((Vector3) { -378.38, 613.15, -1119.28 }, false);
     CaveLight_AddTorch((Vector3) { -376.59, 613.16, -1157.61 }, false);
     CaveLight_AddTorch((Vector3) { -462.88, 612.97, -1118.36 }, false);
-    CaveLight_AddTorch((Vector3) { -423.84, 613.06, -1117.81 }, true);
+    CaveLight_AddTorch((Vector3) { -423.84, 613.06, -1117.81 }, false);
 
     gCaveLight.ready = true;
 }
@@ -209,8 +209,8 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
     float emissivePower = 1.25f;
 
     Vector3 ambientColor = caveMode
-        ? (Vector3) { 0.006f, 0.005f, 0.009f }
-    : (Vector3) { 0.25f, 0.25f, 0.25f };
+        ? (Vector3) { 0.0005f, 0.00045f, 0.0007f }
+        : (Vector3) { 0.25f, 0.25f, 0.25f };
 
     float ambient = caveMode ? 0.15f : 1.0f;
 
@@ -235,9 +235,6 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
     SetShaderValue(gCaveLight.pbrShader, gCaveLight.locAmbientColor, &ambientColor, SHADER_UNIFORM_VEC3);
     SetShaderValue(gCaveLight.pbrShader, gCaveLight.locAmbient, &ambient, SHADER_UNIFORM_FLOAT);
 
-    int numOfLights = CAVE_SHADER_LIGHT_MAX;
-    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locNumOfLights, &numOfLights, SHADER_UNIFORM_INT);
-
     int pushed = 0;
 
     for (int i = 0; i < gCaveLight.torchCount && pushed < CAVE_SHADER_LIGHT_MAX; i++)
@@ -246,14 +243,12 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
         if (!caveMode || !t->lit) continue;
 
         int enabled = 1;
-        int type = 1; // LIGHT_POINT from your shader
+        int type = 1; // point light
 
         Vector3 lightPos = t->pos;
         lightPos.y += 3.45f;
 
         Vector3 target = { 0.0f, 0.0f, 0.0f };
-
-        // Needs to be big because shader attenuation is 1 / (dist * dist * 0.23)
         Vector4 color = { 1.0f, 0.48f, 0.16f, 1.0f };
         float intensity = t->strength;
 
@@ -267,7 +262,6 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
         pushed++;
     }
 
-    // Disable unused light slots.
     for (int i = pushed; i < CAVE_SHADER_LIGHT_MAX; i++)
     {
         int enabled = 0;
@@ -284,6 +278,8 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
         SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightColor[i], &color, SHADER_UNIFORM_VEC4);
         SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightIntensity[i], &intensity, SHADER_UNIFORM_FLOAT);
     }
+
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locNumOfLights, &pushed, SHADER_UNIFORM_INT);
 }
 
 static inline void CaveLight_LightNearbyTorch(Vector3 donPos)

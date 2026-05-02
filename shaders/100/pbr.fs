@@ -2,7 +2,7 @@
 
 precision highp float;
 
-#define MAX_LIGHTS              4
+#define MAX_LIGHTS             32
 #define LIGHT_DIRECTIONAL       0
 #define LIGHT_POINT             1
 #define PI 3.14159265358979323846
@@ -114,7 +114,7 @@ vec3 ComputePBR()
     vec3 baseRefl = mix(vec3(0.04), albedo.rgb, metallic);
     vec3 lightAccum = vec3(0.0);  // Acumulate lighting lum
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < MAX_LIGHTS; i++)
     {
         vec3 L = normalize(lights[i].position - fragPosition);      // Compute light vector
         vec3 H = normalize(V + L);                                  // Compute halfway bisecting vector
