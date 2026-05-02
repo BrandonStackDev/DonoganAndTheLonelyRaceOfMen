@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 131
+#define NUM_PLATS 132
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -650,6 +650,8 @@ void InitPlats()
     plats[128] = Platform_MakeStill((Vector3) { 1894.63, 710, -445.70 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     plats[129] = Platform_MakeStill((Vector3) { 1731.15, 610, -1176.69 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     plats[130] = Platform_MakeStill((Vector3) { 1731.15, 710, -1176.69 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    ////////////////////////////////////////////////////cinderspire//////////////////////////////////////////////////////////////////////////
+    plats[131] = Platform_MakeMover((Vector3) { -452.93, 570, -1136.77 }, (Vector3) { -452.93, 628, -1136.77 }, (Vector3) { 6, 1, 6 }, 6.0f, tex_plat, WHITE);
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 

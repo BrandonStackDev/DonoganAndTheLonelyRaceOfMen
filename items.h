@@ -18,15 +18,8 @@ typedef enum {
     INV_HEALTH_FULL, //full health, all the way to max health, somewhat rare
     INV_POTION, //full mana, common
     INV_RX, // medicine
-    //special - all rare or special in someway
-    //INV_CLOAK, //bad guys don't spawn for 120 seconds (rename this one)
-    //INV_NO_DAMAGE, //bad guys cannot hurt you when this is used for 60 seconds
-    //INV_MEDICINE, //for the Adriana mission
-    //INV_FLAME_TONIC, //sets a timer for like 60 seconds, that we have flaming arrows, flaming arrows will explode on impact and do more damage, this will be hard
     INV_BERRY, //give 5 health, will be spawned from berries that grow on tree 2, if you press square, every pump, will spawn a berry on the closest tree 2 in the active list
     INV_APPLE, //gives +50 health, must be shot down with an arrow from a tree
-    //INV_FART_POWDER, //very rare, when consumed will play a fart sound and immediately kill all bad guys in a 100 foot radius. when in water, should also produce some bubbles
-    //INV_KEY, //very rare, will only be like 5 max in the game, used to open locked things, the number of these should match the number of locked things (like buildings with doors and chests), the rule will be you need a key in inventory to open the thing, it consumes one key and then its permanently opened
     INV_BOOK, //most important item in the game, these are what you look for....should be like 10 - 20 on the map (todo: Alistair stuff also)
     INV_EVIL_BOOK, //the ones that are hidden inside buildings, the shadow books
     INV_TOTAL_TYPES,
@@ -62,7 +55,7 @@ typedef struct {
 } TrackedItem; //for items on the map that do not respawn and are kept in the save file
 
 #define NUM_ITEMS 31
-#define NUM_TRACKED_ITEMS 16
+#define NUM_TRACKED_ITEMS 18
 #define MAX_CLOSE_ITEMS 32
 Item map_items[NUM_ITEMS];
 TrackedItem map_tracked_items[NUM_TRACKED_ITEMS];
@@ -267,6 +260,7 @@ void InitItems()
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 1899.63, 806, -455.70 }, INV_BOOK, 1); //pair
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { 1144.80, 787, -1785.58 }, INV_BOOK, 1); //bridge
     map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { -613.01, 801.58, 2833.29 }, INV_BOOK, 1); //yetimt
+    map_tracked_items[mti_init++] = CreateTrackedItem(book_model, (Vector3) { -445.29, 570, -1161.96 }, INV_BOOK, 1); //cinderspire
     //book of shadows
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2126.62, 545.88, 834.43 }, INV_EVIL_BOOK, 1); //castle
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 2711.45, 362.51, 4524.31 }, INV_EVIL_BOOK, 1); //temple on start island
@@ -276,6 +270,7 @@ void InitItems()
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 1735.15, 806, -1186.69 }, INV_EVIL_BOOK, 1); //pair
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { 805.95, 882, -1838.85 }, INV_EVIL_BOOK, 1); //bridge
     map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -590.53, 802.32, 2830.12 }, INV_EVIL_BOOK, 1); //yetimt //31
+    map_tracked_items[mti_init++] = CreateTrackedItem(evil_book_model, (Vector3) { -443.00, 570, -1186.60 }, INV_EVIL_BOOK, 1); //cinderspire
 }
 
 #endif // ITEMS_H
