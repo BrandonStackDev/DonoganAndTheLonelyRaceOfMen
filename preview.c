@@ -2610,7 +2610,7 @@ int main(void) {
         FindClosestChunkAndAssignLod(vehicleMode?truckPosition:camera.position);
         //----------------------------------------------------------------------------------------------------
         //fade to black, end scene...
-        if (dayTime) {
+        if (dayTime && !caveMode) {
             skyboxTint = LerpColor(skyboxTint, skyboxDay, 0.02f); //dont scale this one
             backGroundColor = LerpColor(backGroundColor, backgroundDay, 0.004f * scaleNightTransition);
             LightPosDraw = LerpVector3(LightPosDraw, LightPosTargetDay, 0.04f * scaleNightTransition);
@@ -2624,7 +2624,7 @@ int main(void) {
             SetShaderValue(heightShaderLight, lightDirLoc, &lightDir, SHADER_UNIFORM_VEC3);
             lightTileColor = LerpColor(lightTileColor, (Color){160,180,200,254}, 0.02f * scaleNightTransition);
         }
-        else { //night time
+        else { //night time or cave mode
             skyboxTint = LerpColor(skyboxTint, skyboxNight, 0.002f); //dont scale this one
             backGroundColor = LerpColor(backGroundColor, backgroundNight, 0.002f * scaleNightTransition);
             LightPosDraw = LerpVector3(LightPosDraw, LightPosTargetNight, 0.04f * scaleNightTransition);
@@ -3869,7 +3869,7 @@ int main(void) {
             }
             BG_UpdateAll(&don, dt);
         }
-        don.drawColor = LerpColor(don.drawColor,!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
+        don.drawColor = LerpColor(don.drawColor,caveMode?DARKGRAY:!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         Garden_Update(&don, gpad.btnSquare);
@@ -4379,7 +4379,7 @@ int main(void) {
                 for (int i = 0; i < NUM_PLATS; i++)
                 {
                     if (Vector3DistanceSqr(don.pos,plats[i].pos) > 600*600 || !IsBoxInFrustum(plats[i].box, frustum)) { continue; }
-                    Platform_Draw(&plats[i], displayBoxes);
+                    Platform_Draw(&plats[i], displayBoxes, caveMode);
                 }
             }
             //bg

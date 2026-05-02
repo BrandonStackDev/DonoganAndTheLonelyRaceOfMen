@@ -232,7 +232,7 @@ static int TileDistSq(const TileEntry* t, int tx, int ty)
 //////////////////////IMPORTANT GLOBAL VARIABLES///////////////////////////////
 // 
 //very very important
-float scaleNightTransition = 0.0989f;
+float scaleNightTransition = 0.00989f;
 float gravityCollected = 0.0f;
 int chosenX = 7;
 int chosenY = 7;

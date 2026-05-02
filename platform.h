@@ -393,16 +393,11 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
 // ------------------------------------------------------------
 // Draw (optional helpers)
 // ------------------------------------------------------------
-static inline void Platform_Draw(const Platform* p, bool bb)
+static inline void Platform_Draw(const Platform* p, bool bb, bool caveMode)
 {
     if (!p) return;
     // If you loaded cubeModel, draw it; otherwise draw a simple cube
-    if (p->cubeModel.meshCount > 0) {
-        DrawModel(p->cubeModel, p->pos, 1.0f, WHITE);
-    }
-    else {
-        DrawCubeV(p->pos, p->dim, p->color.a ? p->color : GRAY);
-    }
+    DrawModel(p->cubeModel, p->pos, 1.0f, caveMode?DARKGRAY:WHITE);
     // Bounding box for debugging
     if (bb) { DrawBoundingBox(p->box, (Color) { 200, 255, 180, 180 }); }
 }
