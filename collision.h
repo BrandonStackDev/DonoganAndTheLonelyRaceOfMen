@@ -253,7 +253,7 @@ static inline float AxisOverlap(float aMin, float aMax, float bMin, float bMax) 
 
 // Epsilon tolerances
 #define GROUND_EPS_BELOW   0.02f   // how far below feet we still accept
-#define GROUND_MAX_STEP    1.0f    // optional: maximum step-up allowed
+#define GROUND_MAX_STEP    4.2f    // optional: maximum step-up allowed
 #define WALL_PUSH_SCALE    0.6f    // scale for gentle push
 #define HORIZ_EPS          1e-4f
 
@@ -330,13 +330,14 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
         Vector3 e1 = Vector3Subtract(b, a);
         Vector3 e2 = Vector3Subtract(c3, a);
         Vector3 n = Vector3Normalize(Vector3CrossProduct(e1, e2));
-        if (n.y < 0.0f) n = { Vector3Negate(n); }
+        if (n.y < 0.0f)  { n = Vector3Negate(n); }
 
         if (n.y >= groundSlopeCos) {
             float y = GetHeightOnTriangle((Vector3) { boxCenter.x, 0, boxCenter.z }, a, b, c3);
             if (y > -9999.0f) {
                 float deltaUp = y - feetY;
-                if (deltaUp >= -GROUND_EPS_BELOW && deltaUp <= GROUND_MAX_STEP) {
+                if (deltaUp >= -GROUND_EPS_BELOW && deltaUp <= GROUND_MAX_STEP)
+                {
                     if (y > bestGroundY) { bestGroundY = y; bestGroundN = n; }
                     out.hit = true;
                 }
