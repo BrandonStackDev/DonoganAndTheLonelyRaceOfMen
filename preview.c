@@ -499,6 +499,26 @@ static void Galadriel_GiveBooks(Donogan* d)
     }
 }
 
+static bool Don_BoxHitsSceneMeshAtPos(Donogan* d, int sceneIndex, Vector3 testPos)
+{
+    BoundingBox testOuter = UpdateBoundingBox(d->origOuterBB, testPos);
+
+    const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS;
+
+    MeshBoxHit testHit = CollideAABBWithMeshTriangles(
+        testOuter,
+        &HomeModels[Scenes[sceneIndex].modelType].meshes[0],
+        Scenes[sceneIndex].pos,
+        Scenes[sceneIndex].scale,
+        Scenes[sceneIndex].yaw,
+        groundSlopeCos,
+        true
+    );
+
+    return testHit.hit && !testHit.hitGround;
+}
+
+
 /// @brief main!
 /// @param  
 /// @return 
@@ -3223,62 +3243,112 @@ int main(void) {
                                 don.groundY = hit.groundY; //overwrites ground collision (seems to work pretty well!)
                             }
                         }
-                        else if (hit.hit && !hitEnvWall)//if we already hit env bounding box, use that instead
+                        else if (hit.hit && !hitEnvWall) // if we already hit env bounding box, use that instead
                         {
                             disableRoll = true;
-                            const float EPS = 1e-6f;
-                            const float ALIGN_THRESH = 0.35f; //
+
+                            const float EPS = 0.0001f;
+                            const float MAX_PUSH = 0.5f;
+                            const float GOOD_DOT = 0.25f;
 
                             DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
 
-                            // Candidate "MTD" from your collider:
+                            // Candidate push from collider.
                             Vector3 p = hit.push;
-                            float   pLen = Vector3Length(p);
-                            if (pLen > 0.5f)
-                            {
-                                p = Vector3Scale(p, 0.5f / pLen);
-                            }
-                            // Movement this frame: new vs old (new is your attempted pos BEFORE resolve)
-                            Vector3 newPos = don.pos;
-                            Vector3 oldPos = don.oldPos;
-                            Vector3 move = Vector3Subtract(newPos, oldPos);
-                            float   moveLen = Vector3Length(move);
-                            if (moveLen < 0.000001) 
-                            {
-                                // Unit directions (guard zero-length)
-                                // Unit directions, guarded against zero movement
-                                Vector3 pDir = (pLen > EPS) ? Vector3Scale(p, 1.0f / pLen) : (Vector3) { 0 };
-                                Vector3 backDir = (Vector3){ 0 };
-                                float align = 1.0f;
+                            p.y = 0.0f;
 
-                                if (moveLen > EPS && pLen > EPS)
+                            float pLen = Vector3Length(p);
+                            if (pLen <= EPS)
+                            {
+                                break;
+                            }
+
+                            if (pLen > MAX_PUSH)
+                            {
+                                p = Vector3Scale(p, MAX_PUSH / pLen);
+                                pLen = MAX_PUSH;
+                            }
+
+                            // -----------------------------------------------------------------
+                            // Walk backward through Don's history and find the newest position
+                            // that does NOT hit this same scene mesh.
+                            // -----------------------------------------------------------------
+                            Vector3 safePos = don.pos;
+                            bool foundSafePos = false;
+
+                            for (int hb = 1; hb <= DON_POS_HISTORY_MAX; hb++)
+                            {
+                                Vector3 testPos = Don_GetHistoryPosition(&don, hb);
+
+                                // Keep current Y so this does not cancel jumping/falling.
+                                testPos.y = don.pos.y;
+
+                                BoundingBox testOuter = UpdateBoundingBox(don.origOuterBB, testPos);
+
+                                MeshBoxHit testHit = CollideAABBWithMeshTriangles(
+                                    testOuter,
+                                    &HomeModels[Scenes[i].modelType].meshes[0],
+                                    Scenes[i].pos,
+                                    Scenes[i].scale,
+                                    Scenes[i].yaw,
+                                    groundSlopeCos,
+                                    true
+                                );
+
+                                if (!testHit.hit || testHit.hitGround)
                                 {
-                                    backDir = Vector3Scale(move, -1.0f / moveLen); // already normalized
-
-                                    align = Vector3DotProduct(pDir, backDir);
-
-                                    TraceLog(LOG_INFO, "align: %f ", align);
-                                    TraceLog(LOG_INFO, "pDir: %f %f %f", pDir.x, pDir.y, pDir.z);
-                                    TraceLog(LOG_INFO, "backDir: %f %f %f", backDir.x, backDir.y, backDir.z);
-
-                                    if (align < ALIGN_THRESH)
-                            {
-                                        // Keep the collider's push size. Do NOT hard shove by 1.0f.
-                                        p = Vector3Scale(backDir, pLen);
-                                        TraceLog(LOG_INFO, "changing p: %f %f %f", p.x, p.y, p.z);
+                                    safePos = testPos;
+                                    foundSafePos = true;
+                                    break;
+                                }
                             }
+
+                            if (foundSafePos)
+                            {
+                                Vector3 toSafe = Vector3Subtract(safePos, don.pos);
+                                toSafe.y = 0.0f;
+
+                                float toSafeLen = Vector3Length(toSafe);
+
+                                // First teleport/rollback to the newest known non-hitting position.
+                                don.pos = safePos;
+
+                                // Then only apply p if it mostly points toward that safe direction.
+                                // If p is wrong, replace it with same-sized push toward safe position.
+                                if (toSafeLen > EPS && pLen > EPS)
+                                {
+                                    Vector3 toSafeDir = Vector3Scale(toSafe, 1.0f / toSafeLen);
+                                    Vector3 pDir = Vector3Scale(p, 1.0f / pLen);
+
+                                    float dot = Vector3DotProduct(pDir, toSafeDir);
+
+                                    if (dot < GOOD_DOT)
+                                    {
+                                        p = Vector3Scale(toSafeDir, pLen);
+                                    }
+
+                                    don.pos = Vector3Add(don.pos, p);
+                                }
+
+                                TraceLog(LOG_WARNING,
+                                    "[HOME HIST SAFE] scene=%d safe=(%.2f %.2f %.2f) p=(%.3f %.3f %.3f)",
+                                    i,
+                                    safePos.x, safePos.y, safePos.z,
+                                    p.x, p.y, p.z
+                                );
+
+                                // Stop carried movement from shoving him right back in.
+                                don.rollVel = (Vector3){ 0 };
+                                don.velXZ = (Vector3){ 0 };
                             }
                             else
                             {
-                                    TraceLog(LOG_INFO, "skip align: moveLen=%f pLen=%f", moveLen, pLen);
-                                }
-                                }
-                            // Apply the (possibly adjusted) push from the *old* position
-                                TraceLog(LOG_INFO, "applying p: %f %f %f", p.x, p.y, p.z);
-                            don.pos = Vector3Add(oldPos, p);
-                            don.box = UpdateBoundingBox(don.origBB, don.pos);
-                            don.innerBox = UpdateBoundingBox(don.origInnerBB, don.pos);
-                            don.outerBox = UpdateBoundingBox(don.origOuterBB, don.pos);
+                                // Fallback: old behavior, but from current pos, not oldPos.
+                                TraceLog(LOG_INFO, "applying p fallback: %f %f %f", p.x, p.y, p.z);
+                                don.pos = Vector3Add(don.pos, p);
+                            }
+
+                            Don_UpdateBoxes(&don);
                             break;
                         }
                     }

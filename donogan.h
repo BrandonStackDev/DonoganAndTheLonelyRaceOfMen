@@ -334,7 +334,7 @@ static float LerpFloat(float* to, float* from, float* dt) {
     float a = *from, b = *to, t = *dt;
     return a + (b - a) * t;
 }
-#define DON_POS_HISTORY_MAX 8
+#define DON_POS_HISTORY_MAX 32
 // ---------- Donogan runtime ----------
 typedef struct {
     // Animation & model
