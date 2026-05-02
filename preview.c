@@ -517,6 +517,25 @@ static bool Don_BoxHitsSceneMeshAtPos(Donogan* d, int sceneIndex, Vector3 testPo
 
     return testHit.hit && !testHit.hitGround;
 }
+static bool Don_HistoryIsWiggingOut(Donogan* d)
+{
+    float path = 0.0f;
+    for (int hb = 1; hb < DON_POS_HISTORY_MAX; hb++)
+    {
+        Vector3 a = Don_GetHistoryPosition(d, hb);
+        Vector3 b = Don_GetHistoryPosition(d, hb + 1);
+        a.y = b.y = 0.0f;
+        path += Vector3Distance(a, b);
+    }
+
+    Vector3 newest = Don_GetHistoryPosition(d, 1);
+    Vector3 oldest = Don_GetHistoryPosition(d, DON_POS_HISTORY_MAX);
+    newest.y = oldest.y = 0.0f;
+
+    float net = Vector3Distance(newest, oldest);
+
+    return (path > 4.0f && net < path * 0.35f);
+}
 
 
 /// @brief main!
@@ -647,6 +666,8 @@ int main(void) {
     Font default_font = GetFontDefault();
     Font req_font = LoadFontEx("res/Tangerine/Tangerine-Bold.ttf", 32, 0, 250);
     Font res_font = LoadFontEx("res/Lexend/static/Lexend-SemiBold.ttf", 15, 0, 250);
+    //omg spaghetti code lol
+    bool disableDonInputNextFrame = false;
     ////PLATS-----------------------------------------------------
     InitPlats();
     //items
@@ -1333,6 +1354,12 @@ int main(void) {
         {
             don.oldPos = don.pos;
             Don_RecordPositionHistory(&don);
+            if (Don_HistoryIsWiggingOut(&don))
+            {
+                disableDonInputNextFrame = true;
+                don.rollVel = (Vector3){ 0 };
+                don.velXZ = (Vector3){ 0 };
+            }
         }
         //controller and truck stuff
         havePad = ReadControllerWindows(0, &gpad);
@@ -2485,6 +2512,12 @@ int main(void) {
             don.velXZ = (Vector3){ donMove.x, 0, donMove.z };
             //DonUpdate(&don, havePad ? &gpad : NULL, dt);
         }
+        if (disableDonInputNextFrame)
+        {
+            disableDonInputNextFrame = false;
+            donMove = (Vector3){ 0 };
+            moveMag = 0.0f;
+        }
         if (vehicleMode)
         {
             //truck position
@@ -3240,10 +3273,10 @@ int main(void) {
                             // snap to ground and re-make AABB
                             if (!alreadyHandledY || don.groundY < hit.groundY)
                             {
-                                don.groundY = hit.groundY; //overwrites ground collision (seems to work pretty well!)
+                                don.groundY = hit.groundY; //overwrites ground collision
                             }
                         }
-                        else if (hit.hit && !hitEnvWall) // if we already hit env bounding box, use that instead
+                        else if (hit.hitWall && !hitEnvWall) // if we already hit env bounding box, use that instead
                         {
                             disableRoll = true;
 
@@ -3343,7 +3376,12 @@ int main(void) {
                             }
                             else
                             {
-                                // Fallback: old behavior, but from current pos, not oldPos.
+                                if (Scenes[i].type == SCENE_CINDER || Scenes[i].type == SCENE_CINDER_CAVE)
+                                {
+                                    TraceLog(LOG_WARNING, "[HOME HIST NO SAFE] cave: ignoring wall push");
+                                    break;
+                                }
+
                                 TraceLog(LOG_INFO, "applying p fallback: %f %f %f", p.x, p.y, p.z);
                                 don.pos = Vector3Add(don.pos, p);
                             }

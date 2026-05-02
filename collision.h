@@ -4,8 +4,6 @@
 // Includes
 #include "raylib.h"
 #include "raymath.h"
-#include "rlgl.h"
-#include <stdio.h> 
 #include <stdbool.h>
 //me
 #include "core.h"
@@ -228,6 +226,7 @@ Vector3 GetTerrainNormalFromMeshXZ(float x, float z)
 typedef struct MeshBoxHit {
     bool  hit;         // any contact at all
     bool  hitGround;   // stood on ground (mostly flat tri)
+    bool  hitWall;
     float groundY;     // y to place Donogan at (if hitGround)
     Vector3 normal;    // normal of the last contacting triangle
     Vector3 push;      // gentle horizontal push for walls
@@ -296,6 +295,8 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
     float bestGroundY = -10000.0f;
     Vector3 bestGroundN = (Vector3){ 0,1,0 };
     Vector3 wallPushAccum = (Vector3){ 0 };
+    float feetY = box.min.y;
+    bool lookForFloor = false; float minAcceptableY = 0;
 
     int triCount = mesh->triangleCount;
     for (int i = 0; i < triCount; i++) {
@@ -334,7 +335,6 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
         if (n.y >= groundSlopeCos) {
             float y = GetHeightOnTriangle((Vector3) { boxCenter.x, 0, boxCenter.z }, a, b, c3);
             if (y > -9999.0f) {
-                float feetY = box.min.y;
                 float deltaUp = y - feetY;
                 if (deltaUp >= -GROUND_EPS_BELOW && deltaUp <= GROUND_MAX_STEP) {
                     if (y > bestGroundY) { bestGroundY = y; bestGroundN = n; }
@@ -342,7 +342,18 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
                 }
             }
         }
-        else {
+        else 
+        {
+            float triYSpan = triBox.max.y - box.min.y;
+
+            // Small vertical lip / floor edge: do not treat as wall.
+            // Let ground/ceiling logic handle it.
+            if (triYSpan < 0.6 && triYSpan > 0)
+            {
+                lookForFloor = true;
+                minAcceptableY = triBox.max.y + 0.02;
+                TraceLog(LOG_INFO, "lookForFloor!");
+            }
             if ((box.min.y <= triBox.max.y) && (box.max.y >= triBox.min.y)) {
                 float ox = AxisOverlap(box.min.x, box.max.x, triBox.min.x, triBox.max.x);
                 float oz = AxisOverlap(box.min.z, box.max.z, triBox.min.z, triBox.max.z);
@@ -389,26 +400,25 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
     out.normal = (Vector3){ 0,0,0 };
     out.push = (Vector3){ 0,0,0 };
 
-    const bool hasGround = (bestGroundY > -9999.0f);
-    const bool hasWall = (Vector3LengthSqr(wallPushAccum) > 0.0f);
+    const bool hasGround = (bestGroundY > -9988.0f);
+    bool hasWall = (Vector3LengthSqr(wallPushAccum) > 0.0f);
 
     if (hasGround) {
+        out.hit = true;
         out.hitGround = true;
         out.groundY = bestGroundY;
-        // keep a sensible normal if we don’t have a wall
-        if (!hasWall) out.normal = bestGroundN;
+        if (!hasWall) { out.normal = bestGroundN; }
+        if (lookForFloor && minAcceptableY > out.groundY) { out.groundY = minAcceptableY; }
     }
 
-    // keep wall push EVEN WHEN GROUNDED
-    if (out.hit) {
-        // only horizontal resolution for walls
+    if (hasWall && !(lookForFloor && hasGround)) {
+        out.hit = true;
+        out.hitWall = true;
+
         wallPushAccum.y = 0.0f;
-        out.push = Vector3Scale(wallPushAccum, WALL_PUSH_SCALE); // your gentle push
-        out.normal = bestGroundN; //todo: if we ever use this for real, needs to be correct
-        if (!hasWall)
-        {
-            //out.push = //todo:? what can we do easily to get a value here?
-        }
+        out.push = Vector3Scale(wallPushAccum, WALL_PUSH_SCALE);
+
+        if (!hasGround) out.normal = bestGroundN;
     }
 
     return out;
