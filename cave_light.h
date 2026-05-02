@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 #define CAVE_TORCH_MAX 32
-#define CAVE_SHADER_LIGHT_MAX 8
+#define CAVE_SHADER_LIGHT_MAX 4
 
 typedef struct CaveTorch {
     Vector3 pos;
@@ -22,12 +22,32 @@ typedef struct CaveLightSystem {
     Shader pbrShader;
 
     int locViewPos;
+    int locAmbientColor;
     int locAmbient;
-    int locLightCount;
-    int locLightPos[CAVE_SHADER_LIGHT_MAX];
+    int locNumOfLights;
+
+    int locTiling;
+    int locOffset;
+
+    int locUseTexAlbedo;
+    int locUseTexNormal;
+    int locUseTexMRA;
+    int locUseTexEmissive;
+
+    int locAlbedoColor;
+    int locEmissiveColor;
+    int locNormalValue;
+    int locMetallicValue;
+    int locRoughnessValue;
+    int locAoValue;
+    int locEmissivePower;
+
+    int locLightEnabled[CAVE_SHADER_LIGHT_MAX];
+    int locLightType[CAVE_SHADER_LIGHT_MAX];
+    int locLightPosition[CAVE_SHADER_LIGHT_MAX];
+    int locLightTarget[CAVE_SHADER_LIGHT_MAX];
     int locLightColor[CAVE_SHADER_LIGHT_MAX];
-    int locLightRadius[CAVE_SHADER_LIGHT_MAX];
-    int locLightStrength[CAVE_SHADER_LIGHT_MAX];
+    int locLightIntensity[CAVE_SHADER_LIGHT_MAX];
 
     Model torchPole;
     Model torchHead;
@@ -47,12 +67,11 @@ static inline void Cave_SetShaderLocations(Shader* s)
     s->locs[SHADER_LOC_MATRIX_NORMAL] = GetShaderLocation(*s, "matNormal");
     s->locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(*s, "viewPos");
 
-    // Texture samplers.
-    // These names must match your pbr.fs.
-    s->locs[SHADER_LOC_MAP_ALBEDO] = GetShaderLocation(*s, "albedoMap");
-    s->locs[SHADER_LOC_MAP_METALNESS] = GetShaderLocation(*s, "metalnessMap");
+    // These names match your pbr.fs
+    s->locs[SHADER_LOC_MAP_DIFFUSE] = GetShaderLocation(*s, "albedoMap");
+    s->locs[SHADER_LOC_MAP_METALNESS] = GetShaderLocation(*s, "mraMap");
     s->locs[SHADER_LOC_MAP_NORMAL] = GetShaderLocation(*s, "normalMap");
-    s->locs[SHADER_LOC_MAP_EMISSION] = GetShaderLocation(*s, "emissionMap");
+    s->locs[SHADER_LOC_MAP_EMISSION] = GetShaderLocation(*s, "emissiveMap");
 }
 
 static inline void CaveLight_AddTorch(Vector3 pos, bool lit)
@@ -65,7 +84,7 @@ static inline void CaveLight_AddTorch(Vector3 pos, bool lit)
     t->lit = lit;
     t->startsLit = lit;
     t->radius = 85.0f;
-    t->strength = 3.5f;
+    t->strength = 3000.5f;
 }
 
 static inline void CaveLight_Init(void)
@@ -80,26 +99,47 @@ static inline void CaveLight_Init(void)
     Cave_SetShaderLocations(&gCaveLight.pbrShader);
 
     gCaveLight.locViewPos = GetShaderLocation(gCaveLight.pbrShader, "viewPos");
-    gCaveLight.locAmbient = GetShaderLocation(gCaveLight.pbrShader, "ambientColor");
-    gCaveLight.locLightCount = GetShaderLocation(gCaveLight.pbrShader, "lightCount");
+    gCaveLight.locAmbientColor = GetShaderLocation(gCaveLight.pbrShader, "ambientColor");
+    gCaveLight.locAmbient = GetShaderLocation(gCaveLight.pbrShader, "ambient");
+    gCaveLight.locNumOfLights = GetShaderLocation(gCaveLight.pbrShader, "numOfLights");
+
+    gCaveLight.locTiling = GetShaderLocation(gCaveLight.pbrShader, "tiling");
+    gCaveLight.locOffset = GetShaderLocation(gCaveLight.pbrShader, "offset");
+
+    gCaveLight.locUseTexAlbedo = GetShaderLocation(gCaveLight.pbrShader, "useTexAlbedo");
+    gCaveLight.locUseTexNormal = GetShaderLocation(gCaveLight.pbrShader, "useTexNormal");
+    gCaveLight.locUseTexMRA = GetShaderLocation(gCaveLight.pbrShader, "useTexMRA");
+    gCaveLight.locUseTexEmissive = GetShaderLocation(gCaveLight.pbrShader, "useTexEmissive");
+
+    gCaveLight.locAlbedoColor = GetShaderLocation(gCaveLight.pbrShader, "albedoColor");
+    gCaveLight.locEmissiveColor = GetShaderLocation(gCaveLight.pbrShader, "emissiveColor");
+    gCaveLight.locNormalValue = GetShaderLocation(gCaveLight.pbrShader, "normalValue");
+    gCaveLight.locMetallicValue = GetShaderLocation(gCaveLight.pbrShader, "metallicValue");
+    gCaveLight.locRoughnessValue = GetShaderLocation(gCaveLight.pbrShader, "roughnessValue");
+    gCaveLight.locAoValue = GetShaderLocation(gCaveLight.pbrShader, "aoValue");
+    gCaveLight.locEmissivePower = GetShaderLocation(gCaveLight.pbrShader, "emissivePower");
 
     for (int i = 0; i < CAVE_SHADER_LIGHT_MAX; i++)
     {
         char name[64];
 
-        TextFormat(""); // keeps raylib linked; harmless
+        snprintf(name, sizeof(name), "lights[%d].enabled", i);
+        gCaveLight.locLightEnabled[i] = GetShaderLocation(gCaveLight.pbrShader, name);
 
-        snprintf(name, sizeof(name), "lights[%d].pos", i);
-        gCaveLight.locLightPos[i] = GetShaderLocation(gCaveLight.pbrShader, name);
+        snprintf(name, sizeof(name), "lights[%d].type", i);
+        gCaveLight.locLightType[i] = GetShaderLocation(gCaveLight.pbrShader, name);
+
+        snprintf(name, sizeof(name), "lights[%d].position", i);
+        gCaveLight.locLightPosition[i] = GetShaderLocation(gCaveLight.pbrShader, name);
+
+        snprintf(name, sizeof(name), "lights[%d].target", i);
+        gCaveLight.locLightTarget[i] = GetShaderLocation(gCaveLight.pbrShader, name);
 
         snprintf(name, sizeof(name), "lights[%d].color", i);
         gCaveLight.locLightColor[i] = GetShaderLocation(gCaveLight.pbrShader, name);
 
-        snprintf(name, sizeof(name), "lights[%d].radius", i);
-        gCaveLight.locLightRadius[i] = GetShaderLocation(gCaveLight.pbrShader, name);
-
-        snprintf(name, sizeof(name), "lights[%d].strength", i);
-        gCaveLight.locLightStrength[i] = GetShaderLocation(gCaveLight.pbrShader, name);
+        snprintf(name, sizeof(name), "lights[%d].intensity", i);
+        gCaveLight.locLightIntensity[i] = GetShaderLocation(gCaveLight.pbrShader, name);
     }
 
     // Torch geometry: raylib cylinders.
@@ -150,39 +190,100 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
 {
     if (!gCaveLight.ready) return;
 
-    Vector3 ambient = caveMode
-        ? (Vector3) { 0.006f, 0.005f, 0.009f }   // almost black
+    // Basic PBR material controls.
+    Vector2 tiling = { 1.0f, 1.0f };
+    Vector2 offset = { 0.0f, 0.0f };
+
+    int useTexAlbedo = 1;
+    int useTexNormal = 0;    // keep OFF first; OBJ tangents may be bad/missing
+    int useTexMRA = 1;
+    int useTexEmissive = 1;
+
+    Vector4 albedoColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vector4 emissiveColor = { 1.0f, 0.45f, 0.12f, 1.0f };
+
+    float normalValue = 1.0f;
+    float metallicValue = 0.0f;
+    float roughnessValue = 0.55f;
+    float aoValue = 1.0f;
+    float emissivePower = 1.25f;
+
+    Vector3 ambientColor = caveMode
+        ? (Vector3) { 0.006f, 0.005f, 0.009f }
     : (Vector3) { 0.25f, 0.25f, 0.25f };
 
+    float ambient = caveMode ? 0.15f : 1.0f;
+
     SetShaderValue(gCaveLight.pbrShader, gCaveLight.locViewPos, &viewPos, SHADER_UNIFORM_VEC3);
-    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locAmbient, &ambient, SHADER_UNIFORM_VEC3);
+
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locTiling, &tiling, SHADER_UNIFORM_VEC2);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locOffset, &offset, SHADER_UNIFORM_VEC2);
+
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locUseTexAlbedo, &useTexAlbedo, SHADER_UNIFORM_INT);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locUseTexNormal, &useTexNormal, SHADER_UNIFORM_INT);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locUseTexMRA, &useTexMRA, SHADER_UNIFORM_INT);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locUseTexEmissive, &useTexEmissive, SHADER_UNIFORM_INT);
+
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locAlbedoColor, &albedoColor, SHADER_UNIFORM_VEC4);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locEmissiveColor, &emissiveColor, SHADER_UNIFORM_VEC4);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locNormalValue, &normalValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locMetallicValue, &metallicValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locRoughnessValue, &roughnessValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locAoValue, &aoValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locEmissivePower, &emissivePower, SHADER_UNIFORM_FLOAT);
+
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locAmbientColor, &ambientColor, SHADER_UNIFORM_VEC3);
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locAmbient, &ambient, SHADER_UNIFORM_FLOAT);
+
+    int numOfLights = CAVE_SHADER_LIGHT_MAX;
+    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locNumOfLights, &numOfLights, SHADER_UNIFORM_INT);
 
     int pushed = 0;
 
-    if (caveMode)
+    for (int i = 0; i < gCaveLight.torchCount && pushed < CAVE_SHADER_LIGHT_MAX; i++)
     {
-        for (int i = 0; i < gCaveLight.torchCount && pushed < CAVE_SHADER_LIGHT_MAX; i++)
-        {
-            CaveTorch* t = &gCaveLight.torches[i];
-            if (!t->lit) continue;
+        CaveTorch* t = &gCaveLight.torches[i];
+        if (!caveMode || !t->lit) continue;
 
-            Vector3 lightPos = t->pos;
-            lightPos.y += 2.2f;
+        int enabled = 1;
+        int type = 1; // LIGHT_POINT from your shader
 
-            Vector3 color = { 1.0f, 0.48f, 0.16f };
-            float radius = t->radius;
-            float strength = t->strength;
+        Vector3 lightPos = t->pos;
+        lightPos.y += 3.45f;
 
-            SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightPos[pushed], &lightPos, SHADER_UNIFORM_VEC3);
-            SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightColor[pushed], &color, SHADER_UNIFORM_VEC3);
-            SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightRadius[pushed], &radius, SHADER_UNIFORM_FLOAT);
-            SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightStrength[pushed], &strength, SHADER_UNIFORM_FLOAT);
+        Vector3 target = { 0.0f, 0.0f, 0.0f };
 
-            pushed++;
-        }
+        // Needs to be big because shader attenuation is 1 / (dist * dist * 0.23)
+        Vector4 color = { 1.0f, 0.48f, 0.16f, 1.0f };
+        float intensity = t->strength;
+
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightEnabled[pushed], &enabled, SHADER_UNIFORM_INT);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightType[pushed], &type, SHADER_UNIFORM_INT);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightPosition[pushed], &lightPos, SHADER_UNIFORM_VEC3);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightTarget[pushed], &target, SHADER_UNIFORM_VEC3);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightColor[pushed], &color, SHADER_UNIFORM_VEC4);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightIntensity[pushed], &intensity, SHADER_UNIFORM_FLOAT);
+
+        pushed++;
     }
 
-    SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightCount, &pushed, SHADER_UNIFORM_INT);
+    // Disable unused light slots.
+    for (int i = pushed; i < CAVE_SHADER_LIGHT_MAX; i++)
+    {
+        int enabled = 0;
+        int type = 1;
+        Vector3 pos = { 0.0f, 0.0f, 0.0f };
+        Vector3 target = { 0.0f, 0.0f, 0.0f };
+        Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        float intensity = 0.0f;
+
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightEnabled[i], &enabled, SHADER_UNIFORM_INT);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightType[i], &type, SHADER_UNIFORM_INT);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightPosition[i], &pos, SHADER_UNIFORM_VEC3);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightTarget[i], &target, SHADER_UNIFORM_VEC3);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightColor[i], &color, SHADER_UNIFORM_VEC4);
+        SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightIntensity[i], &intensity, SHADER_UNIFORM_FLOAT);
+    }
 }
 
 static inline void CaveLight_LightNearbyTorch(Vector3 donPos)
