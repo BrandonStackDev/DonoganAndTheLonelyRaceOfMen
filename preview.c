@@ -820,6 +820,8 @@ int main(void) {
     don.pos = Scenes[SCENE_HOME_CABIN_02].pos;
     don.pos.y = 533.333f;
     StartTimer(&don.talkStartTimer); //so we can talk right away;
+    Don_UpdateBoxes(&don);
+    Don_ResetPositionHistory(&don);
     //windmill Rotor
     Model rotor = LoadModel("models/rotor.obj");
     rotor.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/rotor.png");
@@ -1310,6 +1312,7 @@ int main(void) {
         if (onLoad && donnyMode)
         {
             don.oldPos = don.pos;
+            Don_RecordPositionHistory(&don);
         }
         //controller and truck stuff
         havePad = ReadControllerWindows(0, &gpad);
@@ -3227,29 +3230,6 @@ int main(void) {
                             const float ALIGN_THRESH = 0.35f; //
 
                             DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
-                            /*Vector3 frameMove = Vector3Subtract(don.pos, don.oldPos);
-                            float frameMoveLen = Vector3Length(frameMove);
-                            float horizMoveLen = sqrtf(frameMove.x * frameMove.x + frameMove.z * frameMove.z);
-                            float pushLen = Vector3Length(hit.push);
-
-                            TraceLog(LOG_WARNING,
-                                "[HOME WALL TEST] scene=%d modelType=%d pos=(%.2f %.2f %.2f) old=(%.2f %.2f %.2f) "
-                                "move=(%.3f %.3f %.3f) moveLen=%.3f horiz=%.3f push=(%.3f %.3f %.3f) pushLen=%.3f "
-                                "state=%d groundY=%.2f inWater=%d glued=%d",
-                                i,
-                                Scenes[i].modelType,
-                                don.pos.x, don.pos.y, don.pos.z,
-                                don.oldPos.x, don.oldPos.y, don.oldPos.z,
-                                frameMove.x, frameMove.y, frameMove.z,
-                                frameMoveLen,
-                                horizMoveLen,
-                                hit.push.x, hit.push.y, hit.push.z,
-                                pushLen,
-                                don.state,
-                                don.groundY,
-                                don.inWater,
-                                don.gluedToPlatform
-                            );*/
 
                             // Candidate "MTD" from your collider:
                             Vector3 p = hit.push;
@@ -3282,19 +3262,19 @@ int main(void) {
                                     TraceLog(LOG_INFO, "backDir: %f %f %f", backDir.x, backDir.y, backDir.z);
 
                                     if (align < ALIGN_THRESH)
-                                    {
+                            {
                                         // Keep the collider's push size. Do NOT hard shove by 1.0f.
                                         p = Vector3Scale(backDir, pLen);
                                         TraceLog(LOG_INFO, "changing p: %f %f %f", p.x, p.y, p.z);
-                                    }
-                                }
-                                else
-                                {
+                            }
+                            }
+                            else
+                            {
                                     TraceLog(LOG_INFO, "skip align: moveLen=%f pLen=%f", moveLen, pLen);
                                 }
-                            }
+                                }
                             // Apply the (possibly adjusted) push from the *old* position
-                            TraceLog(LOG_INFO, "applying p: %f %f %f", p.x, p.y, p.z);
+                                TraceLog(LOG_INFO, "applying p: %f %f %f", p.x, p.y, p.z);
                             don.pos = Vector3Add(oldPos, p);
                             don.box = UpdateBoundingBox(don.origBB, don.pos);
                             don.innerBox = UpdateBoundingBox(don.origInnerBB, don.pos);

@@ -334,6 +334,7 @@ static float LerpFloat(float* to, float* from, float* dt) {
     float a = *from, b = *to, t = *dt;
     return a + (b - a) * t;
 }
+#define DON_POS_HISTORY_MAX 8
 // ---------- Donogan runtime ----------
 typedef struct {
     // Animation & model
@@ -536,7 +537,60 @@ typedef struct {
     float money;
     int  galBooksGiven;
     bool hasGuitar;
+
+    Vector3 posHistory[DON_POS_HISTORY_MAX];
+    int posHistoryHead;
+    int posHistoryCount;
 } Donogan;
+
+static inline void Don_UpdateBoxes(Donogan* d)
+{
+    if (!d) return;
+
+    d->box = UpdateBoundingBox(d->origBB, d->pos);
+    d->innerBox = UpdateBoundingBox(d->origInnerBB, d->pos);
+    d->outerBox = UpdateBoundingBox(d->origOuterBB, d->pos);
+}
+
+static inline void Don_ResetPositionHistory(Donogan* d)
+{
+    if (!d) return;
+
+    d->posHistoryHead = 0;
+    d->posHistoryCount = DON_POS_HISTORY_MAX;
+
+    for (int i = 0; i < DON_POS_HISTORY_MAX; i++)
+    {
+        d->posHistory[i] = d->pos;
+    }
+}
+
+static inline void Don_RecordPositionHistory(Donogan* d)
+{
+    if (!d) return;
+
+    d->posHistory[d->posHistoryHead] = d->pos;
+    d->posHistoryHead = (d->posHistoryHead + 1) % DON_POS_HISTORY_MAX;
+
+    if (d->posHistoryCount < DON_POS_HISTORY_MAX)
+    {
+        d->posHistoryCount++;
+    }
+}
+
+static inline Vector3 Don_GetHistoryPosition(const Donogan* d, int framesBack)
+{
+    if (!d) return (Vector3) { 0 };
+
+    if (framesBack < 1) framesBack = 1;
+    if (framesBack > d->posHistoryCount) framesBack = d->posHistoryCount;
+    if (framesBack > DON_POS_HISTORY_MAX) framesBack = DON_POS_HISTORY_MAX;
+
+    int idx = d->posHistoryHead - framesBack;
+    while (idx < 0) idx += DON_POS_HISTORY_MAX;
+
+    return d->posHistory[idx];
+}
 
 // Assets (adjust if needed)
 static const char* GLB = "models/donogan_anim.glb";
