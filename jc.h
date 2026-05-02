@@ -4,8 +4,6 @@
 // Includes
 #include "raylib.h"
 #include "raymath.h"
-#include "rlgl.h"
-#include <stdio.h> 
 #include <stdbool.h>
 
 //me
@@ -207,9 +205,15 @@ void InitHomes() {
     HomeModels[MODEL_HOME_OLE_STONE] = home013;
     Model home014 = LoadModel("models/cinder.obj");
     home014.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/cinder.png");
+    home014.materials[0].maps[MATERIAL_MAP_METALNESS].texture = LoadMyTexture("textures/spire_metal.png");
+    home014.materials[0].maps[MATERIAL_MAP_NORMAL].texture = LoadMyTexture("textures/spire_normal.png");
+    home014.materials[0].maps[MATERIAL_MAP_EMISSION].texture = LoadMyTexture("textures/spire_emissive.png");
     HomeModels[MODEL_CINDER] = home014;
     Model home015 = LoadModel("models/cave.obj");
     home015.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/cave.png");
+    home015.materials[0].maps[MATERIAL_MAP_METALNESS].texture = LoadMyTexture("textures/cave_metal.png");
+    home015.materials[0].maps[MATERIAL_MAP_NORMAL].texture = LoadMyTexture("textures/cave_normal.png");
+    home015.materials[0].maps[MATERIAL_MAP_EMISSION].texture = LoadMyTexture("textures/cave_emissive.png");
     HomeModels[MODEL_CINDER_CAVE] = home015;
 
     // Populate the scene list (the important part)
