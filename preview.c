@@ -32,6 +32,7 @@
 #include "shark.h"
 #include "corn.h"
 #include "garden.h"
+#include "cave_light.h"
 
 //fairly standard things
 #include <float.h>
@@ -633,6 +634,8 @@ int main(void) {
     InitAllNPC();
     //load the homes models/scenes and stuff like that
     InitHomes();
+    CaveLight_Init();
+    //CaveLight_ApplyToCinderModels(&HomeModels[MODEL_CINDER],&HomeModels[MODEL_CINDER_CAVE]);
     //water wheel
     WaterWheel_Init();
     //talking
@@ -3872,6 +3875,27 @@ int main(void) {
         Garden_Update(&don, gpad.btnSquare);
         wasCaveMode = caveMode;
         caveMode = donnyMode && IsInCaveMode(&don, (caveMode || wasCaveMode));
+        if (caveMode)
+        {
+            CaveLight_ApplyToCinderModels( &HomeModels[MODEL_CINDER],&HomeModels[MODEL_CINDER_CAVE]);
+            CaveLight_UpdateShader(camera.position, true);
+        }
+        else
+        {
+            for (int i = 0; i < HomeModels[MODEL_CINDER].materialCount; i++)
+            {
+                HomeModels[MODEL_CINDER].materials[i].shader = (Shader){ 0 };
+            }
+
+            for (int i = 0; i < HomeModels[MODEL_CINDER_CAVE].materialCount; i++)
+            {
+                HomeModels[MODEL_CINDER_CAVE].materials[i].shader = (Shader){ 0 };
+            }
+        }
+        if (caveMode && (gpad.btnSquare || gpad.btnTriangle)) //you can press either of these to light them.
+        {
+            CaveLight_LightNearbyTorch(don.pos);
+        }
 
         if (caveMode && !wasCaveMode)
         {
@@ -4335,6 +4359,7 @@ int main(void) {
                     if (displayBoxes) { DrawBoundingBox(Scenes[i].box, PURPLE); }
                 }
                 rlEnableBackfaceCulling();
+                CaveLight_DrawTorches(fireModel, fireShader, fireVariantLoc, caveMode);
                 if (!missions[MISSION_START_ALL_MILLS].complete && milCnt >= MACHINE_COUNT_WINDMILL) //number of mills
                 {
                     missions[MISSION_START_ALL_MILLS].complete = true;
