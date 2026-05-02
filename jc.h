@@ -550,8 +550,8 @@ void InitHomes() {
     Scenes[SCENE_CINDER_CAVE] = (Scene){ //cinder spire
         .type = SCENE_CINDER_CAVE,
         .modelType = MODEL_CINDER_CAVE,
-        .pos = (Vector3){ -416, 610, -1160 },
-        .yaw = PI, // PI / 2.0f,          // adjust if you want a different facing
+        .pos = (Vector3){ -416, 607, -1160 },
+        .yaw = PI / 2.0f, // PI / 2.0f,          // adjust if you want a different facing
         .scale = 82.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
