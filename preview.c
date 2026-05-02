@@ -3227,36 +3227,79 @@ int main(void) {
                             const float ALIGN_THRESH = 0.35f; //
 
                             DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
+                            /*Vector3 frameMove = Vector3Subtract(don.pos, don.oldPos);
+                            float frameMoveLen = Vector3Length(frameMove);
+                            float horizMoveLen = sqrtf(frameMove.x * frameMove.x + frameMove.z * frameMove.z);
+                            float pushLen = Vector3Length(hit.push);
+
+                            TraceLog(LOG_WARNING,
+                                "[HOME WALL TEST] scene=%d modelType=%d pos=(%.2f %.2f %.2f) old=(%.2f %.2f %.2f) "
+                                "move=(%.3f %.3f %.3f) moveLen=%.3f horiz=%.3f push=(%.3f %.3f %.3f) pushLen=%.3f "
+                                "state=%d groundY=%.2f inWater=%d glued=%d",
+                                i,
+                                Scenes[i].modelType,
+                                don.pos.x, don.pos.y, don.pos.z,
+                                don.oldPos.x, don.oldPos.y, don.oldPos.z,
+                                frameMove.x, frameMove.y, frameMove.z,
+                                frameMoveLen,
+                                horizMoveLen,
+                                hit.push.x, hit.push.y, hit.push.z,
+                                pushLen,
+                                don.state,
+                                don.groundY,
+                                don.inWater,
+                                don.gluedToPlatform
+                            );*/
 
                             // Candidate "MTD" from your collider:
                             Vector3 p = hit.push;
                             float   pLen = Vector3Length(p);
-
+                            if (pLen > 0.5f)
+                            {
+                                p = Vector3Scale(p, 0.5f / pLen);
+                            }
                             // Movement this frame: new vs old (new is your attempted pos BEFORE resolve)
                             Vector3 newPos = don.pos;
                             Vector3 oldPos = don.oldPos;
                             Vector3 move = Vector3Subtract(newPos, oldPos);
                             float   moveLen = Vector3Length(move);
-                            // Unit directions (guard zero-length)
-                            Vector3 pDir = (pLen > EPS) ? Vector3Scale(p, 1.0f / pLen) : (Vector3) { 0 };
-                            Vector3 backDir = Vector3Normalize(Vector3Scale(move, -1.0f / moveLen)); // from new→old
+                            if (moveLen < 0.000001) 
+                            {
+                                // Unit directions (guard zero-length)
+                                // Unit directions, guarded against zero movement
+                                Vector3 pDir = (pLen > EPS) ? Vector3Scale(p, 1.0f / pLen) : (Vector3) { 0 };
+                                Vector3 backDir = (Vector3){ 0 };
+                                float align = 1.0f;
 
-                            // If the collider's push isn't mostly opposite our travel, override to push straight back.
-                            // "Mostly" = cosine threshold; tune 0.7..0.9 as you like.
-                            
-                            float align = Vector3DotProduct(pDir, backDir); // 1 = same, 0 = orthogonal
-                            TraceLog(LOG_INFO, "align: %f ", align);
-                            TraceLog(LOG_INFO, "pDir: %f %f %f", pDir.x, pDir.y, pDir.z);
-                            TraceLog(LOG_INFO, "backDir: %f %f %f", backDir.x, backDir.y, backDir.z);
-                            if (align < ALIGN_THRESH || pLen <= EPS) {
-                                // keep the same separation magnitude, change direction to straight-back
-                                //p = Vector3Scale(backDir, dt);
-                                p = Vector3Scale(backDir, 1.0f);
-                                TraceLog(LOG_INFO, "changing p: %f %f %f", p.x, p.y, p.z);
+                                if (moveLen > EPS && pLen > EPS)
+                                {
+                                    backDir = Vector3Scale(move, -1.0f / moveLen); // already normalized
+
+                                    align = Vector3DotProduct(pDir, backDir);
+
+                                    TraceLog(LOG_INFO, "align: %f ", align);
+                                    TraceLog(LOG_INFO, "pDir: %f %f %f", pDir.x, pDir.y, pDir.z);
+                                    TraceLog(LOG_INFO, "backDir: %f %f %f", backDir.x, backDir.y, backDir.z);
+
+                                    if (align < ALIGN_THRESH)
+                                    {
+                                        // Keep the collider's push size. Do NOT hard shove by 1.0f.
+                                        p = Vector3Scale(backDir, pLen);
+                                        TraceLog(LOG_INFO, "changing p: %f %f %f", p.x, p.y, p.z);
+                                    }
+                                }
+                                else
+                                {
+                                    TraceLog(LOG_INFO, "skip align: moveLen=%f pLen=%f", moveLen, pLen);
+                                }
                             }
                             // Apply the (possibly adjusted) push from the *old* position
                             TraceLog(LOG_INFO, "applying p: %f %f %f", p.x, p.y, p.z);
                             don.pos = Vector3Add(oldPos, p);
+                            don.box = UpdateBoundingBox(don.origBB, don.pos);
+                            don.innerBox = UpdateBoundingBox(don.origInnerBB, don.pos);
+                            don.outerBox = UpdateBoundingBox(don.origOuterBB, don.pos);
+                            break;
                         }
                     }
                 }
