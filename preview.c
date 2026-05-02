@@ -2,9 +2,8 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
-
-//#define RLIGHTS_IMPLEMENTATION    // <— add this line, or dont, it wouldnt change the fact I have to bum rides off of people!
 #include "rlights.h"
+
 //me
 #include "whale.h"
 #include "truck.h"
@@ -18,7 +17,7 @@
 #include "collision.h"
 #include "core.h"
 #include "models.h"
-#include "music.h"   // song/album structs + helpers
+#include "music.h"
 #include "duct_tape.h"
 #include "game.h"
 #include "bg.h"
@@ -39,12 +38,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-//for big report numbers
-#include <stdint.h>
-#include <inttypes.h>
-//debugging
-//#include <vld.h>
 
 
 bool bugGenHappened = false;
@@ -4308,7 +4301,9 @@ int main(void) {
                 rlDisableBackfaceCulling();
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
                 {
+                    if (caveMode && !(Scenes[i].modelType == MODEL_CINDER || Scenes[i].modelType == MODEL_CINDER_CAVE)) { continue; }
                     if (!IsBoxInFrustum(Scenes[i].box, frustumChunk8)) { continue; }
+                    if (Scenes[i].modelType == MODEL_TREE_HOUSE && Vector3DistanceSqr(don.pos, Scenes[i].pos) > (600*600)) { continue; }
                     DrawModelEx(HomeModels[Scenes[i].modelType], Scenes[i].pos, 
                         (Vector3) { 0, 1, 0 }, Scenes[i].yaw * RAD2DEG,
                         (Vector3) { Scenes[i].scale , Scenes[i].scale, Scenes[i].scale}, 
