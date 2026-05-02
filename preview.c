@@ -3882,14 +3882,18 @@ int main(void) {
         }
         else
         {
+            Shader defaultShader = {
+                .id = rlGetShaderIdDefault(),
+                .locs = rlGetShaderLocsDefault()
+            };
             for (int i = 0; i < HomeModels[MODEL_CINDER].materialCount; i++)
             {
-                HomeModels[MODEL_CINDER].materials[i].shader = (Shader){ 0 };
+                HomeModels[MODEL_CINDER].materials[i].shader = defaultShader;
             }
 
             for (int i = 0; i < HomeModels[MODEL_CINDER_CAVE].materialCount; i++)
             {
-                HomeModels[MODEL_CINDER_CAVE].materials[i].shader = (Shader){ 0 };
+                HomeModels[MODEL_CINDER_CAVE].materials[i].shader = defaultShader;
             }
         }
         if (caveMode && (gpad.btnSquare || gpad.btnTriangle)) //you can press either of these to light them.

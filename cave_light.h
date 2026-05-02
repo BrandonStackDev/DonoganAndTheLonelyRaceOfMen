@@ -215,14 +215,14 @@ static inline void CaveLight_DrawTorches(Model fireModel, Shader fireShader, int
         DrawModel(gCaveLight.torchPole, polePos, 1.0f, WHITE);
 
         Vector3 headPos = t->pos;
-        headPos.y += 3.08f;
+        headPos.y += 3.48f;
 
         DrawModel(gCaveLight.torchHead, headPos, 1.0f, WHITE);
 
         if (t->lit)
         {
             Vector3 flamePos = headPos;
-            flamePos.y += 0.35f;
+            flamePos.y += 0.8f;
 
             BeginBlendMode(BLEND_ADDITIVE);
 
