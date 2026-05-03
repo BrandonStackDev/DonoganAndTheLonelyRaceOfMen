@@ -1729,8 +1729,15 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 
     case SKELETON_STATE_DANCE:
     {
-        BG_SetAnimSafe(b, ANIM_SKEL_DANCE, false);
         b->pos.y = groundY;
+        BG_SetAnimSafe(b, ANIM_SKEL_DANCE, false);
+
+        if (BG_AnimNearEnd(b))
+        {
+            b->attackLanded = false;
+            b->state = SKELETON_STATE_PLAN;
+            BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
+        }
     } break;
 
     case SKELETON_STATE_HIT:
