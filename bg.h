@@ -23,6 +23,7 @@ typedef enum {
     BG_YETI,
     BG_ROBO,
     BG_PUMPKIN_HOPPER,
+    BG_SKELETON,
     BG_TYPE_COUNT
 } BadGuyType;
 
@@ -169,6 +170,46 @@ typedef enum {
     HOPPER_STATE_DEAD
 } HopperState;
 
+typedef enum {
+    ANIM_SKEL_DANCE = 0, // dance, 76 frames
+    ANIM_SKEL_DEATH = 1, // death, 151 frames
+    ANIM_SKEL_HIT = 2, // hit, 61 frames
+    ANIM_SKEL_JUMP = 3, // jump, 151 frames
+    ANIM_SKEL_KICK = 4, // kick, 91 frames
+    ANIM_SKEL_PLAN = 5, // plan, 31 frames
+    ANIM_SKEL_RISE = 6, // rise, 151 frames
+    ANIM_SKEL_RUN = 7, // run, 48 frames
+    ANIM_SKEL_SWIPE = 8, // swipe/grab, 81 frames
+    ANIM_SKEL_TRIP = 9, // trip, 151 frames
+    ANIM_SKEL_WALK = 10,// walk, 121 frames
+
+    // aliases so your state code reads nicely
+    ANIM_SKEL_IDLE = ANIM_SKEL_PLAN,
+    ANIM_SKEL_JUMP_ATTACK = ANIM_SKEL_JUMP,
+    ANIM_SKEL_GRAB_ATTACK = ANIM_SKEL_SWIPE,
+    ANIM_SKEL_KICK_ATTACK = ANIM_SKEL_KICK,
+    ANIM_SKEL_GET_UP = ANIM_SKEL_TRIP,
+
+    ANIM_SKEL_COUNT = 11
+} SkeletonAnimation;
+
+typedef enum {
+    SKELETON_STATE_RISE,
+    SKELETON_STATE_PLAN,
+    SKELETON_STATE_WALK,
+    SKELETON_STATE_RUN,
+    SKELETON_STATE_JUMP_ATTACK_START,
+    SKELETON_STATE_JUMP_ATTACK_AIR,
+    SKELETON_STATE_JUMP_ATTACK_LAND,
+    SKELETON_STATE_GRAB_ATTACK,
+    SKELETON_STATE_KICK_ATTACK,
+    SKELETON_STATE_TRIP,
+    SKELETON_STATE_DANCE,
+    SKELETON_STATE_HIT,
+    SKELETON_STATE_DEATH,
+    SKELETON_STATE_DEAD
+} SkeletonState;
+
 typedef struct {
     bool isInUse;
     BadGuyType type;
@@ -241,6 +282,9 @@ void InitBadGuyModels(Shader ghostShader)
     ModelAnimation* yeti_anims = LoadModelAnimations("models/yeti_anim_2.glb", &yeti_animCount);
     Model robo_model = LoadModel("models/robo.obj");
     Texture robo_tex = LoadMyTexture("textures/robo.png");
+    int skel_animCount = 0;
+    ModelAnimation* skel_anims = LoadModelAnimations("models/skeleton.glb", &skel_animCount);
+
     for (int bg_t = 0; bg_t < BG_TYPE_COUNT; bg_t++)
     {
         for (int i = 0; i < MAX_BG_PER_TYPE_AT_ONCE; i++)
@@ -286,6 +330,21 @@ void InitBadGuyModels(Shader ghostShader)
 
                 bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.8);
             }
+            else if (bg_t == BG_SKELETON)
+            {
+                bgModelBorrower[index].model = LoadModel("models/skeleton.glb");
+                bgModelBorrower[index].tex = LoadMyTexture("textures/skeleton.png");
+
+                if (bgModelBorrower[index].model.materialCount > 0 && bgModelBorrower[index].tex.id != 0)
+                {
+                    bgModelBorrower[index].model.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex; //noce using 1 slot material
+                }
+
+                bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12);
+
+                bgModelBorrower[index].anims = skel_anims;
+                bgModelBorrower[index].animCount = skel_animCount;
+            }
         }
     }
 }
@@ -307,7 +366,18 @@ static inline void BG_SetAnim(BadGuy* b, int animIndex, bool forceRestart) {
         b->animFrame = 0;
     }
 }
+static inline void BG_SetAnimSafe(BadGuy* b, int animIndex, bool forceRestart)
+{
+    if (!b || b->gbm_index < 0) return;
+    if (!b->anims || b->animCount <= 0) return;
 
+    if (animIndex < 0 || animIndex >= b->animCount)
+    {
+        animIndex = 0;
+    }
+
+    BG_SetAnim(b, animIndex, forceRestart);
+}
 static inline void BG_UpdateAnim(BadGuy* b, float dt) {
     if (!b || b->gbm_index < 0) return;
     if (b->animCount <= 0 || !b->anims) return;
@@ -331,6 +401,7 @@ static inline void BG_UpdateAnim(BadGuy* b, float dt) {
     // Apply pose to the shared model we're borrowing
     Model* M = &bgModelBorrower[b->gbm_index].model;
     UpdateModelAnimation(*M, b->anims[a], b->animFrame);
+    //UpdateModelAnimation(*M, b->anims[a], 0); //for testing bad animations, see something idk 
 }
 // === NEW: attach shared borrowed resources to instance
 static inline void BG_AttachBorrowed(BadGuy* b) {
@@ -985,6 +1056,501 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
     b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
 }
 
+static inline Vector3 BG_FlatDirTo(Vector3 from, Vector3 to)
+{
+    Vector3 d = Vector3Subtract(to, from);
+    d.y = 0.0f;
+
+    if (Vector3LengthSqr(d) < 0.0001f)
+    {
+        return (Vector3) { 0.0f, 0.0f, 1.0f };
+    }
+
+    return Vector3Normalize(d);
+}
+
+static inline float BG_YawTo(Vector3 from, Vector3 to)
+{
+    Vector3 d = Vector3Subtract(to, from);
+    d.y = 0.0f;
+
+    if (Vector3LengthSqr(d) < 0.0001f)
+    {
+        return 0.0f;
+    }
+
+    return RAD2DEG * atan2f(d.x, d.z);
+}
+
+static inline void Skeleton_PickWanderTarget(BadGuy* b)
+{
+    float r = (float)GetRandomValue(12, 38);
+    float a = (float)GetRandomValue(0, 359) * DEG2RAD;
+
+    Vector3 p = {
+        b->spawnPoint.x + sinf(a) * r,
+        b->spawnPoint.y,
+        b->spawnPoint.z + cosf(a) * r
+    };
+
+    float gy = GetTerrainHeightFromMeshXZ(p.x, p.z);
+    if (gy > -9000.0f) p.y = gy;
+
+    b->targetPos = p;
+}
+
+#define SKEL_TRIP_MIN_DIST          24.0f
+#define SKEL_TRIP_CHANCE_PER_1000    1     // was 3, lower = much less tripping
+
+#define SKEL_JUMP_MIN_DIST          10.0f
+#define SKEL_JUMP_MAX_DIST          22.0f
+
+// Jump lands the skeleton root BEFORE Donogan,
+// because the skeleton's body/arms extend forward during the animation.
+#define SKEL_JUMP_LAND_SHORT         3.8f
+
+#define SKEL_CLOSE_ATTACK_RANGE       7.8f   // was ~6.4/6.8; lets swipe start farther out
+#define SKEL_KICK_BACKUP_DIST         1.8f   // how far kick slides backward
+#define SKEL_KICK_BACKUP_UNTIL        0.32f  // first 32% of kick animation
+// Swipe/grab has a forward step during the animation.
+// Tune speed first, then range.
+#define SKEL_SWIPE_FORWARD_SPEED      2.4f   // lower if it ends too close
+#define SKEL_SWIPE_FORWARD_UNTIL      0.42f  // first 42% of swipe animation
+
+#define SKEL_RUN_SPEED               6.8f
+#define SKEL_WALK_SPEED              2.2f
+
+#define SKEL_JUMP_TIME               0.58f  // seconds to reach Don's locked position
+#define SKEL_JUMP_ARC_HEIGHT         7.0f
+
+#define SKEL_TOO_CLOSE_DIST          2.4f
+#define SKEL_BACKUP_TO_DIST          5.2f
+#define SKEL_BACKUP_SPEED            4.4f
+
+#define SKEL_KICK_BACKUP_SPEED        0.35f  //slow
+
+
+// Only update yaw toward Donogan when there is enough distance.
+// This prevents twitchy spin when the skeleton root is basically inside Don.
+#define SKEL_YAW_FACE_MIN_DIST       2.0f
+
+static inline bool Skeleton_IsAttackState(int state)
+{
+    return state == SKELETON_STATE_JUMP_ATTACK_START ||
+        state == SKELETON_STATE_JUMP_ATTACK_AIR ||
+        state == SKELETON_STATE_JUMP_ATTACK_LAND ||
+        state == SKELETON_STATE_GRAB_ATTACK ||
+        state == SKELETON_STATE_KICK_ATTACK ||
+        state == SKELETON_STATE_TRIP ||
+        state == SKELETON_STATE_HIT ||
+        state == SKELETON_STATE_DEATH ||
+        state == SKELETON_STATE_DEAD ||
+        state == SKELETON_STATE_DANCE;
+}
+
+static inline void Skeleton_StartJumpAttack(BadGuy* b, Donogan* d, float groundY)
+{
+    Vector3 toDon = Vector3Subtract(d->pos, b->pos);
+    toDon.y = 0.0f;
+
+    float dist = Vector3Length(toDon);
+    Vector3 dir = (dist > 0.001f)
+        ? Vector3Scale(toDon, 1.0f / dist)
+        : (Vector3) { 0.0f, 0.0f, 1.0f };
+
+    // Land the ROOT before Donogan.
+    // Visually, the skeleton body/arms continue forward from the root.
+    Vector3 land = d->pos;
+    land.x -= dir.x * SKEL_JUMP_LAND_SHORT;
+    land.z -= dir.z * SKEL_JUMP_LAND_SHORT;
+    land.y = groundY;
+
+    b->targetPos = land;
+
+    Vector3 delta = Vector3Subtract(land, b->pos);
+    delta.y = 0.0f;
+
+    // Face Donogan, not just the shortened landing point.
+    b->yaw = BG_YawTo(b->pos, d->pos);
+    b->targetYaw = b->yaw;
+
+    b->vel.x = delta.x / SKEL_JUMP_TIME;
+    b->vel.z = delta.z / SKEL_JUMP_TIME;
+    b->vel.y = (2.0f * SKEL_JUMP_ARC_HEIGHT) / SKEL_JUMP_TIME;
+
+    b->state = SKELETON_STATE_JUMP_ATTACK_START;
+    BG_SetAnimSafe(b, ANIM_SKEL_JUMP_ATTACK, true);
+}
+
+static inline bool BG_AnimNearEnd(BadGuy* b)
+{
+    if (!b || !b->anims || b->animCount <= 0) return true;
+    if (b->curAnim < 0 || b->curAnim >= b->animCount) return true;
+
+    int last = b->anims[b->curAnim].keyframeCount - 2;
+    return b->animFrame >= last;
+}
+
+static inline float BG_AnimT(BadGuy* b)
+{
+    if (!b || !b->anims || b->animCount <= 0) return 0.0f;
+    if (b->curAnim < 0 || b->curAnim >= b->animCount) return 0.0f;
+
+    int frames = b->anims[b->curAnim].keyframeCount;
+    if (frames <= 1) return 0.0f;
+
+    float t = (float)b->animFrame / (float)(frames - 1);
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    return t;
+}
+
+static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
+{
+    if (!d || !b) return;
+
+    float groundY = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
+    if (groundY < -9000.0f) groundY = b->spawnPoint.y;
+
+    Vector3 toDon = Vector3Subtract(d->pos, b->pos);
+    toDon.y = 0.0f;
+    float distDon = Vector3Length(toDon);
+
+    switch (b->state)
+    {
+    case SKELETON_STATE_RISE:
+    {
+        BG_SetAnimSafe(b, ANIM_SKEL_RISE, false);
+
+        b->pos.y += 5.5f * dt;
+
+        if (b->pos.y >= groundY)
+        {
+            b->pos.y = groundY;
+            b->state = SKELETON_STATE_PLAN;
+            BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
+        }
+    } break;
+
+    case SKELETON_STATE_PLAN:
+    {
+        b->pos.y = groundY;
+
+        if (distDon < b->awareRadius)
+        {
+            b->aware = true;
+            b->state = SKELETON_STATE_RUN;
+            BG_SetAnimSafe(b, ANIM_SKEL_RUN, true);
+            break;
+        }
+
+        // Aimless walking: pick a wander spot sometimes.
+        if (Vector3DistanceSqr(b->pos, b->targetPos) < 4.0f * 4.0f ||
+            GetRandomValue(0, 100) < 2)
+        {
+            Skeleton_PickWanderTarget(b);
+        }
+
+        b->state = SKELETON_STATE_WALK;
+        BG_SetAnimSafe(b, ANIM_SKEL_WALK, true);
+    } break;
+
+    case SKELETON_STATE_WALK:
+    {
+        b->pos.y = groundY;
+
+        if (distDon < b->awareRadius)
+        {
+            b->aware = true;
+            b->state = SKELETON_STATE_RUN;
+            BG_SetAnimSafe(b, ANIM_SKEL_RUN, true);
+            break;
+        }
+
+        Vector3 dir = BG_FlatDirTo(b->pos, b->targetPos);
+        b->yaw = BG_YawTo(b->pos, b->targetPos);
+
+        b->pos = Vector3Add(b->pos, Vector3Scale(dir, 2.2f * dt));
+
+        if (Vector3DistanceSqr(b->pos, b->targetPos) < 3.0f * 3.0f)
+        {
+            b->state = SKELETON_STATE_PLAN;
+            BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
+        }
+    } break;
+
+    case SKELETON_STATE_RUN:
+    {
+        b->pos.y = groundY;
+
+        // Face Don while running/chasing, but do not twitch-spin when nearly overlapping.
+        if (distDon > SKEL_YAW_FACE_MIN_DIST)
+        {
+            b->yaw = BG_YawTo(b->pos, d->pos);
+            b->targetYaw = b->yaw;
+        }
+
+        // If not attacking and too close, back up into a better attack range.
+        // This stops him from crowding Donogan and making kick/swipe/jump look bad.
+        if (!Skeleton_IsAttackState(b->state) && distDon < SKEL_TOO_CLOSE_DIST)
+        {
+            Vector3 away = Vector3Subtract(b->pos, d->pos);
+            away.y = 0.0f;
+
+            if (Vector3LengthSqr(away) < 0.0001f)
+            {
+                // fallback: back away from current facing
+                away = (Vector3){ -sinf(b->yaw * DEG2RAD), 0.0f, -cosf(b->yaw * DEG2RAD) };
+            }
+            else
+            {
+                away = Vector3Normalize(away);
+            }
+
+            b->pos = Vector3Add(b->pos, Vector3Scale(away, SKEL_BACKUP_SPEED * dt));
+            b->pos.y = groundY;
+
+            // Keep run animation while shuffling backward for now.
+            BG_SetAnimSafe(b, ANIM_SKEL_RUN, false);
+
+            // Once he has created enough room, let normal attack logic happen next frame.
+            break;
+        }
+
+        // Very rare trip, and only while he is still a decent distance away.
+        if (distDon > SKEL_TRIP_MIN_DIST && GetRandomValue(0, 1000) < SKEL_TRIP_CHANCE_PER_1000)
+        {
+            b->state = SKELETON_STATE_TRIP;
+            BG_SetAnimSafe(b, ANIM_SKEL_TRIP, true);
+            break;
+        }
+
+        // Close-range attacks FIRST.
+        if (distDon <= SKEL_CLOSE_ATTACK_RANGE)
+        {
+            b->targetPos = b->pos;
+
+            if (GetRandomValue(0, 1) == 0)
+            {
+                b->state = SKELETON_STATE_KICK_ATTACK;
+                BG_SetAnimSafe(b, ANIM_SKEL_KICK_ATTACK, true);
+            }
+            else
+            {
+                b->state = SKELETON_STATE_GRAB_ATTACK;
+                BG_SetAnimSafe(b, ANIM_SKEL_GRAB_ATTACK, true);
+            }
+
+            break;
+        }
+
+        // Jump should start from further out, not from inside Donogan's personal space.
+        if (distDon >= SKEL_JUMP_MIN_DIST && distDon <= SKEL_JUMP_MAX_DIST)
+        {
+            Skeleton_StartJumpAttack(b, d, groundY);
+            break;
+        }
+
+        // Otherwise chase.
+        Vector3 dir = BG_FlatDirTo(b->pos, d->pos);
+        b->pos = Vector3Add(b->pos, Vector3Scale(dir, SKEL_RUN_SPEED * dt));
+
+    } break;
+
+    case SKELETON_STATE_JUMP_ATTACK_START:
+    {
+        // Wait until animation is a little underway, then leave ground.
+        BG_SetAnimSafe(b, ANIM_SKEL_JUMP_ATTACK, false);
+
+        if (b->animFrame > 6)
+        {
+            b->state = SKELETON_STATE_JUMP_ATTACK_AIR;
+        }
+    } break;
+
+    case SKELETON_STATE_JUMP_ATTACK_AIR:
+    {
+        // Do NOT update targetPos to Don here.
+        // Do NOT turn toward Don here.
+        // The jump is committed to the locked landing point.
+
+        b->pos = Vector3Add(b->pos, Vector3Scale(b->vel, dt));
+
+        // Arc gravity. Tune if he floats or drops too fast.
+        b->vel.y -= (4.0f * SKEL_JUMP_ARC_HEIGHT) / (SKEL_JUMP_TIME * SKEL_JUMP_TIME) * dt;
+
+        // Keep yaw locked toward original landing point.
+        b->yaw = b->targetYaw;
+
+        float groundHere = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
+        if (groundHere < -9000.0f) groundHere = groundY;
+
+        if (b->pos.y <= groundHere)
+        {
+            b->pos.y = groundHere;
+            b->vel = (Vector3){ 0 };
+            b->state = SKELETON_STATE_JUMP_ATTACK_LAND;
+        }
+    } break;
+
+    case SKELETON_STATE_JUMP_ATTACK_LAND:
+    {
+        b->pos.y = groundY;
+        b->yaw = b->targetYaw;
+
+        if (BG_AnimNearEnd(b))
+        {
+            b->state = SKELETON_STATE_PLAN;
+            BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
+        }
+    } break;
+
+    case SKELETON_STATE_GRAB_ATTACK:
+    {
+        b->pos.y = groundY;
+
+        if (distDon > SKEL_YAW_FACE_MIN_DIST)
+        {
+            b->yaw = BG_YawTo(b->pos, d->pos);
+            b->targetYaw = b->yaw;
+        }
+
+        b->targetPos = b->pos;
+
+        BG_SetAnimSafe(b, ANIM_SKEL_GRAB_ATTACK, false);
+
+        float animT = BG_AnimT(b);
+
+        if (animT <= SKEL_SWIPE_FORWARD_UNTIL)
+        {
+            Vector3 dir = BG_FlatDirTo(b->pos, d->pos);
+            b->pos = Vector3Add(b->pos, Vector3Scale(dir, SKEL_SWIPE_FORWARD_SPEED * dt));
+            b->pos.y = groundY;
+        }
+
+        if (BG_AnimNearEnd(b))
+        {
+            b->state = SKELETON_STATE_PLAN;
+            BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
+        }
+    } break;
+
+    case SKELETON_STATE_KICK_ATTACK:
+    {
+        b->pos.y = groundY;
+
+        if (distDon > SKEL_YAW_FACE_MIN_DIST)
+        {
+            b->yaw = BG_YawTo(b->pos, d->pos);
+            b->targetYaw = b->yaw;
+        }
+
+        BG_SetAnimSafe(b, ANIM_SKEL_KICK_ATTACK, false);
+
+        float animT = BG_AnimT(b);
+
+        // Kick needs room: slide backward early in the animation.
+        if (animT <= SKEL_KICK_BACKUP_UNTIL)
+        {
+            Vector3 away = Vector3Subtract(b->pos, d->pos);
+            away.y = 0.0f;
+
+            if (Vector3LengthSqr(away) < 0.0001f)
+            {
+                away = (Vector3){ -sinf(b->yaw * DEG2RAD), 0.0f, -cosf(b->yaw * DEG2RAD) };
+            }
+            else
+            {
+                away = Vector3Normalize(away);
+            }
+            b->pos = Vector3Add(b->pos, Vector3Scale(away, SKEL_KICK_BACKUP_SPEED * dt));
+            b->pos.y = groundY;
+        }
+
+        b->targetPos = b->pos;
+
+        if (BG_AnimNearEnd(b))
+        {
+            b->state = SKELETON_STATE_PLAN;
+            BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
+        }
+    } break;
+
+    case SKELETON_STATE_TRIP:
+    {
+        BG_SetAnimSafe(b, ANIM_SKEL_TRIP, false);
+
+        if (b->animCount <= 0 || b->animFrame > b->anims[b->curAnim].keyframeCount - 2)
+        {
+            b->state = SKELETON_STATE_PLAN;
+            BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
+        }
+    } break;
+
+    case SKELETON_STATE_DANCE:
+    {
+        BG_SetAnimSafe(b, ANIM_SKEL_DANCE, false);
+        b->pos.y = groundY;
+    } break;
+
+    case SKELETON_STATE_HIT:
+    {
+        BG_SetAnimSafe(b, ANIM_SKEL_HIT, false);
+
+        if (b->health <= 0)
+        {
+            b->state = SKELETON_STATE_DEATH;
+            BG_SetAnimSafe(b, ANIM_SKEL_DEATH, true);
+            break;
+        }
+
+        if (b->animCount <= 0 || b->animFrame > b->anims[b->curAnim].keyframeCount - 2)
+        {
+            b->state = SKELETON_STATE_PLAN;
+            BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
+        }
+    } break;
+
+    case SKELETON_STATE_DEATH:
+    {
+        BG_SetAnimSafe(b, ANIM_SKEL_DEATH, false);
+
+        if (b->animCount <= 0 || b->animFrame > b->anims[b->curAnim].keyframeCount - 2)
+        {
+            b->state = SKELETON_STATE_DEAD;
+        }
+    } break;
+
+    case SKELETON_STATE_DEAD:
+    {
+        b->active = false;
+        b->dead = true;
+
+        if (b->gbm_index >= 0)
+        {
+            bgModelBorrower[b->gbm_index].isInUse = false;
+        }
+
+        b->gbm_index = -1;
+        StartTimer(&b->respawnTimer);
+        ResetTimer(&b->interactionTimer);
+        d->xp += 20;
+        return;
+    } break;
+
+    default:
+    {
+        b->state = SKELETON_STATE_PLAN;
+    } break;
+    }
+
+    if (b->gbm_index >= 0)
+    {
+        b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+        BG_UpdateAnim(b, dt);
+    }
+}
+
 //create functions
 BadGuy CreateGhost(Vector3 pos)
 {
@@ -1077,11 +1643,49 @@ static inline BadGuy CreatePumpkinHopper(Vector3 pos)
     b.drawColor = WHITE;
     return b;
 }
+
+BadGuy CreateSkeleton(Vector3 pos)
+{
+    BadGuy b = { 0 };
+
+    b.type = BG_SKELETON;
+    b.spawnPoint = pos;
+    b.spawnRadius = 180.0f;   // activates when Don gets near
+    b.awareRadius = 80.0f;    // notices Don
+    b.tetherRadius = 45.0f;
+
+    b.gbm_index = -1;
+    b.active = false;
+    b.dead = false;
+    b.aware = false;
+
+    b.pos = pos;
+    b.targetPos = pos;
+
+    b.scale = 1.12;
+    b.desiredScale = 1.12;
+
+    b.speed = 6.0f;
+    b.startHealth = 280;
+    b.health = b.startHealth;
+
+    b.state = SKELETON_STATE_RISE;
+
+    b.animFPS = 24.0f;
+
+    b.respawnTimer = CreateTimer(360);
+    b.interactionTimer = CreateTimer(2.0f);
+
+    b.drawColor = WHITE;
+
+    return b;
+}
+
 //end of the file stuff, important!
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 160; //increment this, every time, you add, a bg...
+    bg_count = 161; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -1266,6 +1870,7 @@ void InitBadGuys(Shader ghostShader)
     bg[157] = CreatePumpkinHopper((Vector3) { 2376.49f, 331.29f, -3281.79f });
     bg[158] = CreatePumpkinHopper((Vector3) { 2426.24f, 327.53f, -3448.19f });
     bg[159] = CreatePumpkinHopper((Vector3) { 2479.76f, 320.06f, -3481.24f });
+    bg[160] = CreateSkeleton((Vector3) { 3022.00f, 322.00f, 4042.42f });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
@@ -1379,8 +1984,12 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                 bg[i].scale += 0.0123;
             }
         }
+        else if (bg[i].type == BG_SKELETON)
+        {
+            BG_Update_Skeleton(d, &bg[i], dt);
+        }
         //update general stuff
-        bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox,bg[i].pos);
+        bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox, bg[i].pos);
         if (bg[i].type == BG_YETI) {//im sick of these mfn snakes on this mfn plane!
             bg[i].box.max.y += 4.5;
             bg[i].box.min.y += 4;
@@ -1417,7 +2026,8 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                     if (SpawnAppleOnTree(CloseProps[i], 4.0f, 8.0f)) {
                         PlaySoundVol(grow);
                     }
-                    else {
+                    else
+                    {
                         TraceLog(LOG_INFO, "SpawnAppleOnTree: no candidate verts in band");
                     }
                 }
@@ -1472,6 +2082,24 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                         bg[b].targetPos = bg[b].pos;
                         bg[b].groundY = bg[b].pos.y;
                         bg[b].state = HOPPER_STATE_SLEEP;
+                    }
+                    else if (bg[b].type == BG_SKELETON)
+                    {
+                        float gy = GetTerrainHeightFromMeshXZ(bg[b].spawnPoint.x, bg[b].spawnPoint.z);
+                        if (gy < -9000.0f) gy = bg[b].spawnPoint.y;
+
+                        bg[b].spawnPoint.y = gy;
+                        bg[b].pos = bg[b].spawnPoint;
+                        bg[b].pos.y = gy - 7.0f;      // starts underground
+                        bg[b].targetPos = bg[b].spawnPoint;
+
+                        bg[b].vel = (Vector3){ 0 };
+                        bg[b].yaw = 0.0f;
+                        bg[b].pitch = 0.0f;
+                        bg[b].roll = 0.0f;
+
+                        bg[b].state = SKELETON_STATE_RISE;
+                        BG_SetAnimSafe(&bg[b], ANIM_SKEL_RISE, true);
                     }
                     return true;
                 }

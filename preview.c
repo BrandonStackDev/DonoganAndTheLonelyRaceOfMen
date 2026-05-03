@@ -3750,6 +3750,11 @@ int main(void) {
                         ResetTimer(&bg[b].interactionTimer);
                         StartTimer(&bg[b].interactionTimer);
                     }
+                    else if (bg[b].type == BG_SKELETON)
+                    {
+                        bg[b].state = SKELETON_STATE_PLAN;
+                        BG_SetAnimSafe(&bg[b], ANIM_SKEL_IDLE, false);
+                    }
 
                     break;
                 }
