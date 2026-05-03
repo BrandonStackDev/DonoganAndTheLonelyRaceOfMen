@@ -3942,6 +3942,10 @@ int main(void) {
             disableRoll = true;
         }
         WaterWheel_Update(dt);
+        if (donnyMode && !vehicleMode)
+        {
+            WaterWheel_CollideDonny(&don);
+        }
         if (cottageDoorOpen)
         {
             cottageDoorSlide += GetFrameTime() * 0.7f;
@@ -4334,6 +4338,18 @@ int main(void) {
                     }
                 }
                 WaterWheel_Draw(&don);
+                if (displayBoxes)
+                {
+                    for (int wi = 0; wi < WATER_WHEEL_COUNT; wi++)
+                    {
+                        DrawBoundingBox(gWaterWheels[wi].mountBox, RED);
+
+                        for (int bi = 0; bi < WATER_WHEEL_BUCKET_COUNT; bi++)
+                        {
+                            DrawBoundingBox(gWaterWheels[wi].bucketBoxes[bi], BLUE);
+                        }
+                    }
+                }
                 int milCnt = 0;
                 rlDisableBackfaceCulling();
                 for (int i = 0; i < SCENE_TOTAL_COUNT; i++)

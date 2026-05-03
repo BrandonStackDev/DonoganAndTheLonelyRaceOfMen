@@ -100,16 +100,28 @@ typedef struct WaterWheel {
     Model rotor;
     Texture2D rotorTex;
 
+    Texture2D wood1Tex;
+    Texture2D wood2Tex;
+
     Model bigRing;
     Model smallRing;
     Model axle;
     Model bucket;
     Model mount;
 
-    BoundingBox box;
+    BoundingBox box; // rough whole-wheel box
+
+    BoundingBox bucketOrigBox;
+    BoundingBox bucketBoxes[WATER_WHEEL_BUCKET_COUNT];
+
+    BoundingBox mountOrigBox;
+    BoundingBox mountBox;
 } WaterWheel;
 
 WaterWheel gWaterWheels[WATER_WHEEL_COUNT];
+
+Matrix WaterWheel_BucketMatrix(WaterWheel* w, int k);
+Matrix WaterWheel_MountMatrix(WaterWheel* w);
 
 static inline BoundingBox RotateScaleTranslateBoundingBoxY(BoundingBox orig, Vector3 pos, float scale, float yaw)
 {
@@ -157,6 +169,44 @@ static inline BoundingBox RotateScaleTranslateBoundingBoxY(BoundingBox orig, Vec
                 if (r.x > mx.x) mx.x = r.x;
                 if (r.y > mx.y) mx.y = r.y;
                 if (r.z > mx.z) mx.z = r.z;
+            }
+
+    return (BoundingBox) { mn, mx };
+}
+
+static inline Vector3 WaterWheel_TransformPoint(Vector3 p, Matrix m)
+{
+    return (Vector3) {
+        p.x* m.m0 + p.y * m.m4 + p.z * m.m8 + m.m12,
+            p.x* m.m1 + p.y * m.m5 + p.z * m.m9 + m.m13,
+            p.x* m.m2 + p.y * m.m6 + p.z * m.m10 + m.m14
+    };
+}
+
+static inline BoundingBox WaterWheel_TransformBoundingBox(BoundingBox b, Matrix m)
+{
+    Vector3 mn = { FLT_MAX,  FLT_MAX,  FLT_MAX };
+    Vector3 mx = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+    for (int ix = 0; ix < 2; ix++)
+        for (int iy = 0; iy < 2; iy++)
+            for (int iz = 0; iz < 2; iz++)
+            {
+                Vector3 p = {
+                    ix ? b.max.x : b.min.x,
+                    iy ? b.max.y : b.min.y,
+                    iz ? b.max.z : b.min.z
+                };
+
+                Vector3 q = WaterWheel_TransformPoint(p, m);
+
+                if (q.x < mn.x) mn.x = q.x;
+                if (q.y < mn.y) mn.y = q.y;
+                if (q.z < mn.z) mn.z = q.z;
+
+                if (q.x > mx.x) mx.x = q.x;
+                if (q.y > mx.y) mx.y = q.y;
+                if (q.z > mx.z) mx.z = q.z;
             }
 
     return (BoundingBox) { mn, mx };
@@ -583,24 +633,30 @@ static inline void WaterWheel_Init(void)
     w->rotorTex = LoadMyTexture("textures/ww_rotor.png");
     w->rotor.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = w->rotorTex;
 
+    w->wood1Tex = LoadMyTexture("textures/wood1.png");
+    w->wood2Tex = LoadMyTexture("textures/wood2.png");
+
     // low segment torus = blocky wooden wheel
     w->bigRing = LoadModelFromMesh(GenMeshTorus(3.2f, 0.18f, 12, 4));
     w->smallRing = LoadModelFromMesh(GenMeshTorus(0.85f, 0.14f, 10, 4));
 
-    w->bigRing.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BROWN;
-    w->smallRing.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BROWN;
+    w->bigRing.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = w->wood1Tex;
+    w->smallRing.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = w->wood2Tex;
 
-    // long axle through middle, toward back mount
+    // long axle through middle
     w->axle = LoadModelFromMesh(GenMeshCylinder(0.22f, 3.2f, 8));
-    w->axle.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BROWN;
+    w->axle.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = w->wood1Tex;
 
-    // trough / paddle bucket: simple box for now
+    // trough / paddle bucket
     w->bucket = LoadModelFromMesh(GenMeshCube(1.15f, 0.32f, 0.42f));
-    w->bucket.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BROWN;
+    w->bucket.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = w->wood2Tex;
 
-    // non-spinning back machine/mount
+    // non-spinning back machine/mount/base square
     w->mount = LoadModelFromMesh(GenMeshCube(1.2f, 2.2f, 1.2f));
-    w->mount.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = DARKBROWN;
+    w->mount.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = w->wood1Tex;
+
+    w->bucketOrigBox = GetModelBoundingBox(w->bucket);
+    w->mountOrigBox = GetModelBoundingBox(w->mount);
 
     w->box = (BoundingBox){
         (Vector3) {
@@ -612,16 +668,81 @@ w->pos.x + 5, w->pos.y + 5, w->pos.z + 5
     };
 }
 
-static inline void WaterWheel_Update(float dt)
+//static inline void WaterWheel_Update(float dt)
+//{
+//    for (int i = 0; i < WATER_WHEEL_COUNT; i++)
+//    {
+//        WaterWheel* w = &gWaterWheels[i];
+//        w->spin += w->spinSpeed * dt;
+//        if (w->spin > 360.0f) w->spin -= 360.0f;
+//    }
+//}
+
+static inline void WaterWheel_CollideDonny(Donogan* d)
 {
+    if (!d) return;
+
     for (int i = 0; i < WATER_WHEEL_COUNT; i++)
     {
         WaterWheel* w = &gWaterWheels[i];
-        w->spin += w->spinSpeed * dt;
-        if (w->spin > 360.0f) w->spin -= 360.0f;
+
+        if (Vector3DistanceSqr(d->pos, w->pos) > 120.0f * 120.0f) continue;
+
+        // Base/mount is a wall-ish block. Push X/Z only.
+        if (CheckCollisionBoxes(d->box, w->mountBox))
+        {
+            BoundingBox a = d->box;
+            BoundingBox b = w->mountBox;
+
+            Vector3 ac = { (a.min.x + a.max.x) * 0.5f, (a.min.y + a.max.y) * 0.5f, (a.min.z + a.max.z) * 0.5f };
+            Vector3 bc = { (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f, (b.min.z + b.max.z) * 0.5f };
+            Vector3 ah = { (a.max.x - a.min.x) * 0.5f, (a.max.y - a.min.y) * 0.5f, (a.max.z - a.min.z) * 0.5f };
+            Vector3 bh = { (b.max.x - b.min.x) * 0.5f, (b.max.y - b.min.y) * 0.5f, (b.max.z - b.min.z) * 0.5f };
+
+            Vector3 diff = Vector3Subtract(ac, bc);
+            float penX = (ah.x + bh.x) - fabsf(diff.x);
+            float penZ = (ah.z + bh.z) - fabsf(diff.z);
+
+            if (penX < penZ) d->pos.x += (diff.x >= 0.0f) ? penX + 0.03f : -penX - 0.03f;
+            else             d->pos.z += (diff.z >= 0.0f) ? penZ + 0.03f : -penZ - 0.03f;
+
+            d->box = UpdateBoundingBox(d->origBB, d->pos);
+            d->innerBox = UpdateBoundingBox(d->origInnerBB, d->pos);
+            d->outerBox = UpdateBoundingBox(d->origOuterBB, d->pos);
+        }
+
+        // Troughs are moving ground.
+        for (int k = 0; k < WATER_WHEEL_BUCKET_COUNT; k++)
+        {
+            BoundingBox b = w->bucketBoxes[k];
+
+            // Only use a thin landing slab at the top of the trough.
+            BoundingBox top = b;
+            top.min.y = b.max.y - 1.1f;
+            top.max.y = b.max.y + 0.35f;
+
+            if (!CheckCollisionBoxes(d->box, top)) continue;
+
+            float feetY = DonFeetWorldY(d);
+
+            // Only land if Donny is coming from above-ish, not hitting the underside.
+            if (feetY <= b.max.y + 0.6f && feetY >= b.max.y - 2.2f && d->velY <= 1.0f)
+            {
+                d->groundY = b.max.y;
+                d->groundNormal = (Vector3){ 0, 1, 0 };
+                d->onGround = true;
+                d->velY = 0.0f;
+
+                // Snap his feet to the top.
+                d->pos.y = d->groundY - d->firstBB.min.y * d->scale;
+
+                d->box = UpdateBoundingBox(d->origBB, d->pos);
+                d->innerBox = UpdateBoundingBox(d->origInnerBB, d->pos);
+                d->outerBox = UpdateBoundingBox(d->origOuterBB, d->pos);
+            }
+        }
     }
 }
-
 //static inline Matrix WaterWheel_BaseMatrix(WaterWheel* w)
 //{
 //    Matrix S = MatrixScale(w->scale, w->scale, w->scale);
@@ -640,6 +761,36 @@ static inline Matrix WaterWheel_BaseMatrix(WaterWheel* w)
 
     return MatrixMultiply(MatrixMultiply(S, R), T);
 }
+
+static inline void WaterWheel_Update(float dt)
+{
+    for (int i = 0; i < WATER_WHEEL_COUNT; i++)
+    {
+        WaterWheel* w = &gWaterWheels[i];
+
+        w->spin += w->spinSpeed * dt;
+        if (w->spin > 360.0f) w->spin -= 360.0f;
+        if (w->spin < 0.0f)   w->spin += 360.0f;
+
+        for (int k = 0; k < WATER_WHEEL_BUCKET_COUNT; k++)
+        {
+            Matrix bucketM = WaterWheel_BucketMatrix(w, k);
+            w->bucketBoxes[k] = WaterWheel_TransformBoundingBox(w->bucketOrigBox, bucketM);
+
+            // make the collision box a tiny bit friendlier on top
+            w->bucketBoxes[k].max.y += 0.15f;
+        }
+
+        Matrix mountM = WaterWheel_MountMatrix(w);
+        w->mountBox = WaterWheel_TransformBoundingBox(w->mountOrigBox, mountM);
+
+        w->box = (BoundingBox){
+            (Vector3) {w->pos.x - 70.0f, w->pos.y - 70.0f, w->pos.z - 70.0f},
+            (Vector3) {w->pos.x + 70.0f, w->pos.y + 70.0f, w->pos.z + 70.0f}
+        };
+    }
+}
+
 static inline Matrix WaterWheel_BaseMatrixRotor(WaterWheel* w)
 {
     Matrix S = MatrixScale(w->scale*2, w->scale*2, w->scale*2);
@@ -650,6 +801,36 @@ static inline Matrix WaterWheel_BaseMatrixRotor(WaterWheel* w)
     Matrix T = MatrixTranslate(w->pos.x, w->pos.y, w->pos.z);
 
     return MatrixMultiply(MatrixMultiply(S, R), T);
+}
+static inline Matrix WaterWheel_BucketMatrix(WaterWheel* w, int k)
+{
+    Matrix base = WaterWheel_BaseMatrix(w);
+
+    float a = ((float)k / (float)WATER_WHEEL_BUCKET_COUNT) * 2.0f * PI;
+    float spinRad = w->spin * DEG2RAD;
+    float total = a + spinRad;
+
+    float r = 1.96f;
+
+    // Orbit position around local X, but DO NOT rotate the bucket with total.
+    float localY = cosf(total) * r;
+    float localZ = sinf(total) * r;
+
+    Matrix bucketHang = MatrixTranslate(0.0f, localY, localZ);
+
+    // Optional fixed art correction only. This is NOT spin.
+    // If your trough model faces wrong, tweak this constant.
+    Matrix bucketFace = MatrixIdentity();
+    // Matrix bucketFace = MatrixRotateY(90.0f * DEG2RAD);
+
+    return MatrixMultiply(MatrixMultiply(bucketFace, bucketHang), base);
+}
+
+static inline Matrix WaterWheel_MountMatrix(WaterWheel* w)
+{
+    Matrix base = WaterWheel_BaseMatrix(w);
+    Matrix mountLocal = MatrixTranslate(-3.4f, 0.0f, 0.0f);
+    return MatrixMultiply(mountLocal, base);
 }
 static inline void WaterWheel_DrawOne(WaterWheel* w)
 {
@@ -688,24 +869,11 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
         MatrixMultiply(MatrixMultiply(torusFace, MatrixMultiply(rightSide, spin)), base));
 
     // 6 paddle/trough boxes around wheel
+    // 6 suspended troughs around wheel.
+    // They orbit with the wheel, but stay upright.
     for (int k = 0; k < WATER_WHEEL_BUCKET_COUNT; k++)
     {
-        float a = ((float)k / (float)WATER_WHEEL_BUCKET_COUNT) * 2.0f * PI;
-
-        float r = 1.96f;
-
-        // Start at top of wheel, then orbit that point around local X.
-        Matrix orbit = MatrixRotateX(a);
-        Matrix pushOut = MatrixTranslate(0.0f, r, 0.0f);
-
-        // Optional: rotate bucket itself so it follows the wheel angle.
-        Matrix bucketFace = MatrixRotateX(a);
-
-        Matrix bucketLocal = MatrixMultiply(bucketFace, pushOut);
-        bucketLocal = MatrixMultiply(bucketLocal, orbit);
-
-        Matrix bucketM = MatrixMultiply(MatrixMultiply(bucketLocal, spin), base);
-
+        Matrix bucketM = WaterWheel_BucketMatrix(w, k);
         DrawMesh(w->bucket.meshes[0], w->bucket.materials[0], bucketM);
     }
 
@@ -723,7 +891,7 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
     // If it goes in front, flip -2.15f to +2.15f.
     Matrix mountLocal = MatrixTranslate(-3.4f, 0.0f, 0.0f);
 
-    DrawMesh(w->mount.meshes[0], w->mount.materials[0],MatrixMultiply(mountLocal, base));
+    DrawMesh(w->mount.meshes[0], w->mount.materials[0], WaterWheel_MountMatrix(w));
 }
 
 static void WaterWheel_Draw(Donogan* d)
@@ -734,4 +902,5 @@ static void WaterWheel_Draw(Donogan* d)
         WaterWheel_DrawOne(&gWaterWheels[i]);
     }
 }
+
 #endif // JC_H
