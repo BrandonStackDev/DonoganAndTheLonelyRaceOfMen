@@ -33,6 +33,7 @@
 #include "corn.h"
 #include "garden.h"
 #include "cave_light.h"
+#include "portal.h"
 
 //fairly standard things
 #include <float.h>
@@ -650,6 +651,8 @@ int main(void) {
     Machine_Init();
     //maps
     InitMaps();
+    //portals
+    InitPortals();
     //env bounding boxes, duct tape
     GoGoGadgetDuctTape();
     //rocket ship
@@ -3872,6 +3875,7 @@ int main(void) {
         don.drawColor = LerpColor(don.drawColor,caveMode?DARKGRAY:!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
+        DetectPortals(&don);
         Garden_Update(&don, gpad.btnSquare);
         wasCaveMode = caveMode;
         caveMode = donnyMode && IsInCaveMode(&don, (caveMode || wasCaveMode));
@@ -4212,9 +4216,11 @@ int main(void) {
                 if (!caveMode) { DrawDonShadow(&don); }
                 //bubbles
                 if (don.inWater) { DonDrawBubbles(&don, displayBoxes); }
+
             }
             if (onLoad)
             {
+                DrawPortals(&don);
                 Garden_Draw(&don, frustum);
                 if (Vector3DistanceSqr(tolPos, don.pos) < 2048*3000)
                 {
