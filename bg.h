@@ -1107,7 +1107,21 @@ static inline void Skeleton_PickWanderTarget(BadGuy* b)
 
 // Jump lands the skeleton root BEFORE Donogan,
 // because the skeleton's body/arms extend forward during the animation.
-#define SKEL_JUMP_LAND_SHORT         3.8f
+// Positive means jump THROUGH Donogan past his position.
+// Tune 2.0f - 5.0f.
+#define SKEL_JUMP_THROUGH_DIST        3.5f
+
+// Longer jump = more float and better animation sync.
+#define SKEL_JUMP_TIME                0.92f
+
+// Higher arc. Tune 10-16.
+#define SKEL_JUMP_ARC_HEIGHT          13.0f
+
+// Start physical movement a little later in the jump anim.
+#define SKEL_JUMP_LEAVE_FRAME         48  //12
+
+// Land around 2/3 into the 151-frame jump anim.
+#define SKEL_JUMP_LAND_FRAME          100
 
 #define SKEL_CLOSE_ATTACK_RANGE       7.8f   // was ~6.4/6.8; lets swipe start farther out
 #define SKEL_KICK_BACKUP_DIST         1.8f   // how far kick slides backward
@@ -1119,9 +1133,6 @@ static inline void Skeleton_PickWanderTarget(BadGuy* b)
 
 #define SKEL_RUN_SPEED               6.8f
 #define SKEL_WALK_SPEED              2.2f
-
-#define SKEL_JUMP_TIME               0.58f  // seconds to reach Don's locked position
-#define SKEL_JUMP_ARC_HEIGHT         7.0f
 
 #define SKEL_TOO_CLOSE_DIST          2.4f
 #define SKEL_BACKUP_TO_DIST          5.2f
@@ -1158,11 +1169,11 @@ static inline void Skeleton_StartJumpAttack(BadGuy* b, Donogan* d, float groundY
         ? Vector3Scale(toDon, 1.0f / dist)
         : (Vector3) { 0.0f, 0.0f, 1.0f };
 
-    // Land the ROOT before Donogan.
-    // Visually, the skeleton body/arms continue forward from the root.
+    // Land/finish THROUGH Donogan, not before him.
+    // This should make the dive/clutch look more aggressive.
     Vector3 land = d->pos;
-    land.x -= dir.x * SKEL_JUMP_LAND_SHORT;
-    land.z -= dir.z * SKEL_JUMP_LAND_SHORT;
+    land.x += dir.x * SKEL_JUMP_THROUGH_DIST;
+    land.z += dir.z * SKEL_JUMP_THROUGH_DIST;
     land.y = groundY;
 
     b->targetPos = land;
@@ -1170,12 +1181,14 @@ static inline void Skeleton_StartJumpAttack(BadGuy* b, Donogan* d, float groundY
     Vector3 delta = Vector3Subtract(land, b->pos);
     delta.y = 0.0f;
 
-    // Face Donogan, not just the shortened landing point.
+    // Face Donogan at launch.
     b->yaw = BG_YawTo(b->pos, d->pos);
     b->targetYaw = b->yaw;
 
     b->vel.x = delta.x / SKEL_JUMP_TIME;
     b->vel.z = delta.z / SKEL_JUMP_TIME;
+
+    // High initial arc.
     b->vel.y = (2.0f * SKEL_JUMP_ARC_HEIGHT) / SKEL_JUMP_TIME;
 
     b->state = SKELETON_STATE_JUMP_ATTACK_START;
@@ -1362,7 +1375,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         // Wait until animation is a little underway, then leave ground.
         BG_SetAnimSafe(b, ANIM_SKEL_JUMP_ATTACK, false);
 
-        if (b->animFrame > 6)
+        if (b->animFrame >= SKEL_JUMP_LEAVE_FRAME)
         {
             b->state = SKELETON_STATE_JUMP_ATTACK_AIR;
         }
@@ -1385,7 +1398,8 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         float groundHere = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
         if (groundHere < -9000.0f) groundHere = groundY;
 
-        if (b->pos.y <= groundHere)
+        // Do not allow landing too early. Let the animation reach about 2/3 first.
+        if (b->animFrame >= SKEL_JUMP_LAND_FRAME && b->pos.y <= groundHere)
         {
             b->pos.y = groundHere;
             b->vel = (Vector3){ 0 };
