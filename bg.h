@@ -1347,7 +1347,7 @@ static inline void Skeleton_PushDon(Donogan* d, Vector3 dir, float power)
     d->outerBox = UpdateBoundingBox(d->origOuterBB, d->pos);
 }
 
-static inline void Skeleton_TryHitDon(Donogan* d, BadGuy* b,
+static inline bool Skeleton_TryHitDon(Donogan* d, BadGuy* b,
     BoundingBox attackBox,
     int damage,
     float knockPower)
@@ -1581,6 +1581,8 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 
         if (animT >= SKEL_JUMP_HIT_START && animT <= SKEL_JUMP_HIT_END)
         {
+            bool hadHitAlready = b->attackLanded;
+
             Skeleton_TryHitDon(
                 d,
                 b,
@@ -1588,6 +1590,15 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
                 SKEL_DON_HIT_DAMAGE_JUMP,
                 SKEL_DON_KNOCKBACK_JUMP
             );
+
+            if (!hadHitAlready && b->attackLanded)
+            {
+                b->vel = (Vector3){ 0 };
+                b->pos.y = groundY;
+                b->state = SKELETON_STATE_DANCE;
+                BG_SetAnimSafe(b, ANIM_SKEL_DANCE, true);
+                break;
+            }
         }
 
         float groundHere = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
@@ -1765,12 +1776,13 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     case SKELETON_STATE_DEATH:
     {
         BG_SetAnimSafe(b, ANIM_SKEL_DEATH, false);
-
-        if (b->animCount <= 0 || b->animFrame > b->anims[b->curAnim].keyframeCount - 2)
+        b->pos.y -= dt;
+        if (b->animCount <= 0 || b->animFrame > b->anims[b->curAnim].keyframeCount - 4)
         {
             b->state = SKELETON_STATE_DEAD;
         }
-    } break;
+        else { break; }
+    }; // break; //ladder logic for this guy so we dont have a one frame draw issue
 
     case SKELETON_STATE_DEAD:
     {
@@ -1785,7 +1797,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         b->gbm_index = -1;
         StartTimer(&b->respawnTimer);
         ResetTimer(&b->interactionTimer);
-        d->xp += 20;
+        d->xp += 60;
         return;
     } break;
 
