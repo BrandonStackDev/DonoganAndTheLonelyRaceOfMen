@@ -5066,13 +5066,13 @@ int main(void) {
         if(!loadedEem || !wasTilesDocumented)
         {
             // Outline
-            DrawRectangleLines(500, 350, 204, 10, DARKGRAY);
+            DrawRectangleLines((sw / 2) - 50, (sh / 2)-5, 204, 10, DARKGRAY);
             // Fill
             float chunkPercent = ((float)loadCnt)/(CHUNK_COUNT * CHUNK_COUNT);
             float tilePercent = ((float)loadTileCnt)/manifestTileCount;
             float totalPercent = (chunkPercent+tilePercent)/2.0f;
             int gc = (int)((totalPercent)*255);
-            DrawRectangle(502, 352, (int)((200 - 4) * (totalPercent)), 10 - 4, (Color){100,gc,40,255});
+            DrawRectangle((sw/2)-50, (sh/2)-5, (int)((200 - 4)* (totalPercent)), 10 - 4, (Color) { 100, gc, 40, 255 });
         }
         else if(!onLoad)//this used to do something useful, now it does nothing really but snap the player a bit
         {
