@@ -5,13 +5,11 @@
 #include "raymath.h"
 #include "donogan.h"
 
-#define PORTAL_RADIUS 5
-#define PORTAL_RADIUS_SQ PORTAL_RADIUS * PORTAL_RADIUS
-#define NUM_PORTALS 1
-
+#define NUM_PORTALS 4
 
 typedef struct {
     Vector3 pos, warp;
+    float radius;
 } Portal;
 
 Portal portals[NUM_PORTALS];
@@ -36,17 +34,20 @@ static void InitPortals()
     int pIntLoc = GetShaderLocation(portalShader, "uIntensity");
     int pDispLoc = GetShaderLocation(portalShader, "uDispAmp");
     int pNoiseLoc = GetShaderLocation(portalShader, "uNoiseScale");
-    portalModel = LoadModelFromMesh(GenMeshSphere(PORTAL_RADIUS, 64, 64));
+    portalModel = LoadModelFromMesh(GenMeshSphere(1, 64, 64));
     portalModel.materials[0].shader = portalShader;
     //init all portals
-    portals[0] = (Portal){ (Vector3) { -419.69, 620, -1198.05 },(Vector3) { -660.72, 800, -918.63 } }; //pos then warp
+    portals[0] = (Portal){ (Vector3) { -419.69, 620, -1198.05 },(Vector3) { -660.72, 800, -918.63 }, 5.1 }; //pos then warp, cinderSpire
+    portals[1] = (Portal){ (Vector3) { 2587.34, 479, 831.95 },(Vector3) { 2396, 600, 550 }, 4 }; //pos then warp, castle corner
+    portals[2] = (Portal){ (Vector3) { -2560.12, 400, -2462.20 },(Vector3) { -2659.82, 400, -2499.97 }, 3 }; //ole stoney, stuckers (hard brittish accent)
+    portals[3] = (Portal){ (Vector3) { -2120.68, 444, -2374.63 },(Vector3) { -2246.58, 500, -2237.34 }, 3 }; //cozy cottage, to corn field
 }
 
 static void DetectPortals(Donogan* d)
 {
     for (int i = 0; i < NUM_PORTALS; i++)
     {
-        if (Vector3DistanceSqr(d->pos,portals[i].pos) < PORTAL_RADIUS_SQ) 
+        if (Vector3DistanceSqr(d->pos, portals[i].pos) < (portals[i].radius * portals[i].radius))
         {
             d->pos = portals[i].warp; //warp
         }
@@ -70,8 +71,9 @@ static void DrawPortals(Donogan* d)
         //culling
         if (Vector3DistanceSqr(d->pos, portals[i].pos) > 200 * 200) { continue; }
         //draw
+        float r = portals[i].radius + 0.12;
         Matrix m = MatrixMultiply(
-            MatrixScale(1.12, 1.12, 1.12),
+            MatrixScale(r,r,r),
             MatrixTranslate(portals[i].pos.x, portals[i].pos.y, portals[i].pos.z)
         );
         DrawMesh(portalModel.meshes[0], portalModel.materials[0], m);
