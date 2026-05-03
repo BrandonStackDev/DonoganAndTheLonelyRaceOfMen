@@ -41,7 +41,7 @@ static void InitPortals()
     portals[1] = (Portal){ (Vector3) { 2587.34, 479, 831.95 },(Vector3) { 2396, 600, 550 }, 4 }; //pos then warp, castle corner
     portals[2] = (Portal){ (Vector3) { -2560.12, 400, -2462.20 },(Vector3) { -2659.82, 400, -2499.97 }, 3 }; //ole stoney, stuckers (hard brittish accent)
     portals[3] = (Portal){ (Vector3) { -2120.68, 444, -2374.63 },(Vector3) { -2246.58, 500, -2237.34 }, 3 }; //cozy cottage, to corn field
-    portals[4] = (Portal){ (Vector3) { -1107, 70, -7410 },(Vector3) { 0,8000,0 }, 32 }; //at the north in the ocean
+    portals[4] = (Portal){ (Vector3) { -1107, 70, -7410 },(Vector3) { 0,1996,0 }, 32 }; //at the north in the ocean
 }
 
 static void DetectPortals(Donogan* d)
@@ -70,7 +70,7 @@ static void DrawPortals(Donogan* d)
     BeginBlendMode(BLEND_ADDITIVE); // make it bloom with itself
     for (int i = 0; i < NUM_PORTALS; i++) {
         //culling
-        if (Vector3DistanceSqr(d->pos, portals[i].pos) > 500 * 400) { continue; }
+        if (Vector3DistanceSqr(d->pos, portals[i].pos) > 500 * 600) { continue; }
         //draw
         float r = portals[i].radius + 0.12;
         Matrix m = MatrixMultiply(

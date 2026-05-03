@@ -568,6 +568,8 @@ int main(void) {
     bool prevTalkX = false;
     bool prevTalkTri = false;
     float moveMag = 0.0f;
+    //tol stuff for color control during growth
+    Color tol_color = WHITE; //gBloom.generating use to decide which to LERP
     // --- Third-person orbit camera state (around don.pos) ---
     float yaw = 0.0f, pitch = 0.25f, radius = 14.0f;
     int oldLevel = 0;
@@ -4229,7 +4231,8 @@ int main(void) {
                 //tree of life
                 if (IsPointInFrustum(tolPos, frustumChunk8))
                 {
-                    DrawModel(tol, tolPos, 8.0f, WHITE); //(Color) {160,100,220,255}//purple lol!
+                    tol_color = LerpColor(tol_color, (gBloom.hold > 0 && !gBloom.bloomed) ? (Color) { 160, 100, 220, 255 } : WHITE, dt * 8);
+                    DrawModel(tol, tolPos, 8.0f, tol_color); ////purple
                 }
                 //atreyu
                 if (IsPointInFrustum(atreyuPos, frustumChunk8))
