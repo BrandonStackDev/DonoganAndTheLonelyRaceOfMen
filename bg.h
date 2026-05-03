@@ -263,6 +263,7 @@ typedef struct {
     bool bounced;
     float groundY;
     bool onPlatform;
+    bool attackLanded; // prevents one skeleton attack from hitting Don every frame
 } BadGuy;
 //instance of a bad guy, will borrow its model
 
@@ -340,7 +341,8 @@ void InitBadGuyModels(Shader ghostShader)
                     bgModelBorrower[index].model.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex; //noce using 1 slot material
                 }
 
-                bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12);
+                //bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12);
+                bgModelBorrower[index].origBox = (BoundingBox){(Vector3){ -1.10f,  0.20f, -1.10f },(Vector3){  1.10f,  5.80f,  1.10f }};
 
                 bgModelBorrower[index].anims = skel_anims;
                 bgModelBorrower[index].animCount = skel_animCount;
@@ -1140,6 +1142,29 @@ static inline void Skeleton_PickWanderTarget(BadGuy* b)
 
 #define SKEL_KICK_BACKUP_SPEED        0.35f  //slow
 
+//attack defines
+#define SKEL_BODY_PUSH                0.08f
+
+#define SKEL_DON_HIT_DAMAGE_KICK       8
+#define SKEL_DON_HIT_DAMAGE_SWIPE      7
+#define SKEL_DON_HIT_DAMAGE_JUMP      12
+
+#define SKEL_DON_KNOCKBACK_KICK       7.0f
+#define SKEL_DON_KNOCKBACK_SWIPE      6.0f
+#define SKEL_DON_KNOCKBACK_JUMP      10.0f
+
+#define SKEL_TAKE_HIT_KNOCKBACK       8.5f
+#define SKEL_TAKE_WRENCH_KNOCKBACK   16.0f
+#define SKEL_TAKE_HIT_UP              5.0f
+#define SKEL_TAKE_WRENCH_UP           9.0f
+
+#define SKEL_KICK_HIT_START           0.30f
+#define SKEL_KICK_HIT_END             0.62f
+#define SKEL_SWIPE_HIT_START          0.25f
+#define SKEL_SWIPE_HIT_END            0.58f
+#define SKEL_JUMP_HIT_START           0.38f
+#define SKEL_JUMP_HIT_END             0.78f
+//jesus, lots of defines lol
 
 // Only update yaw toward Donogan when there is enough distance.
 // This prevents twitchy spin when the skeleton root is basically inside Don.
@@ -1190,7 +1215,7 @@ static inline void Skeleton_StartJumpAttack(BadGuy* b, Donogan* d, float groundY
 
     // High initial arc.
     b->vel.y = (2.0f * SKEL_JUMP_ARC_HEIGHT) / SKEL_JUMP_TIME;
-
+    b->attackLanded = false;
     b->state = SKELETON_STATE_JUMP_ATTACK_START;
     BG_SetAnimSafe(b, ANIM_SKEL_JUMP_ATTACK, true);
 }
@@ -1216,6 +1241,163 @@ static inline float BG_AnimT(BadGuy* b)
     if (t < 0.0f) t = 0.0f;
     if (t > 1.0f) t = 1.0f;
     return t;
+}
+
+static inline Vector3 BG_ForwardFromYawDeg(float yawDeg)
+{
+    float r = yawDeg * DEG2RAD;
+    return (Vector3) { sinf(r), 0.0f, cosf(r) };
+}
+
+static inline BoundingBox BG_MakeBoxCenterHalf(Vector3 c, Vector3 h)
+{
+    return (BoundingBox) {
+        (Vector3) {
+        c.x - h.x, c.y - h.y, c.z - h.z
+    },
+            (Vector3) {
+            c.x + h.x, c.y + h.y, c.z + h.z
+        }
+    };
+}
+
+static inline BoundingBox Skeleton_MakeForwardAttackBox(BadGuy* b,
+    float forward,
+    float yOffset,
+    Vector3 halfSize)
+{
+    Vector3 f = BG_ForwardFromYawDeg(b->yaw);
+
+    Vector3 c = {
+        b->pos.x + f.x * forward,
+        b->pos.y + yOffset,
+        b->pos.z + f.z * forward
+    };
+
+    return BG_MakeBoxCenterHalf(c, halfSize);
+}
+
+static inline BoundingBox Skeleton_KickBox(BadGuy* b)
+{
+    // Out in front, lower/mid body.
+    return Skeleton_MakeForwardAttackBox(
+        b,
+        2.35f,                         // forward
+        2.15f,                         // y center
+        (Vector3) {
+        1.25f, 1.15f, 1.25f
+    } // half size
+    );
+}
+
+static inline BoundingBox Skeleton_SwipeBox(BadGuy* b)
+{
+    // Wider upper-body grab/swipe zone.
+    return Skeleton_MakeForwardAttackBox(
+        b,
+        2.10f,
+        3.00f,
+        (Vector3) {
+        1.65f, 1.45f, 1.65f
+    }
+    );
+}
+
+static inline BoundingBox Skeleton_JumpAttackBox(BadGuy* b)
+{
+    // During jump, use a chunky box around the skeleton's body.
+    // This is intentionally forgiving.
+    Vector3 c = {
+        b->pos.x,
+        b->pos.y + 2.70f,
+        b->pos.z
+    };
+
+    return BG_MakeBoxCenterHalf(c, (Vector3) { 1.75f, 2.10f, 1.75f });
+}
+
+static inline Vector3 Skeleton_DirFromSkeletonToDon(BadGuy* b, Donogan* d)
+{
+    Vector3 dir = Vector3Subtract(d->pos, b->pos);
+    dir.y = 0.0f;
+
+    if (Vector3LengthSqr(dir) < 0.0001f)
+    {
+        dir = BG_ForwardFromYawDeg(b->yaw);
+    }
+    else
+    {
+        dir = Vector3Normalize(dir);
+    }
+
+    return dir;
+}
+
+static inline void Skeleton_PushDon(Donogan* d, Vector3 dir, float power)
+{
+    // Light immediate positional nudge so the hit visibly separates them.
+    d->pos = Vector3Add(d->pos, Vector3Scale(dir, SKEL_BODY_PUSH * power));
+
+    // Also seed velocity if Don's movement code respects velXZ.
+    d->velXZ = Vector3Scale(dir, power);
+    d->velY = fmaxf(d->velY, 4.5f);
+
+    d->box = UpdateBoundingBox(d->origBB, d->pos);
+    d->innerBox = UpdateBoundingBox(d->origInnerBB, d->pos);
+    d->outerBox = UpdateBoundingBox(d->origOuterBB, d->pos);
+}
+
+static inline void Skeleton_TryHitDon(Donogan* d, BadGuy* b,
+    BoundingBox attackBox,
+    int damage,
+    float knockPower)
+{
+    if (!d || !b) return;
+    if (b->attackLanded) return;
+
+    if (!CheckCollisionBoxes(attackBox, d->box) &&
+        !CheckCollisionBoxes(attackBox, d->outerBox))
+    {
+        return;
+    }
+
+    if (!HasTimerElapsed(&d->hitTimer)) return;
+
+    Vector3 dir = Skeleton_DirFromSkeletonToDon(b, d);
+
+    d->health -= damage;
+    DonSetState(d, DONOGAN_STATE_HIT);
+    StartTimer(&d->hitTimer);
+    d->shook = fmaxf(d->shook, 0.30f);
+
+    Skeleton_PushDon(d, dir, knockPower);
+
+    b->attackLanded = true;
+}
+
+static inline void Skeleton_KnockBackFromDonogan(BadGuy* b, Donogan* d, bool wrench)
+{
+    Vector3 dir = Vector3Subtract(b->pos, d->pos);
+    dir.y = 0.0f;
+
+    if (Vector3LengthSqr(dir) < 0.0001f)
+    {
+        dir = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+    }
+    else
+    {
+        dir = Vector3Normalize(dir);
+    }
+
+    float power = wrench ? SKEL_TAKE_WRENCH_KNOCKBACK : SKEL_TAKE_HIT_KNOCKBACK;
+    float up = wrench ? SKEL_TAKE_WRENCH_UP : SKEL_TAKE_HIT_UP;
+
+    b->vel = Vector3Scale(dir, power);
+    b->vel.y = up;
+
+    b->state = SKELETON_STATE_HIT;
+    b->attackLanded = false;
+    BG_SetAnimSafe(b, ANIM_SKEL_HIT, true);
 }
 
 static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
@@ -1342,7 +1524,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         if (distDon <= SKEL_CLOSE_ATTACK_RANGE)
         {
             b->targetPos = b->pos;
-
+            b->attackLanded = false;
             if (GetRandomValue(0, 1) == 0)
             {
                 b->state = SKELETON_STATE_KICK_ATTACK;
@@ -1395,6 +1577,19 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         // Keep yaw locked toward original landing point.
         b->yaw = b->targetYaw;
 
+        float animT = BG_AnimT(b);
+
+        if (animT >= SKEL_JUMP_HIT_START && animT <= SKEL_JUMP_HIT_END)
+        {
+            Skeleton_TryHitDon(
+                d,
+                b,
+                Skeleton_JumpAttackBox(b),
+                SKEL_DON_HIT_DAMAGE_JUMP,
+                SKEL_DON_KNOCKBACK_JUMP
+            );
+        }
+
         float groundHere = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
         if (groundHere < -9000.0f) groundHere = groundY;
 
@@ -1434,6 +1629,16 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         BG_SetAnimSafe(b, ANIM_SKEL_GRAB_ATTACK, false);
 
         float animT = BG_AnimT(b);
+        if (animT >= SKEL_SWIPE_HIT_START && animT <= SKEL_SWIPE_HIT_END)
+        {
+            Skeleton_TryHitDon(
+                d,
+                b,
+                Skeleton_SwipeBox(b),
+                SKEL_DON_HIT_DAMAGE_SWIPE,
+                SKEL_DON_KNOCKBACK_SWIPE
+            );
+        }
 
         if (animT <= SKEL_SWIPE_FORWARD_UNTIL)
         {
@@ -1462,6 +1667,16 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         BG_SetAnimSafe(b, ANIM_SKEL_KICK_ATTACK, false);
 
         float animT = BG_AnimT(b);
+        if (animT >= SKEL_KICK_HIT_START && animT <= SKEL_KICK_HIT_END)
+        {
+            Skeleton_TryHitDon(
+                d,
+                b,
+                Skeleton_KickBox(b),
+                SKEL_DON_HIT_DAMAGE_KICK,
+                SKEL_DON_KNOCKBACK_KICK
+            );
+        }
 
         // Kick needs room: slide backward early in the animation.
         if (animT <= SKEL_KICK_BACKUP_UNTIL)
@@ -1511,15 +1726,37 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     {
         BG_SetAnimSafe(b, ANIM_SKEL_HIT, false);
 
+        // Knockback physics.
+        b->pos = Vector3Add(b->pos, Vector3Scale(b->vel, dt));
+        b->vel.y -= 24.0f * dt;
+
+        b->vel.x *= 0.92f;
+        b->vel.z *= 0.92f;
+
+        float gy = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
+        if (gy < -9000.0f) gy = groundY;
+
+        if (b->pos.y <= gy)
+        {
+            b->pos.y = gy;
+
+            if (fabsf(b->vel.y) < 2.0f)
+            {
+                b->vel.y = 0.0f;
+            }
+        }
+
         if (b->health <= 0)
         {
             b->state = SKELETON_STATE_DEATH;
+            b->vel = (Vector3){ 0 };
             BG_SetAnimSafe(b, ANIM_SKEL_DEATH, true);
             break;
         }
 
-        if (b->animCount <= 0 || b->animFrame > b->anims[b->curAnim].keyframeCount - 2)
+        if (BG_AnimNearEnd(b))
         {
+            b->vel = (Vector3){ 0 };
             b->state = SKELETON_STATE_PLAN;
             BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
         }

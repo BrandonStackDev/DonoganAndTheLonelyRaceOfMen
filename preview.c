@@ -3680,6 +3680,27 @@ int main(void) {
                         StartTimer(&don.hitTimer);
                     }
                 }
+                else if (bg[b].type == BG_SKELETON &&
+                    bg[b].state != SKELETON_STATE_HIT &&
+                    bg[b].state != SKELETON_STATE_DEATH &&
+                    bg[b].state != SKELETON_STATE_DEAD)
+                {
+                    if (wrenchHit || punchHit)
+                    {
+                        DonAttackType atk = wrenchHit ? ATTACK_THROW : ATTACK_PUNCH;
+
+                        bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
+
+                        Skeleton_KnockBackFromDonogan(&bg[b], &don, wrenchHit);
+
+                        TraceLog(LOG_INFO, "Don hit skeleton! hp=%d", bg[b].health);
+                    }
+                    else if (bodyHit)
+                    {
+                        // Optional body bump. Do NOT damage Don just because the skeleton body touches him.
+                        // Skeleton damage is handled by its attack boxes in bg.h now.
+                    }
+                }
             }
         }
         // bad guy vs home/building boxes
@@ -4424,6 +4445,23 @@ int main(void) {
                     DrawBadGuy(&bg[b]);
                     rlEnableBackfaceCulling();
                     if (displayBoxes) { DrawBoundingBox(bg[b].box, PURPLE); }
+                    if (displayBoxes && bg[b].type == BG_SKELETON)
+                    {
+                        DrawBoundingBox(bg[b].box, RED);
+
+                        if (bg[b].state == SKELETON_STATE_KICK_ATTACK)
+                        {
+                            DrawBoundingBox(Skeleton_KickBox(&bg[b]), ORANGE);
+                        }
+                        else if (bg[b].state == SKELETON_STATE_GRAB_ATTACK)
+                        {
+                            DrawBoundingBox(Skeleton_SwipeBox(&bg[b]), PURPLE);
+                        }
+                        else if (bg[b].state == SKELETON_STATE_JUMP_ATTACK_AIR)
+                        {
+                            DrawBoundingBox(Skeleton_JumpAttackBox(&bg[b]), YELLOW);
+                        }
+                    }
                 }
             }
             //whales and fish
@@ -4648,7 +4686,7 @@ int main(void) {
                         SetMaterialTexture(&foundTiles[te].model.materials[0], MATERIAL_MAP_DIFFUSE, foundTiles[te].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture);//added this because I was having tiles draw with the wrong texture
                         if (reportOn) { tileBcCount++; tileTriCount += foundTiles[te].model.meshes[0].triangleCount; };
                         DrawModel(foundTiles[te].model, (Vector3) { 0, 0, 0 }, 1.0f, lightTileColor);
-                        if (displayBoxes) { DrawBoundingBox(foundTiles[te].box, RED); }
+                        //if (displayBoxes) { DrawBoundingBox(foundTiles[te].box, RED); }
                         EndShaderMode();
                     }
                 }
@@ -4697,11 +4735,11 @@ int main(void) {
                                             transform = MatrixMultiply(transform, MatrixTranslate(obj->pos.x, obj->pos.y, obj->pos.z));
                                             HighFiTransforms[chunks[cx][cy].props[pInd].type][counter[chunks[cx][cy].props[pInd].type]] = transform;//well this is kind of insane
                                             counter[chunks[cx][cy].props[pInd].type]++;
-                                            if (displayBoxes)
+                                            /*if (displayBoxes)
                                             {
                                                 DrawBoundingBox(chunks[cx][cy].props[pInd].outerBox, BLUE);
                                                 DrawBoundingBox(chunks[cx][cy].props[pInd].box, PINK);
-                                            }
+                                            }*/
                                             if (reportOn) { treeTriCount += HighFiStaticObjectModels[chunks[cx][cy].props[pInd].type].meshes[0].triangleCount; }
                                         }
                                         //draw
@@ -4740,7 +4778,7 @@ int main(void) {
                                 chunkTriCount += chunks[cx][cy].model8.meshes[0].triangleCount;
                                 DrawModel(chunks[cx][cy].model8, chunks[cx][cy].position, MAP_SCALE, displayLod ? RED : chunk_08_color);
                             }
-                            if (displayBoxes) { DrawBoundingBox(chunks[cx][cy].box, YELLOW); }
+                            //if (displayBoxes) { DrawBoundingBox(chunks[cx][cy].box, YELLOW); }
                         }
                         else { loadedEem = false; }
                     }
@@ -4776,7 +4814,7 @@ int main(void) {
                                     EndShaderMode();
                                     rlEnableBackfaceCulling();
                                     glDisable(GL_POLYGON_OFFSET_FILL);
-                                    if (displayBoxes) { DrawBoundingBox(chunks[cx][cy].water[w].box, VIOLET); }
+                                    //if (displayBoxes) { DrawBoundingBox(chunks[cx][cy].water[w].box, VIOLET); }
                                 }
                             }
                         }
