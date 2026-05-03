@@ -1917,7 +1917,7 @@ BadGuy CreateSkeleton(Vector3 pos)
     b.desiredScale = 1.12;
 
     b.speed = 6.0f;
-    b.startHealth = 280;
+    b.startHealth = 180;
     b.health = b.startHealth;
 
     b.state = SKELETON_STATE_RISE;
