@@ -3510,7 +3510,7 @@ int main(void) {
             for (int i = 0; i < act_bg_count; i++)
             {
                 int b = act_bg[i];
-                if (!bg[b].active || bg[b].type == BG_GHOST) { continue; }
+                if (!bg[b].active || bg[b].dead || bg[b].type == BG_GHOST) { continue; }
                 if (CheckCollisionBoxes(don.arrows[a].box, bg[b].box))
                 {
                     don.arrows[a].stuck = true;
@@ -3530,6 +3530,11 @@ int main(void) {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
                         Hopper_KnockBackFromDonogan(&bg[b], &don);
                     }
+                    else if (bg[b].type == BG_SKELETON)
+                    {
+                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
+                        Skeleton_KnockBackFromDonogan(&bg[b], &don, false);
+                    }
                 }
             }
         }
@@ -3540,7 +3545,7 @@ int main(void) {
             for (int k = 0; k < act_bg_count; k++)//todo: culling of some sort on this...
             {
                 int b = act_bg[k];
-                if (!bg[b].active) { continue; }
+                if (!bg[b].active || bg[b].dead) { continue; }
                 if (bg[b].type == BG_GHOST && bg[b].state != GHOST_STATE_HIT && Vector3Distance(balls[i].pos, bg[b].pos) < balls[i].radius + 1.6f)//little outside the radius, hit!
                 {
                     bg[b].state = GHOST_STATE_HIT;
@@ -3565,6 +3570,16 @@ int main(void) {
                     bg[b].state = HOPPER_STATE_DEAD;
                     balls[i].alive = false;
                     bg[b].health = 0; // just kill hoppers
+                }
+                else if (bg[b].type == BG_SKELETON
+                    && bg[b].state != SKELETON_STATE_HIT
+                    && bg[b].state != SKELETON_STATE_DEATH
+                    && bg[b].state != SKELETON_STATE_DEAD
+                    && CheckCollisionBoxSphere(bg[b].box, balls[i].pos, balls[i].radius))
+                {
+                    bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
+                    Skeleton_KnockBackFromDonogan(&bg[b], &don, false);
+                    TraceLog(LOG_INFO, "Spell ball hit skeleton! hp=%d", bg[b].health);
                 }
             }
         }

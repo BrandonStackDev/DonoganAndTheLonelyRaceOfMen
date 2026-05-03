@@ -607,7 +607,7 @@ static inline void Yeti_KnockBackFromDonogan(BadGuy* b, Donogan* d)
     away = Vector3Normalize(away);
 
     b->vel = Vector3Scale(away, 10.0f); // stronger than hopper
-    b->vel.y = 8.5f;                    // nice pop
+    //b->vel.y = 8.5f;                    // nice pop
     b->state = YETI_STATE_HIT;
 }
 static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
@@ -952,7 +952,7 @@ static inline void Hopper_KnockBackFromDonogan(BadGuy* b, Donogan* d)
     away = Vector3Normalize(away);
 
     b->vel = Vector3Scale(away, 8.0f); // backwards shove
-    b->vel.y = 7.0f;                   // little pop upward
+    //b->vel.y = 7.0f;                   // little pop upward
     b->state = HOPPER_STATE_HURT;
 }
 
@@ -1390,7 +1390,7 @@ static inline void Skeleton_KnockBackFromDonogan(BadGuy* b, Donogan* d, bool wre
     }
 
     float power = wrench ? SKEL_TAKE_WRENCH_KNOCKBACK : SKEL_TAKE_HIT_KNOCKBACK;
-    float up = wrench ? SKEL_TAKE_WRENCH_UP : SKEL_TAKE_HIT_UP;
+    float up = wrench ? SKEL_TAKE_WRENCH_UP : 0;
 
     b->vel = Vector3Scale(dir, power);
     b->vel.y = up;
