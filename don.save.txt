@@ -1,14 +1,14 @@
 DON_SAVE_V1
-don_pos = -1660.276 366.551 -1562.920
+don_pos = -1636.723 380.500 -1481.343
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
 don_health = 98
-don_mana   = 86
+don_mana   = 90
 don_starthealth = 116
 don_startmana   = 116
-don_level  = 40
-don_xp     = 5531
+don_level  = 41
+don_xp     = 5611
 don_money     = 1248.000000
 don_hover  = 1
 don_wiz  = 1
@@ -38,7 +38,7 @@ MACHINES[2] = 1
 MACHINES[3] = 1
 MACHINES[4] = 1
 MACHINES[5] = 1
-MACHINES[6] = 0
+MACHINES[6] = 1
 MACHINES[7] = 0
 MACHINES[8] = 1
 MACHINES[9] = 0
@@ -95,6 +95,6 @@ MAP[1] = 1 0
 MAP[2] = 1 0
 MAP[3] = 1 0
 MAP[4] = 1 0
-MAP[5] = 0 0
+MAP[5] = 1 0
 MAP[6] = 1 1
 --MAPS-END--

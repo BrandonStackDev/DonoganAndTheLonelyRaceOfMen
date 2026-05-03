@@ -5,7 +5,7 @@
 #include "raymath.h"
 #include "donogan.h"
 
-#define NUM_PORTALS 5
+#define NUM_PORTALS 6
 
 typedef struct {
     Vector3 pos, warp;
@@ -42,6 +42,7 @@ static void InitPortals()
     portals[2] = (Portal){ (Vector3) { -2560.12, 400, -2462.20 },(Vector3) { -2659.82, 400, -2499.97 }, 3 }; //ole stoney, stuckers (hard brittish accent)
     portals[3] = (Portal){ (Vector3) { -2120.68, 444, -2374.63 },(Vector3) { -2246.58, 500, -2237.34 }, 3 }; //cozy cottage, to corn field
     portals[4] = (Portal){ (Vector3) { -1107, 70, -7410 },(Vector3) { 0,1996,0 }, 32 }; //at the north in the ocean
+    portals[5] = (Portal){ (Vector3) { -2465.81, 485, -1798.69 },(Vector3) { -2440, 560, -1825 }, 4 }; //wrenville barn
 }
 
 static void DetectPortals(Donogan* d)

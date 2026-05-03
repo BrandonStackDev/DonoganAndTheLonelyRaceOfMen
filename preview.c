@@ -3876,6 +3876,11 @@ int main(void) {
         }
         don.drawColor = LerpColor(don.drawColor,caveMode?DARKGRAY:!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
+        WaterWheel_Update(dt);
+        if (donnyMode && !vehicleMode)
+        {
+            WaterWheel_CollideDonny(&don);
+        }
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         DetectPortals(&don);
         Garden_Update(&don, gpad.btnSquare);
@@ -3940,11 +3945,6 @@ int main(void) {
         {
             PushDonnyOutOfMachineWorldBoxes(&don);
             disableRoll = true;
-        }
-        WaterWheel_Update(dt);
-        if (donnyMode && !vehicleMode)
-        {
-            WaterWheel_CollideDonny(&don);
         }
         if (cottageDoorOpen)
         {
