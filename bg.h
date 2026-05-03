@@ -1955,7 +1955,7 @@ BadGuy CreateSkeleton(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 161; //increment this, every time, you add, a bg...
+    bg_count = 192; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -2140,7 +2140,44 @@ void InitBadGuys(Shader ghostShader)
     bg[157] = CreatePumpkinHopper((Vector3) { 2376.49f, 331.29f, -3281.79f });
     bg[158] = CreatePumpkinHopper((Vector3) { 2426.24f, 327.53f, -3448.19f });
     bg[159] = CreatePumpkinHopper((Vector3) { 2479.76f, 320.06f, -3481.24f });
-    bg[160] = CreateSkeleton((Vector3) { 3022.00f, 322.00f, 4042.42f });
+    //skeletons initial
+    bg[160] = CreateSkeleton((Vector3) { 2081.94f, 371.92f, 4659.33f });
+    bg[161] = CreateSkeleton((Vector3) { 2338.47f, 436.71f, 4152.02f });
+    bg[162] = CreateSkeleton((Vector3) { 1369.24f, 327.53f, 1515.23f });
+    bg[163] = CreateSkeleton((Vector3) { 1356.75f, 323.76f, 1612.49f });
+    bg[164] = CreateSkeleton((Vector3) { 1266.54f, 327.53f, 1637.80f });
+    bg[165] = CreateSkeleton((Vector3) { 1139.63f, 335.06f, 1723.39f });
+    bg[166] = CreateSkeleton((Vector3) { 1049.55f, 342.59f, 1678.52f });
+    bg[167] = CreateSkeleton((Vector3) { 900.89f, 338.82f, 1618.25f });
+    bg[168] = CreateSkeleton((Vector3) { 894.38f, 350.12f, 1516.07f });
+
+    bg[169] = CreateSkeleton((Vector3) { 43.64f, 372.30f, -1486.26f });
+    bg[170] = CreateSkeleton((Vector3) { -25.86f, 368.94f, -1588.60f });
+    bg[171] = CreateSkeleton((Vector3) { 15.82f, 365.18f, -1654.45f });
+    bg[172] = CreateSkeleton((Vector3) { -43.67f, 350.12f, -1875.42f });
+    bg[173] = CreateSkeleton((Vector3) { -89.70f, 344.07f, -1878.76f });
+    bg[174] = CreateSkeleton((Vector3) { -247.13f, 323.76f, -1941.97f });
+    bg[175] = CreateSkeleton((Vector3) { -336.20f, 317.34f, -2219.33f });
+    bg[176] = CreateSkeleton((Vector3) { -361.29f, 320.00f, -2217.44f });
+
+    bg[177] = CreateSkeleton((Vector3) { -812.29f, 331.29f, -4314.53f });
+    bg[178] = CreateSkeleton((Vector3) { -848.85f, 323.76f, -4360.31f });
+    bg[179] = CreateSkeleton((Vector3) { -885.17f, 320.00f, -4370.65f });
+    bg[180] = CreateSkeleton((Vector3) { -940.58f, 320.00f, -4392.25f });
+
+    bg[181] = CreateSkeleton((Vector3) { -881.24f, 308.71f, -4662.05f });
+    bg[182] = CreateSkeleton((Vector3) { -855.88f, 312.47f, -4705.63f });
+    bg[183] = CreateSkeleton((Vector3) { -919.66f, 308.71f, -4734.47f });
+
+    bg[184] = CreateSkeleton((Vector3) { 1873.65f, 420.87f, -2606.50f });
+    bg[185] = CreateSkeleton((Vector3) { 1860.86f, 423.13f, -2646.33f });
+    bg[186] = CreateSkeleton((Vector3) { 1956.70f, 381.79f, -2647.76f });
+    bg[187] = CreateSkeleton((Vector3) { 1988.69f, 370.50f, -2701.86f });
+    bg[188] = CreateSkeleton((Vector3) { 1963.52f, 385.05f, -2784.16f });
+
+    bg[189] = CreateSkeleton((Vector3) { 1872.40f, 395.20f, -3161.17f });
+    bg[190] = CreateSkeleton((Vector3) { 1578.17f, 323.06f, -3486.57f });
+    bg[191] = CreateSkeleton((Vector3) { 1640.62f, 316.46f, -3519.04f });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
