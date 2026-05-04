@@ -6,11 +6,6 @@
 #include "raymath.h"
 #include <stdbool.h>
 
-//me
-#include "core.h"
-#include "texture.h"
-#include "donogan.h"
-
 typedef enum {
     MODEL_HOME_NONE = -1,
     MODEL_HOME_CABIN, //001
@@ -32,7 +27,7 @@ typedef enum {
 } Model_Home_Type;
 
 typedef enum {
-   SCENE_NONE = -1,
+    SCENE_NONE = -1,
     SCENE_HOME_CABIN_01,
     SCENE_HOME_CABIN_02,
     SCENE_HOME_BRICK_01,
@@ -87,6 +82,7 @@ typedef struct {
 Scene Scenes[SCENE_TOTAL_COUNT];
 Model HomeModels[MODEL_HOME_TOTAL_COUNT];
 
+
 #define WATER_WHEEL_COUNT 1
 #define WATER_WHEEL_BUCKET_COUNT 6
 
@@ -122,6 +118,35 @@ WaterWheel gWaterWheels[WATER_WHEEL_COUNT];
 
 Matrix WaterWheel_BucketMatrix(WaterWheel* w, int k);
 Matrix WaterWheel_MountMatrix(WaterWheel* w);
+
+//order matters
+typedef enum {
+    BCOL_FLOOR = 0,
+    BCOL_CEILING,
+    BCOL_WALL
+} BuildingColliderType;
+
+typedef struct {
+    BuildingColliderType type;
+    // model-local vertices from the .collide.txt file
+    Vector3 local[8];
+} BuildingColliderRaw;
+
+#define MAX_BUILDING_COLLIDERS_PER_MODEL 512
+
+typedef struct {
+    BuildingColliderRaw cols[MAX_BUILDING_COLLIDERS_PER_MODEL];
+    int count;
+    bool loaded;
+} BuildingColliderSet;
+
+BuildingColliderSet HomeCollisionSets[MODEL_HOME_TOTAL_COUNT];
+
+//me
+#include "core.h"
+#include "texture.h"
+#include "donogan.h"
+
 
 static inline BoundingBox RotateScaleTranslateBoundingBoxY(BoundingBox orig, Vector3 pos, float scale, float yaw)
 {
@@ -210,6 +235,135 @@ static inline BoundingBox WaterWheel_TransformBoundingBox(BoundingBox b, Matrix 
             }
 
     return (BoundingBox) { mn, mx };
+}
+
+static inline BuildingColliderType BuildingColliderTypeFromString(const char* s)
+{
+    if (strcmp(s, "floor") == 0) return BCOL_FLOOR;
+    if (strcmp(s, "ceiling") == 0) return BCOL_CEILING;
+    return BCOL_WALL;
+}
+
+static inline const char* BuildingColliderTypeName(BuildingColliderType t)
+{
+    switch (t)
+    {
+    case BCOL_FLOOR:   return "floor";
+    case BCOL_CEILING: return "ceiling";
+    case BCOL_WALL:    return "wall";
+    default:           return "unknown";
+    }
+}
+
+static inline bool LoadBuildingCollisionFile(Model_Home_Type modelType, const char* path)
+{
+    if (modelType < 0 || modelType >= MODEL_HOME_TOTAL_COUNT) return false;
+
+    BuildingColliderSet* set = &HomeCollisionSets[modelType];
+    set->count = 0;
+    set->loaded = false;
+
+    FILE* f = fopen(path, "r");
+    if (!f)
+    {
+        TraceLog(LOG_WARNING, "No building collision file: %s", path);
+        return false;
+    }
+
+    char line[2048];
+
+    while (fgets(line, sizeof(line), f))
+    {
+        if (line[0] == '#') continue;
+        if (strncmp(line, "collider", 8) != 0) continue;
+
+        if (set->count >= MAX_BUILDING_COLLIDERS_PER_MODEL)
+        {
+            TraceLog(LOG_WARNING, "Too many building colliders in %s", path);
+            break;
+        }
+
+        char typeName[64] = { 0 };
+        float v[24] = { 0 };
+
+        int n = sscanf(line,
+            "collider %63s "
+            "%ff %ff %ff %ff %ff %ff %ff %ff %ff %ff %ff %ff "
+            "%ff %ff %ff %ff %ff %ff %ff %ff %ff %ff %ff %ff",
+            typeName,
+            &v[0], &v[1], &v[2],
+            &v[3], &v[4], &v[5],
+            &v[6], &v[7], &v[8],
+            &v[9], &v[10], &v[11],
+            &v[12], &v[13], &v[14],
+            &v[15], &v[16], &v[17],
+            &v[18], &v[19], &v[20],
+            &v[21], &v[22], &v[23]);
+
+        // Some sscanf implementations do not like the literal f suffix.
+        // Try again without requiring the f.
+        if (n != 25)
+        {
+            n = sscanf(line,
+                "collider %63s "
+                "%f %f %f %f %f %f %f %f %f %f %f %f "
+                "%f %f %f %f %f %f %f %f %f %f %f %f",
+                typeName,
+                &v[0], &v[1], &v[2],
+                &v[3], &v[4], &v[5],
+                &v[6], &v[7], &v[8],
+                &v[9], &v[10], &v[11],
+                &v[12], &v[13], &v[14],
+                &v[15], &v[16], &v[17],
+                &v[18], &v[19], &v[20],
+                &v[21], &v[22], &v[23]);
+        }
+
+        if (n != 25)
+        {
+            TraceLog(LOG_WARNING, "Bad collider line in %s: %s", path, line);
+            continue;
+        }
+
+        BuildingColliderRaw* c = &set->cols[set->count++];
+        c->type = BuildingColliderTypeFromString(typeName);
+
+        for (int i = 0; i < 8; i++)
+        {
+            c->local[i] = (Vector3){
+                v[i * 3 + 0],
+                v[i * 3 + 1],
+                v[i * 3 + 2]
+            };
+        }
+    }
+
+    fclose(f);
+
+    set->loaded = (set->count > 0);
+
+    TraceLog(LOG_WARNING,
+        "Loaded building collision %s: modelType=%d count=%d",
+        path,
+        modelType,
+        set->count);
+
+    return set->loaded;
+}
+
+static inline void InitHomeCollisionSets(void)
+{
+    for (int i = 0; i < MODEL_HOME_TOTAL_COUNT; i++)
+    {
+        HomeCollisionSets[i] = (BuildingColliderSet){ 0 };
+    }
+
+    // First test: home_001 / MODEL_HOME_CABIN.
+    LoadBuildingCollisionFile(MODEL_HOME_CABIN,"collide_homes/home_001.collide.txt");
+
+    // Later:
+    // LoadBuildingCollisionFile(MODEL_HOME_BRICK, "collide_homes/home_002.collide.txt");
+    // LoadBuildingCollisionFile(MODEL_HOME_NICE,  "collide_homes/home_003.collide.txt");
 }
 
 void InitHomes() {
@@ -610,12 +764,15 @@ void InitHomes() {
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
+    
     for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
     {
         BoundingBox original = GetModelBoundingBox(HomeModels[Scenes[i].modelType]);
         Scenes[i].origBox = RotateScaleTranslateBoundingBoxY(original, (Vector3) {0,0,0}, Scenes[i].scale, Scenes[i].yaw);
+        Scenes[i].origBox.max.y += 60;
         Scenes[i].box = UpdateBoundingBox(Scenes[i].origBox, Scenes[i].pos);
     }
+    InitHomeCollisionSets();
 }
 
 static inline void WaterWheel_Init(void)

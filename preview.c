@@ -532,7 +532,37 @@ static bool Don_HistoryIsWiggingOut(Donogan* d)
     return (path > 4.0f && net < path * 0.35f);
 }
 
+static inline bool ShouldUseAuthoredBuildingFloor(bool caveMode, bool alreadyHandledY, float currentGroundY, float buildingGroundY)
+{
+    // In cave mode, authored building/cave floors are allowed to own ground.
+    if (caveMode) return true;
 
+    // If terrain/other ground has not been handled yet, use the building floor.
+    if (!alreadyHandledY) return true;
+
+    // If terrain/other ground is higher, keep it.
+    // This prevents a building floor below terrain from dragging Don down.
+    if (currentGroundY > buildingGroundY + 0.05f)
+    {
+        return false;
+    }
+
+    return true;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MAIN
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @brief main!
 /// @param  
 /// @return 
@@ -3266,130 +3296,366 @@ int main(void) {
                 if (CheckCollisionBoxes(don.box, Scenes[i].box))//donny home collision initial
                 {
                     if (Scenes[i].modelType != MODEL_HOME_CASTLE) { don.inHome = true; } //exception for the castle, its wide open mostly
-                    // classify slope: anything flatter than ~50° treated as ground
-                    const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
-                    for (int it = 0; it < 3; ++it)
+                    BuildingColliderSet* set = &HomeCollisionSets[Scenes[i].modelType];
+
+                    if (set->loaded && set->count > 0)
                     {
-                        MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
-                        if (hit.hitGround) {
-                            // snap to ground and re-make AABB
-                            if (!alreadyHandledY || don.groundY < hit.groundY)
-                            {
-                                don.groundY = hit.groundY; //overwrites ground collision
-                            }
-                        }
-                        else if (hit.hitWall && !hitEnvWall) // if we already hit env bounding box, use that instead
+                        BuildingBoxHit bhit = CollideDonAABBWithSceneBuildingColliders(
+                            don.outerBox,
+                            &Scenes[i]
+                        );
+
+                        // Backup: if current frame missed a thin wall, test a swept-ish box
+                        // from previous position to current position.
+                        if (!bhit.hitWall)
                         {
-                            disableRoll = true;
+                            Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
 
-                            const float EPS = 0.0001f;
-                            const float MAX_PUSH = 0.5f;
-                            const float GOOD_DOT = 0.25f;
+                            BoundingBox prevOuter = UpdateBoundingBox(don.origOuterBB, prevPos);
 
-                            DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
-
-                            // Candidate push from collider.
-                            Vector3 p = hit.push;
-                            p.y = 0.0f;
-
-                            float pLen = Vector3Length(p);
-                            if (pLen <= EPS)
-                            {
-                                break;
-                            }
-
-                            if (pLen > MAX_PUSH)
-                            {
-                                p = Vector3Scale(p, MAX_PUSH / pLen);
-                                pLen = MAX_PUSH;
-                            }
-
-                            // -----------------------------------------------------------------
-                            // Walk backward through Don's history and find the newest position
-                            // that does NOT hit this same scene mesh.
-                            // -----------------------------------------------------------------
-                            Vector3 safePos = don.pos;
-                            bool foundSafePos = false;
-
-                            for (int hb = 1; hb <= DON_POS_HISTORY_MAX; hb++)
-                            {
-                                Vector3 testPos = Don_GetHistoryPosition(&don, hb);
-
-                                // Keep current Y so this does not cancel jumping/falling.
-                                testPos.y = don.pos.y;
-
-                                BoundingBox testOuter = UpdateBoundingBox(don.origOuterBB, testPos);
-
-                                MeshBoxHit testHit = CollideAABBWithMeshTriangles(
-                                    testOuter,
-                                    &HomeModels[Scenes[i].modelType].meshes[0],
-                                    Scenes[i].pos,
-                                    Scenes[i].scale,
-                                    Scenes[i].yaw,
-                                    groundSlopeCos,
-                                    true
-                                );
-
-                                if (!testHit.hit || testHit.hitGround)
+                            BoundingBox sweptOuter = {
                                 {
-                                    safePos = testPos;
-                                    foundSafePos = true;
-                                    break;
+                                    fminf(prevOuter.min.x, don.outerBox.min.x),
+                                    fminf(prevOuter.min.y, don.outerBox.min.y),
+                                    fminf(prevOuter.min.z, don.outerBox.min.z)
+                                },
+                                {
+                                    fmaxf(prevOuter.max.x, don.outerBox.max.x),
+                                    fmaxf(prevOuter.max.y, don.outerBox.max.y),
+                                    fmaxf(prevOuter.max.z, don.outerBox.max.z)
+                                }
+                            };
+
+                            BuildingBoxHit sweptHit = CollideDonAABBWithSceneBuildingColliders(
+                                sweptOuter,
+                                &Scenes[i]
+                            );
+
+                            // Wall backup from swept fat box.
+                            if (sweptHit.hitWall && !bhit.hitWall)
+                            {
+                                bhit.hit = true;
+                                bhit.hitWall = true;
+                                bhit.push = sweptHit.push;
+                                bhit.normal = sweptHit.normal;
+                            }
+
+                            // Vertical floor/ceiling crossing backup.
+                            // This catches fast falling/jumping through thin slabs.
+                            BuildingBoxHit sweptYHit = CollideDonAABBWithSceneBuildingCollidersSweptY(
+                                prevOuter,
+                                don.outerBox,
+                                &Scenes[i]
+                            );
+
+                            if (sweptYHit.hitFloor)
+                            {
+                                bhit.hit = true;
+                                bhit.hitFloor = true;
+
+                                if (sweptYHit.groundY > bhit.groundY)
+                                {
+                                    bhit.groundY = sweptYHit.groundY;
                                 }
                             }
 
-                            if (foundSafePos)
+                            if (sweptYHit.hitCeiling && !sweptYHit.hitFloor)
                             {
-                                Vector3 toSafe = Vector3Subtract(safePos, don.pos);
-                                toSafe.y = 0.0f;
+                                bhit.hit = true;
+                                bhit.hitCeiling = true;
+                                bhit.push = sweptYHit.push;
+                                bhit.normal = sweptYHit.normal;
+                            }
+                        }
 
-                                float toSafeLen = Vector3Length(toSafe);
+                        if (bhit.hit)
+                        {
+                            if (bhit.hitFloor && !bhit.hitCeiling)
+                            {
+                                bool useBuildingFloor = ShouldUseAuthoredBuildingFloor(
+                                    caveMode,
+                                    alreadyHandledY,
+                                    don.groundY,
+                                    bhit.groundY
+                                );
 
-                                // First teleport/rollback to the newest known non-hitting position.
-                                don.pos = safePos;
-
-                                // Then only apply p if it mostly points toward that safe direction.
-                                // If p is wrong, replace it with same-sized push toward safe position.
-                                if (toSafeLen > EPS && pLen > EPS)
+                                if (useBuildingFloor)
                                 {
-                                    Vector3 toSafeDir = Vector3Scale(toSafe, 1.0f / toSafeLen);
-                                    Vector3 pDir = Vector3Scale(p, 1.0f / pLen);
-
-                                    float dot = Vector3DotProduct(pDir, toSafeDir);
-
-                                    if (dot < GOOD_DOT)
+                                    if (!alreadyHandledY || don.groundY < bhit.groundY)
                                     {
-                                        p = Vector3Scale(toSafeDir, pLen);
+                                        don.groundY = bhit.groundY;
+                                    }
+
+                                    float feetY = don.outerBox.min.y;
+
+                                    // Wider range because sweptY may catch us after feet already passed below.
+                                    if (feetY <= bhit.groundY + 3.0f && feetY >= bhit.groundY - 6.0f)
+                                    {
+                                        float lift = bhit.groundY - feetY;
+
+                                        don.pos.y += lift;
+
+                                        if (don.velY < 0.0f) don.velY = 0.0f;
+
+                                        don.onGround = true;
+                                        don.groundNormal = bhit.normal.y > 0.1f ? bhit.normal : (Vector3) { 0, 1, 0 };
+
+                                        Don_UpdateBoxes(&don);
+
+                                        // If building collision snapped Don onto a floor after the normal Donogan
+                                        // state update already missed it, force the same landing transition here.
+                                        if (don.state == DONOGAN_STATE_JUMPING ||
+                                            don.state == DONOGAN_STATE_AIR_ROLL ||
+                                            don.state == DONOGAN_STATE_JUMP_START)
+                                        {
+                                            DonSnapToGround(&don);
+                                            DonSetState(&don, DONOGAN_STATE_JUMP_LAND);
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (bhit.hitCeiling && !bhit.hitFloor)
+                            {
+                                if (don.velY > 0.0f) don.velY = 0.0f;
+
+                                if (bhit.push.y > 0.0f) bhit.push.y = -bhit.push.y;
+                                if (bhit.push.y < -0.50f) bhit.push.y = -0.50f;
+
+                                don.pos.y += bhit.push.y;
+                                Don_UpdateBoxes(&don);
+                            }
+
+                            if (bhit.hitCeiling && bhit.hitFloor)
+                            {
+                                Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
+                                float dy = don.pos.y - prevPos.y;
+
+                                bool movingUp = (don.velY > 0.05f) || (dy > 0.05f);
+
+                                if (!movingUp)
+                                {
+                                    bool useBuildingFloor = ShouldUseAuthoredBuildingFloor(
+                                        caveMode,
+                                        alreadyHandledY,
+                                        don.groundY,
+                                        bhit.groundY
+                                    );
+
+                                    if (useBuildingFloor)
+                                    {
+                                        if (!alreadyHandledY || don.groundY < bhit.groundY)
+                                        {
+                                            don.groundY = bhit.groundY;
+                                        }
+
+                                        float feetY = don.outerBox.min.y;
+
+                                        if (feetY <= bhit.groundY + 3.0f && feetY >= bhit.groundY - 6.0f)
+                                        {
+                                            float lift = bhit.groundY - feetY;
+
+                                            don.pos.y += lift;
+
+                                            if (don.velY < 0.0f) don.velY = 0.0f;
+
+                                            don.onGround = true;
+                                            don.groundNormal = bhit.normal.y > 0.1f ? bhit.normal : (Vector3) { 0, 1, 0 };
+
+                                            Don_UpdateBoxes(&don);
+
+                                            // If building collision snapped Don onto a floor after the normal Donogan
+                                            // state update already missed it, force the same landing transition here.
+                                            if (don.state == DONOGAN_STATE_JUMPING ||
+                                                don.state == DONOGAN_STATE_AIR_ROLL ||
+                                                don.state == DONOGAN_STATE_JUMP_START)
+                                            {
+                                                DonSnapToGround(&don);
+                                                DonSetState(&don, DONOGAN_STATE_JUMP_LAND);
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (don.velY > 0.0f) don.velY = 0.0f;
+
+                                    if (bhit.push.y > 0.0f) bhit.push.y = -bhit.push.y;
+                                    if (bhit.push.y < -0.50f) bhit.push.y = -0.50f;
+
+                                    don.pos.y += bhit.push.y;
+                                    Don_UpdateBoxes(&don);
+                                }
+                            }
+
+                            if (bhit.hitWall && !hitEnvWall)
+                            {
+                                disableRoll = true;
+
+                                Vector3 p = bhit.push;
+                                p.y = 0.0f;
+
+                                Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
+                                Vector3 moveDir = Vector3Subtract(don.pos, prevPos);
+                                moveDir.y = 0.0f;
+
+                                if (Vector3LengthSqr(moveDir) > 0.0001f && Vector3LengthSqr(p) > 0.0001f)
+                                {
+                                    moveDir = Vector3Normalize(moveDir);
+
+                                    // If push points with movement, flip it.
+                                    if (Vector3DotProduct(p, moveDir) > 0.0f)
+                                    {
+                                        p = Vector3Negate(p);
+                                    }
+                                }
+
+                                const float MAX_PUSH = 0.75f;
+                                float pLen = Vector3Length(p);
+
+                                if (pLen > 0.0001f)
+                                {
+                                    if (pLen > MAX_PUSH)
+                                    {
+                                        p = Vector3Scale(p, MAX_PUSH / pLen);
                                     }
 
                                     don.pos = Vector3Add(don.pos, p);
+                                    don.velXZ = (Vector3){ 0 };
+                                    don.rollVel = (Vector3){ 0 };
+
+                                    Don_UpdateBoxes(&don);
                                 }
-
-                                TraceLog(LOG_WARNING,
-                                    "[HOME HIST SAFE] scene=%d safe=(%.2f %.2f %.2f) p=(%.3f %.3f %.3f)",
-                                    i,
-                                    safePos.x, safePos.y, safePos.z,
-                                    p.x, p.y, p.z
-                                );
-
-                                // Stop carried movement from shoving him right back in.
-                                don.rollVel = (Vector3){ 0 };
-                                don.velXZ = (Vector3){ 0 };
                             }
-                            else
-                            {
-                                if (Scenes[i].type == SCENE_CINDER || Scenes[i].type == SCENE_CINDER_CAVE)
+                        }
+                    }
+                    else
+                    {
+                        // classify slope: anything flatter than ~50° treated as ground
+                        const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
+                        for (int it = 0; it < 3; ++it)
+                        {
+                            MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
+                            if (hit.hitGround) {
+                                // snap to ground and re-make AABB
+                                if (!alreadyHandledY || don.groundY < hit.groundY)
                                 {
-                                    TraceLog(LOG_WARNING, "[HOME HIST NO SAFE] cave: ignoring wall push");
+                                    don.groundY = hit.groundY; //overwrites ground collision
+                                }
+                            }
+                            else if (hit.hitWall && !hitEnvWall) // if we already hit env bounding box, use that instead
+                            {
+                                disableRoll = true;
+
+                                const float EPS = 0.0001f;
+                                const float MAX_PUSH = 0.5f;
+                                const float GOOD_DOT = 0.25f;
+
+                                DebugLogMeshBoxHit("HOME", i, don.box, don.pos, hit, Scenes[i].pos, Scenes[i].scale);
+
+                                // Candidate push from collider.
+                                Vector3 p = hit.push;
+                                p.y = 0.0f;
+
+                                float pLen = Vector3Length(p);
+                                if (pLen <= EPS)
+                                {
                                     break;
                                 }
 
-                                TraceLog(LOG_INFO, "applying p fallback: %f %f %f", p.x, p.y, p.z);
-                                don.pos = Vector3Add(don.pos, p);
-                            }
+                                if (pLen > MAX_PUSH)
+                                {
+                                    p = Vector3Scale(p, MAX_PUSH / pLen);
+                                    pLen = MAX_PUSH;
+                                }
 
-                            Don_UpdateBoxes(&don);
-                            break;
+                                // -----------------------------------------------------------------
+                                // Walk backward through Don's history and find the newest position
+                                // that does NOT hit this same scene mesh.
+                                // -----------------------------------------------------------------
+                                Vector3 safePos = don.pos;
+                                bool foundSafePos = false;
+
+                                for (int hb = 1; hb <= DON_POS_HISTORY_MAX; hb++)
+                                {
+                                    Vector3 testPos = Don_GetHistoryPosition(&don, hb);
+
+                                    // Keep current Y so this does not cancel jumping/falling.
+                                    testPos.y = don.pos.y;
+
+                                    BoundingBox testOuter = UpdateBoundingBox(don.origOuterBB, testPos);
+
+                                    MeshBoxHit testHit = CollideAABBWithMeshTriangles(
+                                        testOuter,
+                                        &HomeModels[Scenes[i].modelType].meshes[0],
+                                        Scenes[i].pos,
+                                        Scenes[i].scale,
+                                        Scenes[i].yaw,
+                                        groundSlopeCos,
+                                        true
+                                    );
+
+                                    if (!testHit.hit || testHit.hitGround)
+                                    {
+                                        safePos = testPos;
+                                        foundSafePos = true;
+                                        break;
+                                    }
+                                }
+
+                                if (foundSafePos)
+                                {
+                                    Vector3 toSafe = Vector3Subtract(safePos, don.pos);
+                                    toSafe.y = 0.0f;
+
+                                    float toSafeLen = Vector3Length(toSafe);
+
+                                    // First teleport/rollback to the newest known non-hitting position.
+                                    don.pos = safePos;
+
+                                    // Then only apply p if it mostly points toward that safe direction.
+                                    // If p is wrong, replace it with same-sized push toward safe position.
+                                    if (toSafeLen > EPS && pLen > EPS)
+                                    {
+                                        Vector3 toSafeDir = Vector3Scale(toSafe, 1.0f / toSafeLen);
+                                        Vector3 pDir = Vector3Scale(p, 1.0f / pLen);
+
+                                        float dot = Vector3DotProduct(pDir, toSafeDir);
+
+                                        if (dot < GOOD_DOT)
+                                        {
+                                            p = Vector3Scale(toSafeDir, pLen);
+                                        }
+
+                                        don.pos = Vector3Add(don.pos, p);
+                                    }
+
+                                    TraceLog(LOG_WARNING,
+                                        "[HOME HIST SAFE] scene=%d safe=(%.2f %.2f %.2f) p=(%.3f %.3f %.3f)",
+                                        i,
+                                        safePos.x, safePos.y, safePos.z,
+                                        p.x, p.y, p.z
+                                    );
+
+                                    // Stop carried movement from shoving him right back in.
+                                    don.rollVel = (Vector3){ 0 };
+                                    don.velXZ = (Vector3){ 0 };
+                                }
+                                else
+                                {
+                                    if (Scenes[i].type == SCENE_CINDER || Scenes[i].type == SCENE_CINDER_CAVE)
+                                    {
+                                        TraceLog(LOG_WARNING, "[HOME HIST NO SAFE] cave: ignoring wall push");
+                                        break;
+                                    }
+
+                                    TraceLog(LOG_INFO, "applying p fallback: %f %f %f", p.x, p.y, p.z);
+                                    don.pos = Vector3Add(don.pos, p);
+                                }
+
+                                Don_UpdateBoxes(&don);
+                                break;
+                            }
                         }
                     }
                 }
@@ -4427,6 +4693,44 @@ int main(void) {
                     }
 
                     if (displayBoxes) { DrawBoundingBox(Scenes[i].box, PURPLE); }
+                    if (displayBoxes)
+                    {
+                        for (int si = 0; si < SCENE_TOTAL_COUNT; si++)
+                        {
+                            BuildingColliderSet* set = &HomeCollisionSets[Scenes[si].modelType];
+                            if (!set->loaded) continue;
+
+                            for (int ci = 0; ci < set->count; ci++)
+                            {
+                                BuildingColliderWorld wc = Building_MakeWorldCollider(
+                                    &set->cols[ci],
+                                    Scenes[si].pos,
+                                    Scenes[si].scale,
+                                    Scenes[si].yaw
+                                );
+
+                                Color col = YELLOW;
+                                if (wc.type == BCOL_FLOOR) col = GREEN;
+                                else if (wc.type == BCOL_CEILING) col = SKYBLUE;
+                                else if (wc.type == BCOL_WALL) col = ORANGE;
+
+                                DrawLine3D(wc.v[0], wc.v[1], col);
+                                DrawLine3D(wc.v[1], wc.v[2], col);
+                                DrawLine3D(wc.v[2], wc.v[3], col);
+                                DrawLine3D(wc.v[3], wc.v[0], col);
+
+                                DrawLine3D(wc.v[4], wc.v[5], col);
+                                DrawLine3D(wc.v[5], wc.v[6], col);
+                                DrawLine3D(wc.v[6], wc.v[7], col);
+                                DrawLine3D(wc.v[7], wc.v[4], col);
+
+                                DrawLine3D(wc.v[0], wc.v[4], col);
+                                DrawLine3D(wc.v[1], wc.v[5], col);
+                                DrawLine3D(wc.v[2], wc.v[6], col);
+                                DrawLine3D(wc.v[3], wc.v[7], col);
+                            }
+                        }
+                    }
                 }
                 rlEnableBackfaceCulling();
                 CaveLight_DrawTorches(fireModel, fireShader, fireVariantLoc, caveMode);
