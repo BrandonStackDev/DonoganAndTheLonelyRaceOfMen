@@ -95,13 +95,13 @@ static inline void InitMaps(void)
         mapModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = mapTex;
     }
 
-    maps[MAP_HOMES] = CreateGameMap("Homes Map", (Vector3) { 2965.78, 324, 4036.69 }, MAP_HOMES);
-    maps[MAP_WHALES] = CreateGameMap("Whales Map", (Vector3) { 2740.00f, 441.00f, 4110.71f }, MAP_WHALES);
-    maps[MAP_BOOKS] = CreateGameMap("Books Map", (Vector3) { 2720.00f, 441.00f, 4100.71f }, MAP_BOOKS);
-    maps[MAP_WINDMILL] = CreateGameMap("Windmills Map", (Vector3) { -603.88, 577.5, 3695.54 }, MAP_WINDMILL);
-    maps[MAP_STORES] = CreateGameMap("Stores Map", (Vector3) { 2493.04, 341.52, 2422.65 }, MAP_STORES);
-    maps[MAP_FIRES] = CreateGameMap("Fireplace Map", (Vector3) { -1636.03, 382.50, -1480.01 }, MAP_FIRES);
-    maps[MAP_IMPORTANT] = CreateGameMap("Important People", (Vector3) { -3721.90, 329.53, 1108.00 }, MAP_IMPORTANT);
+    maps[MAP_HOMES] = CreateGameMap("Homes Map", (Vector3) { 2965.78, 324, 4036.69 }, MAP_HOMES); //home
+    maps[MAP_WHALES] = CreateGameMap("Whales Map", (Vector3) { 2740.00f, 441.00f, 4110.71f }, MAP_WHALES);//tree house
+    maps[MAP_BOOKS] = CreateGameMap("Books Map", (Vector3) { 2720.00f, 441.00f, 4100.71f }, MAP_BOOKS); //tree house
+    maps[MAP_WINDMILL] = CreateGameMap("Windmills Map", (Vector3) { -603.88, 577.5, 3695.54 }, MAP_WINDMILL); //lucys
+    maps[MAP_STORES] = CreateGameMap("Stores Map", (Vector3) { 2493.04, 341.52, 2422.65 }, MAP_STORES); //store near castle in small town
+    maps[MAP_FIRES] = CreateGameMap("Fireplace Map", (Vector3) { -1652, 357, -1400 }, MAP_FIRES);//water wheel
+    maps[MAP_IMPORTANT] = CreateGameMap("Important People", (Vector3) { -3721.90, 329.53, 1108.00 }, MAP_IMPORTANT); //oh geeze, idk
 }
 
 static inline void ConsumeMaps(Donogan* d)
