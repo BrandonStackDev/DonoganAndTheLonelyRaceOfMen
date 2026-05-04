@@ -487,6 +487,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
 {
     //stuff
     float groundY = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
+    if (d->pos.y + 15 < groundY && d->inHome) { groundY = b->spawnPoint.y; }//hack, for cinderSpire cave
     if (groundY < -9000.0f) groundY = b->pos.y - 3.0f; // safe fallback
     float flyAGL = 3.0f;   // cruise height while flying
     float landAGL = 0.30f;  // near-ground for landing/wander
@@ -497,7 +498,8 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     float yawToTarget = (distToTarget > 1e-4f) ? (RAD2DEG * atan2f(dxT, dzT)) : b->yaw;
     b->targetYaw = yawToTarget;
     //first check if he is outside of the activation radius, for ghosts they die if this is true
-    if (Vector3DistanceSqr(b->pos, b->spawnPoint) > b->spawnRadius * b->spawnRadius)
+    float r = b->spawnRadius < 30 ? 200 : b->spawnRadius;
+    if (Vector3DistanceSqr(b->pos, b->spawnPoint) > r*r)
     {
         b->targetPitch = 0;
         b->speed = 0.4f;
@@ -2215,6 +2217,7 @@ void InitBadGuys(Shader ghostShader)
     bg[204] = CreateGhost((Vector3) { -378.18f, 567.13f, -1188.98f });
     bg[205] = CreateGhost((Vector3) { -417.35f, 567.04f, -1208.09f });
     bg[206] = CreateGhost((Vector3) { -445.06f, 566.98f, -1183.13f });
+    for (int i = 198; i < 207; i++) { bg[i].spawnRadius = 22; }
 
     // skeletons outside the white temple
     bg[207] = CreateSkeleton((Vector3) { -2120.46f, 313.38f, 3331.87f });

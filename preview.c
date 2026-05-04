@@ -4449,7 +4449,7 @@ int main(void) {
                 }
             }
             //bg
-            if (onLoad && !caveMode)
+            if (onLoad)
             {
                 for (int i = 0; i < act_bg_count; i++)
                 {
