@@ -272,6 +272,22 @@ int act_bg[MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT]; //store indexes of active b
 BadGuy * bg;
 int total_bg_models_all_types, bg_count;
 
+static inline BoundingBox UpdateBoundingBoxFromFeet(BoundingBox orig, Vector3 feetPos)
+{
+    return (BoundingBox) {
+        (Vector3) {
+        feetPos.x + orig.min.x,
+            feetPos.y + orig.min.y,
+            feetPos.z + orig.min.z
+    },
+            (Vector3) {
+            feetPos.x + orig.max.x,
+                feetPos.y + orig.max.y,
+                feetPos.z + orig.max.z
+        }
+    };
+}
+
 void InitBadGuyModels(Shader ghostShader)
 {
     total_bg_models_all_types = MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT;
@@ -1411,6 +1427,8 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     toDon.y = 0.0f;
     float distDon = Vector3Length(toDon);
 
+    if (b->health <= 0) { b->dead = true; b->state = SKELETON_STATE_DEATH; }
+
     switch (b->state)
     {
     case SKELETON_STATE_RISE:
@@ -1816,7 +1834,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 
     if (b->gbm_index >= 0)
     {
-        b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+        b->box = UpdateBoundingBoxFromFeet(bgModelBorrower[b->gbm_index].origBox, b->pos);
         BG_UpdateAnim(b, dt);
     }
 }
@@ -2330,6 +2348,10 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         {
             bg[i].box.max.y += 2.25;
             bg[i].box.min.y += 1.8321;
+        }
+        else if (bg[i].type == BG_SKELETON)
+        {
+            bg[i].box = UpdateBoundingBoxFromFeet(bgModelBorrower[bg[i].gbm_index].origBox, bg[i].pos);
         }
     }
     //handle don and timer for square spell

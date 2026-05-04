@@ -152,7 +152,7 @@ static inline void DrawCornFields(Vector3 donPos, Frustum frustum, bool drawDebu
         gCornTransforms[visibleCount++] = MatrixMultiply(MatrixMultiply(S, R), T);
 
         if (drawDebug) {
-            DrawSphere(c->pos, 0.2f, YELLOW);
+            //DrawSphere(c->pos, 0.2f, YELLOW);
         }
 
         if (visibleCount >= CORN_MAX_INSTANCES) break;
