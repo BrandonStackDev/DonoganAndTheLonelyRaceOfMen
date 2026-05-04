@@ -1955,7 +1955,7 @@ BadGuy CreateSkeleton(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 192; //increment this, every time, you add, a bg...
+    bg_count = 211; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -2178,6 +2178,31 @@ void InitBadGuys(Shader ghostShader)
     bg[189] = CreateSkeleton((Vector3) { 1872.40f, 395.20f, -3161.17f });
     bg[190] = CreateSkeleton((Vector3) { 1578.17f, 323.06f, -3486.57f });
     bg[191] = CreateSkeleton((Vector3) { 1640.62f, 316.46f, -3519.04f });
+
+    // skeletons outside cinderspire
+    bg[192] = CreateSkeleton((Vector3) { -481.46f, 658.82f, -1186.00f });
+    bg[193] = CreateSkeleton((Vector3) { -496.83f, 655.06f, -1261.21f });
+    bg[194] = CreateSkeleton((Vector3) { -414.20f, 658.82f, -1254.08f });
+    bg[195] = CreateSkeleton((Vector3) { -371.93f, 662.59f, -1219.08f });
+    bg[196] = CreateSkeleton((Vector3) { -331.92f, 666.35f, -1186.96f });
+    bg[197] = CreateSkeleton((Vector3) { -312.59f, 670.12f, -1157.08f });
+
+    // ghosts inside
+    bg[198] = CreateGhost((Vector3) { -404.37f, 613.10f, -1165.66f });
+    bg[199] = CreateGhost((Vector3) { -439.83f, 613.02f, -1168.91f });
+    bg[200] = CreateGhost((Vector3) { -453.03f, 612.99f, -1198.14f });
+    bg[201] = CreateGhost((Vector3) { -410.32f, 613.09f, -1211.30f });
+    bg[202] = CreateGhost((Vector3) { -386.41f, 613.14f, -1195.41f });
+    bg[203] = CreateGhost((Vector3) { -397.82f, 568.59f, -1138.16f });
+    bg[204] = CreateGhost((Vector3) { -378.18f, 567.13f, -1188.98f });
+    bg[205] = CreateGhost((Vector3) { -417.35f, 567.04f, -1208.09f });
+    bg[206] = CreateGhost((Vector3) { -445.06f, 566.98f, -1183.13f });
+
+    // skeletons outside the white temple
+    bg[207] = CreateSkeleton((Vector3) { -2120.46f, 313.38f, 3331.87f });
+    bg[208] = CreateSkeleton((Vector3) { -2066.84f, 312.47f, 3387.75f });
+    bg[209] = CreateSkeleton((Vector3) { -2117.74f, 316.24f, 3628.95f });
+    bg[210] = CreateSkeleton((Vector3) { -2289.84f, 316.24f, 3630.90f });
 }
 
 static inline void BG_UpdateAll(Donogan *d, float dt)
