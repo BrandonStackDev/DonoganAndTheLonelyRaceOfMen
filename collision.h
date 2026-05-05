@@ -379,6 +379,7 @@ typedef struct BuildingBoxHit {
     float groundY;
     Vector3 push;
     Vector3 normal;
+    float maxWallY;
 } BuildingBoxHit;
 
 static inline void ProjectAABBOnAxis(BoundingBox b, Vector3 axis, float* outMin, float* outMax)
@@ -508,11 +509,23 @@ static inline bool AABBVsBuildingOBBEx(
     cb.min.x -= skin;
     cb.max.x += skin;
     cb.min.y -= skin;
-    cb.max.y += skin;
+    cb.max.y += c->type != BCOL_WALL?skin:(-skin * 2);
     cb.min.z -= skin;
     cb.max.z += skin;
 
     if (!CheckCollisionBoxes(aabb, cb)) return false;
+    if (c->type == BCOL_WALL)
+    {
+        float wallTop = BuildingColliderMaxY(c);
+        const float WALL_TOP_IGNORE_PAD = 0.15f;
+
+        // If Don's feet are clearly above the top of this wall prism,
+        // this buried/low wall should not block him.
+        if (aabb.min.y > wallTop + WALL_TOP_IGNORE_PAD)
+        {
+            return false;
+        }
+    }
 
     Vector3 axes[6] = {
         { 1, 0, 0 },
@@ -701,18 +714,13 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingCollider(
     Vector3 push = { 0 };
     Vector3 normal = { 0 };
 
-    /*if (!AABBVsBuildingOBB(donBox, c, &push, &normal))
-    {
-        return out;
-    }*/
-
     float skin = 0.0f;
 
     if (c->type == BCOL_WALL)
     {
         skin = BUILDING_WALL_SKIN_WORLD;
     }
-    else if (c->type == BCOL_FLOOR)
+    else if (c->type == BCOL_FLOOR) //these arent needed but just incase we make changes and thats nolonger the case, keeping it
     {
         skin = BUILDING_FLOOR_SKIN_WORLD;
     }
@@ -742,6 +750,11 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingCollider(
     else
     {
         out.hitWall = true;
+        out.maxWallY = -99999;
+        for (int i = 0; i < 8; i++)
+        {
+            if (c->v[i].y > out.maxWallY) { out.maxWallY = c->v[i].y; }
+        }
     }
 
     return out;

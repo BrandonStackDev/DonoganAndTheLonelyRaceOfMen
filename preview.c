@@ -3379,7 +3379,7 @@ int main(void) {
                                     don.state == DONOGAN_STATE_AIR_ROLL) &&
                                 don.velY > 0.05f;
 
-                            if (bhit.hitFloor && !risingJump && (!bhit.hitCeiling || don.velY < -0.05f)) //if (bhit.hitFloor && (!bhit.hitCeiling||don.velY<-0.05))
+                            if (bhit.hitFloor && !risingJump && (!bhit.hitCeiling || don.velY < -0.05f))
                             {
                                 bool useBuildingFloor = ShouldUseAuthoredBuildingFloor(
                                     caveMode,
@@ -3497,7 +3497,7 @@ int main(void) {
                                 }
                             }
 
-                            if (bhit.hitWall && !hitEnvWall)
+                            if (bhit.hitWall && !hitEnvWall && bhit.maxWallY + 0.2 < don.outerBox.min.y)
                             {
                                 disableRoll = true;
 
