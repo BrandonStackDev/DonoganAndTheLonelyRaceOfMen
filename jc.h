@@ -133,6 +133,8 @@ typedef struct {
 } BuildingColliderRaw;
 
 #define MAX_BUILDING_COLLIDERS_PER_MODEL 512
+#define BUILDING_SEAM_MATCH_EPS_LOCAL 0.007f
+#define BUILDING_WALL_FLOOR_RELIEF_LOCAL 0.200f
 
 typedef struct {
     BuildingColliderRaw cols[MAX_BUILDING_COLLIDERS_PER_MODEL];
@@ -254,7 +256,58 @@ static inline const char* BuildingColliderTypeName(BuildingColliderType t)
     default:           return "unknown";
     }
 }
+static inline void BuildingCollision_RelieveWallFloorSeams(BuildingColliderSet* set)
+{
+    if (!set) return;
 
+    const float epsSq = BUILDING_SEAM_MATCH_EPS_LOCAL * BUILDING_SEAM_MATCH_EPS_LOCAL;
+    int lowered = 0;
+
+    for (int wi = 0; wi < set->count; wi++)
+    {
+        BuildingColliderRaw* wall = &set->cols[wi];
+        if (wall->type != BCOL_WALL) continue;
+
+        for (int wv = 0; wv < 8; wv++)
+        {
+            Vector3 wp = wall->local[wv];
+
+            bool matchedFloor = false;
+
+            for (int fi = 0; fi < set->count && !matchedFloor; fi++)
+            {
+                BuildingColliderRaw* floor = &set->cols[fi];
+                if (floor->type != BCOL_FLOOR) continue;
+
+                for (int fv = 0; fv < 8; fv++)
+                {
+                    Vector3 fp = floor->local[fv];
+
+                    float dx = wp.x - fp.x;
+                    float dy = wp.y - fp.y;
+                    float dz = wp.z - fp.z;
+
+                    float d2 = dx * dx + dy * dy + dz * dz;
+
+                    if (d2 <= epsSq)
+                    {
+                        wall->local[wv].y -= BUILDING_WALL_FLOOR_RELIEF_LOCAL;
+                        lowered++;
+                        matchedFloor = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (lowered > 0)
+    {
+        TraceLog(LOG_WARNING,
+            "Building seam relief lowered %d wall vertices near floor vertices.",
+            lowered);
+    }
+}
 static inline bool LoadBuildingCollisionFile(Model_Home_Type modelType, const char* path)
 {
     if (modelType < 0 || modelType >= MODEL_HOME_TOTAL_COUNT) return false;
@@ -341,6 +394,11 @@ static inline bool LoadBuildingCollisionFile(Model_Home_Type modelType, const ch
     fclose(f);
 
     set->loaded = (set->count > 0);
+
+    if (set->loaded)
+    {
+        BuildingCollision_RelieveWallFloorSeams(set);
+    }
 
     TraceLog(LOG_WARNING,
         "Loaded building collision %s: modelType=%d count=%d",

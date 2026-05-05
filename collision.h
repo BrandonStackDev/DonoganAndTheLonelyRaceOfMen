@@ -10,13 +10,14 @@
 #include "jc.h"
 
 
-#define BUILDING_WALL_SKIN_WORLD     1.15f
-#define BUILDING_FLOOR_SKIN_WORLD    1.15f
-#define BUILDING_CEILING_SKIN_WORLD  1.15f
-#define BUILDING_FLOOR_XZ_SKIN_WORLD       1.00f
-#define BUILDING_FLOOR_CATCH_ABOVE_WORLD   1.50f
-#define BUILDING_FLOOR_CATCH_BELOW_WORLD   1.00f
-#define BUILDING_CEILING_CATCH_WORLD       1.00f
+#define BUILDING_WALL_SKIN_WORLD            0.2f
+#define BUILDING_FLOOR_SKIN_WORLD           0.2f
+#define BUILDING_CEILING_SKIN_WORLD         0.2f
+#define BUILDING_FLOOR_XZ_SKIN_WORLD        0.2f
+#define BUILDING_FLOOR_CATCH_ABOVE_WORLD    0.2f
+#define BUILDING_FLOOR_CATCH_BELOW_WORLD    3.0f
+#define BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG 12.0f
+#define BUILDING_CEILING_CATCH_WORLD        0.2f
 ////////////////////////////////////////////////////////////////////////////////
 // Barycentric interpolation to get Y at point (x, z) on triangle
 float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
@@ -541,8 +542,17 @@ static inline bool AABBVsBuildingOBBEx(
 
         // Runtime forgiveness. The file can be paper-thin;
         // collision behaves as if it has usable thickness.
-        bmin -= skin;
-        bmax += skin;
+        float useSkin = skin;
+
+        // For walls, do not inflate vertically.
+        // This prevents wall colliders from catching Don at floor/ledge seams.
+        if (c->type == BCOL_WALL && fabsf(axis.y) > 0.4f)
+        {
+            useSkin = 0.0f;
+        }
+
+        bmin -= useSkin;
+        bmax += useSkin;
 
         float overlap = fminf(amax, bmax) - fmaxf(amin, bmin);
 
@@ -613,7 +623,8 @@ static inline bool Building_AABBOverlapsXZ(BoundingBox a, BoundingBox b, float s
 
 static inline BuildingBoxHit CollideDonAABBWithBuildingFloorCeilingSensor(
     BoundingBox donBox,
-    const BuildingColliderWorld* c)
+    const BuildingColliderWorld* c,
+    float donVelY)
 {
     BuildingBoxHit out = { 0 };
     out.groundY = -10000.0f;
@@ -622,7 +633,7 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingFloorCeilingSensor(
 
     const float XZ_SKIN = BUILDING_FLOOR_XZ_SKIN_WORLD;
     const float FLOOR_GRACE_ABOVE = BUILDING_FLOOR_CATCH_ABOVE_WORLD;
-    const float FLOOR_GRACE_BELOW = BUILDING_FLOOR_CATCH_BELOW_WORLD;
+    const float FLOOR_GRACE_BELOW = donVelY<=-12.04? BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG:BUILDING_FLOOR_CATCH_BELOW_WORLD;
     const float CEILING_GRACE = BUILDING_CEILING_CATCH_WORLD;
 
     if (!Building_AABBOverlapsXZ(donBox, cb, XZ_SKIN))
@@ -674,14 +685,15 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingFloorCeilingSensor(
 
 static inline BuildingBoxHit CollideDonAABBWithBuildingCollider(
     BoundingBox donBox,
-    const BuildingColliderWorld* c)
+    const BuildingColliderWorld* c,
+    float donVelY)
 {
     BuildingBoxHit out = { 0 };
     out.groundY = -10000.0f;
 
     if (c->type == BCOL_FLOOR || c->type == BCOL_CEILING)
     {
-        return CollideDonAABBWithBuildingFloorCeilingSensor(donBox, c);
+        return CollideDonAABBWithBuildingFloorCeilingSensor(donBox, c, donVelY);
     }
 
     Vector3 push = { 0 };
@@ -746,7 +758,8 @@ static inline bool Building_AABBPairOverlapsXZ(BoundingBox prevBox, BoundingBox 
 static inline BuildingBoxHit CollideDonAABBWithSceneBuildingCollidersSweptY(
     BoundingBox prevBox,
     BoundingBox currBox,
-    const Scene* scene)
+    const Scene* scene,
+    float donVelY)
 {
     BuildingBoxHit best = { 0 };
     best.groundY = -10000.0f;
@@ -759,7 +772,7 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingCollidersSweptY(
 
     const float XZ_SKIN = BUILDING_FLOOR_XZ_SKIN_WORLD;
     const float FLOOR_GRACE_ABOVE = BUILDING_FLOOR_CATCH_ABOVE_WORLD;
-    const float FLOOR_GRACE_BELOW = BUILDING_FLOOR_CATCH_BELOW_WORLD;
+    const float FLOOR_GRACE_BELOW = donVelY <= -12.04 ? BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG : BUILDING_FLOOR_CATCH_BELOW_WORLD;
     const float CEILING_GRACE = BUILDING_CEILING_CATCH_WORLD;
 
     float prevFeetY = prevBox.min.y;
@@ -834,7 +847,8 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingCollidersSweptY(
 }
 static inline BuildingBoxHit CollideDonAABBWithSceneBuildingColliders(
     BoundingBox donBox,
-    const Scene* scene)
+    const Scene* scene,
+    float donVelY)
 {
     BuildingBoxHit best = { 0 };
     best.groundY = -10000.0f;
@@ -858,7 +872,7 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingColliders(
             scene->yaw
         );
 
-        BuildingBoxHit h = CollideDonAABBWithBuildingCollider(donBox, &wc);
+        BuildingBoxHit h = CollideDonAABBWithBuildingCollider(donBox, &wc, donVelY);
         if (!h.hit) continue;
 
         best.hit = true;

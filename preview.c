@@ -3302,7 +3302,8 @@ int main(void) {
                     {
                         BuildingBoxHit bhit = CollideDonAABBWithSceneBuildingColliders(
                             don.outerBox,
-                            &Scenes[i]
+                            &Scenes[i],
+                            don.velY
                         );
 
                         // Backup: if current frame missed a thin wall, test a swept-ish box
@@ -3328,7 +3329,8 @@ int main(void) {
 
                             BuildingBoxHit sweptHit = CollideDonAABBWithSceneBuildingColliders(
                                 sweptOuter,
-                                &Scenes[i]
+                                &Scenes[i],
+                                don.velY
                             );
 
                             // Wall backup from swept fat box.
@@ -3345,7 +3347,8 @@ int main(void) {
                             BuildingBoxHit sweptYHit = CollideDonAABBWithSceneBuildingCollidersSweptY(
                                 prevOuter,
                                 don.outerBox,
-                                &Scenes[i]
+                                &Scenes[i],
+                                don.velY
                             );
 
                             if (sweptYHit.hitFloor)
@@ -3370,7 +3373,7 @@ int main(void) {
 
                         if (bhit.hit)
                         {
-                            if (bhit.hitFloor && !bhit.hitCeiling)
+                            if (bhit.hitFloor && (!bhit.hitCeiling||don.velY<-0.05))
                             {
                                 bool useBuildingFloor = ShouldUseAuthoredBuildingFloor(
                                     caveMode,
