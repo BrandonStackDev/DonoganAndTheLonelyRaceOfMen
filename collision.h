@@ -9,12 +9,13 @@
 #include "core.h"
 #include "jc.h"
 
+#define BUILDING_FLOOR_STAND_PAD 0.12f
 
 #define BUILDING_WALL_SKIN_WORLD            0.2f
 #define BUILDING_FLOOR_SKIN_WORLD           0.2f
 #define BUILDING_CEILING_SKIN_WORLD         0.2f
 #define BUILDING_FLOOR_XZ_SKIN_WORLD        0.2f
-#define BUILDING_FLOOR_CATCH_ABOVE_WORLD    0.2f
+#define BUILDING_FLOOR_CATCH_ABOVE_WORLD    0.012f
 #define BUILDING_FLOOR_CATCH_BELOW_WORLD    3.0f
 #define BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG 12.0f
 #define BUILDING_CEILING_CATCH_WORLD        0.2f
@@ -648,6 +649,7 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingFloorCeilingSensor(
     {
         Vector3 center = BoxCenter(donBox);
         float y = BuildingColliderFloorYAtXZ(c, center.x, center.z);
+        y += BUILDING_FLOOR_STAND_PAD;
 
         if (y < -9999.0f)
         {
@@ -801,7 +803,7 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingCollidersSweptY(
         {
             Vector3 center = BoxCenter(currBox);
             float y = BuildingColliderFloorYAtXZ(&wc, center.x, center.z);
-
+            y += BUILDING_FLOOR_STAND_PAD;
             if (y < -9999.0f)
             {
                 y = BuildingColliderMaxY(&wc); // fallback only

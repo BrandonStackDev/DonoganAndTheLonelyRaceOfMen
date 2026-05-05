@@ -3373,7 +3373,13 @@ int main(void) {
 
                         if (bhit.hit)
                         {
-                            if (bhit.hitFloor && (!bhit.hitCeiling||don.velY<-0.05))
+                            bool risingJump =
+                                (don.state == DONOGAN_STATE_JUMP_START ||
+                                    don.state == DONOGAN_STATE_JUMPING ||
+                                    don.state == DONOGAN_STATE_AIR_ROLL) &&
+                                don.velY > 0.05f;
+
+                            if (bhit.hitFloor && !risingJump && (!bhit.hitCeiling || don.velY < -0.05f)) //if (bhit.hitFloor && (!bhit.hitCeiling||don.velY<-0.05))
                             {
                                 bool useBuildingFloor = ShouldUseAuthoredBuildingFloor(
                                     caveMode,
