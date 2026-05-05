@@ -34,6 +34,7 @@
 #include "garden.h"
 #include "cave_light.h"
 #include "portal.h"
+#include "dust_puff.h"
 
 //fairly standard things
 #include <float.h>
@@ -386,6 +387,9 @@ static void FinishTalking(Donogan* d)
         d->talkedToBlueWizard = true;
         npcs[NPC_WIZARD].state = WIZARD_STATE_FLY;
         npcs[NPC_WIZARD].targetPos = (Vector3){ 8008, 8008, 8008 };
+        Vector3 wp = npcs[NPC_WIZARD].pos; //wizard position
+        wp.y -= 2;
+        DustPuff_Spawn(wp);
     }
     //abby not needed, galdriel not needed?, new guys not needed
 }
@@ -1038,6 +1042,7 @@ int main(void) {
     map_atreyu = &atreyuPos;
     map_gal = &npcs[NPC_GALADRIEL].pos;
     Corn_Init(instancingLightShader);
+    DustPuff_Init();
     //init the stuff before launching thread launcher
     InitMenu(&don);//just for some color stuff
     //INIT
@@ -4355,6 +4360,8 @@ int main(void) {
             DrawSkyboxPanelFixed(skyboxPanelRightModel, (Vector3) { cam.x + dist, cam.y, cam.z }, -90.0f, (Vector3) { 0, 1, 0 }, size);
             // UP (+Y)
             DrawSkyboxPanelFixed(skyboxPanelUpModel, (Vector3) { cam.x, cam.y + dist, cam.z }, 90.0f, (Vector3) { 1, 0, 0 }, size);
+            //bottom
+            //DrawPlane((Vector3) { 0,-400, 0 }, (Vector2) {1000,1000}, (Color) { 5, 5, 20, 255 });
             rlEnableDepthMask();
         EndMode3D();
         //regular scene of the map
@@ -4403,6 +4410,11 @@ int main(void) {
             rotationTruck.m12 = truckOrigin.x;
             rotationTruck.m13 = Lerp(truckOrigin.y + truckYOffsetDraw, truckOrigin.y + truckYOffsetDraw + truckPitchYOffset, 0.01f); //!!!!SPACE TRUCK!!!!
             rotationTruck.m14 = truckOrigin.z;
+            //puffs
+            if (onLoad)
+            {
+                DustPuff_UpdateDraw(camera);
+            }
             //donogan
             if (onLoad && donnyMode && !don.eatenByShark) //do not draw once he was eaten
             {

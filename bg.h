@@ -14,6 +14,7 @@
 #include "util.h"
 #include "apples.h"
 #include "texture.h"
+#include "dust_puff.h"
 
 #define MAX_BG_PER_TYPE_AT_ONCE 12
 
@@ -1071,6 +1072,7 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
         StartTimer(&b->respawnTimer);
         ResetTimer(&b->interactionTimer);
         d->xp += 12;
+        DustPuff_Spawn(b->pos);
     }
     }
     b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
@@ -2289,6 +2291,8 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                     {
                         bg[i].state = GHOST_STATE_DEATH;
                         bg[i].targetPos = bg[i].pos;
+                        bg[i].frozen = false; //they die with a pff
+                        DustPuff_Spawn(bg[i].pos);
                     }
                 }
                 if (d->spellTimer.running)
@@ -2357,11 +2361,11 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             bg[i].box = UpdateBoundingBoxFromFeet(bgModelBorrower[bg[i].gbm_index].origBox, bg[i].pos);
         }
     }
-    //handle don and timer for square spell
-    if (d->spellTimer.running)
-    {
-        //d->cached_yawY = d->yawY;//this does not work....?
-    }
+    ////handle don and timer for square spell
+    //if (d->spellTimer.running)
+    //{
+    //    //d->cached_yawY = d->yawY;//this does not work....?
+    //}
     if (HasTimerElapsed(&d->spellTimer))
     {
         d->mana -= 1;
