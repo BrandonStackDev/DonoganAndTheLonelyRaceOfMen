@@ -3298,7 +3298,7 @@ int main(void) {
                     if (Scenes[i].modelType != MODEL_HOME_CASTLE) { don.inHome = true; } //exception for the castle, its wide open mostly
                     BuildingColliderSet* set = &HomeCollisionSets[Scenes[i].modelType];
 
-                    if (set->loaded && set->count > 0)
+                    if (set->loaded && set->count > 0 ) //&& Scenes[i].type != SCENE_HOME_BARN_02
                     {
                         BuildingBoxHit bhit = CollideDonAABBWithSceneBuildingColliders(
                             don.outerBox,
