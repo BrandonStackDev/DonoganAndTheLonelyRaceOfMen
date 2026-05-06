@@ -672,7 +672,6 @@ int main(void) {
     //load the homes models/scenes and stuff like that
     InitHomes();
     CaveLight_Init();
-    //CaveLight_ApplyToCinderModels(&HomeModels[MODEL_CINDER],&HomeModels[MODEL_CINDER_CAVE]);
     //water wheel
     WaterWheel_Init();
     //talking
@@ -3502,7 +3501,9 @@ int main(void) {
                                 }
                             }
 
-                            if (bhit.hitWall && !hitEnvWall && bhit.maxWallY + 0.2 < don.outerBox.min.y)
+                            bool wallIsTallEnough = (bhit.maxWallY - 0.2f >= don.outerBox.min.y);
+                            bool dontLowerWalls = (Scenes[i].modelType != MODEL_HOME_NICE);
+                            if (bhit.hitWall && !hitEnvWall && (wallIsTallEnough || dontLowerWalls))
                             {
                                 disableRoll = true;
 
