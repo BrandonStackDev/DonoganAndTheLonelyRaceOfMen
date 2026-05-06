@@ -16,8 +16,8 @@
 #define BUILDING_CEILING_SKIN_WORLD         0.2f
 #define BUILDING_FLOOR_XZ_SKIN_WORLD        0.2f
 #define BUILDING_FLOOR_CATCH_ABOVE_WORLD    0.012f
-#define BUILDING_FLOOR_CATCH_BELOW_WORLD    3.0f
-#define BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG 12.0f
+#define BUILDING_FLOOR_CATCH_BELOW_WORLD    0.2f
+#define BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG 4.0f
 #define BUILDING_CEILING_CATCH_WORLD        0.2f
 ////////////////////////////////////////////////////////////////////////////////
 // Barycentric interpolation to get Y at point (x, z) on triangle
@@ -650,7 +650,8 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingFloorCeilingSensor(
 
     const float XZ_SKIN = BUILDING_FLOOR_XZ_SKIN_WORLD;
     const float FLOOR_GRACE_ABOVE = BUILDING_FLOOR_CATCH_ABOVE_WORLD;
-    const float FLOOR_GRACE_BELOW = donVelY<=-12.04? BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG:BUILDING_FLOOR_CATCH_BELOW_WORLD;
+    //const float FLOOR_GRACE_BELOW = donVelY<-32.0? BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG:BUILDING_FLOOR_CATCH_BELOW_WORLD;
+    const float FLOOR_GRACE_BELOW = BUILDING_FLOOR_CATCH_BELOW_WORLD;
     const float CEILING_GRACE = BUILDING_CEILING_CATCH_WORLD;
 
     if (!Building_AABBOverlapsXZ(donBox, cb, XZ_SKIN))
