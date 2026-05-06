@@ -780,7 +780,7 @@ void InitHomes() {
     {
         BoundingBox original = GetModelBoundingBox(HomeModels[Scenes[i].modelType]);
         Scenes[i].origBox = RotateScaleTranslateBoundingBoxY(original, (Vector3) {0,0,0}, Scenes[i].scale, Scenes[i].yaw);
-        Scenes[i].origBox.max.y += 60;
+        if (Scenes[i].modelType != MODEL_CINDER_CAVE) { Scenes[i].origBox.max.y += Scenes[i].scale * 0.2; }
         Scenes[i].box = UpdateBoundingBox(Scenes[i].origBox, Scenes[i].pos);
     }
     InitHomeCollisionSets();
