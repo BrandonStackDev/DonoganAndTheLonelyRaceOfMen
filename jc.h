@@ -374,6 +374,7 @@ static inline void InitHomeCollisionSets(void)
     LoadBuildingCollisionFile(MODEL_BARN, "collide_homes/barn.collide.txt");
     LoadBuildingCollisionFile(MODEL_HOME_WINDMILL, "collide_homes/home_007.collide.txt");
     LoadBuildingCollisionFile(MODEL_HOME_NICE, "collide_homes/home_003.collide.txt");
+    LoadBuildingCollisionFile(MODEL_CINDER, "collide_homes/cinder.collide.txt");
 }
 
 void InitHomes() {
