@@ -508,24 +508,27 @@ static inline bool AABBVsBuildingOBBEx(
 
     cb.min.x -= skin;
     cb.max.x += skin;
-    cb.min.y -= skin;
-    cb.max.y += c->type != BCOL_WALL?skin:(-skin * 2);
+    if (c->type != BCOL_WALL)
+    {
+        cb.min.y -= skin;
+        cb.max.y += skin;
+    }
     cb.min.z -= skin;
     cb.max.z += skin;
 
     if (!CheckCollisionBoxes(aabb, cb)) return false;
-    if (c->type == BCOL_WALL)
-    {
-        float wallTop = BuildingColliderMaxY(c);
-        const float WALL_TOP_IGNORE_PAD = 0.15f;
+    //if (c->type == BCOL_WALL)
+    //{
+    //    float wallTop = BuildingColliderMaxY(c);
+    //    const float WALL_TOP_IGNORE_PAD = 0.15f;
 
-        // If Don's feet are clearly above the top of this wall prism,
-        // this buried/low wall should not block him.
-        if (aabb.min.y > wallTop + WALL_TOP_IGNORE_PAD)
-        {
-            return false;
-        }
-    }
+    //    // If Don's feet are clearly above the top of this wall prism,
+    //    // this buried/low wall should not block him.
+    //    if (aabb.min.y > wallTop + WALL_TOP_IGNORE_PAD)
+    //    {
+    //        return false;
+    //    }
+    //}
 
     Vector3 axes[6] = {
         { 1, 0, 0 },
