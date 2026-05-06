@@ -226,7 +226,7 @@ static TalkData talkData[] = {
         "Nick",
         {
             "Thank you for rescuing me from those robot orbs!",
-            "I thought I was finished.",
+            "I thought I was finished. Who built those stupid things anyway?",
             "I owe you one, Donogan."
         },
         3,
@@ -239,11 +239,11 @@ static TalkData talkData[] = {
             "Ah, Donogan. The world is older than your map.",
             "Find the good books. Beware the shadow books.",
             "[Donogan] Why, what are they for?",
-            "Because Donogan, you are the Queso Cataracts!",
+            "Because Donogan, you are the Queso Cataracts! The ultimate form of power this world has ever known!",
             "[Donogan] You want me to shove cheese into my eyeballs?!",
-            "No!, I mean ... No, just find the maps and the books. You'll want to use X to jump, and O to roll.",
-            "L3 lets you run and jump higher. Left joystick is mostly to move and Right joystick is for the camera.",
-            "Use square for your freeze attack spell and sometimes to cast spells. Also... Hover mode for the Truck is near the castle."
+            "No!, I mean ... No, just find the maps and the books. You'll want to use X to jump, and O to roll. Triangle to interact with your environment.",
+            "L3 lets you run and jump higher. Left joystick is to move and Right joystick is for the camera.",
+            "Use square for your freeze attack spell and sometimes to cast other spells, and R2 to shoot radiant spell-spheres."
         },
         8,
         TALK_OPTION_OK
@@ -317,10 +317,9 @@ static TalkData talkData[] = {
         TALK_TYPE_GAL_2,
         "Galadriel",
         {
-            "Ah, you have found good books.",
-            "Will you sell them to me for $80 each?"
+            "Ah, you have found good books. Will you sell them to me for $80 each? (X to accept Triangle to decline)",
         },
-        2,
+        1,
         TALK_OPTION_YES_NO
     },
     {
@@ -342,9 +341,11 @@ static TalkData talkData[] = {
         "Did you know, there are maps hidden across the islands?",
         "Not all of them are easy to find... some are tucked away in strange places.",
         "Old ruins, quiet cliffs, even places people stopped visiting long ago.",
-        "If you collect them, they will reveal more of the world to you."
+        "If you collect them, they will reveal more of the world to you.",
+        "[Donogan] Great, do you know where any are?",
+        "No, sorry. There is no map for maps."
     },
-    4,
+    6,
     TALK_OPTION_OK
     },
 {
@@ -352,7 +353,7 @@ static TalkData talkData[] = {
     "Geoff",
     {
         "Hey Donogan, I think I saw something you might want.",
-        "Near the water wheel just outside of Wrenville.",
+        "On top of the water wheel just outside of Wrenville.",
         "It looked like a map, just sitting up high... kind of strange, honestly.",
         "I didnt grab it because the windmill needs to be started to get up on the platforms.",
         "You should check out there if you havent already."
