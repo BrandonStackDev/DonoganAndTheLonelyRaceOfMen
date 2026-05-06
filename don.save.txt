@@ -1,23 +1,23 @@
 DON_SAVE_V1
-don_pos = 913.319 393.441 694.558
+don_pos = -338.274 568.471 -503.528
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
-don_health = 71
-don_mana   = 100
+don_health = 72
+don_mana   = 54
 don_starthealth = 100
 don_startmana   = 100
-don_level  = 108
-don_xp     = 56006
-don_money     = 1173809.625000
+don_level  = 109
+don_xp     = 56686
+don_money     = 1171456.000000
 don_hover  = 1
 don_wiz  = 1
 don_gal_books = 0
 don_guitar = 0
 invY = 0
 invX = 0
-musicVol = 1.0000
-soundVol = 1.0000
+musicVol = 0.0000
+soundVol = 0.0500
 difficulty = 1
 --FIREPLACES-BEGIN--
 FIRE[0] = 0
@@ -28,7 +28,7 @@ FIRE[4] = 0
 FIRE[5] = 0
 FIRE[6] = 0
 FIRE[7] = 1
-FIRE[8] = 0
+FIRE[8] = 1
 FIRE[9] = 0
 --FIREPLACES-END--
 --MACHINES-BEGIN--
@@ -49,7 +49,7 @@ MACHINES[11] = 0
 MISSION[0] = 0
 MISSION[1] = 0
 MISSION[2] = 0
-MISSION[3] = 0
+MISSION[3] = 1
 MISSION[4] = 0
 MISSION[5] = 0
 MISSION[6] = 0
@@ -68,7 +68,7 @@ ITEM[4] = 1
 ITEM[5] = 0
 ITEM[6] = 0
 ITEM[7] = 0
-ITEM[8] = 0
+ITEM[8] = 1
 ITEM[9] = 0
 ITEM[10] = 0
 ITEM[11] = 1
@@ -78,7 +78,7 @@ ITEM[14] = 1
 ITEM[15] = 0
 ITEM[16] = 0
 ITEM[17] = 0
-ITEM[18] = 0
+ITEM[18] = 1
 ITEM[19] = 0
 --ITEMS-END--
 --INV-BEGIN--
@@ -88,8 +88,8 @@ INV[2] = 60
 INV[3] = 100
 INV[4] = 0
 INV[5] = 0
-INV[6] = 2
-INV[7] = 2
+INV[6] = 3
+INV[7] = 3
 --INV-END--
 --MAPS-BEGIN--
 MAP[0] = 0 0
