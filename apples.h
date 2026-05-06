@@ -303,8 +303,8 @@ void UpdateTreeOfLifeBloomGeneration(void)
     bool isBlue = shade >= 20 && shade <= 22;
     bool isFlower = shade >= 23;
 
-    int perTree = isGreen ? 28 : isBlue ? 5 : 8;
-
+    //int perTree = isGreen ? 28 : isBlue ? 5 : 8;
+    int perTree = isGreen ? 20 : isBlue ? 4 : 6;
     float minBand = isGreen ? 2.8f : 3.5f;
     float maxBand = isGreen ? 11.5f : 12.5f;
 
@@ -346,8 +346,8 @@ void UpdateTreeOfLifeBloomGeneration(void)
             p.y += GetRandomValue(0, 10000) / 10000.0f * spreadY;
 
             float scale = isGreen
-                ? GetRandomValue(65, 140) * 0.01f
-                : GetRandomValue(35, 80) * 0.01f;
+                ? GetRandomValue(65, 140) * 0.022f
+                : GetRandomValue(35, 80) * 0.022f;
 
             scale *= sizeMul;
 
