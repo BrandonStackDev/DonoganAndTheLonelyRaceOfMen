@@ -42,11 +42,16 @@ typedef enum {
     MISSION_KILL_GHOST,
     MISSION_KILL_YETI,
     MISSION_KILL_ROBO,
-    MISSION_START_ALL_MILLS,
-    MISSION_RESCUE_NICK,
     MISSION_FART_WHALE,
+    MISSION_RESCUE_NICK,
     MISSION_ABBY_LIGHT,
     MISSION_ABBY_RX,
+    MISSION_START_ALL_MILLS,
+    //all fire places
+    //all maps
+    // kill 100 skeletons
+    // give galadriel 10 books
+    //give alister 10 books
     MISSION_TOTAL_COUNT
 } MissionType;
 

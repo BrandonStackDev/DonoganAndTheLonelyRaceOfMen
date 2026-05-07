@@ -300,7 +300,13 @@ static inline BoundingBox UpdateBoundingBoxFromFeet(BoundingBox orig, Vector3 fe
 void InitBadGuyModels(Shader ghostShader)
 {
     total_bg_models_all_types = MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT;
-    bgModelBorrower = (BadGuyBorrowModel*)malloc(sizeof(BadGuyBorrowModel) * total_bg_models_all_types);
+    //bgModelBorrower = (BadGuyBorrowModel*)malloc(sizeof(BadGuyBorrowModel) * total_bg_models_all_types);
+    bgModelBorrower = calloc(total_bg_models_all_types, sizeof(BadGuyBorrowModel));
+    if (!bgModelBorrower)
+    {
+        TraceLog(LOG_ERROR, "Failed to allocate enemy Model Borrower");
+        return;
+    }
     //ghost model can be shared
     Model ghost_model = LoadModel("models/ghost.obj");
     Texture ghost_tex = LoadMyTexture("textures/ghost.png");
@@ -363,7 +369,10 @@ void InitBadGuyModels(Shader ghostShader)
 
                 if (bgModelBorrower[index].model.materialCount > 0 && bgModelBorrower[index].tex.id != 0)
                 {
-                    bgModelBorrower[index].model.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex; //noce using 1 slot material
+                    for (int m = 0; m < bgModelBorrower[index].model.materialCount; m++)
+                    {
+                        bgModelBorrower[index].model.materials[m].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
+                    }
                 }
 
                 //bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12);
@@ -375,6 +384,26 @@ void InitBadGuyModels(Shader ghostShader)
         }
     }
 }
+//helper for managing all of these d@mn variables in the bg struct
+static inline void BG_ClearRuntimeState(BadGuy* b)
+{
+    if (!b) return;
+
+    b->attackLanded = false;
+
+    b->ragdoll = false;
+    b->ragdollTimer = 0.0f;
+    b->ragdollSpinVel = (Vector3){0};
+
+    b->truckHitCooldown = 0.0f;
+    b->propHitCooldown = 0.0f;
+
+    b->vel = (Vector3){ 0 };
+
+    b->animFrame = 0.0f;
+    b->curAnim = 0;
+    b->animFPS = 24.0f;
+}
 // === NEW: helper for ground
 static inline float BG_GroundY(Vector3 p) {
     float g = GetTerrainHeightFromMeshXZ(p.x, p.z);
@@ -383,10 +412,21 @@ static inline float BG_GroundY(Vector3 p) {
 
 static inline void BG_UpdateMainBox(BadGuy* b)
 {
-    if (!b || b->gbm_index < 0) return;
+    if (!b) return;
+    //if (!BG_ModelIndexOK(b->gbm_index)) return;
 
-    b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+    BoundingBox orig = bgModelBorrower[b->gbm_index].origBox;
+
+    if (b->type == BG_SKELETON)
+    {
+        b->box = UpdateBoundingBoxFromFeet(orig, b->pos);
+    }
+    else
+    {
+        b->box = UpdateBoundingBox(orig, b->pos);
+    }
 }
+
 static inline bool BG_GroundCheckAndSnap(BadGuy* b, float snapUp, float snapDown, bool forceIfBelow)
 {
     if (!b || b->gbm_index < 0) return false;
@@ -1049,7 +1089,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     }
 
     // keep box in sync
-    b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+    BG_UpdateMainBox(b);
 }
 
 static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
@@ -1314,7 +1354,7 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
         DustPuff_Spawn(b->pos);
     }
     }
-    b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+    BG_UpdateMainBox(b);
 }
 
 static inline Vector3 BG_FlatDirTo(Vector3 from, Vector3 to)
@@ -1676,12 +1716,14 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     {
     case SKELETON_STATE_RISE:
     {
+        b->animFPS = 4;
         BG_SetAnimSafe(b, ANIM_SKEL_RISE, false);
 
         if (b->pos.y >= groundY)
         {
             b->pos.y = groundY;
             b->state = SKELETON_STATE_PLAN;
+            b->animFPS = 24;
             BG_SetAnimSafe(b, ANIM_SKEL_IDLE, true);
         }
     } break;
@@ -2075,7 +2117,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 
     if (b->gbm_index >= 0)
     {
-        b->box = UpdateBoundingBoxFromFeet(bgModelBorrower[b->gbm_index].origBox, b->pos);
+        BG_UpdateMainBox(b);
         BG_UpdateAnim(b, dt);
     }
 }
@@ -2648,20 +2690,23 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         {
             BG_Update_Skeleton(d, &bg[i], dt);
         }
-        //update general stuff
-        bg[i].box = UpdateBoundingBox(bgModelBorrower[bg[i].gbm_index].origBox, bg[i].pos);
-        if (bg[i].type == BG_YETI) {//im sick of these mfn snakes on this mfn plane!
-            bg[i].box.max.y += 4.5;
-            bg[i].box.min.y += 4;
-        }
-        else if (bg[i].type == BG_PUMPKIN_HOPPER)
+        if (bg->active)
         {
-            bg[i].box.max.y += 2.25;
-            bg[i].box.min.y += 1.8321;
+            //update boxes and height hacks
+            BG_UpdateMainBox(b);
+            if (bg[i].type == BG_YETI) {//im sick of these mfn snakes on this mfn plane!
+                bg[i].box.max.y += 4.5;
+                bg[i].box.min.y += 4;
+            }
+            else if (bg[i].type == BG_PUMPKIN_HOPPER)
+            {
+                bg[i].box.max.y += 2.25;
+                bg[i].box.min.y += 1.8321;
+            }
         }
-        else if (bg[i].type == BG_SKELETON)
+        else
         {
-            bg[i].box = UpdateBoundingBoxFromFeet(bgModelBorrower[bg[i].gbm_index].origBox, bg[i].pos);
+            continue;
         }
     }
     ////handle don and timer for square spell
@@ -2716,6 +2761,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                 {
                     int index = i + (bg[b].type * MAX_BG_PER_TYPE_AT_ONCE);
                     if (bgModelBorrower[index].isInUse) { continue; }
+                    BG_ClearRuntimeState(&(bg[b])); //clear important stuff
                     bgModelBorrower[index].isInUse = true;
                     bg[b].gbm_index = index;
                     bg[b].active = true;
