@@ -53,6 +53,7 @@ static void DetectPortals(Donogan* d)
         if (Vector3DistanceSqr(d->pos, portals[i].pos) < (portals[i].radius * portals[i].radius))
         {
             d->pos = portals[i].warp; //warp
+            d->inWater = false;
         }
     }
 }
