@@ -2472,6 +2472,40 @@ void InitBadGuys(Shader ghostShader)
     bg[216] = CreateSkeleton((Vector3) { -9976.92f, 10001.00f, -9898.58f });
 }
 
+static inline bool BG_HornRecentlyActive(Donogan* d)
+{
+    if (!d || !d->gs) return false;
+
+    return d->gs->HonkedHornRecently.running &&
+        !HasTimerElapsed(&d->gs->HonkedHornRecently);
+}
+
+static inline void BG_KillGhostFromHorn(Donogan* d, BadGuy* b)
+{
+    if (!d || !b) return;
+    if (!b->active || b->dead) return;
+    if (b->type != BG_GHOST) return;
+    if (b->gbm_index < 0) return;
+
+    DustPuff_Spawn(b->pos);
+
+    b->active = false;
+    b->dead = true;
+    b->aware = false;
+    b->frozen = false;
+    b->throwing = false;
+    b->state = GHOST_STATE_DEATH;
+
+    bgModelBorrower[b->gbm_index].isInUse = false;
+    b->gbm_index = -1;
+
+    StartTimer(&b->respawnTimer);
+    ResetTimer(&b->interactionTimer);
+
+    d->xp += 10;
+    ghostKillCount++;
+}
+
 static inline void BG_UpdateAll(Donogan *d, float dt)
 {
     for (int b = 0; b < act_bg_count; b++) {
@@ -2497,6 +2531,18 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         {
             BG_UpdateTruckRagdoll(&bg[i], dt);
             continue;
+        }
+        // Truck horn kills nearby ghosts.
+        if (bg[i].type == BG_GHOST && BG_HornRecentlyActive(d))
+        {
+            const float HORN_GHOST_KILL_RADIUS = 90.0f;
+
+            if (Vector3DistanceSqr(d->pos, bg[i].pos) <
+                HORN_GHOST_KILL_RADIUS * HORN_GHOST_KILL_RADIUS)
+            {
+                BG_KillGhostFromHorn(d, &bg[i]);
+                continue;
+            }
         }
         //handle square spell
         if (d->squareThrowRequest && bg[i].frozen)

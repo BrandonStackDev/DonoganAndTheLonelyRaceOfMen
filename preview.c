@@ -912,7 +912,7 @@ int main(void) {
     //---------------RAYLIB INIT STUFF---------------------------------------
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Donogan And The Lonely Race Of Men");
     //game state
-    gGame.HonkedHornRecently = CreateTimer(60);//60 seconds
+    gGame.HonkedHornRecently = CreateTimer(3);//3,2,1 (seconds)
     gGame.diff = DIFF_NORMAL; // default to normal
     gGame.menuTimer = CreateTimer(0.22f);
     StartTimer(&gGame.menuTimer);
