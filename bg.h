@@ -270,6 +270,7 @@ typedef struct {
     float ragdollTimer;
     Vector3 ragdollSpinVel;
     float truckHitCooldown;
+    float propHitCooldown;
 } BadGuy;
 //instance of a bad guy, will borrow its model
 

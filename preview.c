@@ -826,6 +826,227 @@ static void Truck_CollideBadGuys(float dt)
             bi, b->type, part, b->health);
     }
 }
+//badguy prop collide
+static inline bool BG_PropCollisionType(BadGuyType type)
+{
+    // Only skeletons, yetis, and orbs.
+    // Not ghosts, not hoppers.
+    return type == BG_SKELETON ||
+        type == BG_YETI ||
+        type == BG_ROBO;
+}
+
+static inline bool Prop_IsGrass(Model_Type type)
+{
+    return type == MODEL_GRASS ||
+        type == MODEL_GRASS_LARGE ||
+        type == MODEL_GRASS_THICK;
+}
+
+static inline bool Prop_IsRock(Model_Type type)
+{
+    return type == MODEL_ROCK ||
+        type == MODEL_ROCK2 ||
+        type == MODEL_ROCK3 ||
+        type == MODEL_ROCK4 ||
+        type == MODEL_ROCK5;
+}
+
+static inline bool Prop_IsTreeLike(Model_Type type)
+{
+    return type == MODEL_TREE ||
+        type == MODEL_TREE_2 ||
+        type == MODEL_TREE_3 ||
+        type == MODEL_TREE_4 ||
+        type == MODEL_TREE_DEAD_01 ||
+        type == MODEL_TREE_DEAD_02 ||
+        type == MODEL_TREE_DEAD_03 ||
+        type == MODEL_TREE_PINE;
+}
+
+static inline Vector3 AABB_HorizontalPushAOutOfB(BoundingBox a, BoundingBox b, float skin)
+{
+    // Require vertical overlap too, but only push in X/Z.
+    if (a.max.y < b.min.y || a.min.y > b.max.y)
+    {
+        return (Vector3) { 0 };
+    }
+
+    float left = b.max.x - a.min.x; // push A +X
+    float right = a.max.x - b.min.x; // push A -X
+    float back = b.max.z - a.min.z; // push A +Z
+    float front = a.max.z - b.min.z; // push A -Z
+
+    if (left <= 0.0f || right <= 0.0f || back <= 0.0f || front <= 0.0f)
+    {
+        return (Vector3) { 0 };
+    }
+
+    float ox = (left < right) ? left : -right;
+    float oz = (back < front) ? back : -front;
+
+    if (fabsf(ox) < fabsf(oz))
+    {
+        return (Vector3) { ox > 0.0f ? ox + skin : ox - skin, 0.0f, 0.0f };
+    }
+
+    return (Vector3) { 0.0f, 0.0f, oz > 0.0f ? oz + skin : oz - skin };
+}
+
+static inline void BG_SendToPlanningAfterProp(BadGuy* b)
+{
+    if (!b) return;
+
+    if (b->type == BG_YETI)
+    {
+        b->state = YETI_STATE_PLANNING;
+        BG_SetAnimSafe(b, ANIM_YETI_WALK, false);
+    }
+    else if (b->type == BG_ROBO)
+    {
+        b->state = ROBO_STATE_PLAN;
+    }
+    else if (b->type == BG_SKELETON)
+    {
+        b->state = SKELETON_STATE_PLAN;
+        BG_SetAnimSafe(b, ANIM_SKEL_IDLE, false);
+    }
+
+    b->targetPos = b->pos;
+}
+
+static inline void BG_SkeletonTripOnSmallRock(BadGuy* b, StaticGameObject* rock)
+{
+    if (!b || !rock) return;
+    if (b->type != BG_SKELETON) return;
+
+    b->state = SKELETON_STATE_TRIP;
+    BG_SetAnimSafe(b, ANIM_SKEL_TRIP, true);
+
+    b->targetPos = b->pos;
+    b->vel = (Vector3){ 0 };
+
+    // Keep it from constantly retriggering while standing in the rock box.
+    b->propHitCooldown = 1.10f;
+
+    // Small stumble away from the rock.
+    Vector3 away = Vector3Subtract(b->pos, rock->pos);
+    away.y = 0.0f;
+
+    if (Vector3LengthSqr(away) > 0.0001f)
+    {
+        away = Vector3Normalize(away);
+        b->pos = Vector3Add(b->pos, Vector3Scale(away, 0.45f));
+        BG_UpdateMainBox(b);
+    }
+
+    TraceLog(LOG_WARNING,
+        "Skeleton tripped on small rock type=%d scale=%.2f",
+        rock->type,
+        rock->scale
+    );
+}
+
+static void BG_CollideBadGuysWithStaticProps(float dt)
+{
+    if (numCloseProps <= 0) return;
+
+    const float SKIN = 0.04f;
+    const float BG_PROP_BROADPHASE = 42.0f;
+    const float SMALL_ROCK_SCALE = 2.75f; //
+
+    for (int ai = 0; ai < act_bg_count; ai++)
+    {
+        int bi = act_bg[ai];
+        BadGuy* b = &bg[bi];
+
+        if (!b->active) continue;
+        if (b->dead) continue;
+        if (b->gbm_index < 0) continue;
+        if (b->ragdoll) continue;
+        if (!BG_PropCollisionType(b->type)) continue;
+
+        if (b->propHitCooldown > 0.0f)
+        {
+            b->propHitCooldown -= dt;
+            if (b->propHitCooldown < 0.0f) b->propHitCooldown = 0.0f;
+        }
+
+        bool hitSomething = false;
+        bool skeletonTripped = false;
+
+        for (int pi = 0; pi < numCloseProps; pi++)
+        {
+            StaticGameObject* prop = CloseProps[pi];
+            if (!prop) continue;
+
+            if (Prop_IsGrass(prop->type)) continue;
+
+            bool isRock = Prop_IsRock(prop->type);
+            bool isTree = Prop_IsTreeLike(prop->type);
+
+            if (!isRock && !isTree) continue;
+
+            // Cheap range test before box test.
+            if (Vector3DistanceSqr(b->pos, prop->pos) >
+                BG_PROP_BROADPHASE * BG_PROP_BROADPHASE)
+            {
+                continue;
+            }
+
+            // Trees use trunk-ish box. Rocks use outerBox so they are easier to hit/trip on.
+            BoundingBox propBox = isRock ? prop->outerBox : prop->box;
+
+            Vector3 push = AABB_HorizontalPushAOutOfB(b->box, propBox, SKIN);
+            if (Vector3LengthSqr(push) <= 0.000001f) continue;
+
+            // Move BG out of the prop.
+            b->pos = Vector3Add(b->pos, push);
+            BG_UpdateMainBox(b);
+
+            b->vel.x = 0.0f;
+            b->vel.z = 0.0f;
+            b->targetPos = b->pos;
+
+            hitSomething = true;
+
+            // Skeletons trip over SMALL rocks.
+            // The last value in your tree/proptype lines is scale, so this uses prop->scale.
+            if (b->type == BG_SKELETON &&
+                isRock &&
+                prop->scale <= SMALL_ROCK_SCALE &&
+                b->propHitCooldown <= 0.0f)
+            {
+                BG_SkeletonTripOnSmallRock(b, prop);
+                skeletonTripped = true;
+                break;
+            }
+
+            // Trees and bigger rocks just interrupt pathing and send enemy back to planning.
+            if (b->propHitCooldown <= 0.0f)
+            {
+                BG_SendToPlanningAfterProp(b);
+                b->propHitCooldown = 0.35f;
+            }
+
+            // One prop correction per BG per frame is enough.
+            break;
+        }
+
+        if (hitSomething && !skeletonTripped)
+        {
+            TraceLog(LOG_INFO,
+                "BG prop collision type=%d state=%d pos=(%.2f %.2f %.2f)",
+                b->type,
+                b->state,
+                b->pos.x,
+                b->pos.y,
+                b->pos.z
+            );
+        }
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4499,6 +4720,7 @@ int main(void) {
                 NPC_Update(&npcs[i], &don, GetFrameTime());
             }
             BG_UpdateAll(&don, dt);
+            BG_CollideBadGuysWithStaticProps(dt);
         }
         don.drawColor = LerpColor(don.drawColor,caveMode?DARKGRAY:!HasTimerElapsed(&don.hitTimer)?targetHitColor:WHITE , dt);
         if (HasTimerElapsed(&don.hitTimer)) { don.drawColor.a = 255; }
