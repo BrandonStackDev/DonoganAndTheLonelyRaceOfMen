@@ -2,11 +2,9 @@
 #define APPLES_H
 
 #include "raylib.h"
-#include <stdlib.h>
 #include "core.h"
 #include "texture.h"
 #include "models.h"
-#include "frustum.h"
 
 #define MAX_APPLES_TOTAL 128
 
@@ -472,7 +470,7 @@ void UpdateTreeOfLifeBloomSpell(Donogan* d, ControllerData* pad, float dt)
 
     Vector3 tolPos = *InteractivePoints[POI_TYPE_TREE_OF_LIFE].pos;
 
-    if (Vector3DistanceSqr(d->pos, tolPos) > BLOOM_RADIUS * BLOOM_RADIUS)
+    if (Vector3DistanceSqr(d->pos, tolPos) > BLOOM_RADIUS) //BLOOM_RADIUS == 32^2, so 32 units away
     {
         gBloom.hold = 0.0f;
         gBloom.manaPaid = 0;
