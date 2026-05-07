@@ -404,6 +404,18 @@ static inline void BG_ClearRuntimeState(BadGuy* b)
     b->curAnim = 0;
     b->animFPS = 24.0f;
 }
+//
+static inline bool BG_ActiveIndexOK(int idx)
+{
+    return bg && idx >= 0 && idx < bg_count;
+}
+
+static inline bool BG_BorrowerIndexOK(int idx)
+{
+    return bgModelBorrower &&
+        idx >= 0 &&
+        idx < total_bg_models_all_types;
+}
 // === NEW: helper for ground
 static inline float BG_GroundY(Vector3 p) {
     float g = GetTerrainHeightFromMeshXZ(p.x, p.z);
@@ -678,7 +690,17 @@ static inline void BG_SetAnimSafe(BadGuy* b, int animIndex, bool forceRestart)
 }
 static inline void BG_UpdateAnim(BadGuy* b, float dt) {
     if (!b || b->gbm_index < 0) return;
+    if (!BG_BorrowerIndexOK(b->gbm_index)) return;
     if (b->animCount <= 0 || !b->anims) return;
+
+    if (b->curAnim < 0 || b->curAnim >= b->animCount)
+    {
+        TraceLog(LOG_ERROR,
+            "Bad BG curAnim=%d animCount=%d type=%d state=%d gbm=%d",
+            b->curAnim, b->animCount, b->type, b->state, b->gbm_index);
+        b->curAnim = 0;
+        b->animFrame = 0;
+    }
 
     const int a = b->curAnim;
     const ModelAnimation* A = &b->anims[a];
@@ -699,8 +721,8 @@ static inline void BG_UpdateAnim(BadGuy* b, float dt) {
     // Apply pose to the shared model we're borrowing
     Model* M = &bgModelBorrower[b->gbm_index].model;
     UpdateModelAnimation(*M, b->anims[a], b->animFrame);
-    //UpdateModelAnimation(*M, b->anims[a], 0); //for testing bad animations, see something idk 
 }
+
 // === NEW: attach shared borrowed resources to instance
 static inline void BG_AttachBorrowed(BadGuy* b) {
     if (!b || b->gbm_index < 0) return;

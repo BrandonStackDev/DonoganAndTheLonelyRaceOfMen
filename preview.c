@@ -679,6 +679,7 @@ static void Truck_CollideBadGuys(float dt)
     for (int i = 0; i < act_bg_count; i++)
     {
         int bi = act_bg[i];
+        if (!BG_ActiveIndexOK(bi)) { continue; }
         BadGuy* b = &bg[bi];
 
         if (!b->active) continue;
@@ -688,20 +689,6 @@ static void Truck_CollideBadGuys(float dt)
         if (b->truckHitCooldown > 0.0f) continue;
         if (b->ragdoll) continue;
         if (Vector3DistanceSqr(b->pos, truckPosition) > 90.0f * 90.0f) continue;
-        /*if (!BG_GroundCheckAndSnap(b, 3.0f, 6.0f, true))
-        {
-            TraceLog(LOG_WARNING,
-                "Truck skipped BG not grounded: type=%d state=%d pos=(%.2f %.2f %.2f) ground=%.2f bottom=%.2f",
-                b->type,
-                b->state,
-                b->pos.x, b->pos.y, b->pos.z,
-                b->groundY,
-                BG_BoxBottomYAtPos(b, b->pos)
-            );
-            continue;
-        }*/
-        !BG_GroundCheckAndSnap(b, 3.0f, 6.0f, true);
-        // cheap broadphase
 
         Vector3 push;
         TruckHitPart part;
@@ -771,7 +758,7 @@ static void Truck_CollideBadGuys(float dt)
 
         // Small separation so it does not immediately retrigger inside the truck.
         b->pos = Vector3Add(b->pos, Vector3Scale(dir, 0.65f));
-        b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+        BG_UpdateMainBox(b);
 
         //// Damage: truck hits hurt, but not instant death by default.
         //if (b->type == BG_YETI) b->health -= 8;
@@ -958,6 +945,7 @@ static void BG_CollideBadGuysWithStaticProps(float dt)
     for (int ai = 0; ai < act_bg_count; ai++)
     {
         int bi = act_bg[ai];
+        if (!BG_ActiveIndexOK(bi)) { continue; }
         BadGuy* b = &bg[bi];
 
         if (!b->active) continue;
