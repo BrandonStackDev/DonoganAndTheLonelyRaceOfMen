@@ -265,6 +265,11 @@ typedef struct {
     float groundY;
     bool onPlatform;
     bool attackLanded; // prevents one skeleton attack from hitting Don every frame
+
+    bool ragdoll;
+    float ragdollTimer;
+    Vector3 ragdollSpinVel;
+    float truckHitCooldown;
 } BadGuy;
 //instance of a bad guy, will borrow its model
 
@@ -272,6 +277,8 @@ int act_bg_count = 0;
 int act_bg[MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT]; //store indexes of active bg's so we dont loop alot ever (except for spawning check...)
 BadGuy * bg;
 int total_bg_models_all_types, bg_count;
+
+void BG_SetAnimSafe(BadGuy* b, int animIndex, bool forceRestart);
 
 static inline BoundingBox UpdateBoundingBoxFromFeet(BoundingBox orig, Vector3 feetPos)
 {
@@ -367,11 +374,242 @@ void InitBadGuyModels(Shader ghostShader)
         }
     }
 }
-
 // === NEW: helper for ground
 static inline float BG_GroundY(Vector3 p) {
     float g = GetTerrainHeightFromMeshXZ(p.x, p.z);
     return (g < -9000.0f) ? p.y : g;
+}
+
+static inline void BG_UpdateMainBox(BadGuy* b)
+{
+    if (!b || b->gbm_index < 0) return;
+
+    b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+}
+static inline bool BG_GroundCheckAndSnap(BadGuy* b, float snapUp, float snapDown, bool forceIfBelow)
+{
+    if (!b || b->gbm_index < 0) return false;
+
+    float groundY = BG_GroundY(b->pos);
+    float bottomY = BG_BoxBottomYAtPos(b, b->pos);
+
+    b->groundY = groundY;
+
+    float diff = bottomY - groundY;
+
+    // If the bottom of the box is below ground, always allow a rescue when forceIfBelow is true.
+    if (diff < 0.0f)
+    {
+        if (forceIfBelow || fabsf(diff) <= snapUp)
+        {
+            b->pos.y += -diff;
+            BG_UpdateMainBox(b);
+            return true;
+        }
+
+        return false;
+    }
+
+    // If slightly above ground, snap down.
+    if (diff <= snapDown)
+    {
+        b->pos.y -= diff;
+        BG_UpdateMainBox(b);
+        return true;
+    }
+
+    // Too high above ground; probably airborne.
+    return false;
+}
+//truck ragdoll stuff
+static inline float BG_BoxBottomYAtPos(BadGuy* b, Vector3 pos)
+{
+    if (!b || b->gbm_index < 0) return pos.y;
+
+    BoundingBox orig = bgModelBorrower[b->gbm_index].origBox;
+    return pos.y + orig.min.y;
+}
+
+static inline bool BG_IsActuallyDeadState(BadGuy* b)
+{
+    if (!b) return true;
+
+    if (b->type == BG_YETI)
+    {
+        return b->state == YETI_STATE_DEAD || b->state == YETI_STATE_DYING;
+    }
+
+    if (b->type == BG_ROBO)
+    {
+        return b->state == ROBO_STATE_DEAD || b->state == ROBO_STATE_DYING;
+    }
+
+    if (b->type == BG_PUMPKIN_HOPPER)
+    {
+        return b->state == HOPPER_STATE_DEAD;
+    }
+
+    if (b->type == BG_SKELETON)
+    {
+        return b->state == SKELETON_STATE_DEAD || b->state == SKELETON_STATE_DEATH;
+    }
+
+    return b->dead;
+}
+
+static inline void BG_StartTruckRagdoll(BadGuy* b, Vector3 impulse, float spinPower)
+{
+    if (!b) return;
+    if (b->type == BG_GHOST) return;
+    if (BG_IsActuallyDeadState(b)) return;
+
+    b->ragdoll = true;
+    b->ragdollTimer = 01.85f + (float)GetRandomValue(10, 50) * 0.01f;
+    b->truckHitCooldown = 0.35f;
+
+    b->vel = impulse;
+
+    if (b->vel.y < 7.0f)
+    {
+        b->vel.y = 7.0f;
+    }
+
+    // Keep it goofy but not insane.
+    float sp = Clamp(spinPower * 2.4, 12.0f, 36.0f);
+
+    b->ragdollSpinVel = (Vector3){
+        (float)GetRandomValue(-90, 90) * sp * 0.08f,
+        (float)GetRandomValue(-120, 120) * sp * 0.06f,
+        (float)GetRandomValue(-160, 160) * sp * 0.08f
+    };
+
+    b->targetPos = b->pos;
+    b->throwing = false;
+    b->frozen = false;
+    b->attackLanded = false;
+
+    if (b->type == BG_YETI)
+    {
+        b->state = YETI_STATE_HIT;
+        BG_SetAnimSafe(b, ANIM_YETI_ROAR, false);
+    }
+    else if (b->type == BG_ROBO)
+    {
+        b->state = ROBO_STATE_PLAN;
+    }
+    else if (b->type == BG_PUMPKIN_HOPPER)
+    {
+        b->state = HOPPER_STATE_HURT;
+    }
+    else if (b->type == BG_SKELETON)
+    {
+        b->state = SKELETON_STATE_HIT;
+        BG_SetAnimSafe(b, ANIM_SKEL_HIT, true);
+    }
+}
+
+static inline void BG_UpdateTruckRagdoll(BadGuy* b, float dt)
+{
+    if (!b) return;
+    if (b->gbm_index < 0) return;
+
+    b->ragdollTimer -= dt;
+
+    // fake physics
+    b->vel.y -= 30.0f * dt;
+
+    b->pos.x += b->vel.x * dt;
+    b->pos.y += b->vel.y * dt;
+    b->pos.z += b->vel.z * dt;
+
+    // tumble visuals
+    b->pitch += b->ragdollSpinVel.x * dt;
+    b->yaw += b->ragdollSpinVel.y * dt;
+    b->roll += b->ragdollSpinVel.z * dt;
+
+    // horizontal drag
+    float drag = 1.0f - 3.8f * dt;
+    if (drag < 0.80f) drag = 0.80f;
+
+    b->vel.x *= drag;
+    b->vel.z *= drag;
+
+    b->ragdollSpinVel.x *= drag;
+    b->ragdollSpinVel.y *= drag;
+    b->ragdollSpinVel.z *= drag;
+
+    float groundY = BG_GroundY(b->pos);
+    float bottomY = BG_BoxBottomYAtPos(b, b->pos);
+
+    b->groundY = groundY;
+
+    if (bottomY <= groundY)
+    {
+        // Move the whole bad guy up/down so the bottom of his box sits on the ground.
+        b->pos.y += (groundY - bottomY);
+
+        // little bounce once, then settle
+        if (fabsf(b->vel.y) > 8.0f)
+        {
+            b->vel.y = fabsf(b->vel.y) * 0.20f;
+            b->vel.x *= 0.65f;
+            b->vel.z *= 0.65f;
+        }
+        else
+        {
+            b->vel.y = 0.0f;
+        }
+
+        // ground friction
+        b->vel.x *= 0.82f;
+        b->vel.z *= 0.82f;
+    }
+
+    BG_UpdateMainBox(b);
+
+    bool slowEnough =
+        Vector3LengthSqr((Vector3) { b->vel.x, 0.0f, b->vel.z }) < 1.5f &&
+        fabsf(b->vel.y) < 1.0f;
+
+    if (b->ragdollTimer <= 0.0f && slowEnough)
+    {
+        b->ragdoll = false;
+        b->vel = (Vector3){ 0 };
+        b->pitch = 0.0f;
+        b->roll = 0.0f;
+
+        if (b->health <= 0)
+        {
+            /*if (b->type == BG_YETI) b->state = YETI_STATE_DYING;
+            else if (b->type == BG_ROBO) b->state = ROBO_STATE_DYING;
+            else if (b->type == BG_PUMPKIN_HOPPER) b->state = HOPPER_STATE_DEAD;
+            else if (b->type == BG_SKELETON) b->state = SKELETON_STATE_DEATH;*/
+            b->health = 2;
+        }
+        else
+        {
+            if (b->type == BG_YETI)
+            {
+                b->state = YETI_STATE_PLANNING;
+                BG_SetAnimSafe(b, ANIM_YETI_WALK, false);
+            }
+            else if (b->type == BG_ROBO)
+            {
+                b->state = ROBO_STATE_PLAN;
+            }
+            else if (b->type == BG_PUMPKIN_HOPPER)
+            {
+                b->state = HOPPER_STATE_WAIT;
+                ResetTimer(&b->interactionTimer);
+                StartTimer(&b->interactionTimer);
+            }
+            else if (b->type == BG_SKELETON)
+            {
+                b->state = SKELETON_STATE_PLAN;
+                BG_SetAnimSafe(b, ANIM_SKEL_IDLE, false);
+            }
+        }
+    }
 }
 //anim helpers
 // === NEW: general animation helpers =========================================
@@ -2246,6 +2484,18 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             bgModelBorrower[bg[i].gbm_index].isInUse = false;
             bg[i].gbm_index = -1;
             d->xp += 1; //give don a point for it I guess
+            continue;
+        }
+        //ragdoll
+        if (bg[i].truckHitCooldown > 0.0f)
+        {
+            bg[i].truckHitCooldown -= dt;
+            if (bg[i].truckHitCooldown < 0.0f) bg[i].truckHitCooldown = 0.0f;
+        }
+
+        if (bg[i].ragdoll)
+        {
+            BG_UpdateTruckRagdoll(&bg[i], dt);
             continue;
         }
         //handle square spell

@@ -552,6 +552,280 @@ static inline bool ShouldUseAuthoredBuildingFloor(bool caveMode, bool alreadyHan
 
     return true;
 }
+typedef enum {
+    TRUCK_HIT_NONE = -1,
+    TRUCK_HIT_FRONT = 0,
+    TRUCK_HIT_BACK = 1,
+    TRUCK_HIT_LEFT = 2,
+    TRUCK_HIT_RIGHT = 3,
+    TRUCK_HIT_TIRE_FR = 4,
+    TRUCK_HIT_TIRE_FL = 5,
+    TRUCK_HIT_TIRE_BR = 6,
+    TRUCK_HIT_TIRE_BL = 7
+} TruckHitPart;
+
+static inline Vector3 AABB_PushAOutOfB(BoundingBox a, BoundingBox b)
+{
+    float left = b.max.x - a.min.x; // push A +X
+    float right = a.max.x - b.min.x; // push A -X
+    float bottom = b.max.y - a.min.y; // push A +Y
+    float top = a.max.y - b.min.y; // push A -Y
+    float back = b.max.z - a.min.z; // push A +Z
+    float front = a.max.z - b.min.z; // push A -Z
+
+    if (left <= 0 || right <= 0 || bottom <= 0 || top <= 0 || back <= 0 || front <= 0)
+    {
+        return (Vector3) { 0 };
+    }
+
+    float ox = (left < right) ? left : -right;
+    float oy = (bottom < top) ? bottom : -top;
+    float oz = (back < front) ? back : -front;
+
+    float ax = fabsf(ox);
+    float ay = fabsf(oy);
+    float az = fabsf(oz);
+
+    if (ax <= ay && ax <= az)
+    {
+        return (Vector3) { ox, 0.0f, 0.0f };
+    }
+
+    if (az <= ax && az <= ay)
+    {
+        return (Vector3) { 0.0f, 0.0f, oz };
+    }
+
+    return (Vector3) { 0.0f, oy, 0.0f };
+}
+
+static inline bool Truck_FindBadGuyHit(BadGuy* b, Vector3* outPush, TruckHitPart* outPart)
+{
+    if (!b || !outPush || !outPart) return false;
+
+    BoundingBox truckBoxes[8] = {
+        TruckBoxFront,
+        TruckBoxBack,
+        TruckBoxLeft,
+        TruckBoxRight,
+        TruckBoxTires[0], // front-right
+        TruckBoxTires[1], // front-left
+        TruckBoxTires[2], // back-right
+        TruckBoxTires[3]  // back-left
+    };
+
+    TruckHitPart parts[8] = {
+        TRUCK_HIT_FRONT,
+        TRUCK_HIT_BACK,
+        TRUCK_HIT_LEFT,
+        TRUCK_HIT_RIGHT,
+        TRUCK_HIT_TIRE_FR,
+        TRUCK_HIT_TIRE_FL,
+        TRUCK_HIT_TIRE_BR,
+        TRUCK_HIT_TIRE_BL
+    };
+
+    bool hit = false;
+    float bestScore = FLT_MAX;
+    Vector3 bestPush = { 0 };
+    TruckHitPart bestPart = TRUCK_HIT_NONE;
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (!CheckCollisionBoxes(b->box, truckBoxes[i])) continue;
+
+        Vector3 push = AABB_PushAOutOfB(b->box, truckBoxes[i]);
+        float score = fabsf(push.x) + fabsf(push.y) + fabsf(push.z);
+
+        if (score > 0.0f && score < bestScore)
+        {
+            bestScore = score;
+            bestPush = push;
+            bestPart = parts[i];
+            hit = true;
+        }
+    }
+
+    if (!hit) return false;
+
+    *outPush = bestPush;
+    *outPart = bestPart;
+    return true;
+}
+
+static inline bool TruckHitPart_IsRearTire(TruckHitPart p)
+{
+    return p == TRUCK_HIT_TIRE_BR || p == TRUCK_HIT_TIRE_BL;
+}
+
+static inline bool TruckHitPart_IsTire(TruckHitPart p)
+{
+    return p == TRUCK_HIT_TIRE_FR ||
+        p == TRUCK_HIT_TIRE_FL ||
+        p == TRUCK_HIT_TIRE_BR ||
+        p == TRUCK_HIT_TIRE_BL;
+}
+
+static void Truck_CollideBadGuys(float dt)
+{
+    (void)dt;
+
+    float speedAbs = fabsf(truckSpeed);
+    float slideAbs = fabsf(truckSlideSpeed);
+
+    // Don't bother if the truck is basically stopped.
+    if (speedAbs < 0.03f && slideAbs < 0.03f) return;
+
+    for (int i = 0; i < act_bg_count; i++)
+    {
+        int bi = act_bg[i];
+        BadGuy* b = &bg[bi];
+
+        if (!b->active) continue;
+        if (b->dead) continue;
+        if (b->type == BG_GHOST) continue;
+        if (b->gbm_index < 0) continue;
+        if (b->truckHitCooldown > 0.0f) continue;
+        if (b->ragdoll) continue;
+        if (Vector3DistanceSqr(b->pos, truckPosition) > 90.0f * 90.0f) continue;
+        /*if (!BG_GroundCheckAndSnap(b, 3.0f, 6.0f, true))
+        {
+            TraceLog(LOG_WARNING,
+                "Truck skipped BG not grounded: type=%d state=%d pos=(%.2f %.2f %.2f) ground=%.2f bottom=%.2f",
+                b->type,
+                b->state,
+                b->pos.x, b->pos.y, b->pos.z,
+                b->groundY,
+                BG_BoxBottomYAtPos(b, b->pos)
+            );
+            continue;
+        }*/
+        !BG_GroundCheckAndSnap(b, 3.0f, 6.0f, true);
+        // cheap broadphase
+
+        Vector3 push;
+        TruckHitPart part;
+
+        if (!Truck_FindBadGuyHit(b, &push, &part)) continue;
+
+        Vector3 dir = push;
+        dir.y = 0.0f;
+
+        if (Vector3LengthSqr(dir) < 0.0001f)
+        {
+            dir = Vector3Subtract(b->pos, truckPosition);
+            dir.y = 0.0f;
+        }
+
+        if (Vector3LengthSqr(dir) < 0.0001f)
+        {
+            dir = (Vector3){ sinf(truckAngle), 0.0f, cosf(truckAngle) };
+        }
+
+        dir = Vector3Normalize(dir);
+
+        // Rear tire while sliding: blend toward the slide direction.
+        if (TruckHitPart_IsRearTire(part) && isTruckSliding && Vector3LengthSqr(truckSlideForward) > 0.0001f)
+        {
+            Vector3 slideDir = truckSlideForward;
+            slideDir.y = 0.0f;
+
+            if (Vector3LengthSqr(slideDir) > 0.0001f)
+            {
+                slideDir = Vector3Normalize(slideDir);
+
+                // Make sure slideDir throws the BG away, not under the truck.
+                if (Vector3DotProduct(slideDir, dir) < 0.0f)
+                {
+                    slideDir = Vector3Scale(slideDir, -1.0f);
+                }
+
+                dir = Vector3Normalize(Vector3Add(Vector3Scale(dir, 0.45f), Vector3Scale(slideDir, 0.85f)));
+            }
+        }
+
+        float impact = speedAbs + slideAbs * 0.65f;
+        impact = Clamp(impact, 1.0f, 16.0f);
+
+        //launch ragdoll vector
+        Vector3 impulse = Vector3Scale(dir, 128 * fabs(truckSpeed) + impact * 8.0f);
+        impulse.y = 5.5f + impact * 0.85f;
+
+        // Bigger guys fly less.
+        if (b->type == BG_YETI)
+        {
+            impulse.x *= 0.55f;
+            impulse.z *= 0.55f;
+            impulse.y *= 0.65f;
+        }
+        else if (b->type == BG_ROBO)
+        {
+            impulse.y *= 0.75f;
+        }
+        else if (b->type == BG_PUMPKIN_HOPPER)
+        {
+            impulse.x *= 1.15f;
+            impulse.z *= 1.15f;
+            impulse.y *= 1.25f;
+        }
+
+        // Small separation so it does not immediately retrigger inside the truck.
+        b->pos = Vector3Add(b->pos, Vector3Scale(dir, 0.65f));
+        b->box = UpdateBoundingBox(bgModelBorrower[b->gbm_index].origBox, b->pos);
+
+        //// Damage: truck hits hurt, but not instant death by default.
+        //if (b->type == BG_YETI) b->health -= 8;
+        //else if (b->type == BG_ROBO) b->health -= 12;
+        //else if (b->type == BG_PUMPKIN_HOPPER) b->health -= 20;
+        //else if (b->type == BG_SKELETON) b->health -= 16;
+
+        BG_StartTruckRagdoll(b, impulse, impact);
+
+        // Slow the truck. Front hits hurt speed most.
+        if (part == TRUCK_HIT_FRONT)
+        {
+            truckSpeed *= 0.42f;
+            truckSlideSpeed *= 0.60f;
+        }
+        else if (part == TRUCK_HIT_BACK)
+        {
+            truckSpeed *= 0.62f;
+            truckSlideSpeed *= 0.70f;
+        }
+        else if (part == TRUCK_HIT_LEFT || part == TRUCK_HIT_RIGHT)
+        {
+            truckSpeed *= 0.68f;
+            truckSlideSpeed *= 0.48f;
+        }
+        else if (TruckHitPart_IsRearTire(part))
+        {
+            truckSpeed *= 0.76f;
+            truckSlideSpeed *= 0.38f;
+        }
+        else if (TruckHitPart_IsTire(part))
+        {
+            truckSpeed *= 0.72f;
+            truckSlideSpeed *= 0.55f;
+        }
+
+        // Optional: hitting someone with tires/body can start a tiny slide wobble.
+        if (TruckHitPart_IsTire(part) && speedAbs > 1.5f)
+        {
+            isTruckSliding = true;
+
+            if (Vector3LengthSqr(dir) > 0.0001f)
+            {
+                truckSlideForward = Vector3Scale(dir, 1.0f);
+                truckSlideSpeed += impact * 0.12f;
+            }
+        }
+
+        UpdateTruckBoxes();
+
+        TraceLog(LOG_INFO, "Truck hit bad guy %d type=%d part=%d hp=%d",
+            bi, b->type, part, b->health);
+    }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3027,6 +3301,9 @@ int main(void) {
                     }
                 }
             }
+            //truck badguy collision
+            Truck_CollideBadGuys(dt);
+            //rebuild from tires stuff and other fun things, yay!
             bool rebuildFromTires = false;
             if (closestCX < 0 || closestCY < 0 || closestCX >= CHUNK_COUNT || closestCY >= CHUNK_COUNT) {
                 // Outside world bounds
