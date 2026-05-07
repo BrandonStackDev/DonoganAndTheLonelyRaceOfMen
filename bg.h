@@ -5,9 +5,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
-#include <stdio.h> 
 #include <stdbool.h>
-#include <stdlib.h>
 //me
 #include "timer.h"
 #include "game.h"
@@ -15,6 +13,7 @@
 #include "apples.h"
 #include "texture.h"
 #include "dust_puff.h"
+#include "donogan.h"
 
 #define MAX_BG_PER_TYPE_AT_ONCE 12
 
@@ -1674,16 +1673,16 @@ static inline bool Skeleton_TryHitDon(Donogan* d, BadGuy* b,
     int damage,
     float knockPower)
 {
-    if (!d || !b) return;
-    if (b->attackLanded) return;
+    if (!d || !b) return false;
+    if (b->attackLanded) return false;
 
     if (!CheckCollisionBoxes(attackBox, d->box) &&
         !CheckCollisionBoxes(attackBox, d->outerBox))
     {
-        return;
+        return false;
     }
 
-    if (!HasTimerElapsed(&d->hitTimer)) return;
+    if (!HasTimerElapsed(&d->hitTimer)) return false;
 
     Vector3 dir = Skeleton_DirFromSkeletonToDon(b, d);
 
@@ -1695,6 +1694,7 @@ static inline bool Skeleton_TryHitDon(Donogan* d, BadGuy* b,
     Skeleton_PushDon(d, dir, knockPower);
 
     b->attackLanded = true;
+    return true;
 }
 
 static inline void Skeleton_KnockBackFromDonogan(BadGuy* b, Donogan* d, bool wrench)

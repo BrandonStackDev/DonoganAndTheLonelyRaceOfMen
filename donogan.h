@@ -1596,7 +1596,7 @@ static void PrintBoneRecursive(const Model* m, int boneIndex, int depth) {
     for (int d = 0; d < depth; ++d) printf("  ");
 
     // Header line with index/name/parent
-    printf("└─[%3d] '%s'  parent=%d", boneIndex, bi->name, bi->parent);
+    printf("|-[%3d] '%s'  parent=%d", boneIndex, bi->name, bi->parent);
 
     // Bind pose (if available)
     if (m->skeleton.bindPose) {
@@ -1934,8 +1934,8 @@ static Donogan InitDonogan(void)
     d.galBooksGiven = 0;
     d.eatenByShark = false;
     d.eatenTimer = CreateTimer(5.00f);
-    PrintModelBones(&d.model);
-    PrintModelBones(&d.bowModel);
+    //PrintModelBones(&d.model);
+    //PrintModelBones(&d.bowModel);
     //proc anim setup
     BowStripScaleAndRootOffset(&d);
     DonInitBowKeyframeGroups(&d);
@@ -2039,7 +2039,7 @@ static void DonSetState(Donogan* d, DonoganState s)
                     || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN 
                     || s == DONOGAN_STATE_JUMPING
                     || s == DONOGAN_STATE_SWIM_IDLE || s == DONOGAN_STATE_SWIM_MOVE 
-                    || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_ANIM_PROC_BOW_PULL
+                    || s == DONOGAN_STATE_BOW_AIM
                     || s == DONOGAN_STATE_SLIDE
                     || s == DONOGAN_STATE_SPELL_IDLE);
     bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN
