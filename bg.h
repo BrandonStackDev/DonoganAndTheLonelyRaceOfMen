@@ -413,7 +413,7 @@ static inline float BG_GroundY(Vector3 p) {
 static inline void BG_UpdateMainBox(BadGuy* b)
 {
     if (!b) return;
-    //if (!BG_ModelIndexOK(b->gbm_index)) return;
+    if (!b->active || b->dead || b->gbm_index < 0) { return; } //guard
 
     BoundingBox orig = bgModelBorrower[b->gbm_index].origBox;
 
@@ -1352,7 +1352,8 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
         ResetTimer(&b->interactionTimer);
         d->xp += 12;
         DustPuff_Spawn(b->pos);
-    }
+        return;
+    } break;
     }
     BG_UpdateMainBox(b);
 }
@@ -2690,10 +2691,10 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         {
             BG_Update_Skeleton(d, &bg[i], dt);
         }
-        if (bg->active)
+        if (bg[i].active && bg[i].gbm_index >= 0)
         {
             //update boxes and height hacks
-            BG_UpdateMainBox(b);
+            BG_UpdateMainBox(&bg[i]);
             if (bg[i].type == BG_YETI) {//im sick of these mfn snakes on this mfn plane!
                 bg[i].box.max.y += 4.5;
                 bg[i].box.min.y += 4;
