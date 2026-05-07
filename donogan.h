@@ -2049,7 +2049,7 @@ static void DonSetState(Donogan* d, DonoganState s)
                         || s == DONOGAN_STATE_BOW_PULL || s == DONOGAN_STATE_BOW_REL
                         || s==DONOGAN_STATE_PUNCH_IDLE || s == DONOGAN_STATE_PUNCH_JAB || s == DONOGAN_STATE_PUNCH_CROSS 
                         || s == DONOGAN_STATE_PUNCH_JAB_ENTER || s == DONOGAN_STATE_PUNCH_CROSS_ENTER
-                        || s == DONOGAN_STATE_WRENCH_SWING);
+                        || s == DONOGAN_STATE_WRENCH_SWING || s == DONOGAN_STATE_SPELL_SHOOT);
     if (!locomotion) {
         d->runLock = false;      // auto-break on swimming
         d->runningHeld = false;
