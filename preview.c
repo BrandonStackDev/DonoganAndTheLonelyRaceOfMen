@@ -3817,8 +3817,10 @@ int main(void) {
 
                     if (set->loaded && set->count > 0 && (Scenes[i].modelType != MODEL_CINDER || caveMode))
                     {
-                        BuildingBoxHit bhit = CollideDonAABBWithSceneBuildingColliders(
-                            don.outerBox,
+                        DonContactBoxes contactBoxes = Don_MakeContactBoxes(don.outerBox);
+
+                        BuildingBoxHit bhit = CollideDonContactBoxesWithScene(
+                            contactBoxes,
                             &Scenes[i],
                             don.velY
                         );
@@ -4019,41 +4021,49 @@ int main(void) {
                             if (bhit.hitWall && !hitEnvWall && (wallIsTallEnough || dontLowerWalls))
                             {
                                 disableRoll = true;
+                                Vector3 push = ClampWallPush(bhit.push);
 
-                                Vector3 p = bhit.push;
-                                p.y = 0.0f;
-
-                                Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
-                                Vector3 moveDir = Vector3Subtract(don.pos, prevPos);
-                                moveDir.y = 0.0f;
-
-                                if (Vector3LengthSqr(moveDir) > 0.0001f && Vector3LengthSqr(p) > 0.0001f)
+                                if (Vector3LengthSqr(push) > 0.000001f)
                                 {
-                                    moveDir = Vector3Normalize(moveDir);
-
-                                    // If push points with movement, flip it.
-                                    if (Vector3DotProduct(p, moveDir) > 0.0f)
-                                    {
-                                        p = Vector3Negate(p);
-                                    }
+                                    don.pos.x += push.x;
+                                    don.pos.z += push.z;
                                 }
-
-                                const float MAX_PUSH = 0.75f;
-                                float pLen = Vector3Length(p);
-
-                                if (pLen > 0.0001f)
+                                else
                                 {
-                                    if (pLen > MAX_PUSH)
+                                    Vector3 p = bhit.push;
+                                    p.y = 0.0f;
+
+                                    Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
+                                    Vector3 moveDir = Vector3Subtract(don.pos, prevPos);
+                                    moveDir.y = 0.0f;
+
+                                    if (Vector3LengthSqr(moveDir) > 0.0001f && Vector3LengthSqr(p) > 0.0001f)
                                     {
-                                        p = Vector3Scale(p, MAX_PUSH / pLen);
+                                        moveDir = Vector3Normalize(moveDir);
+
+                                        // If push points with movement, flip it.
+                                        if (Vector3DotProduct(p, moveDir) > 0.0f)
+                                        {
+                                            p = Vector3Negate(p);
+                                        }
                                     }
 
-                                    don.pos = Vector3Add(don.pos, p);
-                                    don.velXZ = (Vector3){ 0 };
-                                    don.rollVel = (Vector3){ 0 };
+                                    const float MAX_PUSH = 0.75f;
+                                    float pLen = Vector3Length(p);
 
-                                    Don_UpdateBoxes(&don);
+                                    if (pLen > 0.0001f)
+                                    {
+                                        if (pLen > MAX_PUSH)
+                                        {
+                                            p = Vector3Scale(p, MAX_PUSH / pLen);
+                                        }
+
+                                        don.pos = Vector3Add(don.pos, p);
+                                        don.velXZ = (Vector3){ 0 };
+                                        don.rollVel = (Vector3){ 0 };
+                                    }
                                 }
+                                Don_UpdateBoxes(&don);
                             }
                         }
                     }

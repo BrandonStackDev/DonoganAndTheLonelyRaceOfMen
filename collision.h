@@ -20,6 +20,76 @@
 #define BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG 4.0f
 #define BUILDING_CEILING_CATCH_WORLD        0.2f
 ////////////////////////////////////////////////////////////////////////////////
+typedef struct DonContactBoxes {
+    BoundingBox bottom;
+    BoundingBox top;
+
+    BoundingBox xMin; // world -X side third
+    BoundingBox xMax; // world +X side third
+    BoundingBox zMin; // world -Z side third
+    BoundingBox zMax; // world +Z side third
+} DonContactBoxes;
+
+static inline BoundingBox BoxSliceY(BoundingBox b, float t0, float t1)
+{
+    float h = b.max.y - b.min.y;
+    BoundingBox o = b;
+    o.min.y = b.min.y + h * t0;
+    o.max.y = b.min.y + h * t1;
+    return o;
+}
+
+static inline BoundingBox BoxSliceX(BoundingBox b, float t0, float t1)
+{
+    float h = b.max.x - b.min.x;
+    BoundingBox o = b;
+    o.min.x = b.min.x + h * t0;
+    o.max.x = b.min.x + h * t1;
+    return o;
+}
+
+static inline BoundingBox BoxSliceZ(BoundingBox b, float t0, float t1)
+{
+    float h = b.max.z - b.min.z;
+    BoundingBox o = b;
+    o.min.z = b.min.z + h * t0;
+    o.max.z = b.min.z + h * t1;
+    return o;
+}
+
+static inline BoundingBox BoxTrimY(BoundingBox b, float bottomFrac, float topFrac)
+{
+    float h = b.max.y - b.min.y;
+
+    b.min.y += h * bottomFrac;
+    b.max.y -= h * topFrac;
+
+    return b;
+}
+
+static inline DonContactBoxes Don_MakeContactBoxes(BoundingBox outer)
+{
+    DonContactBoxes s = { 0 };
+
+    // Floor / ceiling sensors.
+    s.bottom = BoxSliceY(outer, 0.00f, 0.333f);
+    s.top = BoxSliceY(outer, 0.667f, 1.00f);
+
+    // Wall sensors: left/right/front/back thirds,
+    // but trimmed vertically so they don't catch floors/ceilings as much.
+    const float WALL_BOTTOM_TRIM = 0.12f;
+    const float WALL_TOP_TRIM = 0.12f;
+
+    s.xMin = BoxTrimY(BoxSliceX(outer, 0.00f, 0.333f), WALL_BOTTOM_TRIM, WALL_TOP_TRIM);
+    s.xMax = BoxTrimY(BoxSliceX(outer, 0.667f, 1.00f), WALL_BOTTOM_TRIM, WALL_TOP_TRIM);
+
+    s.zMin = BoxTrimY(BoxSliceZ(outer, 0.00f, 0.333f), WALL_BOTTOM_TRIM, WALL_TOP_TRIM);
+    s.zMax = BoxTrimY(BoxSliceZ(outer, 0.667f, 1.00f), WALL_BOTTOM_TRIM, WALL_TOP_TRIM);
+
+    return s;
+}
+
+
 // Barycentric interpolation to get Y at point (x, z) on triangle
 float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
 {
@@ -603,6 +673,20 @@ static inline float BuildingColliderMaxY(const BuildingColliderWorld* c)
     return y;
 }
 
+static inline Vector3 ClampWallPush(Vector3 p)
+{
+    // Keep this gentle. We want slide/push, not teleport.
+    const float MAX_PUSH = 0.55f;
+
+    if (p.x > MAX_PUSH) p.x = MAX_PUSH;
+    if (p.x < -MAX_PUSH) p.x = -MAX_PUSH;
+    if (p.z > MAX_PUSH) p.z = MAX_PUSH;
+    if (p.z < -MAX_PUSH) p.z = -MAX_PUSH;
+
+    p.y = 0.0f;
+    return p;
+}
+
 static inline float BuildingColliderFloorYAtXZ(const BuildingColliderWorld* c, float x, float z)
 {
     // Try the top/selected quad as two triangles.
@@ -931,6 +1015,116 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingColliders(
     }
 
     return best;
+}
+
+static inline BuildingBoxHit CollideDonContactBoxesWithScene(
+    DonContactBoxes s,
+    const Scene* scene,
+    float donVelY)
+{
+    BuildingBoxHit out = { 0 };
+    out.groundY = -10000.0f;
+
+    // Fast falling: do not let side/ceiling weirdness steal floor detection.
+    bool floorOnly = (donVelY <= -30.0f);
+
+    // 1) Floor: bottom third only.
+    BuildingBoxHit floorHit = CollideDonAABBWithSceneBuildingColliders(
+        s.bottom,
+        scene,
+        donVelY
+    );
+
+    if (floorHit.hitFloor)
+    {
+        out.hit = true;
+        out.hitFloor = true;
+        out.groundY = floorHit.groundY;
+        out.normal = floorHit.normal;
+    }
+
+    if (floorOnly)
+    {
+        return out;
+    }
+
+    // 2) Ceiling: top third only.
+    BuildingBoxHit ceilHit = CollideDonAABBWithSceneBuildingColliders(
+        s.top,
+        scene,
+        donVelY
+    );
+
+    if (ceilHit.hitCeiling)
+    {
+        out.hit = true;
+        out.hitCeiling = true;
+        out.push = ceilHit.push;
+        out.normal = ceilHit.normal;
+    }
+
+    // 3) Walls: only side thirds.
+    BoundingBox sideBoxes[4] = {
+        s.xMin, s.xMax, s.zMin, s.zMax
+    };
+
+    Vector3 sideFallback[4] = {
+        {  1, 0,  0 }, // xMin hit means push +X
+        { -1, 0,  0 }, // xMax hit means push -X
+        {  0, 0,  1 }, // zMin hit means push +Z
+        {  0, 0, -1 }  // zMax hit means push -Z
+    };
+
+    Vector3 bestPush = { 0 };
+    float bestLen = 999999.0f;
+    bool foundWall = false;
+
+    for (int i = 0; i < 4; i++)
+    {
+        BuildingBoxHit wh = CollideDonAABBWithSceneBuildingColliders(
+            sideBoxes[i],
+            scene,
+            donVelY
+        );
+
+        if (!wh.hitWall) continue;
+
+        Vector3 p = wh.push;
+        p.y = 0.0f;
+
+        // If the OBB math gives a weak/odd direction, use the side-box known direction.
+        if (Vector3LengthSqr(p) < 0.0001f)
+        {
+            p = Vector3Scale(sideFallback[i], 0.18f);
+        }
+
+        // Make sure the push agrees with the side that was hit.
+        if (Vector3DotProduct(p, sideFallback[i]) < 0.0f)
+        {
+            p = Vector3Negate(p);
+        }
+
+        p = ClampWallPush(p);
+
+        float len = Vector3LengthSqr(p);
+        if (len > 0.0f && len < bestLen)
+        {
+            bestLen = len;
+            bestPush = p;
+            foundWall = true;
+            out.normal = wh.normal;
+            out.maxWallY = wh.maxWallY;
+        }
+    }
+
+    if (foundWall)
+    {
+        out.hit = true;
+        out.hitWall = true;
+        out.push = bestPush;
+    }
+
+    return out;
 }
 
 // Same return struct as your original
