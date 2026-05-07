@@ -1439,8 +1439,6 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     {
         BG_SetAnimSafe(b, ANIM_SKEL_RISE, false);
 
-        b->pos.y += 5.5f * dt;
-
         if (b->pos.y >= groundY)
         {
             b->pos.y = groundY;
@@ -2459,9 +2457,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
 
                         bg[b].spawnPoint.y = gy;
                         bg[b].pos = bg[b].spawnPoint;
-                        bg[b].pos.y = gy - 7.0f;      // starts underground
                         bg[b].targetPos = bg[b].spawnPoint;
-
                         bg[b].vel = (Vector3){ 0 };
                         bg[b].yaw = 0.0f;
                         bg[b].pitch = 0.0f;
