@@ -1739,10 +1739,13 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     {
     case SKELETON_STATE_RISE:
     {
-        b->animFPS = 4;
+        b->animFPS = 8;
         BG_SetAnimSafe(b, ANIM_SKEL_RISE, false);
-
-        if (b->pos.y >= groundY)
+        if (b->animFrame > b->anims[b->curAnim].keyframeCount / 2)
+        {
+            b->pos.y += dt;
+        }
+        if (BG_AnimNearEnd(b) && b->pos.y >= groundY - 2)
         {
             b->pos.y = groundY;
             b->state = SKELETON_STATE_PLAN;
@@ -2824,11 +2827,11 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                         bg[b].spawnPoint.y = gy;
                         bg[b].pos = bg[b].spawnPoint;
                         bg[b].targetPos = bg[b].spawnPoint;
+                        bg[b].pos.y -= 2.1;
                         bg[b].vel = (Vector3){ 0 };
                         bg[b].yaw = 0.0f;
                         bg[b].pitch = 0.0f;
                         bg[b].roll = 0.0f;
-
                         bg[b].state = SKELETON_STATE_RISE;
                         BG_SetAnimSafe(&bg[b], ANIM_SKEL_RISE, true);
                     }
