@@ -1120,7 +1120,43 @@ static void DonInitSpellShootKeyframeGroups(Donogan* d)
     g0->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0, 0, -70);
     g0->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 0, 60);
 }
+//by his chest
+static inline Vector3 DonAirR2PivotLocal(const Donogan* d)
+{
+    // Pivot in MODEL LOCAL SPACE.
+    // Since DrawModel applies d->scale later, do NOT multiply this by d->scale.
+    BoundingBox bb = d->firstBB;
 
+    float h = bb.max.y - bb.min.y;
+
+    Vector3 p;
+    p.x = (bb.min.x + bb.max.x) * 0.5f;
+
+    // Chest-ish flip center:
+    // 2/3 from feet == 1/3 from head.
+    p.y = bb.min.y + h * (2.0f / 3.0f);
+
+    p.z = (bb.min.z + bb.max.z) * 0.5f;
+
+    return p;
+}
+
+static inline Vector3 DonRootPivotCompensate(Quaternion q, Vector3 pivot)
+{
+    // Want: final = R * (v - pivot) + pivot
+    // Which equals: R*v + (pivot - R*pivot)
+    Vector3 rp = Vector3RotateByQuaternion(pivot, q);
+    return Vector3Subtract(pivot, rp);
+}
+
+static inline void DonAirJumpAttackSetRoot(KeyFrame* kf, const Donogan* d, float pitchDeg, float yawDeg, float rollDeg)
+{
+    Quaternion q = QuatXYZDeg(pitchDeg, yawDeg, rollDeg);
+    Vector3 pivot = DonAirR2PivotLocal(d);
+
+    kf->kfBones[0].rot = q;
+    kf->kfBones[0].pos = DonRootPivotCompensate(q, pivot);
+}
 static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
 {
     const DonBone BONES[] = {
@@ -1172,8 +1208,8 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     // KEY 0: start tuck
     // ------------------------------------------------------------
 
-    // Root: tiny pre-rotation. Keep mild.
-    g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+    // Root: pivot-corrected whole-body rotation.
+    DonAirJumpAttackSetRoot(&g->keyFrames[0], d, 0.0f, 0.0f, 0.0f);
 
     // Arms start moving forward/down.
     g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(35, -8, 8);
@@ -1194,11 +1230,10 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     // KEY 1: main flip/tuck
     // ------------------------------------------------------------
 
-    // Root does the spin. This is where pitch/roll/yaw live now.
     // X = front flip pitch
     // Y = twist/yaw
     // Z = side roll/aerial flavor
-    g->keyFrames[1].kfBones[0].rot = QuatXYZDeg(-120, 25, 55);
+    DonAirJumpAttackSetRoot(&g->keyFrames[1], d, 120.0f, 0,0);
 
     g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(75, -10, 12);
     g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(45, 0, 0);
@@ -1218,7 +1253,7 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     // ------------------------------------------------------------
 
     // Almost one full flip with some twist/roll.
-    g->keyFrames[2].kfBones[0].rot = QuatXYZDeg(-270, 55, 105);
+    DonAirJumpAttackSetRoot(&g->keyFrames[2], d, 270.0f, 0,0);
 
     // Arms reach out/down for the shot.
     g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(125, -8, 12);
@@ -1239,8 +1274,8 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     // KEY 3: recover
     // ------------------------------------------------------------
 
-    // Return root near identity so he does not stay twisted after proc anim.
-    g->keyFrames[3].kfBones[0].rot = QuatXYZDeg(-360, 0, 0);
+    // Full pitch rotation, but pivot-corrected so he rotates around center.
+    DonAirJumpAttackSetRoot(&g->keyFrames[3], d, 360.0f, 0.0f, 0.0f);
 
     g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(25, 0, 0);
     g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(10, 0, 0);
@@ -1357,24 +1392,24 @@ static void DonInitWrenchSwingKf(Donogan* d)
     g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 35);*/
     // 0: wind-up LOWER (more relaxed at side)
     g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, -10, 0);   // less torso twist
-    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(5, 0, 25);    // shoulder WAY lower
-    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(-25, 0, 10);  // upper arm less lifted
+    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(5, 25, 0);    // shoulder WAY lower
+    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(25, 0, 10);  // upper arm less lifted
     g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(-10, 0, 0);   // forearm relaxed
-    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 20);    // slight wrist angle
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, -20);    // slight wrist angle
 
     // 1: forward strike
     g->keyFrames[1].kfBones[0].rot = QuatXYZDeg(0, 20, 0);
-    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(55, 0, -35);
+    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(55, -35, 0);
     g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(15, 0, -45);
     g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(35, 0, 0);
-    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, -35);
+    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, 35);
 
     // 2: across body / up
     g->keyFrames[2].kfBones[0].rot = QuatXYZDeg(0, 35, 0);
-    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(70, 0, -70);
+    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(70, -70, 0);
     g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(35, 0, -65);
     g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(45, 0, 0);
-    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, -75);
+    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, 75);
 
     // 3: settle
     g->keyFrames[3].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
