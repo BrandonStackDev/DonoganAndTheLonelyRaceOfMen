@@ -197,6 +197,11 @@ typedef enum {
     DONOGAN_STATE_JUMP_LAND,
     DONOGAN_STATE_ROLL,
     DONOGAN_STATE_AIR_ROLL,
+    DONOGAN_STATE_AIR_R2_SPELL_SHOOT,
+    //DONOGAN_STATE_AIR_R1,
+    //DONOGAN_STATE_AIR_L2,
+    //DONOGAN_STATE_AIR_L1,
+    //DONOGAN_STATE_AIR_GUITAR_NORMAL_ATTACK,
     DONOGAN_STATE_SWIM_IDLE,
     DONOGAN_STATE_SWIM_MOVE,
     DONOGAN_STATE_BOW_ENTER,
@@ -222,6 +227,7 @@ typedef enum {
 
 // ---------- Anim IDs present in your GLB (+procedural negatives)----------
 typedef enum {
+    DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT = -9,
     DONOGAN_ANIM_PROC_WRENCH_SWING = -8,
     DONOGAN_ANIM_PROC_MACHINE_TURN = -7,
     DONOGAN_ANIM_PROC_SPELL_SHOOT = -6,
@@ -307,6 +313,7 @@ typedef enum {
     SPELL_KFG_SHOOT,
     MACHINE_KFG_TURN,
     WRENCH_KFG_SWING,
+    AIR_R2_KFG_SHOOT,
     BOW_KFG_COUNT
 } BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
 typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
@@ -551,6 +558,18 @@ typedef struct {
     int posHistoryCount;
 } Donogan;
 
+typedef struct SpellBall {
+    Vector3 pos, vel;
+    float   radius, growRate;
+    float   life;      // seconds
+    int     alive;
+} SpellBall;
+
+#define MAX_BALLS 32
+SpellBall balls[MAX_BALLS] = { 0 };
+
+void DonGetProcBlendKeys(const Donogan* d, const KeyFrameGroup* G, int* outKeyA, int* outKeyB, float* outT);
+
 static inline void Don_UpdateBoxes(Donogan* d)
 {
     if (!d) return;
@@ -600,6 +619,41 @@ static inline Vector3 Don_GetHistoryPosition(const Donogan* d, int framesBack)
     return d->posHistory[idx];
 }
 
+Vector3 RotYawOffset(Vector3 localOff, float yaw, float scale, bool useScale);
+static void SpawnAirR2DownBall(const Donogan* d, SpellBall* b)
+{
+    // Same basic spell ball, but spawned from above/chest/hand area
+    // and fired straight down in WORLD space.
+    Vector3 spawnOff = { 0.0f, 2.6f, 0.25f };
+    Vector3 spawn = Vector3Add(d->pos, RotYawOffset(spawnOff, d->yawY, d->scale, false));
+
+    b->pos = spawn;
+    b->vel = (Vector3){ 0.0f, -38.0f, 0.0f };
+
+    // Same values as regular spell ball.
+    b->radius = 0.35f;
+    b->growRate = 3.5f;
+    b->life = 3.12f;
+    b->alive = 1;
+}
+static inline bool Don_TryFireAirR2Spell(Donogan* d)
+{
+    if (!d) return false;
+    if (!d->ja_r2_unlocked) return false;
+    if (d->mana < 8) return false;
+
+    for (int i = 0; i < MAX_BALLS; ++i)
+    {
+        if (!balls[i].alive)
+        {
+            SpawnAirR2DownBall(d, &balls[i]);
+            d->mana -= 8;
+            return true;
+        }
+    }
+
+    return false;
+}
 // Assets (adjust if needed)
 static const char* GLB = "models/donogan_anim.glb";
 static const char* GLB_ANIM = "models/donogan_anim.glb";
@@ -1067,6 +1121,142 @@ static void DonInitSpellShootKeyframeGroups(Donogan* d)
     g0->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 0, 60);
 }
 
+static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
+{
+    const DonBone BONES[] = {
+        // Whole-body visual rotation.
+        // This is NOT gameplay yaw. This is just the root bone pose for this proc anim.
+        DON_BONE_ROOT,
+
+        DON_BONE_DEF_UPPER_ARM_L,
+        DON_BONE_DEF_FOREARM_L,
+        DON_BONE_DEF_HAND_L,
+
+        DON_BONE_DEF_UPPER_ARM_R,
+        DON_BONE_DEF_FOREARM_R,
+        DON_BONE_DEF_HAND_R,
+
+        DON_BONE_DEF_THIGH_L,
+        DON_BONE_DEF_SHIN_L,
+        DON_BONE_DEF_THIGH_R,
+        DON_BONE_DEF_SHIN_R,
+    };
+
+    const int NUM_BONES = (int)(sizeof(BONES) / sizeof(BONES[0]));
+
+    KeyFrameGroup* g = &d->kfGroups[AIR_R2_KFG_SHOOT];
+    g->state = DONOGAN_STATE_AIR_R2_SPELL_SHOOT;
+    g->anim = DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT;
+    g->maxKey = 4;
+    g->curKey = 0;
+
+    KfMakeZeroKey(&g->keyFrames[0], 0.00f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[1], 0.18f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[2], 0.36f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[3], 0.54f, BONES, NUM_BONES);
+
+    // Index map:
+    // 0  root
+    // 1  upper_arm_L
+    // 2  forearm_L
+    // 3  hand_L
+    // 4  upper_arm_R
+    // 5  forearm_R
+    // 6  hand_R
+    // 7  thigh_L
+    // 8  shin_L
+    // 9  thigh_R
+    // 10 shin_R
+
+    // ------------------------------------------------------------
+    // KEY 0: start tuck
+    // ------------------------------------------------------------
+
+    // Root: tiny pre-rotation. Keep mild.
+    g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+
+    // Arms start moving forward/down.
+    g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(35, -8, 8);
+    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(20, 0, 0);
+    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 0, 8);
+
+    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(35, 8, -8);
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(20, 0, 0);
+    g->keyFrames[0].kfBones[6].rot = QuatXYZDeg(0, 0, -8);
+
+    // Knees: moderate tuck.
+    g->keyFrames[0].kfBones[7].rot = QuatXYZDeg(35, 0, 4);
+    g->keyFrames[0].kfBones[8].rot = QuatXYZDeg(-70, 0, 0);
+    g->keyFrames[0].kfBones[9].rot = QuatXYZDeg(35, 0, -4);
+    g->keyFrames[0].kfBones[10].rot = QuatXYZDeg(-70, 0, 0);
+
+    // ------------------------------------------------------------
+    // KEY 1: main flip/tuck
+    // ------------------------------------------------------------
+
+    // Root does the spin. This is where pitch/roll/yaw live now.
+    // X = front flip pitch
+    // Y = twist/yaw
+    // Z = side roll/aerial flavor
+    g->keyFrames[1].kfBones[0].rot = QuatXYZDeg(-120, 25, 55);
+
+    g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(75, -10, 12);
+    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(45, 0, 0);
+    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(0, 0, 16);
+
+    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(75, 10, -12);
+    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(45, 0, 0);
+    g->keyFrames[1].kfBones[6].rot = QuatXYZDeg(0, 0, -16);
+
+    g->keyFrames[1].kfBones[7].rot = QuatXYZDeg(65, 0, 6);
+    g->keyFrames[1].kfBones[8].rot = QuatXYZDeg(-105, 0, 0);
+    g->keyFrames[1].kfBones[9].rot = QuatXYZDeg(65, 0, -6);
+    g->keyFrames[1].kfBones[10].rot = QuatXYZDeg(-105, 0, 0);
+
+    // ------------------------------------------------------------
+    // KEY 2: release / strongest rotation
+    // ------------------------------------------------------------
+
+    // Almost one full flip with some twist/roll.
+    g->keyFrames[2].kfBones[0].rot = QuatXYZDeg(-270, 55, 105);
+
+    // Arms reach out/down for the shot.
+    g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(125, -8, 12);
+    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(35, 0, 0);
+    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(0, 0, 16);
+
+    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(125, 8, -12);
+    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(35, 0, 0);
+    g->keyFrames[2].kfBones[6].rot = QuatXYZDeg(0, 0, -16);
+
+    // Loosen legs a little for the shot.
+    g->keyFrames[2].kfBones[7].rot = QuatXYZDeg(45, 0, 4);
+    g->keyFrames[2].kfBones[8].rot = QuatXYZDeg(-75, 0, 0);
+    g->keyFrames[2].kfBones[9].rot = QuatXYZDeg(45, 0, -4);
+    g->keyFrames[2].kfBones[10].rot = QuatXYZDeg(-75, 0, 0);
+
+    // ------------------------------------------------------------
+    // KEY 3: recover
+    // ------------------------------------------------------------
+
+    // Return root near identity so he does not stay twisted after proc anim.
+    g->keyFrames[3].kfBones[0].rot = QuatXYZDeg(-360, 0, 0);
+
+    g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(25, 0, 0);
+    g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(10, 0, 0);
+    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(25, 0, 0);
+    g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(10, 0, 0);
+    g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[3].kfBones[7].rot = QuatXYZDeg(10, 0, 0);
+    g->keyFrames[3].kfBones[8].rot = QuatXYZDeg(-20, 0, 0);
+    g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(10, 0, 0);
+    g->keyFrames[3].kfBones[10].rot = QuatXYZDeg(-20, 0, 0);
+}
+
+
 static void DonInitMachineTurnKeyframeGroups(Donogan* d)
 {
     const DonBone BONES[] = {
@@ -1205,6 +1395,7 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     case DONOGAN_ANIM_PROC_SPELL_SHOOT:  return &d->kfGroups[SPELL_KFG_SHOOT];
     case DONOGAN_ANIM_PROC_MACHINE_TURN: return &d->kfGroups[MACHINE_KFG_TURN];//NEW for machines
     case DONOGAN_ANIM_PROC_WRENCH_SWING: return &d->kfGroups[WRENCH_KFG_SWING];//wrench attack
+    case DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT:   return &d->kfGroups[AIR_R2_KFG_SHOOT];
     default:                          return NULL;
     }
 }
@@ -1450,17 +1641,69 @@ static void DonApplyPoseFk(int rootBoneId, int boneId, Donogan* d, const KeyFram
 
 
 // Apply current group's current key (single key for now) as deltas on top of bind pose
+//static void DonApplyProcPoseFromKF(Donogan* d)
+//{
+//    if (!d || d->model.skeleton.boneCount <= 0 || !d->model.skeleton.bindPose) { return; }
+//
+//    const int bc = d->model.skeleton.boneCount;
+//    // Temp frame (1 frame) – simple and clear
+//    Transform* out = (Transform*)MemAlloc(sizeof(Transform) * bc);
+//    if (!out) return;
+//
+//    // Base = bind pose (later, you can switch this to a cached GLB pose to avoid "snap")
+//    for (int i = 0; i < bc; ++i) { out[i] = d->model.skeleton.bindPose[i]; }
+//    float alpha = 1.0f;
+//    if (d->curAnimId == DONOGAN_ANIM_PROC_BOW_ENTER ||
+//        d->curAnimId == DONOGAN_ANIM_PROC_BOW_AIM ||
+//        d->curAnimId == DONOGAN_ANIM_PROC_BOW_PULL ||
+//        d->curAnimId == DONOGAN_ANIM_PROC_BOW_REL ||
+//        d->curAnimId == DONOGAN_ANIM_PROC_BOW_EXIT)
+//    {
+//        alpha = d->bowBlend;
+//    }
+//    KeyFrameGroup* G = DonActiveKfGroup(d);
+//    if (G && G->maxKey > 0) {
+//        const KeyFrame* K = &G->keyFrames[G->curKey]; // one key for now
+//        for (int i = 0; i < K->maxBones; ++i) {
+//            KeyFrameBone* KB = &K->kfBones[i];
+//            int b = (int)KB->boneId;
+//            if (b >= 0 && b < bc) {
+//                // Scale the keyframe’s delta by alpha
+//                KeyFrameBone tmp = *KB;
+//                tmp.pos = Vector3Scale(KB->pos, alpha);
+//                tmp.rot = QuaternionSlerp(QuaternionIdentity(), KB->rot, alpha);
+//
+//                // Apply as usual
+//                DonApplyPoseFk(b, b, d, &tmp, out);
+//            }
+//        }
+//    }
+//
+//    // Build 1-frame "animation" and push it
+//    Transform* framesArr[1] = { out };
+//    ModelAnimation A1;
+//    A1.boneCount = bc;
+//    A1.keyframeCount = 1;
+//    //A1.bones = d->model.skeleton.bones; //raylib 6
+//    A1.keyframePoses = framesArr;
+//
+//    UpdateModelAnimation(d->model, A1, 0);
+//    MemFree(out);
+//}
 static void DonApplyProcPoseFromKF(Donogan* d)
 {
-    if (!d || d->model.skeleton.boneCount <= 0 || !d->model.skeleton.bindPose) { return; }
+    if (!d || d->model.skeleton.boneCount <= 0 || !d->model.skeleton.bindPose) return;
 
     const int bc = d->model.skeleton.boneCount;
-    // Temp frame (1 frame) – simple and clear
+
     Transform* out = (Transform*)MemAlloc(sizeof(Transform) * bc);
     if (!out) return;
 
-    // Base = bind pose (later, you can switch this to a cached GLB pose to avoid "snap")
-    for (int i = 0; i < bc; ++i) { out[i] = d->model.skeleton.bindPose[i]; }
+    for (int i = 0; i < bc; ++i)
+    {
+        out[i] = d->model.skeleton.bindPose[i];
+    }
+
     float alpha = 1.0f;
     if (d->curAnimId == DONOGAN_ANIM_PROC_BOW_ENTER ||
         d->curAnimId == DONOGAN_ANIM_PROC_BOW_AIM ||
@@ -1470,30 +1713,38 @@ static void DonApplyProcPoseFromKF(Donogan* d)
     {
         alpha = d->bowBlend;
     }
-    KeyFrameGroup* G = DonActiveKfGroup(d);
-    if (G && G->maxKey > 0) {
-        const KeyFrame* K = &G->keyFrames[G->curKey]; // one key for now
-        for (int i = 0; i < K->maxBones; ++i) {
-            KeyFrameBone* KB = &K->kfBones[i];
-            int b = (int)KB->boneId;
-            if (b >= 0 && b < bc) {
-                // Scale the keyframe’s delta by alpha
-                KeyFrameBone tmp = *KB;
-                tmp.pos = Vector3Scale(KB->pos, alpha);
-                tmp.rot = QuaternionSlerp(QuaternionIdentity(), KB->rot, alpha);
 
-                // Apply as usual
-                DonApplyPoseFk(b, b, d, &tmp, out);
+    KeyFrameGroup* G = DonActiveKfGroup(d);
+    if (G && G->maxKey > 0)
+    {
+        int keyA = 0, keyB = 0;
+        float keyT = 0.0f;
+        DonGetProcBlendKeys(d, G, &keyA, &keyB, &keyT);
+
+        const KeyFrame* A = &G->keyFrames[keyA];
+        const KeyFrame* B = &G->keyFrames[keyB];
+
+        for (int i = 0; i < A->maxBones; ++i)
+        {
+            KeyFrameBone tmp = A->kfBones[i];
+
+            if (keyA != keyB && i < B->maxBones && B->kfBones[i].boneId == tmp.boneId)
+            {
+                tmp.pos = Vector3Lerp(A->kfBones[i].pos, B->kfBones[i].pos, keyT);
+                tmp.rot = QuaternionSlerp(A->kfBones[i].rot, B->kfBones[i].rot, keyT);
             }
+
+            tmp.pos = Vector3Scale(tmp.pos, alpha);
+            tmp.rot = QuaternionSlerp(QuaternionIdentity(), tmp.rot, alpha);
+
+            DonApplyPoseFk((int)tmp.boneId, (int)tmp.boneId, d, &tmp, out);
         }
     }
 
-    // Build 1-frame "animation" and push it
     Transform* framesArr[1] = { out };
     ModelAnimation A1;
     A1.boneCount = bc;
     A1.keyframeCount = 1;
-    //A1.bones = d->model.skeleton.bones; //raylib 6
     A1.keyframePoses = framesArr;
 
     UpdateModelAnimation(d->model, A1, 0);
@@ -1506,7 +1757,54 @@ static void DonApplyProcPoseFromKF(Donogan* d)
 #ifndef BOW_EXIT_T
 #define BOW_EXIT_T  0.20f
 #endif
+static inline float ProcClamp01(float x)
+{
+    if (x < 0.0f) return 0.0f;
+    if (x > 1.0f) return 1.0f;
+    return x;
+}
 
+static void DonGetProcBlendKeys(const Donogan* d, const KeyFrameGroup* G,
+    int* outKeyA, int* outKeyB, float* outT)
+{
+    *outKeyA = 0;
+    *outKeyB = 0;
+    *outT = 0.0f;
+
+    if (!d || !G || G->maxKey <= 0) return;
+    if (G->maxKey == 1) return;
+
+    float t = d->animTime;
+
+    if (t <= G->keyFrames[0].time)
+    {
+        *outKeyA = 0;
+        *outKeyB = 0;
+        *outT = 0.0f;
+        return;
+    }
+
+    for (int i = 0; i < G->maxKey - 1; ++i)
+    {
+        float t0 = G->keyFrames[i].time;
+        float t1 = G->keyFrames[i + 1].time;
+
+        if (t <= t1)
+        {
+            float denom = (t1 - t0);
+            float blend = (denom > 0.0001f) ? ((t - t0) / denom) : 1.0f;
+
+            *outKeyA = i;
+            *outKeyB = i + 1;
+            *outT = ProcClamp01(blend);
+            return;
+        }
+    }
+
+    *outKeyA = G->maxKey - 1;
+    *outKeyB = G->maxKey - 1;
+    *outT = 0.0f;
+}
 // Minimal “procedural anim stepper”:
 // - ENTER/EXIT finish after fixed time
 // - AIM never finishes (loops/holds)
@@ -1556,6 +1854,19 @@ static void DonApplyProcFrame(Donogan* d)
         float t = d->animTime;
 
         if (t < phase * 1.0f) G->curKey = 0;
+        else if (t < phase * 2.0f) G->curKey = 1;
+        else if (t < phase * 3.0f) G->curKey = 2;
+        else if (t < phase * 4.0f) G->curKey = 3;
+        else d->animFinished = true;
+    } break;
+    case DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT:
+    {
+        if (!G) { d->animFinished = true; break; }
+
+        const float phase = 0.18f;
+        float t = d->animTime;
+
+        if (t < phase * 1.0f)      G->curKey = 0;
         else if (t < phase * 2.0f) G->curKey = 1;
         else if (t < phase * 3.0f) G->curKey = 2;
         else if (t < phase * 4.0f) G->curKey = 3;
@@ -1954,6 +2265,7 @@ static Donogan InitDonogan(void)
     BowStripScaleAndRootOffset(&d);
     DonInitBowKeyframeGroups(&d);
     DonInitSpellShootKeyframeGroups(&d);
+    DonInitAirR2SpellKeyframeGroups(&d);
     DonInitMachineTurnKeyframeGroups(&d);
     DonInitWrenchSwingKf(&d);
     DonInitArrows(&d);
@@ -2034,6 +2346,7 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_SPELL_IDLE:              return DONOGAN_ANIM_Spell_Simple_Idle_Loop;
     case DONOGAN_STATE_SPELL_EXIT:              return DONOGAN_ANIM_Spell_Simple_Exit;
     case DONOGAN_STATE_SPELL_SHOOT:             return DONOGAN_ANIM_PROC_SPELL_SHOOT;
+    case DONOGAN_STATE_AIR_R2_SPELL_SHOOT:      return DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT;
     case DONOGAN_STATE_MACHINE_TURN:      return DONOGAN_ANIM_PROC_MACHINE_TURN;
     case DONOGAN_STATE_WRENCH_SWING:      return DONOGAN_ANIM_PROC_WRENCH_SWING;
     case DONOGAN_STATE_HIT:         return DONOGAN_ANIM_Hit_Chest;
@@ -2063,7 +2376,7 @@ static void DonSetState(Donogan* d, DonoganState s)
                         || s == DONOGAN_STATE_BOW_PULL || s == DONOGAN_STATE_BOW_REL
                         || s==DONOGAN_STATE_PUNCH_IDLE || s == DONOGAN_STATE_PUNCH_JAB || s == DONOGAN_STATE_PUNCH_CROSS 
                         || s == DONOGAN_STATE_PUNCH_JAB_ENTER || s == DONOGAN_STATE_PUNCH_CROSS_ENTER
-                        || s == DONOGAN_STATE_WRENCH_SWING || s == DONOGAN_STATE_SPELL_SHOOT);
+                        || s == DONOGAN_STATE_WRENCH_SWING || s == DONOGAN_STATE_SPELL_SHOOT || s == DONOGAN_STATE_AIR_R2_SPELL_SHOOT);
     if (!locomotion) {
         d->runLock = false;      // auto-break on swimming
         d->runningHeld = false;
@@ -2106,16 +2419,6 @@ float GetAnimationRate(DonoganAnim anim)
     else if (DONOGAN_ANIM_Punch_Cross) { return 4; }
     else { return 2; }
 }
-
-typedef struct SpellBall {
-    Vector3 pos, vel;
-    float   radius, growRate;
-    float   life;      // seconds
-    int     alive;
-} SpellBall;
-
-#define MAX_BALLS 32
-SpellBall balls[MAX_BALLS] = { 0 };
 
 static void SpawnBall(const Donogan* d, SpellBall* b) {
     Vector3 spawnOff = (Vector3){ 0.25f, 3.1f, 0.6f }; // tweak: right, up, forward from Donny
@@ -2306,7 +2609,22 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         DonSetState(d, DONOGAN_STATE_JUMPING); // loops
                     }
                 }
+                else if (d->state == DONOGAN_STATE_JUMPING &&
+                    !d->bowMode &&
+                    R2Pressed &&
+                    d->ja_r2_unlocked &&
+                    d->mana >= 8)
+                {
+                    if (Don_TryFireAirR2Spell(d))
+                    {
+                        DonSetState(d, DONOGAN_STATE_AIR_R2_SPELL_SHOOT);
 
+                        // Optional: small hover/stall so the move reads clearly.
+                        if (d->velY < 0.0f) d->velY *= 0.35f;
+
+                        break;
+                    }
+                }
                 // Land if feet cross ground while falling
                 if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY) {
                     DonSnapToGround(d);
@@ -2700,7 +3018,32 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     DonSetState(d, DONOGAN_STATE_IDLE);
                 }
             } break;
+            case DONOGAN_STATE_AIR_R2_SPELL_SHOOT:
+            {
+                // Keep normal airborne physics during the attack.
+                d->velY += d->gravity * dt;
+                d->pos.y += d->velY * dt;
 
+                // Keep some air drift, but slightly reduced while casting.
+                d->pos = Vector3Add(
+                    d->pos,
+                    Vector3Scale(d->velXZ, dt * (d->runningHeld ? d->runSpeed : d->walkSpeed) * 0.65f)
+                );
+
+                // Landing cancels into land state.
+                if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY)
+                {
+                    DonSnapToGround(d);
+                    DonSetState(d, DONOGAN_STATE_JUMP_LAND);
+                    break;
+                }
+
+                // If the proc move finishes and we are still airborne, go back to jump loop.
+                if (d->animFinished)
+                {
+                    DonSetState(d, DONOGAN_STATE_JUMPING);
+                }
+            } break;
             case DONOGAN_STATE_HIT:
                 d->bowMode = false;
                 d->bowCur = -1;
