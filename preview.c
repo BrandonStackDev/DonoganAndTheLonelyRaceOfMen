@@ -241,6 +241,54 @@ static inline void PushDonnyOutOfMachineWorldBoxes(Donogan* d)
         d->outerBox = UpdateBoundingBox(d->origOuterBB, d->pos);
     }
 }
+
+static inline Vector3 Don_GetRecentMoveXZ(const Donogan* d, Vector3 currentPos, float minLen)
+{
+    if (!d) return (Vector3) { 0 };
+
+    if (minLen <= 0.0f) minLen = 0.02f;
+
+    const float minLenSq = minLen * minLen;
+
+    currentPos.y = 0.0f;
+
+    // First: compare current position against older history positions.
+    // This works when Don has been stuck/still for a few frames but recently moved.
+    for (int hb = 1; hb <= d->posHistoryCount && hb <= DON_POS_HISTORY_MAX; hb++)
+    {
+        Vector3 old = Don_GetHistoryPosition(d, hb);
+        old.y = 0.0f;
+
+        Vector3 move = Vector3Subtract(currentPos, old);
+        move.y = 0.0f;
+
+        if (Vector3LengthSqr(move) >= minLenSq)
+        {
+            return move;
+        }
+    }
+
+    // Second: if current got pinned/reused weirdly, scan history pair-to-pair.
+    for (int hb = 1; hb < d->posHistoryCount && hb < DON_POS_HISTORY_MAX; hb++)
+    {
+        Vector3 newer = Don_GetHistoryPosition(d, hb);
+        Vector3 older = Don_GetHistoryPosition(d, hb + 1);
+
+        newer.y = 0.0f;
+        older.y = 0.0f;
+
+        Vector3 move = Vector3Subtract(newer, older);
+        move.y = 0.0f;
+
+        if (Vector3LengthSqr(move) >= minLenSq)
+        {
+            return move;
+        }
+    }
+
+    return (Vector3) { 0 };
+}
+
 static BoundingBox MakeCottageDoorBox(Vector3 center)
 {
     return (BoundingBox) {
@@ -3814,160 +3862,106 @@ int main(void) {
                 //some useful stuff
                 Vector3 contactMove = Vector3Subtract(don.pos, don.oldPos);
                 contactMove.y = 0.0f;
+
+                // If last-frame movement is too tiny, use recent history.
+                // This keeps corner/wall correction stable when Don is pressed against a wall.
+                if (Vector3LengthSqr(contactMove) < 0.02f * 0.02f)
+                {
+                    contactMove = Don_GetRecentMoveXZ(&don, don.pos, 0.02f);
+                }
                 //collider between don and hoose
                 if (CheckCollisionBoxes(don.box, Scenes[i].box))//donny home collision initial
                 {
                     if (Scenes[i].modelType != MODEL_HOME_CASTLE) { don.inHome = true; } //exception for the castle, its wide open mostly
                     BuildingColliderSet* set = &HomeCollisionSets[Scenes[i].modelType];
 
-                    if (set->loaded && set->count > 0 && (Scenes[i].modelType != MODEL_CINDER || caveMode))
+                    for (int collide = 0; collide < 3; collide++)
                     {
-                        DonContactBoxes contactBoxes = Don_MakeContactBoxes(don.outerBox);
-
-                        BuildingBoxHit bhit = CollideDonContactBoxesWithScene(
-                            contactBoxes,
-                            &Scenes[i],
-                            don.velY,
-                            contactMove
-                        );
-
-                        // Backup: if current frame missed a thin wall, test a swept-ish box
-                        // from previous position to current position.
-                        if (!bhit.hitWall)
+                        if (set->loaded && set->count > 0 && (Scenes[i].modelType != MODEL_CINDER || caveMode))
                         {
-                            Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
+                            DonContactBoxes contactBoxes = Don_MakeContactBoxes(don.outerBox);
 
-                            BoundingBox prevOuter = UpdateBoundingBox(don.origOuterBB, prevPos);
-
-                            BoundingBox sweptOuter = {
-                                {
-                                    fminf(prevOuter.min.x, don.outerBox.min.x),
-                                    fminf(prevOuter.min.y, don.outerBox.min.y),
-                                    fminf(prevOuter.min.z, don.outerBox.min.z)
-                                },
-                                {
-                                    fmaxf(prevOuter.max.x, don.outerBox.max.x),
-                                    fmaxf(prevOuter.max.y, don.outerBox.max.y),
-                                    fmaxf(prevOuter.max.z, don.outerBox.max.z)
-                                }
-                            };
-
-                            BuildingBoxHit sweptHit = CollideDonAABBWithSceneBuildingColliders(
-                                sweptOuter,
+                            BuildingBoxHit bhit = CollideDonContactBoxesWithScene(
+                                contactBoxes,
                                 &Scenes[i],
-                                don.velY
+                                don.velY,
+                                contactMove
                             );
 
-                            // Wall backup from swept fat box.
-                            if (sweptHit.hitWall && !bhit.hitWall)
-                            {
-                                bhit.hit = true;
-                                bhit.hitWall = true;
-                                bhit.push = sweptHit.push;
-                                bhit.normal = sweptHit.normal;
-                            }
-
-                            // Vertical floor/ceiling crossing backup.
-                            // This catches fast falling/jumping through thin slabs.
-                            BuildingBoxHit sweptYHit = CollideDonAABBWithSceneBuildingCollidersSweptY(
-                                prevOuter,
-                                don.outerBox,
-                                &Scenes[i],
-                                don.velY
-                            );
-
-                            if (sweptYHit.hitFloor)
-                            {
-                                bhit.hit = true;
-                                bhit.hitFloor = true;
-
-                                if (sweptYHit.groundY > bhit.groundY)
-                                {
-                                    bhit.groundY = sweptYHit.groundY;
-                                }
-                            }
-
-                            if (sweptYHit.hitCeiling && !sweptYHit.hitFloor)
-                            {
-                                bhit.hit = true;
-                                bhit.hitCeiling = true;
-                                bhit.push = sweptYHit.push;
-                                bhit.normal = sweptYHit.normal;
-                            }
-                        }
-
-                        if (bhit.hit)
-                        {
-                            bool risingJump =
-                                (don.state == DONOGAN_STATE_JUMP_START ||
-                                    don.state == DONOGAN_STATE_JUMPING ||
-                                    don.state == DONOGAN_STATE_AIR_ROLL) &&
-                                don.velY > 0.05f;
-
-                            if (bhit.hitFloor && !risingJump && (!bhit.hitCeiling || don.velY < -0.05f))
-                            {
-                                bool useBuildingFloor = ShouldUseAuthoredBuildingFloor(
-                                    caveMode,
-                                    alreadyHandledY,
-                                    don.groundY,
-                                    bhit.groundY
-                                );
-
-                                if (useBuildingFloor)
-                                {
-                                    if (!alreadyHandledY || don.groundY < bhit.groundY)
-                                    {
-                                        don.groundY = bhit.groundY;
-                                    }
-
-                                    float feetY = don.outerBox.min.y;
-
-                                    // Wider range because sweptY may catch us after feet already passed below.
-                                    if (feetY <= bhit.groundY + 3.0f && feetY >= bhit.groundY - 6.0f)
-                                    {
-                                        float lift = bhit.groundY - feetY;
-
-                                        don.pos.y += lift;
-
-                                        if (don.velY < 0.0f) don.velY = 0.0f;
-
-                                        don.onGround = true;
-                                        don.groundNormal = bhit.normal.y > 0.1f ? bhit.normal : (Vector3) { 0, 1, 0 };
-
-                                        Don_UpdateBoxes(&don);
-
-                                        // If building collision snapped Don onto a floor after the normal Donogan
-                                        // state update already missed it, force the same landing transition here.
-                                        if (don.state == DONOGAN_STATE_JUMPING ||
-                                            don.state == DONOGAN_STATE_AIR_ROLL ||
-                                            don.state == DONOGAN_STATE_JUMP_START)
-                                        {
-                                            DonSnapToGround(&don);
-                                            DonSetState(&don, DONOGAN_STATE_JUMP_LAND);
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (bhit.hitCeiling && !bhit.hitFloor)
-                            {
-                                if (don.velY > 0.0f) don.velY = 0.0f;
-
-                                if (bhit.push.y > 0.0f) bhit.push.y = -bhit.push.y;
-                                if (bhit.push.y < -0.50f) bhit.push.y = -0.50f;
-
-                                don.pos.y += bhit.push.y;
-                                Don_UpdateBoxes(&don);
-                            }
-
-                            if (bhit.hitCeiling && bhit.hitFloor)
+                            // Backup: if current frame missed a thin wall, test a swept-ish box
+                            // from previous position to current position.
+                            if (!bhit.hitWall)
                             {
                                 Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
-                                float dy = don.pos.y - prevPos.y;
 
-                                bool movingUp = (don.velY > 0.05f) || (dy > 0.05f);
+                                BoundingBox prevOuter = UpdateBoundingBox(don.origOuterBB, prevPos);
 
-                                if (!movingUp)
+                                BoundingBox sweptOuter = {
+                                    {
+                                        fminf(prevOuter.min.x, don.outerBox.min.x),
+                                        fminf(prevOuter.min.y, don.outerBox.min.y),
+                                        fminf(prevOuter.min.z, don.outerBox.min.z)
+                                    },
+                                    {
+                                        fmaxf(prevOuter.max.x, don.outerBox.max.x),
+                                        fmaxf(prevOuter.max.y, don.outerBox.max.y),
+                                        fmaxf(prevOuter.max.z, don.outerBox.max.z)
+                                    }
+                                };
+
+                                BuildingBoxHit sweptHit = CollideDonAABBWithSceneBuildingColliders(
+                                    sweptOuter,
+                                    &Scenes[i],
+                                    don.velY
+                                );
+
+                                // Wall backup from swept fat box.
+                                if (sweptHit.hitWall && !bhit.hitWall)
+                                {
+                                    bhit.hit = true;
+                                    bhit.hitWall = true;
+                                    bhit.push = sweptHit.push;
+                                    bhit.normal = sweptHit.normal;
+                                }
+
+                                // Vertical floor/ceiling crossing backup.
+                                // This catches fast falling/jumping through thin slabs.
+                                BuildingBoxHit sweptYHit = CollideDonAABBWithSceneBuildingCollidersSweptY(
+                                    prevOuter,
+                                    don.outerBox,
+                                    &Scenes[i],
+                                    don.velY
+                                );
+
+                                if (sweptYHit.hitFloor)
+                                {
+                                    bhit.hit = true;
+                                    bhit.hitFloor = true;
+
+                                    if (sweptYHit.groundY > bhit.groundY)
+                                    {
+                                        bhit.groundY = sweptYHit.groundY;
+                                    }
+                                }
+
+                                if (sweptYHit.hitCeiling && !sweptYHit.hitFloor)
+                                {
+                                    bhit.hit = true;
+                                    bhit.hitCeiling = true;
+                                    bhit.push = sweptYHit.push;
+                                    bhit.normal = sweptYHit.normal;
+                                }
+                            }
+                            if (!bhit.hit) { break; }
+                            if (bhit.hit)
+                            {
+                                bool risingJump =
+                                    (don.state == DONOGAN_STATE_JUMP_START ||
+                                        don.state == DONOGAN_STATE_JUMPING ||
+                                        don.state == DONOGAN_STATE_AIR_ROLL) &&
+                                    don.velY > 0.05f;
+
+                                if (bhit.hitFloor && !risingJump && (!bhit.hitCeiling || don.velY < -0.05f))
                                 {
                                     bool useBuildingFloor = ShouldUseAuthoredBuildingFloor(
                                         caveMode,
@@ -3985,6 +3979,7 @@ int main(void) {
 
                                         float feetY = don.outerBox.min.y;
 
+                                        // Wider range because sweptY may catch us after feet already passed below.
                                         if (feetY <= bhit.groundY + 3.0f && feetY >= bhit.groundY - 6.0f)
                                         {
                                             float lift = bhit.groundY - feetY;
@@ -4010,7 +4005,8 @@ int main(void) {
                                         }
                                     }
                                 }
-                                else
+
+                                if (bhit.hitCeiling && !bhit.hitFloor)
                                 {
                                     if (don.velY > 0.0f) don.velY = 0.0f;
 
@@ -4020,65 +4016,145 @@ int main(void) {
                                     don.pos.y += bhit.push.y;
                                     Don_UpdateBoxes(&don);
                                 }
-                            }
 
-                            bool wallIsTallEnough = (bhit.maxWallY - 0.2f >= don.outerBox.min.y);
-                            bool dontLowerWalls = (Scenes[i].modelType != MODEL_HOME_NICE);
-                            if (bhit.hitWall && !hitEnvWall && (wallIsTallEnough || dontLowerWalls))
-                            {
-                                disableRoll = true;
-                                Vector3 push = ClampWallPush(bhit.push);
-
-                                if (Vector3LengthSqr(push) > 0.000001f)
+                                if (bhit.hitCeiling && bhit.hitFloor)
                                 {
-                                    don.pos.x += push.x;
-                                    don.pos.z += push.z;
-                                }
-                                else
-                                {
-                                    Vector3 p = bhit.push;
-                                    p.y = 0.0f;
-
                                     Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
-                                    Vector3 moveDir = Vector3Subtract(don.pos, prevPos);
-                                    moveDir.y = 0.0f;
+                                    float dy = don.pos.y - prevPos.y;
 
-                                    if (Vector3LengthSqr(moveDir) > 0.0001f && Vector3LengthSqr(p) > 0.0001f)
+                                    bool movingUp = (don.velY > 0.05f) || (dy > 0.05f);
+
+                                    if (!movingUp)
                                     {
-                                        moveDir = Vector3Normalize(moveDir);
+                                        bool useBuildingFloor = ShouldUseAuthoredBuildingFloor(
+                                            caveMode,
+                                            alreadyHandledY,
+                                            don.groundY,
+                                            bhit.groundY
+                                        );
 
-                                        // If push points with movement, flip it.
-                                        if (Vector3DotProduct(p, moveDir) > 0.0f)
+                                        if (useBuildingFloor)
                                         {
-                                            p = Vector3Negate(p);
+                                            if (!alreadyHandledY || don.groundY < bhit.groundY)
+                                            {
+                                                don.groundY = bhit.groundY;
+                                            }
+
+                                            float feetY = don.outerBox.min.y;
+
+                                            if (feetY <= bhit.groundY + 3.0f && feetY >= bhit.groundY - 6.0f)
+                                            {
+                                                float lift = bhit.groundY - feetY;
+
+                                                don.pos.y += lift;
+
+                                                if (don.velY < 0.0f) don.velY = 0.0f;
+
+                                                don.onGround = true;
+                                                don.groundNormal = bhit.normal.y > 0.1f ? bhit.normal : (Vector3) { 0, 1, 0 };
+
+                                                Don_UpdateBoxes(&don);
+
+                                                // If building collision snapped Don onto a floor after the normal Donogan
+                                                // state update already missed it, force the same landing transition here.
+                                                if (don.state == DONOGAN_STATE_JUMPING ||
+                                                    don.state == DONOGAN_STATE_AIR_ROLL ||
+                                                    don.state == DONOGAN_STATE_JUMP_START)
+                                                {
+                                                    DonSnapToGround(&don);
+                                                    DonSetState(&don, DONOGAN_STATE_JUMP_LAND);
+                                                }
+                                            }
                                         }
                                     }
-
-                                    const float MAX_PUSH = 0.75f;
-                                    float pLen = Vector3Length(p);
-
-                                    if (pLen > 0.0001f)
+                                    else
                                     {
-                                        if (pLen > MAX_PUSH)
-                                        {
-                                            p = Vector3Scale(p, MAX_PUSH / pLen);
-                                        }
+                                        if (don.velY > 0.0f) don.velY = 0.0f;
 
-                                        don.pos = Vector3Add(don.pos, p);
-                                        don.velXZ = (Vector3){ 0 };
-                                        don.rollVel = (Vector3){ 0 };
+                                        if (bhit.push.y > 0.0f) bhit.push.y = -bhit.push.y;
+                                        if (bhit.push.y < -0.50f) bhit.push.y = -0.50f;
+
+                                        don.pos.y += bhit.push.y;
+                                        Don_UpdateBoxes(&don);
                                     }
                                 }
-                                Don_UpdateBoxes(&don);
+
+                                bool wallIsTallEnough = (bhit.maxWallY - 0.2f >= don.outerBox.min.y);
+                                bool dontLowerWalls = (Scenes[i].modelType != MODEL_HOME_NICE);
+                                if (bhit.hitWall && !hitEnvWall && (wallIsTallEnough || dontLowerWalls))
+                                {
+                                    disableRoll = true;
+                                    Vector3 push = bhit.push;
+                                    push.y = 0.0f;
+
+                                    float pushLen = Vector3Length(push);
+
+                                    if (pushLen > 0.0001f)
+                                    {
+                                        // Normal wall push stays gentle.
+                                        // Multi-wall emergency push is allowed to be bigger.
+                                        float maxPush = (pushLen >= 0.80f) ? 1.10f : 0.55f;
+
+                                        if (pushLen > maxPush)
+                                        {
+                                            push = Vector3Scale(push, maxPush / pushLen);
+                                            pushLen = maxPush;
+                                        }
+
+                                        don.pos.x += push.x;
+                                        don.pos.z += push.z;
+
+                                        // If it was a hard corner escape, kill carried motion so he does not
+                                        // immediately shove himself back into the same wall.
+                                        if (pushLen >= 0.80f)
+                                        {
+                                            don.velXZ = (Vector3){ 0 };
+                                            don.rollVel = (Vector3){ 0 };
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Vector3 p = bhit.push;
+                                        p.y = 0.0f;
+
+                                        Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
+                                        Vector3 moveDir = Vector3Subtract(don.pos, prevPos);
+                                        moveDir.y = 0.0f;
+
+                                        if (Vector3LengthSqr(moveDir) > 0.0001f && Vector3LengthSqr(p) > 0.0001f)
+                                        {
+                                            moveDir = Vector3Normalize(moveDir);
+
+                                            // If push points with movement, flip it.
+                                            if (Vector3DotProduct(p, moveDir) > 0.0f)
+                                            {
+                                                p = Vector3Negate(p);
+                                            }
+                                        }
+
+                                        const float MAX_PUSH = 0.75f;
+                                        float pLen = Vector3Length(p);
+
+                                        if (pLen > 0.0001f)
+                                        {
+                                            if (pLen > MAX_PUSH)
+                                            {
+                                                p = Vector3Scale(p, MAX_PUSH / pLen);
+                                            }
+
+                                            don.pos = Vector3Add(don.pos, p);
+                                            don.velXZ = (Vector3){ 0 };
+                                            don.rollVel = (Vector3){ 0 };
+                                        }
+                                    }
+                                    Don_UpdateBoxes(&don);
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        // classify slope: anything flatter than ~50° treated as ground
-                        const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
-                        for (int it = 0; it < 3; ++it)
+                        else
                         {
+                            // classify slope: anything flatter than ~50° treated as ground
+                            const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
                             DonContactBoxes contactBoxes = Don_MakeContactBoxes(don.outerBox);
 
                             MeshBoxHit hit = CollideDonContactBoxesWithMeshTriangles(

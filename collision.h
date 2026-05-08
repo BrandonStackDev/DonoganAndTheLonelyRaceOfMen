@@ -775,44 +775,37 @@ static inline Vector3 SafeNormalizeXZ(Vector3 v, Vector3 fallback)
 
 static inline Vector3 Don_MultiWallBlendPush(Vector3 avgPushDir, Vector3 moveXZ, float pushMag)
 {
-    moveXZ.y = 0.0f;
     avgPushDir.y = 0.0f;
+    moveXZ.y = 0.0f;
 
-    Vector3 awayMove = { 0 };
+    Vector3 safeDir = avgPushDir;
 
-    if (Vector3LengthSqr(moveXZ) > 0.0001f)
-    {
-        awayMove = Vector3Normalize(Vector3Negate(moveXZ));
-    }
-
-    avgPushDir = SafeNormalizeXZ(avgPushDir, awayMove);
-
-    Vector3 finalDir;
-
-    if (Vector3LengthSqr(awayMove) > 0.0001f)
-    {
-        // -movement dominates, average wall push still informs corners.
-        finalDir = Vector3Add(
-            Vector3Scale(avgPushDir, 0.35f),
-            Vector3Scale(awayMove, 1.35f)
-        );
-    }
-    else
-    {
-        finalDir = avgPushDir;
-    }
-
-    finalDir = SafeNormalizeXZ(finalDir, avgPushDir);
-
-    if (Vector3LengthSqr(finalDir) < 0.0001f)
+    if (Vector3LengthSqr(safeDir) < 0.0001f)
     {
         return (Vector3) { 0 };
     }
 
-    // Multi-hit/corner corrections should be firm but not teleporty.
-    pushMag = Clamp(pushMag, 0.16f, 0.55f);
+    safeDir = Vector3Normalize(safeDir);
 
-    return Vector3Scale(finalDir, pushMag);
+    // Optional movement assist, but ONLY if it agrees with the safe wall push.
+    if (Vector3LengthSqr(moveXZ) > 0.0001f)
+    {
+        Vector3 awayMove = Vector3Normalize(Vector3Negate(moveXZ));
+
+        if (Vector3DotProduct(awayMove, safeDir) > 0.35f)
+        {
+            safeDir = Vector3Normalize(Vector3Add(
+                Vector3Scale(safeDir, 1.0f),
+                Vector3Scale(awayMove, 0.45f)
+            ));
+        }
+    }
+
+    // Multi-wall/corner hit means emergency correction.
+    // Do not use tiny overlap values here.
+    pushMag = Clamp(pushMag, 0.85f, 1.10f);
+
+    return Vector3Scale(safeDir, pushMag);
 }
 static inline float BuildingColliderFloorYAtXZ(const BuildingColliderWorld* c, float x, float z)
 {
@@ -1590,8 +1583,6 @@ static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
         out.push = Don_MultiWallBlendPush(avgPushDir, moveXZ, pushMag);
         out.normal = SafeNormalizeXZ(out.push, avgPushDir);
     }
-
-    return out;
 
     return out;
 }
