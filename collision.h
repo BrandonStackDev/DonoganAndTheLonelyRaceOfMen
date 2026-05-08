@@ -11,14 +11,14 @@
 
 #define BUILDING_FLOOR_STAND_PAD 0.12f
 
-#define BUILDING_WALL_SKIN_WORLD            0.2f
-#define BUILDING_FLOOR_SKIN_WORLD           0.2f
-#define BUILDING_CEILING_SKIN_WORLD         0.2f
-#define BUILDING_FLOOR_XZ_SKIN_WORLD        0.2f
-#define BUILDING_FLOOR_CATCH_ABOVE_WORLD    0.012f
-#define BUILDING_FLOOR_CATCH_BELOW_WORLD    0.2f
+#define BUILDING_WALL_SKIN_WORLD             0.45f
+#define BUILDING_FLOOR_SKIN_WORLD            0.45f
+#define BUILDING_CEILING_SKIN_WORLD          0.35f
+#define BUILDING_FLOOR_XZ_SKIN_WORLD         0.50f
+#define BUILDING_FLOOR_CATCH_ABOVE_WORLD     0.10f
+#define BUILDING_FLOOR_CATCH_BELOW_WORLD     0.50f
 #define BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG 4.0f
-#define BUILDING_CEILING_CATCH_WORLD        0.2f
+#define BUILDING_CEILING_CATCH_WORLD         0.35f
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct DonContactBoxes {
     BoundingBox bottom;
@@ -1310,5 +1310,108 @@ void DebugLogMeshBoxHit(
     );
 }
 
+static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
+    DonContactBoxes s,
+    const Mesh* mesh,
+    Vector3 meshWorldOffset,
+    float meshScale,
+    float yawRadians,
+    float groundSlopeCos,
+    float donVelY
+)
+{
+    MeshBoxHit out = { 0 };
+    out.groundY = -10000.0f;
 
+    bool floorOnly = (donVelY <= -30.0f);
+
+    // 1) Floor: bottom third only.
+    MeshBoxHit floorHit = CollideAABBWithMeshTriangles(
+        s.bottom,
+        mesh,
+        meshWorldOffset,
+        meshScale,
+        yawRadians,
+        groundSlopeCos,
+        false
+    );
+
+    if (floorHit.hitGround)
+    {
+        out.hit = true;
+        out.hitGround = true;
+        out.groundY = floorHit.groundY;
+        out.normal = floorHit.normal;
+    }
+
+    if (floorOnly)
+    {
+        return out;
+    }
+
+    // 2) Walls: side thirds only.
+    BoundingBox sideBoxes[4] = {
+        s.xMin, s.xMax, s.zMin, s.zMax
+    };
+
+    Vector3 sideFallback[4] = {
+        {  1, 0,  0 }, // xMin hit means push +X
+        { -1, 0,  0 }, // xMax hit means push -X
+        {  0, 0,  1 }, // zMin hit means push +Z
+        {  0, 0, -1 }  // zMax hit means push -Z
+    };
+
+    Vector3 bestPush = { 0 };
+    float bestLen = 999999.0f;
+    bool foundWall = false;
+
+    for (int i = 0; i < 4; i++)
+    {
+        MeshBoxHit wh = CollideAABBWithMeshTriangles(
+            sideBoxes[i],
+            mesh,
+            meshWorldOffset,
+            meshScale,
+            yawRadians,
+            groundSlopeCos,
+            true // wall check only
+        );
+
+        if (!wh.hitWall) continue;
+
+        Vector3 p = wh.push;
+        p.y = 0.0f;
+
+        if (Vector3LengthSqr(p) < 0.0001f)
+        {
+            p = Vector3Scale(sideFallback[i], 0.18f);
+        }
+
+        // Make side-box result agree with which side sensor fired.
+        if (Vector3DotProduct(p, sideFallback[i]) < 0.0f)
+        {
+            p = Vector3Negate(p);
+        }
+
+        p = ClampWallPush(p);
+
+        float len = Vector3LengthSqr(p);
+        if (len > 0.0f && len < bestLen)
+        {
+            bestLen = len;
+            bestPush = p;
+            foundWall = true;
+            out.normal = wh.normal;
+        }
+    }
+
+    if (foundWall)
+    {
+        out.hit = true;
+        out.hitWall = true;
+        out.push = bestPush;
+    }
+
+    return out;
+}
 #endif // COLLISION_H

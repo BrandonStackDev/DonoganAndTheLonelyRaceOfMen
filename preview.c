@@ -3792,6 +3792,7 @@ int main(void) {
             don.inHome = false;
             for (int i = 0; i < SCENE_TOTAL_COUNT; i++)
             {
+                //arrows
                 for (int a = 0; a < MAX_ARROWS; a++)//arrows
                 {
                     if (!don.arrows[a].alive || don.arrows[a].stuck) { continue; }
@@ -3810,6 +3811,7 @@ int main(void) {
                         }
                     }
                 }
+                //collider between don and hoose
                 if (CheckCollisionBoxes(don.box, Scenes[i].box))//donny home collision initial
                 {
                     if (Scenes[i].modelType != MODEL_HOME_CASTLE) { don.inHome = true; } //exception for the castle, its wide open mostly
@@ -4073,7 +4075,18 @@ int main(void) {
                         const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
                         for (int it = 0; it < 3; ++it)
                         {
-                            MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
+                            DonContactBoxes contactBoxes = Don_MakeContactBoxes(don.outerBox);
+
+                            MeshBoxHit hit = CollideDonContactBoxesWithMeshTriangles(
+                                contactBoxes,
+                                &HomeModels[Scenes[i].modelType].meshes[0],
+                                Scenes[i].pos,
+                                Scenes[i].scale,
+                                Scenes[i].yaw,
+                                groundSlopeCos,
+                                don.velY
+                            );
+                            //MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
                             if (hit.hitGround) {
                                 // snap to ground and re-make AABB
                                 if (!alreadyHandledY || don.groundY < hit.groundY)
@@ -4949,9 +4962,20 @@ int main(void) {
                 DrawModel(don.model, don.pos, don.scale, don.drawColor); // uses model.transform for rotation
                 if (displayBoxes) 
                 { 
-                    DrawBoundingBox(don.box, RED); 
-                    DrawBoundingBox(don.outerBox, GREEN);
-                    DrawBoundingBox(don.innerBox, YELLOW);
+                    //DrawBoundingBox(don.box, RED); 
+                    DrawBoundingBox(don.outerBox, YELLOW);
+                    //DrawBoundingBox(don.innerBox, YELLOW);
+                    DonContactBoxes s = Don_MakeContactBoxes(don.outerBox);
+
+                    DrawBoundingBox(s.bottom, GREEN);
+                    DrawBoundingBox(s.top, SKYBLUE);
+
+                    DrawBoundingBox(s.xMin, RED);
+                    DrawBoundingBox(s.xMax, RED);
+
+                    DrawBoundingBox(s.zMin, ORANGE);
+                    DrawBoundingBox(s.zMax, ORANGE);
+
                     for (int i = 0; i < gEnvBoundingBoxCount; i++)//env boxes, duct tape
                     {
                         DrawBoundingBox(gEnvBoundingBoxes[i].box, MAGENTA);
