@@ -15,7 +15,7 @@
 #include "collision.h"  // UpdateBoundingBox, CheckCollisionBoxes
 #include "texture.h"
 
-#define NUM_PLATS 132
+#define NUM_PLATS 180
 
 // ------------------------------------------------------------
 // Platform types/states
@@ -648,6 +648,267 @@ void InitPlats()
     ////////////////////////////////////////////////////cinderspire//////////////////////////////////////////////////////////////////////////
     plats[131] = Platform_MakeMover((Vector3) { -452.93, 570, -1136.77 }, (Vector3) { -452.93, 628, -1136.77 }, (Vector3) { 6, 1, 6 }, 6.0f, tex_plat, WHITE);
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////HIGH BOOK TOWER NEAR -2790, 822, -309////////////////////////////////////////////////
+    // Start anchor:
+    //      don_pos = -2790.97, 822.00, -309.21
+    //
+    // Design:
+    //      - starts 6 feet above anchor, y=828
+    //      - first mover rises 50 feet to y=878
+    //      - several broken "almost 9x9 grid" layers
+    //      - no clovers
+    //      - select movers/fallers/missing gaps
+    //      - final large still platform for hiding books
+
+    // START LIFT: straight up 50 feet
+    plats[132] = Platform_MakeMover(
+        (Vector3) {
+        -2790.97f, 828.00f, -309.21f
+    },
+        (Vector3) {
+        -2790.97f, 878.00f, -309.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        8.0f,
+        tex_plat,
+        WHITE
+    );
+
+    // ------------------------------------------------------------
+    // LAYER 1: broken grid, y ~= 884
+    // ------------------------------------------------------------
+    plats[133] = Platform_MakeStill((Vector3) { -2790.97f, 884.00f, -309.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[134] = Platform_MakeFaller((Vector3) { -2781.97f, 884.00f, -309.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[135] = Platform_MakeStill((Vector3) { -2772.97f, 884.00f, -309.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    plats[136] = Platform_MakeStill((Vector3) { -2799.97f, 884.00f, -318.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[137] = Platform_MakeFaller((Vector3) { -2808.97f, 884.00f, -327.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[138] = Platform_MakeStill((Vector3) { -2817.97f, 884.00f, -327.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    plats[139] = Platform_MakeStill((Vector3) { -2772.97f, 884.00f, -318.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // side shuttle across a missing part of the grid
+    plats[140] = Platform_MakeMover(
+        (Vector3) {
+        -2763.97f, 884.00f, -327.21f
+    },
+        (Vector3) {
+        -2763.97f, 884.00f, -354.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        5.5f,
+        tex_plat,
+        WHITE
+    );
+
+    plats[141] = Platform_MakeStill((Vector3) { -2763.97f, 884.00f, -363.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[142] = Platform_MakeFaller((Vector3) { -2772.97f, 884.00f, -372.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[143] = Platform_MakeStill((Vector3) { -2781.97f, 884.00f, -372.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // lift to layer 2
+    plats[144] = Platform_MakeMover(
+        (Vector3) {
+        -2790.97f, 888.00f, -381.21f
+    },
+        (Vector3) {
+        -2790.97f, 938.00f, -381.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        7.0f,
+        tex_plat,
+        WHITE
+    );
+
+    // ------------------------------------------------------------
+    // LAYER 2: broken grid, y ~= 944
+    // ------------------------------------------------------------
+    plats[145] = Platform_MakeStill((Vector3) { -2790.97f, 944.00f, -381.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[146] = Platform_MakeFaller((Vector3) { -2799.97f, 944.00f, -390.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[147] = Platform_MakeStill((Vector3) { -2808.97f, 944.00f, -399.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // cross-gap mover
+    plats[148] = Platform_MakeMover(
+        (Vector3) {
+        -2817.97f, 944.00f, -408.21f
+    },
+        (Vector3) {
+        -2781.97f, 944.00f, -408.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        6.0f,
+        tex_plat,
+        WHITE
+    );
+
+    plats[149] = Platform_MakeStill((Vector3) { -2772.97f, 944.00f, -408.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[150] = Platform_MakeFaller((Vector3) { -2763.97f, 944.00f, -399.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[151] = Platform_MakeStill((Vector3) { -2754.97f, 944.00f, -390.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[152] = Platform_MakeStill((Vector3) { -2754.97f, 944.00f, -372.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[153] = Platform_MakeFaller((Vector3) { -2763.97f, 944.00f, -363.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+
+    // moving bridge back across the grid
+    plats[154] = Platform_MakeMover(
+        (Vector3) {
+        -2772.97f, 944.00f, -354.21f
+    },
+        (Vector3) {
+        -2817.97f, 944.00f, -354.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        5.5f,
+        tex_plat,
+        WHITE
+    );
+
+    plats[155] = Platform_MakeStill((Vector3) { -2826.97f, 944.00f, -354.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // lift to layer 3
+    plats[156] = Platform_MakeMover(
+        (Vector3) {
+        -2826.97f, 948.00f, -345.21f
+    },
+        (Vector3) {
+        -2826.97f, 998.00f, -345.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        7.0f,
+        tex_plat,
+        WHITE
+    );
+
+    // ------------------------------------------------------------
+    // LAYER 3: broken grid, y ~= 1004
+    // ------------------------------------------------------------
+    plats[157] = Platform_MakeStill((Vector3) { -2826.97f, 1004.00f, -345.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[158] = Platform_MakeFaller((Vector3) { -2817.97f, 1004.00f, -336.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[159] = Platform_MakeStill((Vector3) { -2808.97f, 1004.00f, -327.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // diagonal-ish mover across the open middle
+    plats[160] = Platform_MakeMover(
+        (Vector3) {
+        -2799.97f, 1004.00f, -318.21f
+    },
+        (Vector3) {
+        -2763.97f, 1004.00f, -318.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        6.5f,
+        tex_plat,
+        WHITE
+    );
+
+    plats[161] = Platform_MakeFaller((Vector3) { -2754.97f, 1004.00f, -327.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[162] = Platform_MakeStill((Vector3) { -2745.97f, 1004.00f, -336.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[163] = Platform_MakeStill((Vector3) { -2745.97f, 1004.00f, -354.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // vertical-grid-edge shuttle
+    plats[164] = Platform_MakeMover(
+        (Vector3) {
+        -2754.97f, 1004.00f, -363.21f
+    },
+        (Vector3) {
+        -2754.97f, 1004.00f, -399.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        5.5f,
+        tex_plat,
+        WHITE
+    );
+
+    plats[165] = Platform_MakeStill((Vector3) { -2763.97f, 1004.00f, -408.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[166] = Platform_MakeFaller((Vector3) { -2772.97f, 1004.00f, -417.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[167] = Platform_MakeStill((Vector3) { -2781.97f, 1004.00f, -417.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // lift to layer 4
+    plats[168] = Platform_MakeMover(
+        (Vector3) {
+        -2790.97f, 1008.00f, -426.21f
+    },
+        (Vector3) {
+        -2790.97f, 1058.00f, -426.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        7.0f,
+        tex_plat,
+        WHITE
+    );
+
+    // ------------------------------------------------------------
+    // LAYER 4: final broken grid, y ~= 1064
+    // ------------------------------------------------------------
+    plats[169] = Platform_MakeStill((Vector3) { -2790.97f, 1064.00f, -426.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[170] = Platform_MakeFaller((Vector3) { -2799.97f, 1064.00f, -435.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[171] = Platform_MakeStill((Vector3) { -2808.97f, 1064.00f, -444.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // final timed shuttle toward reward area
+    plats[172] = Platform_MakeMover(
+        (Vector3) {
+        -2817.97f, 1064.00f, -453.21f
+    },
+        (Vector3) {
+        -2853.97f, 1074.00f, -489.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        6.0f,
+        tex_plat,
+        WHITE
+    );
+
+    plats[173] = Platform_MakeFaller((Vector3) { -2826.97f, 1064.00f, -462.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[174] = Platform_MakeStill((Vector3) { -2835.97f, 1064.00f, -471.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // small risky landing before final reward
+    plats[175] = Platform_MakeMover(
+        (Vector3) {
+        -2862.97f, 1078.00f, -498.21f
+    },
+        (Vector3) {
+        -2879.97f, 1086.00f, -515.21f
+    },
+        (Vector3) {
+        8, 1, 8
+    },
+        5.0f,
+        tex_plat,
+        WHITE
+    );
+
+    plats[176] = Platform_MakeStill((Vector3) { -2869.97f, 1084.00f, -506.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[177] = Platform_MakeFaller((Vector3) { -2878.97f, 1086.00f, -515.21f }, (Vector3) { 8, 1, 8 }, tex_fall, WHITE);
+    plats[178] = Platform_MakeStill((Vector3) { -2887.97f, 1088.00f, -524.21f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+
+    // FINAL BOOK PLATFORM: larger than normal, stable
+    plats[179] = Platform_MakeStill(
+        (Vector3) {
+        -2904.97f, 1092.00f, -540.21f
+    },
+        (Vector3) {
+        26, 1, 26
+    },
+        tex_plat,
+        WHITE
+    );
 }
 
 #endif // PLATFORM_H
