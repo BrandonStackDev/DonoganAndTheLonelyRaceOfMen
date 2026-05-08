@@ -3811,6 +3811,9 @@ int main(void) {
                         }
                     }
                 }
+                //some useful stuff
+                Vector3 contactMove = Vector3Subtract(don.pos, don.oldPos);
+                contactMove.y = 0.0f;
                 //collider between don and hoose
                 if (CheckCollisionBoxes(don.box, Scenes[i].box))//donny home collision initial
                 {
@@ -3824,7 +3827,8 @@ int main(void) {
                         BuildingBoxHit bhit = CollideDonContactBoxesWithScene(
                             contactBoxes,
                             &Scenes[i],
-                            don.velY
+                            don.velY,
+                            contactMove
                         );
 
                         // Backup: if current frame missed a thin wall, test a swept-ish box
@@ -4084,7 +4088,8 @@ int main(void) {
                                 Scenes[i].scale,
                                 Scenes[i].yaw,
                                 groundSlopeCos,
-                                don.velY
+                                don.velY,
+                                contactMove
                             );
                             //MeshBoxHit hit = CollideAABBWithMeshTriangles(don.outerBox, &HomeModels[Scenes[i].modelType].meshes[0], Scenes[i].pos, Scenes[i].scale, Scenes[i].yaw, groundSlopeCos, false);
                             if (hit.hitGround) {

@@ -11,14 +11,14 @@
 
 #define BUILDING_FLOOR_STAND_PAD 0.12f
 
-#define BUILDING_WALL_SKIN_WORLD             0.45f
-#define BUILDING_FLOOR_SKIN_WORLD            0.45f
-#define BUILDING_CEILING_SKIN_WORLD          0.35f
-#define BUILDING_FLOOR_XZ_SKIN_WORLD         0.50f
-#define BUILDING_FLOOR_CATCH_ABOVE_WORLD     0.10f
-#define BUILDING_FLOOR_CATCH_BELOW_WORLD     0.50f
+#define BUILDING_WALL_SKIN_WORLD             0.22f
+#define BUILDING_FLOOR_SKIN_WORLD            0.55f
+#define BUILDING_CEILING_SKIN_WORLD          0.30f
+#define BUILDING_FLOOR_XZ_SKIN_WORLD         0.70f
+#define BUILDING_FLOOR_CATCH_ABOVE_WORLD     0.18f
+#define BUILDING_FLOOR_CATCH_BELOW_WORLD     0.75f
 #define BUILDING_FLOOR_CATCH_BELOW_WORLD_BIG 4.0f
-#define BUILDING_CEILING_CATCH_WORLD         0.35f
+#define BUILDING_CEILING_CATCH_WORLD         0.30f
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct DonContactBoxes {
     BoundingBox bottom;
@@ -72,8 +72,8 @@ static inline DonContactBoxes Don_MakeContactBoxes(BoundingBox outer)
     DonContactBoxes s = { 0 };
 
     // Floor / ceiling sensors.
-    s.bottom = BoxSliceY(outer, 0.00f, 0.333f);
-    s.top = BoxSliceY(outer, 0.667f, 1.00f);
+    s.bottom = BoxSliceY(outer, 0.00f, 0.42f); //was .333 on the right here
+    s.top = BoxSliceY(outer, 0.58, 1.00f); //667f
 
     // Wall sensors: left/right/front/back thirds,
     // but trimmed vertically so they don't catch floors/ceilings as much.
@@ -88,7 +88,75 @@ static inline DonContactBoxes Don_MakeContactBoxes(BoundingBox outer)
 
     return s;
 }
+static inline int Don_PrimaryMoveSide(Vector3 moveXZ)
+{
+    moveXZ.y = 0.0f;
 
+    const float EPS = 0.001f;
+
+    float ax = fabsf(moveXZ.x);
+    float az = fabsf(moveXZ.z);
+
+    if (ax < EPS && az < EPS)
+    {
+        return -1; // no strong movement
+    }
+
+    if (ax >= az)
+    {
+        return (moveXZ.x < 0.0f) ? 0 : 1; // xMin / xMax
+    }
+
+    return (moveXZ.z < 0.0f) ? 2 : 3; // zMin / zMax
+}
+
+static inline int Don_SecondaryMoveSide(Vector3 moveXZ)
+{
+    moveXZ.y = 0.0f;
+
+    const float EPS = 0.001f;
+
+    float ax = fabsf(moveXZ.x);
+    float az = fabsf(moveXZ.z);
+
+    if (ax < EPS || az < EPS)
+    {
+        return -1;
+    }
+
+    if (ax >= az)
+    {
+        return (moveXZ.z < 0.0f) ? 2 : 3;
+    }
+
+    return (moveXZ.x < 0.0f) ? 0 : 1;
+}
+
+static inline int Don_BuildSideOrder(Vector3 moveXZ, int outOrder[4])
+{
+    int primary = Don_PrimaryMoveSide(moveXZ);
+    int secondary = Don_SecondaryMoveSide(moveXZ);
+
+    if (primary >= 0)
+    {
+        outOrder[0] = primary;
+
+        if (secondary >= 0)
+        {
+            outOrder[1] = secondary;
+            return 2;
+        }
+
+        return 1;
+    }
+
+    // No movement: fallback to old all-sides behavior.
+    outOrder[0] = 0;
+    outOrder[1] = 1;
+    outOrder[2] = 2;
+    outOrder[3] = 3;
+    return 4;
+}
 
 // Barycentric interpolation to get Y at point (x, z) on triangle
 float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
@@ -686,7 +754,66 @@ static inline Vector3 ClampWallPush(Vector3 p)
     p.y = 0.0f;
     return p;
 }
+static inline Vector3 SafeNormalizeXZ(Vector3 v, Vector3 fallback)
+{
+    v.y = 0.0f;
 
+    if (Vector3LengthSqr(v) < 0.0001f)
+    {
+        fallback.y = 0.0f;
+
+        if (Vector3LengthSqr(fallback) < 0.0001f)
+        {
+            return (Vector3) { 0 };
+        }
+
+        return Vector3Normalize(fallback);
+    }
+
+    return Vector3Normalize(v);
+}
+
+static inline Vector3 Don_MultiWallBlendPush(Vector3 avgPushDir, Vector3 moveXZ, float pushMag)
+{
+    moveXZ.y = 0.0f;
+    avgPushDir.y = 0.0f;
+
+    Vector3 awayMove = { 0 };
+
+    if (Vector3LengthSqr(moveXZ) > 0.0001f)
+    {
+        awayMove = Vector3Normalize(Vector3Negate(moveXZ));
+    }
+
+    avgPushDir = SafeNormalizeXZ(avgPushDir, awayMove);
+
+    Vector3 finalDir;
+
+    if (Vector3LengthSqr(awayMove) > 0.0001f)
+    {
+        // -movement dominates, average wall push still informs corners.
+        finalDir = Vector3Add(
+            Vector3Scale(avgPushDir, 0.35f),
+            Vector3Scale(awayMove, 1.35f)
+        );
+    }
+    else
+    {
+        finalDir = avgPushDir;
+    }
+
+    finalDir = SafeNormalizeXZ(finalDir, avgPushDir);
+
+    if (Vector3LengthSqr(finalDir) < 0.0001f)
+    {
+        return (Vector3) { 0 };
+    }
+
+    // Multi-hit/corner corrections should be firm but not teleporty.
+    pushMag = Clamp(pushMag, 0.16f, 0.55f);
+
+    return Vector3Scale(finalDir, pushMag);
+}
 static inline float BuildingColliderFloorYAtXZ(const BuildingColliderWorld* c, float x, float z)
 {
     // Try the top/selected quad as two triangles.
@@ -1020,7 +1147,8 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingColliders(
 static inline BuildingBoxHit CollideDonContactBoxesWithScene(
     DonContactBoxes s,
     const Scene* scene,
-    float donVelY)
+    float donVelY,
+    Vector3 moveXZ)
 {
     BuildingBoxHit out = { 0 };
     out.groundY = -10000.0f;
@@ -1063,7 +1191,9 @@ static inline BuildingBoxHit CollideDonContactBoxesWithScene(
         out.normal = ceilHit.normal;
     }
 
-    // 3) Walls: only side thirds.
+    // 3) Walls: only movement-leading side thirds.
+    // If multiple side boxes hit, average their safe pushes,
+    // then blend strongly against Don's movement vector.
     BoundingBox sideBoxes[4] = {
         s.xMin, s.xMax, s.zMin, s.zMax
     };
@@ -1075,9 +1205,14 @@ static inline BuildingBoxHit CollideDonContactBoxesWithScene(
         {  0, 0, -1 }  // zMax hit means push -Z
     };
 
-    Vector3 bestPush = { 0 };
-    float bestLen = 999999.0f;
-    bool foundWall = false;
+    Vector3 pushSum = { 0 };
+    float magSum = 0.0f;
+    float maxMag = 0.0f;
+    int hitCount = 0;
+
+    Vector3 singlePush = { 0 };
+    Vector3 singleNormal = { 0 };
+    float singleMaxWallY = -99999.0f;
 
     for (int i = 0; i < 4; i++)
     {
@@ -1092,13 +1227,12 @@ static inline BuildingBoxHit CollideDonContactBoxesWithScene(
         Vector3 p = wh.push;
         p.y = 0.0f;
 
-        // If the OBB math gives a weak/odd direction, use the side-box known direction.
         if (Vector3LengthSqr(p) < 0.0001f)
         {
             p = Vector3Scale(sideFallback[i], 0.18f);
         }
 
-        // Make sure the push agrees with the side that was hit.
+        // Keep this: per-sensor direction sanity.
         if (Vector3DotProduct(p, sideFallback[i]) < 0.0f)
         {
             p = Vector3Negate(p);
@@ -1106,22 +1240,44 @@ static inline BuildingBoxHit CollideDonContactBoxesWithScene(
 
         p = ClampWallPush(p);
 
-        float len = Vector3LengthSqr(p);
-        if (len > 0.0f && len < bestLen)
-        {
-            bestLen = len;
-            bestPush = p;
-            foundWall = true;
-            out.normal = wh.normal;
-            out.maxWallY = wh.maxWallY;
-        }
+        float mag = Vector3Length(p);
+        if (mag <= 0.0001f) continue;
+
+        Vector3 dir = Vector3Scale(p, 1.0f / mag);
+
+        pushSum = Vector3Add(pushSum, dir);
+        magSum += mag;
+        if (mag > maxMag) maxMag = mag;
+
+        singlePush = p;
+        singleNormal = wh.normal;
+        singleMaxWallY = wh.maxWallY;
+
+        hitCount++;
     }
 
-    if (foundWall)
+    if (hitCount == 1)
     {
         out.hit = true;
         out.hitWall = true;
-        out.push = bestPush;
+        out.push = singlePush;
+        out.normal = singleNormal;
+        out.maxWallY = singleMaxWallY;
+    }
+    else if (hitCount > 1)
+    {
+        Vector3 avgPushDir = Vector3Scale(pushSum, 1.0f / (float)hitCount);
+
+        // Use the larger of average magnitude or max magnitude.
+        // Corners need a little authority.
+        float avgMag = magSum / (float)hitCount;
+        float pushMag = fmaxf(avgMag, maxMag * 0.85f);
+
+        out.hit = true;
+        out.hitWall = true;
+        out.push = Don_MultiWallBlendPush(avgPushDir, moveXZ, pushMag);
+        out.normal = SafeNormalizeXZ(out.push, avgPushDir);
+        out.maxWallY = singleMaxWallY;
     }
 
     return out;
@@ -1317,7 +1473,8 @@ static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
     float meshScale,
     float yawRadians,
     float groundSlopeCos,
-    float donVelY
+    float donVelY,
+    Vector3 moveXZ
 )
 {
     MeshBoxHit out = { 0 };
@@ -1350,20 +1507,25 @@ static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
     }
 
     // 2) Walls: side thirds only.
+    // 2) Walls: side thirds.
     BoundingBox sideBoxes[4] = {
         s.xMin, s.xMax, s.zMin, s.zMax
     };
 
     Vector3 sideFallback[4] = {
-        {  1, 0,  0 }, // xMin hit means push +X
-        { -1, 0,  0 }, // xMax hit means push -X
-        {  0, 0,  1 }, // zMin hit means push +Z
-        {  0, 0, -1 }  // zMax hit means push -Z
+        {  1, 0,  0 },
+        { -1, 0,  0 },
+        {  0, 0,  1 },
+        {  0, 0, -1 }
     };
 
-    Vector3 bestPush = { 0 };
-    float bestLen = 999999.0f;
-    bool foundWall = false;
+    Vector3 pushSum = { 0 };
+    float magSum = 0.0f;
+    float maxMag = 0.0f;
+    int hitCount = 0;
+
+    Vector3 singlePush = { 0 };
+    Vector3 singleNormal = { 0 };
 
     for (int i = 0; i < 4; i++)
     {
@@ -1374,7 +1536,7 @@ static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
             meshScale,
             yawRadians,
             groundSlopeCos,
-            true // wall check only
+            true
         );
 
         if (!wh.hitWall) continue;
@@ -1387,7 +1549,6 @@ static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
             p = Vector3Scale(sideFallback[i], 0.18f);
         }
 
-        // Make side-box result agree with which side sensor fired.
         if (Vector3DotProduct(p, sideFallback[i]) < 0.0f)
         {
             p = Vector3Negate(p);
@@ -1395,22 +1556,42 @@ static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
 
         p = ClampWallPush(p);
 
-        float len = Vector3LengthSqr(p);
-        if (len > 0.0f && len < bestLen)
-        {
-            bestLen = len;
-            bestPush = p;
-            foundWall = true;
-            out.normal = wh.normal;
-        }
+        float mag = Vector3Length(p);
+        if (mag <= 0.0001f) continue;
+
+        Vector3 dir = Vector3Scale(p, 1.0f / mag);
+
+        pushSum = Vector3Add(pushSum, dir);
+        magSum += mag;
+        if (mag > maxMag) maxMag = mag;
+
+        singlePush = p;
+        singleNormal = wh.normal;
+
+        hitCount++;
     }
 
-    if (foundWall)
+    if (hitCount == 1)
     {
         out.hit = true;
         out.hitWall = true;
-        out.push = bestPush;
+        out.push = singlePush;
+        out.normal = singleNormal;
     }
+    else if (hitCount > 1)
+    {
+        Vector3 avgPushDir = Vector3Scale(pushSum, 1.0f / (float)hitCount);
+
+        float avgMag = magSum / (float)hitCount;
+        float pushMag = fmaxf(avgMag, maxMag * 0.85f);
+
+        out.hit = true;
+        out.hitWall = true;
+        out.push = Don_MultiWallBlendPush(avgPushDir, moveXZ, pushMag);
+        out.normal = SafeNormalizeXZ(out.push, avgPushDir);
+    }
+
+    return out;
 
     return out;
 }
