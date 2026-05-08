@@ -1141,12 +1141,60 @@ static inline Vector3 DonAirR2PivotLocal(const Donogan* d)
     return p;
 }
 
+static inline Vector3 DonRootFrontFlipPivotCompensate(float pitchDeg, Vector3 pivot)
+{
+    // Pure front flip compensation.
+    // For rotation around local X:
+    //
+    // y' = y*cos(a) - z*sin(a)
+    // z' = y*sin(a) + z*cos(a)
+    //
+    // To keep the pivot visually fixed:
+    // pos = pivot - rotatedPivot
+    //
+    // This is the circle correction you were talking about.
+
+    float a = pitchDeg * DEG2RAD;
+    float s = sinf(a);
+    float c = cosf(a);
+
+    Vector3 pos = { 0 };
+
+    // X does not change for pure X-axis pitch.
+    pos.x = 0.0f;
+
+    // Keep pivot's Y from bobbing around the flip circle.
+    pos.y = pivot.y - (pivot.y * c - pivot.z * s);
+
+    // Keep pivot's forward/back position from drawing a circle.
+    pos.z = pivot.z - (pivot.y * s + pivot.z * c);
+
+    return pos;
+}
+
 static inline Vector3 DonRootPivotCompensate(Quaternion q, Vector3 pivot)
 {
-    // Want: final = R * (v - pivot) + pivot
-    // Which equals: R*v + (pivot - R*pivot)
+    // General pivot compensation in MODEL/BIND space:
+    // pos = pivot - rotatedPivot
     Vector3 rp = Vector3RotateByQuaternion(pivot, q);
     return Vector3Subtract(pivot, rp);
+}
+
+static inline Vector3 DonRootCompToKbLocal(const Donogan* d, Vector3 desiredComp)
+{
+    // DonApplyPoseFk() does:
+    //
+    //     deltaLocal = Rotate(KB->pos, prevRot);
+    //     newPos = prev.translation + deltaLocal;
+    //
+    // So if we want "desiredComp" to be the final applied translation,
+    // we must pre-unrotate it here.
+    if (!d || !d->model.skeleton.bindPose) return desiredComp;
+
+    Quaternion prevRot = d->model.skeleton.bindPose[DON_BONE_ROOT].rotation;
+    Quaternion invPrevRot = QuaternionInvert(prevRot);
+
+    return Vector3RotateByQuaternion(desiredComp, invPrevRot);
 }
 
 static inline void DonAirJumpAttackSetRoot(KeyFrame* kf, const Donogan* d, float pitchDeg, float yawDeg, float rollDeg)
@@ -1154,8 +1202,14 @@ static inline void DonAirJumpAttackSetRoot(KeyFrame* kf, const Donogan* d, float
     Quaternion q = QuatXYZDeg(pitchDeg, yawDeg, rollDeg);
     Vector3 pivot = DonAirR2PivotLocal(d);
 
+    // First compute the compensation in the obvious/model space.
+    Vector3 desiredComp = DonRootPivotCompensate(q, pivot);
+
+    // Then convert it into the local space expected by DonApplyPoseFk().
+    Vector3 kbPos = DonRootCompToKbLocal(d, desiredComp);
+
     kf->kfBones[0].rot = q;
-    kf->kfBones[0].pos = DonRootPivotCompensate(q, pivot);
+    kf->kfBones[0].pos = kbPos;
 }
 static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
 {
@@ -1221,10 +1275,10 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     g->keyFrames[0].kfBones[6].rot = QuatXYZDeg(0, 0, -8);
 
     // Knees: moderate tuck.
-    g->keyFrames[0].kfBones[7].rot = QuatXYZDeg(35, 0, 4);
-    g->keyFrames[0].kfBones[8].rot = QuatXYZDeg(-70, 0, 0);
-    g->keyFrames[0].kfBones[9].rot = QuatXYZDeg(35, 0, -4);
-    g->keyFrames[0].kfBones[10].rot = QuatXYZDeg(-70, 0, 0);
+    g->keyFrames[0].kfBones[7].rot = QuatXYZDeg(-35, 0, 4);  // thigh L
+    g->keyFrames[0].kfBones[8].rot = QuatXYZDeg(70, 0, 0);  // shin L
+    g->keyFrames[0].kfBones[9].rot = QuatXYZDeg(-35, 0, -4);  // thigh R
+    g->keyFrames[0].kfBones[10].rot = QuatXYZDeg(70, 0, 0);  // shin R
 
     // ------------------------------------------------------------
     // KEY 1: main flip/tuck
@@ -1243,10 +1297,11 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(45, 0, 0);
     g->keyFrames[1].kfBones[6].rot = QuatXYZDeg(0, 0, -16);
 
-    g->keyFrames[1].kfBones[7].rot = QuatXYZDeg(65, 0, 6);
-    g->keyFrames[1].kfBones[8].rot = QuatXYZDeg(-105, 0, 0);
-    g->keyFrames[1].kfBones[9].rot = QuatXYZDeg(65, 0, -6);
-    g->keyFrames[1].kfBones[10].rot = QuatXYZDeg(-105, 0, 0);
+    // Main tuck.
+    g->keyFrames[1].kfBones[7].rot = QuatXYZDeg(-65, 0, 6);  // thigh L
+    g->keyFrames[1].kfBones[8].rot = QuatXYZDeg(105, 0, 0);  // shin L
+    g->keyFrames[1].kfBones[9].rot = QuatXYZDeg(-65, 0, -6);  // thigh R
+    g->keyFrames[1].kfBones[10].rot = QuatXYZDeg(105, 0, 0);  // shin R
 
     // ------------------------------------------------------------
     // KEY 2: release / strongest rotation
@@ -1265,10 +1320,10 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     g->keyFrames[2].kfBones[6].rot = QuatXYZDeg(0, 0, -16);
 
     // Loosen legs a little for the shot.
-    g->keyFrames[2].kfBones[7].rot = QuatXYZDeg(45, 0, 4);
-    g->keyFrames[2].kfBones[8].rot = QuatXYZDeg(-75, 0, 0);
-    g->keyFrames[2].kfBones[9].rot = QuatXYZDeg(45, 0, -4);
-    g->keyFrames[2].kfBones[10].rot = QuatXYZDeg(-75, 0, 0);
+    g->keyFrames[2].kfBones[7].rot = QuatXYZDeg(-45, 0, 4);  // thigh L
+    g->keyFrames[2].kfBones[8].rot = QuatXYZDeg(75, 0, 0);  // shin L
+    g->keyFrames[2].kfBones[9].rot = QuatXYZDeg(-45, 0, -4);  // thigh R
+    g->keyFrames[2].kfBones[10].rot = QuatXYZDeg(75, 0, 0);  // shin R
 
     // ------------------------------------------------------------
     // KEY 3: recover
@@ -1285,10 +1340,10 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(10, 0, 0);
     g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
 
-    g->keyFrames[3].kfBones[7].rot = QuatXYZDeg(10, 0, 0);
-    g->keyFrames[3].kfBones[8].rot = QuatXYZDeg(-20, 0, 0);
-    g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(10, 0, 0);
-    g->keyFrames[3].kfBones[10].rot = QuatXYZDeg(-20, 0, 0);
+    g->keyFrames[3].kfBones[7].rot = QuatXYZDeg(-10, 0, 0);  // thigh L
+    g->keyFrames[3].kfBones[8].rot = QuatXYZDeg(20, 0, 0);  // shin L
+    g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(-10, 0, 0);  // thigh R
+    g->keyFrames[3].kfBones[10].rot = QuatXYZDeg(20, 0, 0);  // shin R
 }
 
 

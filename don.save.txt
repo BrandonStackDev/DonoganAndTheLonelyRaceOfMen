@@ -1,9 +1,9 @@
 DON_SAVE_V1
-don_pos = -395.007 323.765 -4010.841
+don_pos = -694.592 359.861 -4016.209
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
-don_health = 93
+don_health = 104
 don_mana   = 104
 don_starthealth = 104
 don_startmana   = 104
@@ -93,8 +93,8 @@ ITEM[19] = 1
 --ITEMS-END--
 --INV-BEGIN--
 INV[0] = 13
-INV[1] = 13
-INV[2] = 27
+INV[1] = 12
+INV[2] = 26
 INV[3] = 19
 INV[4] = 35
 INV[5] = 35
