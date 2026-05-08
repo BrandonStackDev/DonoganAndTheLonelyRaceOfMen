@@ -1472,39 +1472,90 @@ static void DonInitWrenchSwingKf(Donogan* d)
         KfMakeZeroKey(&g->keyFrames[k], k * 0.1f, bones, 10);
     }
 
-    // 0: wind-up, hand outside/back
-    /*g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, -15, 0);
-    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(25, 0, 45);
-    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(-55, 0, 20);
-    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(-25, 0, 0);
-    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 35);*/
-    // 0: wind-up LOWER (more relaxed at side)
-    g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, -10, 0);   // less torso twist
-    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(5, 25, 0);    // shoulder WAY lower
-    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(25, 0, 10);  // upper arm less lifted
-    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(-10, 0, 0);   // forearm relaxed
-    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, -20);    // slight wrist angle
+    // ---------------------------------------------------------------------
+// WRENCH SWING:
+// Goal: chest-height right-to-left sweep across Donogan's body.
+//
+// Index map:
+// 0 spine002
+// 1 spine003
+// 2 shoulderR
+// 3 upper_armR
+// 4 forearmR
+// 5 handR
+// 6 shoulderL
+// 7 upper_armL
+// 8 forearmL
+// 9 handL
+//
+// Important:
+// Keep upper_armR X modest. Big X is what sends the arm up through head.
+// Use mostly Y/Z to sweep across the chest.
+// ---------------------------------------------------------------------
 
-    // 1: forward strike
-    g->keyFrames[1].kfBones[0].rot = QuatXYZDeg(0, 20, 0);
-    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(55, -35, 0);
-    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(15, 0, -45);
-    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(35, 0, 0);
-    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, 35);
+// KEY 0: wind-up on Donogan's right side, chest height
+    g->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, -4, 0);
+    g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, -6, 0);
 
-    // 2: across body / up
-    g->keyFrames[2].kfBones[0].rot = QuatXYZDeg(0, 35, 0);
-    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(70, -70, 0);
-    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(35, 0, -65);
-    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(45, 0, 0);
-    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, 75);
+    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(22, -20, -12); // was -38, less far right
+    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(16, 24, 0);    // was 34
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, -18);    // was -28
 
-    // 3: settle
-    g->keyFrames[3].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
-    g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(15, 0, 0);
-    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(0, 0, 0);
-    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(0, 0, 0);
-    g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);
+    // Left arm gets out of the way a little
+    g->keyFrames[0].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[0].kfBones[7].rot = QuatXYZDeg(10, 0, -28);
+    g->keyFrames[0].kfBones[8].rot = QuatXYZDeg(8, 0, 0);
+    g->keyFrames[0].kfBones[9].rot = QuatXYZDeg(0, 0, 0);
+
+
+    // KEY 1: entering the strike, wrench in front of chest
+    // KEY 1: entering strike, already crossing center chest
+    g->keyFrames[1].kfBones[0].rot = QuatXYZDeg(0, 10, 0);
+    g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(0, 15, 0);
+
+    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(24, 28, -4); // was 12
+    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(12, 58, 0);  // was 48
+    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, 0);    // was -10
+
+    g->keyFrames[1].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[1].kfBones[7].rot = QuatXYZDeg(10, 0, -35);
+    g->keyFrames[1].kfBones[8].rot = QuatXYZDeg(8, 0, 0);
+    g->keyFrames[1].kfBones[9].rot = QuatXYZDeg(0, 0, 0);
+
+
+    // KEY 2: strongest hit, wrench crosses to Donogan's left side
+    // KEY 2: strongest hit, wrench crosses farther to Donogan's left
+    g->keyFrames[2].kfBones[0].rot = QuatXYZDeg(0, 24, 0);
+    g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(0, 34, 0);
+
+    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(22, 82, 14); // was 58
+    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(8, 82, 0);   // was 62
+    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, 26);   // was 18
+
+    // Left arm tucks farther away from the wrench path
+    g->keyFrames[2].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[2].kfBones[7].rot = QuatXYZDeg(12, 0, -48);
+    g->keyFrames[2].kfBones[8].rot = QuatXYZDeg(12, 0, 0);
+    g->keyFrames[2].kfBones[9].rot = QuatXYZDeg(0, 0, 0);
+
+
+    // KEY 3: settle/recover, still low, no head clipping
+    // KEY 3: settle/recover, still slightly left of center
+    g->keyFrames[3].kfBones[0].rot = QuatXYZDeg(0, 8, 0);
+    g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(0, 12, 0);
+
+    g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(18, 38, 6); // was 24
+    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(8, 48, 0);  // was 34
+    g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 12);  // was 8
+
+    g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[3].kfBones[7].rot = QuatXYZDeg(8, 0, -24);
+    g->keyFrames[3].kfBones[8].rot = QuatXYZDeg(6, 0, 0);
+    g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(0, 0, 0);
 }
 
 // Choose the active keyframe group based on current proc anim
