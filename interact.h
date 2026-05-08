@@ -47,11 +47,10 @@ typedef enum {
     MISSION_ABBY_LIGHT,
     MISSION_ABBY_RX,
     MISSION_START_ALL_MILLS,
-    //all fire places
-    //all maps
-    // kill 100 skeletons
-    // give galadriel 10 books
-    //give alister 10 books
+    MISSION_LIGHT_ALL_FIRES,
+    MISSION_ALL_MAPS,
+    MISSION_GALADRIEL,
+    MISSION_ALISTER,
     MISSION_TOTAL_COUNT
 } MissionType;
 
@@ -502,6 +501,26 @@ void InitMissions()
     missions[MISSION_ABBY_RX].type = MISSION_ABBY_RX;
     missions[MISSION_ABBY_RX].name = "Get medicine for Abby's father.";
     missions[MISSION_ABBY_RX].desc = "Get medicine for Abby's father at a nearby store.";
+    //MISSION_LIGHT_ALL_FIRES
+    missions[MISSION_LIGHT_ALL_FIRES].complete = false;
+    missions[MISSION_LIGHT_ALL_FIRES].type = MISSION_LIGHT_ALL_FIRES;
+    missions[MISSION_LIGHT_ALL_FIRES].name = "Light all fires.";
+    missions[MISSION_LIGHT_ALL_FIRES].desc = "Light all fire-pits.";
+    //MISSION_ALL_MAPS
+    missions[MISSION_ALL_MAPS].complete = false;
+    missions[MISSION_ALL_MAPS].type = MISSION_ALL_MAPS;
+    missions[MISSION_ALL_MAPS].name = "Find all of the maps.";
+    missions[MISSION_ALL_MAPS].desc = "Find all of the maps.";
+    //MISSION_GALADRIEL
+    missions[MISSION_GALADRIEL].complete = false;
+    missions[MISSION_GALADRIEL].type = MISSION_GALADRIEL;
+    missions[MISSION_GALADRIEL].name = "Give 10 good books to Galadriel.";
+    missions[MISSION_GALADRIEL].desc = "Give 10 good books to Galadriel.";
+    //MISSION_ALISTER
+    missions[MISSION_ALISTER].complete = false;
+    missions[MISSION_ALISTER].type = MISSION_ALISTER;
+    missions[MISSION_ALISTER].name = "Give 10 good shadow to Alister.";
+    missions[MISSION_ALISTER].desc = "Give 10 good shadow to Alister.";
 }
 
 // Draw text using font inside rectangle limits with support for text selection

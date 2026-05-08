@@ -1813,6 +1813,47 @@ int main(void) {
                 don.money += 1000;
             }
         }
+        if (onLoad && !missions[MISSION_LIGHT_ALL_FIRES].complete)
+        {
+            int milCnt = 0;
+            for (int i = 0; i < FIREPIT_TOTAL_COUNT; i++)
+            {
+                if (fires[i].lit) { milCnt++; }
+            }
+            if (milCnt >= FIREPIT_TOTAL_COUNT) //number of mills
+            {
+                missions[MISSION_LIGHT_ALL_FIRES].complete = true;
+                toast = "All Fire pits Lit!";
+                StartTimer(&toastTimer);
+                don.xp += 400;
+                don.money += 1000;
+            }
+        }
+        if (onLoad && !missions[MISSION_ALL_MAPS].complete)
+        {
+            int milCnt = 0;
+            for (int i = 0; i < MAP_TOTAL_COUNT; i++)
+            {
+                if (maps[i].collected) { milCnt++; }
+            }
+            if (milCnt >= MAP_TOTAL_COUNT) //number of mills
+            {
+                missions[MISSION_ALL_MAPS].complete = true;
+                toast = "All Maps found!";
+                StartTimer(&toastTimer);
+                don.xp += 800;
+                don.money += 1200;
+            }
+        }
+        if (don.hasGuitar && onLoad && !missions[MISSION_GALADRIEL].complete)
+        {//can cheat here and just use don.hasGuitar.
+            missions[MISSION_GALADRIEL].complete = true;
+            toast = "Gave ten books to Galadriel! Got the Guitar!";
+            StartTimer(&toastTimer);
+            don.xp += 1000;
+            don.money += 2000;
+        }
+        //todo: alister, MISSION_ALISTER, 10 shadow books
         if (!missions[MISSION_KILL_GHOST].complete && ghostKillCount >= 10)
         {
             toast = "Completed mission! You killed ten Ghosts!";
