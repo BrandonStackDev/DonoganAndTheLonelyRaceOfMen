@@ -43,6 +43,7 @@ typedef enum {
     MISSION_KILL_GHOST,
     MISSION_KILL_YETI,
     MISSION_KILL_ROBO,
+    MISSION_KILL_SKEL,
     MISSION_FART_WHALE,
     MISSION_RESCUE_NICK,
     MISSION_ABBY_LIGHT,
@@ -477,7 +478,7 @@ void InitMissions()
     //MISSION_START_ALL_MILLS
     missions[MISSION_START_ALL_MILLS].complete = false;
     missions[MISSION_START_ALL_MILLS].type = MISSION_START_ALL_MILLS;
-    missions[MISSION_START_ALL_MILLS].name = "Start all windmills.";
+    missions[MISSION_START_ALL_MILLS].name = "Start all windmills";
     missions[MISSION_START_ALL_MILLS].desc = "Start all of the windmills by pressing interact near the machine inside. (requires the wrench)";
     //MISSION_KILL_GHOST,
     missions[MISSION_KILL_GHOST].complete = false;
@@ -494,6 +495,11 @@ void InitMissions()
     missions[MISSION_KILL_ROBO].type = MISSION_KILL_ROBO;
     missions[MISSION_KILL_ROBO].name = "Kill 10 Robot Orbs";
     missions[MISSION_KILL_ROBO].desc = "Kill 10 Robot Orbs in a single session.";
+    //kill skeletons
+    missions[MISSION_KILL_SKEL].complete = false;
+    missions[MISSION_KILL_SKEL].type = MISSION_KILL_SKEL;
+    missions[MISSION_KILL_SKEL].name = "Kill 25 Skeletons";
+    missions[MISSION_KILL_SKEL].desc = "Kill 25 Skeletons in a single session.";
     //rescue nick
     missions[MISSION_RESCUE_NICK].complete = false;
     missions[MISSION_RESCUE_NICK].type = MISSION_RESCUE_NICK;
@@ -503,7 +509,7 @@ void InitMissions()
     missions[MISSION_FART_WHALE].complete = false;
     missions[MISSION_FART_WHALE].type = MISSION_FART_WHALE;
     missions[MISSION_FART_WHALE].name = "Fart on a Whale";
-    missions[MISSION_FART_WHALE].desc = "Blow bubbles under water at a whale.";
+    missions[MISSION_FART_WHALE].desc = "Blow bubbles under water at a whale";
     //abby 1
     missions[MISSION_ABBY_LIGHT].complete = false;
     missions[MISSION_ABBY_LIGHT].type = MISSION_ABBY_LIGHT;
@@ -512,27 +518,27 @@ void InitMissions()
     //abby 2
     missions[MISSION_ABBY_RX].complete = false;
     missions[MISSION_ABBY_RX].type = MISSION_ABBY_RX;
-    missions[MISSION_ABBY_RX].name = "Get medicine for Abby's father.";
+    missions[MISSION_ABBY_RX].name = "Get medicine for Abby's father";
     missions[MISSION_ABBY_RX].desc = "Get medicine for Abby's father at a nearby store.";
     //MISSION_LIGHT_ALL_FIRES
     missions[MISSION_LIGHT_ALL_FIRES].complete = false;
     missions[MISSION_LIGHT_ALL_FIRES].type = MISSION_LIGHT_ALL_FIRES;
-    missions[MISSION_LIGHT_ALL_FIRES].name = "Light all fires.";
+    missions[MISSION_LIGHT_ALL_FIRES].name = "Light all fires";
     missions[MISSION_LIGHT_ALL_FIRES].desc = "Light all fire-pits.";
     //MISSION_ALL_MAPS
     missions[MISSION_ALL_MAPS].complete = false;
     missions[MISSION_ALL_MAPS].type = MISSION_ALL_MAPS;
-    missions[MISSION_ALL_MAPS].name = "Find all of the maps.";
+    missions[MISSION_ALL_MAPS].name = "Find all of the maps";
     missions[MISSION_ALL_MAPS].desc = "Find all of the maps.";
     //MISSION_GALADRIEL
     missions[MISSION_GALADRIEL].complete = false;
     missions[MISSION_GALADRIEL].type = MISSION_GALADRIEL;
-    missions[MISSION_GALADRIEL].name = "Give 10 good books to Galadriel.";
+    missions[MISSION_GALADRIEL].name = "Give 10 good books to Galadriel";
     missions[MISSION_GALADRIEL].desc = "Give 10 good books to Galadriel.";
     //MISSION_ALISTER
     missions[MISSION_ALISTER].complete = false;
     missions[MISSION_ALISTER].type = MISSION_ALISTER;
-    missions[MISSION_ALISTER].name = "Give 10 shadow books to Alister.";
+    missions[MISSION_ALISTER].name = "Give 10 shadow books to Alister";
     missions[MISSION_ALISTER].desc = "Give 10 shadow books to Alister.";
 }
 

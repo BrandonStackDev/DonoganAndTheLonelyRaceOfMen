@@ -1949,6 +1949,14 @@ int main(void) {
             don.money += 1000;
             missions[MISSION_KILL_ROBO].complete = true;
         }
+        if (!missions[MISSION_KILL_SKEL].complete && skelKillCount >= 25)
+        {
+            toast = "Completed mission! You killed 25 Skeletons!";
+            StartTimer(&toastTimer);
+            don.xp += 1000;
+            don.money += 1000;
+            missions[MISSION_KILL_SKEL].complete = true;
+        }
         //handle health and mana re-gen, xp to level conversion as well
         oldLevel = don.level;
         //don.level = (int)(120.0 * log(1.0 + don.xp / 200.0));

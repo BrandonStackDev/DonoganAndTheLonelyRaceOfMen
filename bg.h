@@ -31,6 +31,7 @@ typedef enum {
 int ghostKillCount;
 int yetiKillCount;
 int roboKillCount;
+int skelKillCount;
 
 typedef enum {
     ATTACK_PUNCH,
@@ -2132,6 +2133,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         StartTimer(&b->respawnTimer);
         ResetTimer(&b->interactionTimer);
         d->xp += 60;
+        skelKillCount++;
         return;
     } break;
 
