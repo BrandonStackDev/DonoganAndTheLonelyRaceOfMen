@@ -141,6 +141,8 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     fprintf(f, "don_wiz  = %d\n", d->talkedToBlueWizard);
     fprintf(f, "don_gal_books = %d\n", d->galBooksGiven);
     fprintf(f, "don_guitar = %d\n", d->hasGuitar ? 1 : 0);
+    fprintf(f, "don_ali_books = %d\n", d->aliBooksGiven);
+    fprintf(f, "don_ali_evil = %d\n", d->alisterEvilRevealed ? 1 : 0);
 
     // GameState
     fprintf(f, "invY = %d\n", gs->invY ? 1 : 0);
@@ -313,6 +315,17 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
             int v = 0;
             sscanf(s, "don_guitar = %d", &v);
             d->hasGuitar = (v != 0);
+        }
+        else if (!strncmp(s, "don_ali_books", 13)) {
+            sscanf(s, "don_ali_books = %d", &d->aliBooksGiven);
+
+            if (d->aliBooksGiven < 0) d->aliBooksGiven = 0;
+            if (d->aliBooksGiven > 10) d->aliBooksGiven = 10;//ALISTER_BOOK_GOAL
+        }
+        else if (!strncmp(s, "don_ali_evil", 12)) {
+            int v = 0;
+            sscanf(s, "don_ali_evil = %d", &v);
+            d->alisterEvilRevealed = (v != 0);
         }
         else if (!strncmp(s, "invY", 4)) {
             int v = 0; sscanf(s, "invY = %d", &v); gs->invY = (v != 0);

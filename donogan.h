@@ -537,6 +537,8 @@ typedef struct {
     float money;
     int  galBooksGiven;
     bool hasGuitar;
+    int  aliBooksGiven;
+    bool alisterEvilRevealed;
 
     Vector3 posHistory[DON_POS_HISTORY_MAX];
     int posHistoryHead;
@@ -1932,6 +1934,7 @@ static Donogan InitDonogan(void)
     d.money = 0;
     d.hasGuitar = false;
     d.galBooksGiven = 0;
+    d.aliBooksGiven = 0;
     d.eatenByShark = false;
     d.eatenTimer = CreateTimer(5.00f);
     //PrintModelBones(&d.model);

@@ -519,8 +519,8 @@ void InitMissions()
     //MISSION_ALISTER
     missions[MISSION_ALISTER].complete = false;
     missions[MISSION_ALISTER].type = MISSION_ALISTER;
-    missions[MISSION_ALISTER].name = "Give 10 good shadow to Alister.";
-    missions[MISSION_ALISTER].desc = "Give 10 good shadow to Alister.";
+    missions[MISSION_ALISTER].name = "Give 10 shadow to Alister.";
+    missions[MISSION_ALISTER].desc = "Give 10 shadow to Alister.";
 }
 
 // Draw text using font inside rectangle limits with support for text selection

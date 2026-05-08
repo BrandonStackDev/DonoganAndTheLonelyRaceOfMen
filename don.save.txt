@@ -14,6 +14,8 @@ don_hover  = 1
 don_wiz  = 1
 don_gal_books = 5
 don_guitar = 0
+don_ali_books = 0
+don_ali_evil = 0
 invY = 0
 invX = 0
 musicVol = 1.0000
@@ -58,6 +60,10 @@ MISSION[8] = 0
 MISSION[9] = 0
 MISSION[10] = 0
 MISSION[11] = 0
+MISSION[12] = 0
+MISSION[13] = 0
+MISSION[14] = 0
+MISSION[15] = 0
 --MISSIONS-END--
 --ITEMS-BEGIN--
 ITEM[0] = 0
