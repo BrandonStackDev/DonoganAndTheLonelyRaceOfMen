@@ -1,6 +1,6 @@
 # Blender v3.6.18 OBJ File: ''
 # www.blender.org
-mtllib truck.mtl
+# mtl  truck.mtl
 o model
 v 0.311080 -0.039298 -0.345509
 v 0.312082 -0.094401 -0.340183

@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib health_full.mtl
+# mtl  health_full.mtl
 o a_health_pack_0921234425_texture
 v -0.101041 -0.484441 -0.307782
 v -0.102322 -0.276853 -0.307670

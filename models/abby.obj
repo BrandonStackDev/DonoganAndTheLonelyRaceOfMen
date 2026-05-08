@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI_a_women_named_Adriana_0428000007_texture.mtl
+# mtl  Meshy_AI_a_women_named_Adriana_0428000007_texture.mtl
 o Meshy_AI_a_women_named_Adriana_0428000007_texture
 v 0.008720 0.470517 -0.361276
 v -0.016180 0.510020 -0.353142

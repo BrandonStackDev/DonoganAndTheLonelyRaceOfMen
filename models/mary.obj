@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI_A_middle_aged_women_a_0501193719_texture.mtl
+# mtl  Meshy_AI_A_middle_aged_women_a_0501193719_texture.mtl
 o Meshy_AI_A_middle_aged_women_a_0501193719_texture
 v 0.014548 -0.041082 -0.285832
 v -0.042854 -0.041092 -0.279042

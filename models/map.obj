@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI_a_rolled_up_old_map_p_0425191533_texture.mtl
+# mtl  Meshy_AI_a_rolled_up_old_map_p_0425191533_texture.mtl
 o Meshy_AI_a_rolled_up_old_map_p_0425191533_texture
 v -0.853795 0.027186 -0.441566
 v -0.902484 -0.011500 -0.458936

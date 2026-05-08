@@ -1,6 +1,6 @@
 # Blender 3.6.18
 # www.blender.org
-mtllib rock2.mtl
+# mtl  rock2.mtl
 o Cube
 v 0.955247 0.521221 -0.412855
 v 0.889565 0.012633 -0.766203

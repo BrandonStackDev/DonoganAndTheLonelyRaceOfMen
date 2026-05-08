@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI_a_porcelain_statue_of_0501154645_texture.mtl
+# mtl  Meshy_AI_a_porcelain_statue_of_0501154645_texture.mtl
 o Meshy_AI_a_porcelain_statue_of_0501154645_texture
 v -0.010738 -0.672338 -0.282451
 v -0.074333 -0.671345 -0.270707

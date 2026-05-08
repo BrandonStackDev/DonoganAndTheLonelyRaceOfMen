@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib shark.mtl
+# mtl  shark.mtl
 o Meshy_AI_a_great_white_shark_w_0420025804_texture
 v 0.003308 0.215539 -0.959982
 v 0.006850 0.163258 -0.946479

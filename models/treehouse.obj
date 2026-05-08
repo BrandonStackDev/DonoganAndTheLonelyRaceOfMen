@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI_a_small_tree_house_in_0422222338_texture.mtl
+# mtl  Meshy_AI_a_small_tree_house_in_0422222338_texture.mtl
 o Meshy_AI_a_small_tree_house_in_0422222338_texture
 v -0.202498 0.250083 -0.766521
 v 0.298117 0.233704 -0.760689

@@ -1,6 +1,6 @@
 # Blender 4.3.0
 # www.blender.org
-mtllib donogan.mtl
+# mtl  donogan.mtl
 o model
 v 0.012592 0.771012 -0.214556
 v -0.017812 0.763352 -0.211243

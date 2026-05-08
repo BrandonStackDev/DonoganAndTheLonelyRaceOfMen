@@ -1,6 +1,6 @@
 # Blender 4.5.2 LTS
 # www.blender.org
-mtllib wrench2.mtl
+# mtl  wrench2.mtl
 o wrench
 v -0.046293 1.679520 -0.123160
 v -0.059784 1.538257 -0.121214

@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib home_005.mtl
+# mtl  home_005.mtl
 o model
 v 0.650127 -0.264746 0.486293
 v 0.645929 -0.264757 0.477460

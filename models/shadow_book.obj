@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib shadow_book.mtl
+# mtl  shadow_book.mtl
 o An_old_evil_book_clo_0922024928_texture
 v 0.917763 -0.307698 -0.713096
 v 0.944984 -0.328041 -0.708090

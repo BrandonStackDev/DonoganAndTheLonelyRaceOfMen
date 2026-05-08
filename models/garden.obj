@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI_A_small_garden_in_sli_0430200836_texture.mtl
+# mtl  Meshy_AI_A_small_garden_in_sli_0430200836_texture.mtl
 o Meshy_AI_A_small_garden_in_sli_0430200836_texture
 v 0.138461 -0.011469 -0.635968
 v 0.138774 0.026547 -0.609563

@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI_old_man_McCann_0501193727_texture.mtl
+# mtl  Meshy_AI_old_man_McCann_0501193727_texture.mtl
 o Meshy_AI_old_man_McCann_0501193727_texture
 v 0.168424 -0.833802 -0.290292
 v 0.186377 -0.831343 -0.287137

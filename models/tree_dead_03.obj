@@ -1,6 +1,6 @@
 # Blender 3.6.18
 # www.blender.org
-mtllib tree_dead_03.mtl
+# mtl  tree_dead_03.mtl
 o trunk
 v 0.269258 -0.222599 0.059317
 v 0.072898 -0.225821 -0.089578

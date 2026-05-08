@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib mana.mtl
+# mtl  mana.mtl
 o a_mana_potion_in_a_be_0921233753_texture
 v 0.003957 -0.878229 -0.564852
 v 0.058391 -0.816821 -0.552399

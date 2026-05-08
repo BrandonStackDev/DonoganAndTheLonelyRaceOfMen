@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib firepit.mtl
+# mtl  firepit.mtl
 o model
 v 0.120652 -0.341736 -0.982346
 v 0.041903 -0.286579 -0.999476

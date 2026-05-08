@@ -1,6 +1,6 @@
 # Blender 3.6.18
 # www.blender.org
-mtllib rock3.mtl
+# mtl  rock3.mtl
 o Icosphere
 v 0.117322 -0.498898 0.090665
 v 0.840929 0.053883 0.616390

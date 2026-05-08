@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI__0501230243_texture.mtl
+# mtl  Meshy_AI__0501230243_texture.mtl
 o Meshy_AI__0501230243_texture
 v 0.646900 -0.412362 0.513943
 v 0.609008 -1.000000 0.687570

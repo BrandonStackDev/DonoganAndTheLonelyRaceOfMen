@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib machine.mtl
+# mtl  machine.mtl
 o Meshy_AI_I_need_a_machine_with_0418153521_texture
 v 0.058338 -0.461028 -0.784541
 v 0.071370 -0.373512 -0.790071

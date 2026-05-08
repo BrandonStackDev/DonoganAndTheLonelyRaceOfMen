@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib robo.mtl
+# mtl  robo.mtl
 o robo
 v -0.414708 -0.030495 -0.978510
 v -0.347609 0.044417 -1.004074

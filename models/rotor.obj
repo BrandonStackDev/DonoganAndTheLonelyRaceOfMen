@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib rotor.mtl
+# mtl  rotor.mtl
 o model
 v -0.026512 0.023206 -0.222252
 v 0.025385 0.011538 -0.223153

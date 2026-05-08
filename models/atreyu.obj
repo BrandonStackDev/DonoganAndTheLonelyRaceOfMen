@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib atreyu.mtl
+# mtl  atreyu.mtl
 o model
 v 0.075362 -0.128510 -0.530596
 v 0.055556 -0.112550 -0.553259

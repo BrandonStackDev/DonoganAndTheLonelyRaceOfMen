@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI_a_model_rocket_0425043046_texture.mtl
+# mtl  Meshy_AI_a_model_rocket_0425043046_texture.mtl
 o Meshy_AI_a_model_rocket_0425043046_texture
 v -0.002771 -0.944989 -0.297619
 v 0.000124 -0.873422 -0.298532

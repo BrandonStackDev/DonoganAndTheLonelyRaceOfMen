@@ -1,6 +1,6 @@
 # Blender 4.5.2 LTS
 # www.blender.org
-mtllib hopper.mtl
+# mtl  hopper.mtl
 o Meshy_AI_a_pumpkin_jaco_latter_0424232756_texture
 v -0.064377 0.500802 -0.969306
 v -0.078487 0.851781 -0.975289

@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib Meshy_AI_old_man_Jeffers_0501193734_texture.mtl
+# mtl  Meshy_AI_old_man_Jeffers_0501193734_texture.mtl
 o Meshy_AI_old_man_Jeffers_0501193734_texture
 v -0.058063 0.045190 -0.376010
 v -0.085807 0.092262 -0.381418

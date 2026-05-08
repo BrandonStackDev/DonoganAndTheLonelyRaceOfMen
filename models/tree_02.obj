@@ -1,6 +1,6 @@
 # Blender 3.6.18
 # www.blender.org
-mtllib tree_02.mtl
+# mtl  tree_02.mtl
 o model
 v 0.831035 1.996411 0.223445
 v 1.261810 2.325494 0.536415

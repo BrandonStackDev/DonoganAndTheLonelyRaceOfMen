@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib An_apple_0925025308_texture.mtl
+# mtl  An_apple_0925025308_texture.mtl
 o An_apple_0925025308_texture
 v -0.049463 -0.160656 -0.884278
 v 0.062251 -0.012301 -0.884124

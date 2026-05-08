@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib canoe.mtl
+# mtl  canoe.mtl
 o an_old_American_India_0925025006_texture
 v 0.011773 -0.200718 -0.261086
 v -0.073040 -0.170778 -0.265647

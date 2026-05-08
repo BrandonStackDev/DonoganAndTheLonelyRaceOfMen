@@ -1,6 +1,6 @@
 # Blender 4.4.0
 # www.blender.org
-mtllib book.mtl
+# mtl  book.mtl
 o A_very_old_book_with_0922013742_texture
 v -0.698353 -0.244082 -0.748793
 v -0.752713 -0.216124 -0.748452
