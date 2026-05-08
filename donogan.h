@@ -620,15 +620,47 @@ static inline Vector3 Don_GetHistoryPosition(const Donogan* d, int framesBack)
 }
 
 Vector3 RotYawOffset(Vector3 localOff, float yaw, float scale, bool useScale);
+// Optional external targeting hook.
+// preview.c can set this after bg.h is included.
+// Return true if a target was found, false to use straight-down fallback.
+typedef bool (*DonAirR2FindTargetFn)(const Donogan* d, Vector3 spawn, Vector3* outTarget);
+
+static DonAirR2FindTargetFn gDonAirR2FindTargetFn = NULL;
+
+static inline void Don_SetAirR2FindTargetHook(DonAirR2FindTargetFn fn)
+{
+    gDonAirR2FindTargetFn = fn;
+}
+
 static void SpawnAirR2DownBall(const Donogan* d, SpellBall* b)
 {
-    // Same basic spell ball, but spawned from above/chest/hand area
-    // and fired straight down in WORLD space.
+    // Same basic spell ball, but spawned from above/chest/hand area.
     Vector3 spawnOff = { 0.0f, 2.6f, 0.25f };
     Vector3 spawn = Vector3Add(d->pos, RotYawOffset(spawnOff, d->yawY, d->scale, false));
 
+    const float ballSpeed = 38.0f;
+
+    Vector3 dir = { 0.0f, -1.0f, 0.0f };
+
+    // Ask preview/bg side for a target.
+    // If none found, keep the old straight-down shot.
+    if (gDonAirR2FindTargetFn)
+    {
+        Vector3 target = { 0 };
+
+        if (gDonAirR2FindTargetFn(d, spawn, &target))
+        {
+            Vector3 toTarget = Vector3Subtract(target, spawn);
+
+            if (Vector3LengthSqr(toTarget) > 0.0001f)
+            {
+                dir = Vector3Normalize(toTarget);
+            }
+        }
+    }
+
     b->pos = spawn;
-    b->vel = (Vector3){ 0.0f, -38.0f, 0.0f };
+    b->vel = Vector3Scale(dir, ballSpeed);
 
     // Same values as regular spell ball.
     b->radius = 0.35f;
@@ -636,6 +668,7 @@ static void SpawnAirR2DownBall(const Donogan* d, SpellBall* b)
     b->life = 3.12f;
     b->alive = 1;
 }
+
 static inline bool Don_TryFireAirR2Spell(Donogan* d)
 {
     if (!d) return false;

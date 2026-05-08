@@ -42,6 +42,72 @@
 #include <stdlib.h>
 #include <string.h>
 
+static bool Preview_FindAirR2Target(const Donogan* d, Vector3 spawn, Vector3* outTarget)
+{
+    if (!d || !outTarget) return false;
+    if (!bg || act_bg_count <= 0) return false;
+
+    const float TARGET_RANGE = 70.0f;
+    const float TARGET_RANGE_SQ = TARGET_RANGE * TARGET_RANGE;
+
+    int bestIndex = -1;
+    float bestDistSq = TARGET_RANGE_SQ;
+
+    for (int i = 0; i < act_bg_count; i++)
+    {
+        int bi = act_bg[i];
+
+        if (!BG_ActiveIndexOK(bi)) continue;
+
+        BadGuy* b = &bg[bi];
+
+        if (!b->active) continue;
+        if (b->dead) continue;
+        if (BG_IsActuallyDeadState(b)) continue;
+
+        // Use the body/box center when possible.
+        Vector3 target = {
+            (b->box.min.x + b->box.max.x) * 0.5f,
+            (b->box.min.y + b->box.max.y) * 0.5f,
+            (b->box.min.z + b->box.max.z) * 0.5f
+        };
+
+        // Safety fallback if the box is not valid yet.
+        if (Vector3LengthSqr(target) < 0.0001f)
+        {
+            target = b->pos;
+            target.y += 2.0f;
+        }
+
+        float distSq = Vector3DistanceSqr(spawn, target);
+
+        if (distSq < bestDistSq)
+        {
+            bestDistSq = distSq;
+            bestIndex = bi;
+        }
+    }
+
+    if (bestIndex < 0) return false;
+
+    BadGuy* best = &bg[bestIndex];
+
+    Vector3 target = {
+        (best->box.min.x + best->box.max.x) * 0.5f,
+        (best->box.min.y + best->box.max.y) * 0.5f,
+        (best->box.min.z + best->box.max.z) * 0.5f
+    };
+
+    if (Vector3LengthSqr(target) < 0.0001f)
+    {
+        target = best->pos;
+        target.y += 2.0f;
+    }
+
+    *outTarget = target;
+    return true;
+}
+
 bool bugGenHappened = false;
 LightningBug* GenerateLightningBugs(Vector3 cameraPos, int count, float maxDistance)
 {
@@ -4879,6 +4945,7 @@ int main(void) {
         {
             WaterWheel_CollideDonny(&don);
         }
+        Don_SetAirR2FindTargetHook(Preview_FindAirR2Target);
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         DetectPortals(&don);
         Garden_Update(&don, gpad.btnSquare);
