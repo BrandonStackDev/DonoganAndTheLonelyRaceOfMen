@@ -198,9 +198,10 @@ typedef enum {
     DONOGAN_STATE_ROLL,
     DONOGAN_STATE_AIR_ROLL,
     DONOGAN_STATE_AIR_R2_SPELL_SHOOT,
-    //DONOGAN_STATE_AIR_R1,
-    //DONOGAN_STATE_AIR_L2,
-    //DONOGAN_STATE_AIR_L1,
+    DONOGAN_STATE_AIR_R1_HAND_STAND,
+    DONOGAN_STATE_AIR_R1_RELEASE,
+    //DONOGAN_STATE_AIR_L2_SPELL_SLAM,
+    //DONOGAN_STATE_AIR_L1_GUITAR_SLAM,
     //DONOGAN_STATE_AIR_GUITAR_NORMAL_ATTACK,
     DONOGAN_STATE_SWIM_IDLE,
     DONOGAN_STATE_SWIM_MOVE,
@@ -227,6 +228,8 @@ typedef enum {
 
 // ---------- Anim IDs present in your GLB (+procedural negatives)----------
 typedef enum {
+    DONOGAN_ANIM_PROC_AIR_R1_RELEASE = -11,
+    DONOGAN_ANIM_PROC_AIR_R1_HAND_STAND = -10,
     DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT = -9,
     DONOGAN_ANIM_PROC_WRENCH_SWING = -8,
     DONOGAN_ANIM_PROC_MACHINE_TURN = -7,
@@ -314,6 +317,8 @@ typedef enum {
     MACHINE_KFG_TURN,
     WRENCH_KFG_SWING,
     AIR_R2_KFG_SHOOT,
+    AIR_R1_KFG_HAND_STAND,
+    AIR_R1_KFG_RELEASE,
     BOW_KFG_COUNT
 } BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
 typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
@@ -1378,7 +1383,222 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(-10, 0, 0);  // thigh R
     g->keyFrames[3].kfBones[10].rot = QuatXYZDeg(20, 0, 0);  // shin R
 }
+static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
+{
+    const DonBone BONES[] = {
+        DON_BONE_ROOT,
 
+        DON_BONE_DEF_UPPER_ARM_L,
+        DON_BONE_DEF_FOREARM_L,
+        DON_BONE_DEF_HAND_L,
+
+        DON_BONE_DEF_UPPER_ARM_R,
+        DON_BONE_DEF_FOREARM_R,
+        DON_BONE_DEF_HAND_R,
+
+        DON_BONE_DEF_THIGH_L,
+        DON_BONE_DEF_SHIN_L,
+        DON_BONE_DEF_FOOT_L,
+
+        DON_BONE_DEF_THIGH_R,
+        DON_BONE_DEF_SHIN_R,
+        DON_BONE_DEF_FOOT_R,
+    };
+
+    const int NUM_BONES = (int)(sizeof(BONES) / sizeof(BONES[0]));
+
+    // ------------------------------------------------------------
+    // PHASE 1: flip down into handstand and HOLD
+    // ------------------------------------------------------------
+    KeyFrameGroup* g = &d->kfGroups[AIR_R1_KFG_HAND_STAND];
+    g->state = DONOGAN_STATE_AIR_R1_HAND_STAND;
+    g->anim = DONOGAN_ANIM_PROC_AIR_R1_HAND_STAND;
+    g->maxKey = 4;
+    g->curKey = 0;
+
+    KfMakeZeroKey(&g->keyFrames[0], 0.00f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[1], 0.14f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[2], 0.30f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[3], 0.46f, BONES, NUM_BONES);
+
+    // Index map:
+    // 0  root
+    // 1  upper_arm_L
+    // 2  forearm_L
+    // 3  hand_L
+    // 4  upper_arm_R
+    // 5  forearm_R
+    // 6  hand_R
+    // 7  thigh_L
+    // 8  shin_L
+    // 9  foot_L
+    // 10 thigh_R
+    // 11 shin_R
+    // 12 foot_R
+
+    // KEY 0: start like R2 flip
+    DonAirJumpAttackSetRoot(&g->keyFrames[0], d, 0.0f, 0.0f, 0.0f);
+
+    g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(45, -6, 8);
+    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(20, 0, 0);
+    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 0, 8);
+
+    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(45, 6, -8);
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(20, 0, 0);
+    g->keyFrames[0].kfBones[6].rot = QuatXYZDeg(0, 0, -8);
+
+    g->keyFrames[0].kfBones[7].rot = QuatXYZDeg(-30, 0, 4);
+    g->keyFrames[0].kfBones[8].rot = QuatXYZDeg(55, 0, 0);
+    g->keyFrames[0].kfBones[9].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[0].kfBones[10].rot = QuatXYZDeg(-30, 0, -4);
+    g->keyFrames[0].kfBones[11].rot = QuatXYZDeg(55, 0, 0);
+    g->keyFrames[0].kfBones[12].rot = QuatXYZDeg(0, 0, 0);
+
+    // KEY 1: dive forward/down
+    DonAirJumpAttackSetRoot(&g->keyFrames[1], d, 105.0f, 0.0f, 0.0f);
+
+    g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(115, -4, 6);
+    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(15, 0, 0);
+    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(0, 0, 5);
+
+    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(115, 4, -6);
+    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(15, 0, 0);
+    g->keyFrames[1].kfBones[6].rot = QuatXYZDeg(0, 0, -5);
+
+    g->keyFrames[1].kfBones[7].rot = QuatXYZDeg(-45, 0, 6);
+    g->keyFrames[1].kfBones[8].rot = QuatXYZDeg(75, 0, 0);
+    g->keyFrames[1].kfBones[9].rot = QuatXYZDeg(10, 0, 0);
+
+    g->keyFrames[1].kfBones[10].rot = QuatXYZDeg(-45, 0, -6);
+    g->keyFrames[1].kfBones[11].rot = QuatXYZDeg(75, 0, 0);
+    g->keyFrames[1].kfBones[12].rot = QuatXYZDeg(10, 0, 0);
+
+    // KEY 2: almost handstand
+    DonAirJumpAttackSetRoot(&g->keyFrames[2], d, 170.0f, 0.0f, 0.0f);
+
+    g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(160, -2, 4);
+    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(5, 0, 0);
+    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(160, 2, -4);
+    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(5, 0, 0);
+    g->keyFrames[2].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[2].kfBones[7].rot = QuatXYZDeg(-18, 0, 8);
+    g->keyFrames[2].kfBones[8].rot = QuatXYZDeg(20, 0, 0);
+    g->keyFrames[2].kfBones[9].rot = QuatXYZDeg(12, 0, 0);
+
+    g->keyFrames[2].kfBones[10].rot = QuatXYZDeg(-18, 0, -8);
+    g->keyFrames[2].kfBones[11].rot = QuatXYZDeg(20, 0, 0);
+    g->keyFrames[2].kfBones[12].rot = QuatXYZDeg(12, 0, 0);
+
+    // KEY 3: full handstand HOLD pose
+    DonAirJumpAttackSetRoot(&g->keyFrames[3], d, 180.0f, 0.0f, 0.0f);
+
+    g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(168, -2, 2);
+    g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(168, 2, -2);
+    g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
+
+    // Legs mostly straight while upside down.
+    g->keyFrames[3].kfBones[7].rot = QuatXYZDeg(-8, 0, 8);
+    g->keyFrames[3].kfBones[8].rot = QuatXYZDeg(10, 0, 0);
+    g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(8, 0, 0);
+
+    g->keyFrames[3].kfBones[10].rot = QuatXYZDeg(-8, 0, -8);
+    g->keyFrames[3].kfBones[11].rot = QuatXYZDeg(10, 0, 0);
+    g->keyFrames[3].kfBones[12].rot = QuatXYZDeg(8, 0, 0);
+
+    // ------------------------------------------------------------
+    // PHASE 2: bounce release, rights himself
+    // ------------------------------------------------------------
+    KeyFrameGroup* r = &d->kfGroups[AIR_R1_KFG_RELEASE];
+    r->state = DONOGAN_STATE_AIR_R1_RELEASE;
+    r->anim = DONOGAN_ANIM_PROC_AIR_R1_RELEASE;
+    r->maxKey = 4;
+    r->curKey = 0;
+
+    KfMakeZeroKey(&r->keyFrames[0], 0.00f, BONES, NUM_BONES);
+    KfMakeZeroKey(&r->keyFrames[1], 0.12f, BONES, NUM_BONES);
+    KfMakeZeroKey(&r->keyFrames[2], 0.27f, BONES, NUM_BONES);
+    KfMakeZeroKey(&r->keyFrames[3], 0.42f, BONES, NUM_BONES);
+
+    // KEY 0: starts from handstand
+    DonAirJumpAttackSetRoot(&r->keyFrames[0], d, 180.0f, 0.0f, 0.0f);
+
+    r->keyFrames[0].kfBones[1].rot = QuatXYZDeg(168, -2, 2);
+    r->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
+    r->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 0, 0);
+
+    r->keyFrames[0].kfBones[4].rot = QuatXYZDeg(168, 2, -2);
+    r->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 0);
+    r->keyFrames[0].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
+
+    r->keyFrames[0].kfBones[7].rot = QuatXYZDeg(-8, 0, 8);
+    r->keyFrames[0].kfBones[8].rot = QuatXYZDeg(10, 0, 0);
+    r->keyFrames[0].kfBones[9].rot = QuatXYZDeg(8, 0, 0);
+    r->keyFrames[0].kfBones[10].rot = QuatXYZDeg(-8, 0, -8);
+    r->keyFrames[0].kfBones[11].rot = QuatXYZDeg(10, 0, 0);
+    r->keyFrames[0].kfBones[12].rot = QuatXYZDeg(8, 0, 0);
+
+    // KEY 1: spring away from handstand
+    DonAirJumpAttackSetRoot(&r->keyFrames[1], d, 245.0f, 0.0f, 0.0f);
+
+    r->keyFrames[1].kfBones[1].rot = QuatXYZDeg(120, -4, 5);
+    r->keyFrames[1].kfBones[2].rot = QuatXYZDeg(12, 0, 0);
+    r->keyFrames[1].kfBones[3].rot = QuatXYZDeg(0, 0, 4);
+
+    r->keyFrames[1].kfBones[4].rot = QuatXYZDeg(120, 4, -5);
+    r->keyFrames[1].kfBones[5].rot = QuatXYZDeg(12, 0, 0);
+    r->keyFrames[1].kfBones[6].rot = QuatXYZDeg(0, 0, -4);
+
+    r->keyFrames[1].kfBones[7].rot = QuatXYZDeg(-20, 0, 6);
+    r->keyFrames[1].kfBones[8].rot = QuatXYZDeg(35, 0, 0);
+    r->keyFrames[1].kfBones[9].rot = QuatXYZDeg(8, 0, 0);
+    r->keyFrames[1].kfBones[10].rot = QuatXYZDeg(-20, 0, -6);
+    r->keyFrames[1].kfBones[11].rot = QuatXYZDeg(35, 0, 0);
+    r->keyFrames[1].kfBones[12].rot = QuatXYZDeg(8, 0, 0);
+
+    // KEY 2: almost upright
+    DonAirJumpAttackSetRoot(&r->keyFrames[2], d, 315.0f, 0.0f, 0.0f);
+
+    r->keyFrames[2].kfBones[1].rot = QuatXYZDeg(70, -4, 6);
+    r->keyFrames[2].kfBones[2].rot = QuatXYZDeg(20, 0, 0);
+    r->keyFrames[2].kfBones[3].rot = QuatXYZDeg(0, 0, 5);
+
+    r->keyFrames[2].kfBones[4].rot = QuatXYZDeg(70, 4, -6);
+    r->keyFrames[2].kfBones[5].rot = QuatXYZDeg(20, 0, 0);
+    r->keyFrames[2].kfBones[6].rot = QuatXYZDeg(0, 0, -5);
+
+    r->keyFrames[2].kfBones[7].rot = QuatXYZDeg(-25, 0, 4);
+    r->keyFrames[2].kfBones[8].rot = QuatXYZDeg(55, 0, 0);
+    r->keyFrames[2].kfBones[9].rot = QuatXYZDeg(0, 0, 0);
+    r->keyFrames[2].kfBones[10].rot = QuatXYZDeg(-25, 0, -4);
+    r->keyFrames[2].kfBones[11].rot = QuatXYZDeg(55, 0, 0);
+    r->keyFrames[2].kfBones[12].rot = QuatXYZDeg(0, 0, 0);
+
+    // KEY 3: upright / return toward normal jump
+    DonAirJumpAttackSetRoot(&r->keyFrames[3], d, 360.0f, 0.0f, 0.0f);
+
+    r->keyFrames[3].kfBones[1].rot = QuatXYZDeg(25, 0, 0);
+    r->keyFrames[3].kfBones[2].rot = QuatXYZDeg(10, 0, 0);
+    r->keyFrames[3].kfBones[3].rot = QuatXYZDeg(0, 0, 0);
+
+    r->keyFrames[3].kfBones[4].rot = QuatXYZDeg(25, 0, 0);
+    r->keyFrames[3].kfBones[5].rot = QuatXYZDeg(10, 0, 0);
+    r->keyFrames[3].kfBones[6].rot = QuatXYZDeg(0, 0, 0);
+
+    r->keyFrames[3].kfBones[7].rot = QuatXYZDeg(-10, 0, 0);
+    r->keyFrames[3].kfBones[8].rot = QuatXYZDeg(20, 0, 0);
+    r->keyFrames[3].kfBones[9].rot = QuatXYZDeg(0, 0, 0);
+    r->keyFrames[3].kfBones[10].rot = QuatXYZDeg(-10, 0, 0);
+    r->keyFrames[3].kfBones[11].rot = QuatXYZDeg(20, 0, 0);
+    r->keyFrames[3].kfBones[12].rot = QuatXYZDeg(0, 0, 0);
+}
 
 static void DonInitMachineTurnKeyframeGroups(Donogan* d)
 {
@@ -1570,6 +1790,8 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     case DONOGAN_ANIM_PROC_MACHINE_TURN: return &d->kfGroups[MACHINE_KFG_TURN];//NEW for machines
     case DONOGAN_ANIM_PROC_WRENCH_SWING: return &d->kfGroups[WRENCH_KFG_SWING];//wrench attack
     case DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT:   return &d->kfGroups[AIR_R2_KFG_SHOOT];
+    case DONOGAN_ANIM_PROC_AIR_R1_HAND_STAND:   return &d->kfGroups[AIR_R1_KFG_HAND_STAND];
+    case DONOGAN_ANIM_PROC_AIR_R1_RELEASE:   return &d->kfGroups[AIR_R1_KFG_RELEASE];
     default:                          return NULL;
     }
 }
@@ -2046,6 +2268,33 @@ static void DonApplyProcFrame(Donogan* d)
         else if (t < phase * 4.0f) G->curKey = 3;
         else d->animFinished = true;
     } break;
+    case DONOGAN_ANIM_PROC_AIR_R1_HAND_STAND:
+    {
+        if (!G) { d->animFinished = true; break; }
+
+        // This one does NOT finish by itself.
+        // It flips into handstand, then holds key 3 until ground / platform / badguy impact.
+        float t = d->animTime;
+
+        if (t < 0.14f)      G->curKey = 0;
+        else if (t < 0.30f) G->curKey = 1;
+        else if (t < 0.46f) G->curKey = 2;
+        else                G->curKey = 3;
+
+        d->animFinished = false;
+    } break;
+    case DONOGAN_ANIM_PROC_AIR_R1_RELEASE:
+    {
+        if (!G) { d->animFinished = true; break; }
+
+        float t = d->animTime;
+
+        if (t < 0.12f)      G->curKey = 0;
+        else if (t < 0.27f) G->curKey = 1;
+        else if (t < 0.42f) G->curKey = 2;
+        else if (t < 0.54f) G->curKey = 3;
+        else                d->animFinished = true;
+    } break;
     default:
         d->animFinished = true;  // unknown proc id → finish immediately
         break;
@@ -2440,6 +2689,7 @@ static Donogan InitDonogan(void)
     DonInitBowKeyframeGroups(&d);
     DonInitSpellShootKeyframeGroups(&d);
     DonInitAirR2SpellKeyframeGroups(&d);
+    DonInitAirR1HandstandKeyframeGroups(&d);
     DonInitMachineTurnKeyframeGroups(&d);
     DonInitWrenchSwingKf(&d);
     DonInitArrows(&d);
@@ -2521,6 +2771,8 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_SPELL_EXIT:              return DONOGAN_ANIM_Spell_Simple_Exit;
     case DONOGAN_STATE_SPELL_SHOOT:             return DONOGAN_ANIM_PROC_SPELL_SHOOT;
     case DONOGAN_STATE_AIR_R2_SPELL_SHOOT:      return DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT;
+    case DONOGAN_STATE_AIR_R1_HAND_STAND:      return DONOGAN_ANIM_PROC_AIR_R1_HAND_STAND;
+    case DONOGAN_STATE_AIR_R1_RELEASE:      return DONOGAN_ANIM_PROC_AIR_R1_RELEASE;
     case DONOGAN_STATE_MACHINE_TURN:      return DONOGAN_ANIM_PROC_MACHINE_TURN;
     case DONOGAN_STATE_WRENCH_SWING:      return DONOGAN_ANIM_PROC_WRENCH_SWING;
     case DONOGAN_STATE_HIT:         return DONOGAN_ANIM_Hit_Chest;
@@ -2547,7 +2799,60 @@ static void DonSetState(Donogan* d, DonoganState s)
 
     if (s == DONOGAN_STATE_JUMPING) d->jumpTimer = 0.0f;
 }
+//r1 and other jump attack helpers
+static inline bool DonIsAirR1HandstandAttack(const Donogan* d)
+{
+    if (!d) return false;
 
+    return d->state == DONOGAN_STATE_AIR_R1_HAND_STAND &&
+        d->animTime >= 0.10f;
+}
+
+static inline BoundingBox DonMakeAirR1HandstandBox(const Donogan* d)
+{
+    // Big forgiving attack box around Don while he is diving/handstanding.
+    // This does not rotate with the visual model; it is gameplay-friendly.
+    Vector3 c = d->pos;
+
+    float h = d->outerBox.max.y - d->outerBox.min.y;
+
+    c.y = d->outerBox.min.y + h * 0.48f;
+
+    Vector3 half = {
+        1.85f,
+        2.35f,
+        1.85f
+    };
+
+    return (BoundingBox) {
+        { c.x - half.x, c.y - half.y, c.z - half.z },
+        { c.x + half.x, c.y + half.y, c.z + half.z }
+    };
+}
+
+static inline void DonStartAirR1Release(Donogan* d)
+{
+    if (!d) return;
+
+    // Release any moving-platform glue before bouncing upward.
+    d->gluedToPlatform = false;
+    d->gluedPlatId = -1;
+
+    // Slightly higher-than-normal pop.
+    d->velY = d->jumpSpeed * 1.18f;
+
+    // Keep some motion, but do not launch him wildly sideways.
+    d->velXZ = Vector3Scale(d->velXZ, 0.45f);
+    d->rollVel = (Vector3){ 0 };
+
+    d->onGround = false;
+
+    // Small lift so he does not instantly retrigger the same ground/platform.
+    d->pos.y += d->liftoffBump * 0.85f;
+
+    Don_UpdateBoxes(d);
+    DonSetState(d, DONOGAN_STATE_AIR_R1_RELEASE);
+}
 //water helpers------------------------------------------------------------------------------------
 static inline void DonClampToWater(Donogan* d) {
     // Keep the body riding at the surface
@@ -2770,6 +3075,21 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     if (d->jumpTimer >= d->startToLoopTime || d->velY <= 0.0f) {
                         DonSetState(d, DONOGAN_STATE_JUMPING); // loops
                     }
+                }
+                else if (d->state == DONOGAN_STATE_JUMPING &&
+                    !d->bowMode &&
+                    R1Pressed &&
+                    d->ja_r1_unlocked)
+                {
+                    DonSetState(d, DONOGAN_STATE_AIR_R1_HAND_STAND);
+
+                    // Start the dive. If he was rising, stall it hard.
+                    if (d->velY > -6.0f) d->velY = -6.0f;
+
+                    // Keep some XZ movement, but reduce control/drift.
+                    d->velXZ = Vector3Scale(d->velXZ, 0.65f);
+
+                    break;
                 }
                 else if (d->state == DONOGAN_STATE_JUMPING &&
                     !d->bowMode &&
@@ -3206,11 +3526,76 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     DonSetState(d, DONOGAN_STATE_JUMPING);
                 }
             } break;
+            case DONOGAN_STATE_AIR_R1_HAND_STAND:
+            {
+                // Dive downward into handstand.
+                // Gravity still applies, but once the pose is underway we force a strong downward drive.
+                d->velY += d->gravity * dt * 1.15f;
+
+                if (d->animTime > 0.12f && d->velY > -24.0f)
+                {
+                    d->velY -= 52.0f * dt;
+                    if (d->velY < -24.0f) d->velY = -24.0f;
+                }
+
+                d->pos.y += d->velY * dt;
+
+                // Reduced air drift.
+                d->pos = Vector3Add(
+                    d->pos,
+                    Vector3Scale(d->velXZ, dt * (d->runningHeld ? d->runSpeed : d->walkSpeed) * 0.35f)
+                );
+
+                Don_UpdateBoxes(d);
+
+                // Anything that has already set groundY can trigger the bounce:
+                // terrain, home floors, platforms, water wheel, etc.
+                if (d->velY <= 0.0f && d->outerBox.min.y <= d->groundY + 0.15f)
+                {
+                    DonSnapToGround(d);
+                    DonStartAirR1Release(d);
+                    break;
+                }
+
+            } break;
+
+            case DONOGAN_STATE_AIR_R1_RELEASE:
+            {
+                // Bounce upward and right himself.
+                d->velY += d->gravity * dt;
+                d->pos.y += d->velY * dt;
+
+                d->pos = Vector3Add(
+                    d->pos,
+                    Vector3Scale(d->velXZ, dt * (d->runningHeld ? d->runSpeed : d->walkSpeed) * 0.55f)
+                );
+
+                Don_UpdateBoxes(d);
+
+                // If he hits ground again before the release anim finishes,
+                // break out into normal landing.
+                if (d->velY <= 0.0f && d->outerBox.min.y <= d->groundY + 0.10f)
+                {
+                    DonSnapToGround(d);
+                    DonSetState(d, DONOGAN_STATE_JUMP_LAND);
+                    break;
+                }
+
+                // If the righting animation finishes while still airborne,
+                // return to normal jump loop.
+                if (d->animFinished)
+                {
+                    DonSetState(d, DONOGAN_STATE_JUMPING);
+                }
+
+            } break;
             case DONOGAN_STATE_HIT:
                 d->bowMode = false;
                 d->bowCur = -1;
                 d->bowFinished = true;
                 d->bowReleaseCamHold = 0.0f;
+                d->runLock = false;
+                d->runningHeld = false;
                 d->squareThrowRequest = false;
                 ResetTimer(&d->spellTimer);
                 if (d->animFinished) { DonSetState(d, DONOGAN_STATE_IDLE);}

@@ -4621,130 +4621,179 @@ int main(void) {
             {
                 int b = act_bg[i];
                 if (!bg[b].active) { continue; }
-                //if (!CheckCollisionBoxes(bg[b].box, don.outerBox)) { continue; }
                 bool punching = don.punching;
                 bool bodyHit = CheckCollisionBoxes(bg[b].box, don.outerBox);
                 bool punchHit = punching && CheckCollisionBoxes(bg[b].box, don.punchBox);
                 bool wrenchHit = DonIsWrenchSwinging(&don) && CheckCollisionBoxes(bg[b].box, don.punchBox);
+                bool airR1Hit = DonIsAirR1HandstandAttack(&don) && CheckCollisionBoxes(bg[b].box, don.punchBox);
+
                 DonAttackType atk = wrenchHit ? ATTACK_THROW : ATTACK_PUNCH;
 
-                if (!bodyHit && !punchHit) { continue; }
-                /*bool punching = (don.state == DONOGAN_STATE_PUNCH_CROSS_ENTER
-                    || don.state == DONOGAN_STATE_PUNCH_JAB_ENTER
-                    || don.state == DONOGAN_STATE_PUNCH_CROSS
-                    || don.state == DONOGAN_STATE_PUNCH_JAB);*/
-                if (bg[b].type == BG_GHOST && HasTimerElapsed(&don.hitTimer))
+                if (!bodyHit && !punchHit && !airR1Hit) { continue; }
+
+                // Handstand of death:
+                // This happens before normal body-hit damage, so Don does not get hurt by touching the BG.
+                if (airR1Hit)
                 {
-                    //hit don
-                    TraceLog(LOG_INFO, "ouch!");
-                    don.health -= 5;
-                    DonSetState(&don, DONOGAN_STATE_HIT);
-                    StartTimer(&don.hitTimer);
-                }
-                else if (bg[b].type == BG_YETI && bg[b].state != YETI_STATE_HIT)//want this extra check here, so neither happens
-                {
-                    if (punchHit) {
-                        // punched a yeti!
-                        TraceLog(LOG_INFO, "punched a yeti!");
-                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
+                    TraceLog(LOG_INFO, "HANDSTAND OF DEATH hit bad guy %d type=%d", b, bg[b].type);
+
+                    bg[b].health = 0; //make em easy, one more hit
+
+                    Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
+                    dir.y = 0.35f;
+
+                    if (Vector3LengthSqr(dir) < 0.0001f)
+                    {
+                        dir = (Vector3){ sinf(don.yawY), 0.35f, cosf(don.yawY) };
+                    }
+
+                    dir = Vector3Normalize(dir);
+
+                    if (bg[b].type == BG_YETI)
+                    {
+                        bg[b].health = 1; //cant kill a yeti with this, but almost, need one more hit
                         Yeti_KnockBackFromDonogan(&bg[b], &don);
-                        if (wrenchHit) {
+                        BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
+                    }
+                    else if (bg[b].type == BG_ROBO)
+                    {
+                        bg[b].vel = Vector3Scale(dir, 45.0f);
+                        bg[b].vel.y = 18.0f;
+                        bg[b].state = ROBO_STATE_PLAN;
+                    }
+                    else if (bg[b].type == BG_PUMPKIN_HOPPER)
+                    {
+                        bg[b].vel = Vector3Scale(dir, 45.0f);
+                        bg[b].vel.y = 18.0f;
+                        bg[b].state = HOPPER_STATE_HURT;
+                    }
+                    else if (bg[b].type == BG_SKELETON)
+                    {
+                        Skeleton_KnockBackFromDonogan(&bg[b], &don, true);
+                    }
+
+                    // Treat bad guy top like a temporary ground contact and bounce.
+                    don.groundY = bg[b].box.max.y;
+                    DonSnapToGround(&don);
+                    DonStartAirR1Release(&don);
+
+                    continue;
+                }
+                else if (don.state != DONOGAN_STATE_AIR_R1_RELEASE) //todo: function, don attacking, and add all attack states there?
+                {
+                    if (bg[b].type == BG_GHOST && HasTimerElapsed(&don.hitTimer))
+                    {
+                        //hit don
+                        TraceLog(LOG_INFO, "ouch!");
+                        don.health -= 5;
+                        DonSetState(&don, DONOGAN_STATE_HIT);
+                        StartTimer(&don.hitTimer);
+                    }
+                    else if (bg[b].type == BG_YETI && bg[b].state != YETI_STATE_HIT)//want this extra check here, so neither happens
+                    {
+                        if (punchHit) {
+                            // punched a yeti!
+                            TraceLog(LOG_INFO, "punched a yeti!");
+                            bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
+                            Yeti_KnockBackFromDonogan(&bg[b], &don);
+                            if (wrenchHit) {
+                                Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
+                                dir.y = 0.35f;
+                                dir = Vector3Normalize(dir);
+
+                                bg[b].vel = Vector3Scale(dir, 55.0f);
+                                bg[b].vel.y = 22.0f;
+                                bg[b].state = YETI_STATE_ATTACK; // crude but gives airborne physics
+                            }
+                            BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
+                        }
+                        else if (HasTimerElapsed(&don.hitTimer)) {
+                            // yeti damages Don (cooldown applies here only)
+                            TraceLog(LOG_INFO, "ouch! yeti oof!");
+                            don.health -= 10;
+                            DonSetState(&don, DONOGAN_STATE_HIT);
+                            StartTimer(&don.hitTimer);
+                        }
+                    }
+                    else if (bg[b].type == BG_ROBO)
+                    {
+                        if (wrenchHit)
+                        {
+                            bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
                             Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
                             dir.y = 0.35f;
                             dir = Vector3Normalize(dir);
 
                             bg[b].vel = Vector3Scale(dir, 55.0f);
                             bg[b].vel.y = 22.0f;
-                            bg[b].state = YETI_STATE_ATTACK; // crude but gives airborne physics
+                            bg[b].state = ROBO_STATE_PLAN;
                         }
-                        BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
+                        else if (punchHit)
+                        {
+                            bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
+                        }
+                        else
+                        {
+                            bg[b].health -= 1;
+                            bg[b].state = ROBO_STATE_PLAN;
+                        }
                     }
-                    else if (HasTimerElapsed(&don.hitTimer)) {
-                        // yeti damages Don (cooldown applies here only)
-                        TraceLog(LOG_INFO, "ouch! yeti oof!");
-                        don.health -= 10;
-                        DonSetState(&don, DONOGAN_STATE_HIT);
-                        StartTimer(&don.hitTimer);
-                    }
-                }
-                else if (bg[b].type == BG_ROBO)
-                {
-                    if (wrenchHit)
+                    else if (bg[b].type == BG_PUMPKIN_HOPPER)
                     {
-                        bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
-                        Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
-                        dir.y = 0.35f;
-                        dir = Vector3Normalize(dir);
+                        if (don.state == DONOGAN_STATE_JUMPING || don.state == DONOGAN_STATE_JUMP_LAND)
+                        {
+                            // hopped a hopper!
+                            TraceLog(LOG_INFO, "hopped a hopper!");
+                            bg[b].health = 0;
+                            bg[b].state = HOPPER_STATE_DEAD;
+                            don.velY = don.jumpSpeed;   // or *1.1f for extra juice
+                            don.state = DONOGAN_STATE_JUMPING;
+                            don.onGround = false;
+                        }
+                        else if (wrenchHit)
+                        {
+                            bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
+                            Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
+                            dir.y = 0.35f;
+                            dir = Vector3Normalize(dir);
 
-                        bg[b].vel = Vector3Scale(dir, 55.0f);
-                        bg[b].vel.y = 22.0f;
-                        bg[b].state = ROBO_STATE_PLAN;
+                            bg[b].vel = Vector3Scale(dir, 55.0f);
+                            bg[b].vel.y = 22.0f;
+                            bg[b].state = HOPPER_STATE_HURT;
+                        }
+                        else if (punchHit)
+                        {
+                            TraceLog(LOG_INFO, "punched a hopper!");
+                            bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
+                            Hopper_KnockBackFromDonogan(&bg[b], &don);
+                        }
+                        else if (HasTimerElapsed(&don.hitTimer)) {
+                            TraceLog(LOG_INFO, "ouch! hopper oof!");
+                            don.health -= 10;
+                            DonSetState(&don, DONOGAN_STATE_HIT);
+                            StartTimer(&don.hitTimer);
+                        }
                     }
-                    else if (punchHit)
+                    else if (bg[b].type == BG_SKELETON &&
+                        bg[b].state != SKELETON_STATE_HIT &&
+                        bg[b].state != SKELETON_STATE_DEATH &&
+                        bg[b].state != SKELETON_STATE_DEAD)
                     {
-                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
-                    }
-                    else
-                    {
-                        bg[b].health -= 1;
-                        bg[b].state = ROBO_STATE_PLAN;
-                    }
-                }
-                else if (bg[b].type == BG_PUMPKIN_HOPPER)
-                {
-                    if (don.state == DONOGAN_STATE_JUMPING || don.state == DONOGAN_STATE_JUMP_LAND)
-                    {
-                        // hopped a hopper!
-                        TraceLog(LOG_INFO, "hopped a hopper!");
-                        bg[b].health = 0;
-                        bg[b].state = HOPPER_STATE_DEAD;
-                        don.velY = don.jumpSpeed;   // or *1.1f for extra juice
-                        don.state = DONOGAN_STATE_JUMPING;
-                        don.onGround = false;
-                    }
-                    else if (wrenchHit)
-                    {
-                        bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
-                        Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
-                        dir.y = 0.35f;
-                        dir = Vector3Normalize(dir);
+                        if (wrenchHit || punchHit)
+                        {
+                            DonAttackType atk = wrenchHit ? ATTACK_THROW : ATTACK_PUNCH;
 
-                        bg[b].vel = Vector3Scale(dir, 55.0f);
-                        bg[b].vel.y = 22.0f;
-                        bg[b].state = HOPPER_STATE_HURT;
-                    }
-                    else if (punchHit)
-                    {
-                        TraceLog(LOG_INFO, "punched a hopper!");
-                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
-                        Hopper_KnockBackFromDonogan(&bg[b], &don);
-                    }
-                    else if (HasTimerElapsed(&don.hitTimer)) {
-                        TraceLog(LOG_INFO, "ouch! hopper oof!");
-                        don.health -= 10;
-                        DonSetState(&don, DONOGAN_STATE_HIT);
-                        StartTimer(&don.hitTimer);
-                    }
-                }
-                else if (bg[b].type == BG_SKELETON &&
-                    bg[b].state != SKELETON_STATE_HIT &&
-                    bg[b].state != SKELETON_STATE_DEATH &&
-                    bg[b].state != SKELETON_STATE_DEAD)
-                {
-                    if (wrenchHit || punchHit)
-                    {
-                        DonAttackType atk = wrenchHit ? ATTACK_THROW : ATTACK_PUNCH;
+                            bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
 
-                        bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
+                            Skeleton_KnockBackFromDonogan(&bg[b], &don, wrenchHit);
 
-                        Skeleton_KnockBackFromDonogan(&bg[b], &don, wrenchHit);
-
-                        TraceLog(LOG_INFO, "Don hit skeleton! hp=%d", bg[b].health);
-                    }
-                    else if (bodyHit)
-                    {
-                        // Optional body bump. Do NOT damage Don just because the skeleton body touches him.
-                        // Skeleton damage is handled by its attack boxes in bg.h now.
+                            TraceLog(LOG_INFO, "Don hit skeleton! hp=%d", bg[b].health);
+                        }
+                        else if (bodyHit)
+                        {
+                            // Optional body bump. Do NOT damage Don just because the skeleton body touches him.
+                            // Skeleton damage is handled by its attack boxes in bg.h now.
+                        }
                     }
                 }
             }
@@ -5030,11 +5079,19 @@ int main(void) {
         //shark
         Shark_Update(&shark, &don, dt);
         //punchin and fightin and cusin
-        /*don.punching = DonIsPunching(&don);
-        don.punchBox = DonMakePunchBox(&don);*/
-        don.punching = DonIsPunching(&don) || DonIsWrenchSwinging(&don);
-        if (DonIsWrenchSwinging(&don)) don.punchBox = DonMakeWrenchBox(&don);
-        else                           don.punchBox = DonMakePunchBox(&don);
+        don.punching =DonIsPunching(&don) ||DonIsWrenchSwinging(&don) ||DonIsAirR1HandstandAttack(&don);
+        if (DonIsAirR1HandstandAttack(&don))
+        {
+            don.punchBox = DonMakeAirR1HandstandBox(&don);
+        }
+        else if (DonIsWrenchSwinging(&don))
+        {
+            don.punchBox = DonMakeWrenchBox(&don);
+        }
+        else
+        {
+            don.punchBox = DonMakePunchBox(&don);
+        }
         //whale farts
         if (onLoad && !missions[MISSION_FART_WHALE].complete)
         {
