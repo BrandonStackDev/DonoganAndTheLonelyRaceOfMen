@@ -1808,10 +1808,11 @@ int main(void) {
             if (milCnt >= MACHINE_COUNT_WINDMILL) //number of mills
             {
                 missions[MISSION_START_ALL_MILLS].complete = true;
-                toast = "All Windmills Activated!";
+                toast = "All Windmills Activated! Unlocked Jump Attack, Air Spell-Sphere (R2)!";
                 StartTimer(&toastTimer);
                 don.xp += 400;
                 don.money += 1000;
+                don.ja_r2_unlocked = true;
             }
         }
         if (onLoad && !missions[MISSION_LIGHT_ALL_FIRES].complete)
@@ -1824,10 +1825,11 @@ int main(void) {
             if (milCnt >= FIREPIT_TOTAL_COUNT) //number of mills
             {
                 missions[MISSION_LIGHT_ALL_FIRES].complete = true;
-                toast = "All Fire pits Lit!";
+                toast = "All Fire pits Lit! Unlocked Jump Attack, Handstand of Death (R1)!";
                 StartTimer(&toastTimer);
                 don.xp += 400;
                 don.money += 1000;
+                don.ja_r1_unlocked = true;
             }
         }
         if (onLoad && !missions[MISSION_ALL_MAPS].complete)
@@ -1840,19 +1842,21 @@ int main(void) {
             if (milCnt >= MAP_TOTAL_COUNT) //number of mills
             {
                 missions[MISSION_ALL_MAPS].complete = true;
-                toast = "All Maps found!";
+                toast = "All Maps found! Unlocked Jump Attack, Spell-Sphere Slam (L2)!";
                 StartTimer(&toastTimer);
                 don.xp += 800;
                 don.money += 1200;
+                don.ja_l2_unlocked = true;
             }
         }
         if (don.hasGuitar && onLoad && !missions[MISSION_GALADRIEL].complete)
         {//can cheat here and just use don.hasGuitar.
             missions[MISSION_GALADRIEL].complete = true;
-            toast = "Gave ten books to Galadriel! Got the Guitar!";
+            toast = "Gave ten books to Galadriel! Got the Guitar (L1 to use)!";
             StartTimer(&toastTimer);
             don.xp += 1000;
             don.money += 2000;
+            don.ja_l1_unlocked = true;
         }
         //todo: alister, MISSION_ALISTER, 10 shadow books
         if (!missions[MISSION_KILL_GHOST].complete && ghostKillCount >= 10)

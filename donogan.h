@@ -533,13 +533,19 @@ typedef struct {
     bool canHasCheeseburger;
     //wizard
     bool talkedToBlueWizard;
-    //money. its a crime. blah blah blah blah blah blah blah blah, money, its a gas....fart!
+    //money. its a crime.
     float money;
     int  galBooksGiven;
     bool hasGuitar;
     int  aliBooksGiven;
     bool alisterEvilRevealed;
 
+    //jump attacks
+    bool ja_l1_unlocked;
+    bool ja_r1_unlocked;
+    bool ja_l2_unlocked;
+    bool ja_r2_unlocked;
+    //history
     Vector3 posHistory[DON_POS_HISTORY_MAX];
     int posHistoryHead;
     int posHistoryCount;
@@ -1935,6 +1941,11 @@ static Donogan InitDonogan(void)
     d.hasGuitar = false;
     d.galBooksGiven = 0;
     d.aliBooksGiven = 0;
+    //jump attacks
+    d.ja_l1_unlocked = false;
+    d.ja_r1_unlocked = false;
+    d.ja_l2_unlocked = false;
+    d.ja_r2_unlocked = false;
     d.eatenByShark = false;
     d.eatenTimer = CreateTimer(5.00f);
     //PrintModelBones(&d.model);

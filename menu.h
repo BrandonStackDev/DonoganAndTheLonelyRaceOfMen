@@ -143,6 +143,10 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     fprintf(f, "don_guitar = %d\n", d->hasGuitar ? 1 : 0);
     fprintf(f, "don_ali_books = %d\n", d->aliBooksGiven);
     fprintf(f, "don_ali_evil = %d\n", d->alisterEvilRevealed ? 1 : 0);
+    fprintf(f, "ja_l1_unlocked = %d\n", d->ja_l1_unlocked ? 1 : 0);
+    fprintf(f, "ja_l2_unlocked = %d\n", d->ja_l2_unlocked ? 1 : 0);
+    fprintf(f, "ja_r1_unlocked = %d\n", d->ja_r1_unlocked ? 1 : 0);
+    fprintf(f, "ja_r2_unlocked = %d\n", d->ja_r2_unlocked ? 1 : 0);
 
     // GameState
     fprintf(f, "invY = %d\n", gs->invY ? 1 : 0);
@@ -326,6 +330,26 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
             int v = 0;
             sscanf(s, "don_ali_evil = %d", &v);
             d->alisterEvilRevealed = (v != 0);
+        }
+        else if (!strncmp(s, "ja_l1_unlocked", 14)) {
+            int v = 0;
+            sscanf(s, "ja_l1_unlocked = %d", &v);
+            d->ja_l1_unlocked = (v != 0);
+        }
+        else if (!strncmp(s, "ja_l2_unlocked", 14)) {
+            int v = 0;
+            sscanf(s, "ja_l2_unlocked = %d", &v);
+            d->ja_l2_unlocked = (v != 0);
+        }
+        else if (!strncmp(s, "ja_r1_unlocked", 14)) {
+            int v = 0;
+            sscanf(s, "ja_r1_unlocked = %d", &v);
+            d->ja_r1_unlocked = (v != 0);
+        }
+        else if (!strncmp(s, "ja_r2_unlocked", 14)) {
+            int v = 0;
+            sscanf(s, "ja_r2_unlocked = %d", &v);
+            d->ja_r2_unlocked = (v != 0);
         }
         else if (!strncmp(s, "invY", 4)) {
             int v = 0; sscanf(s, "invY = %d", &v); gs->invY = (v != 0);
