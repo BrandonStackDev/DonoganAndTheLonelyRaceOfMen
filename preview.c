@@ -1518,19 +1518,20 @@ int main(void) {
     wrenchModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadMyTexture("textures/wrench.png");
     Vector3 wrenchPos = (Vector3){ 875.34, 357.0, 1353.11 };
     BoundingBox wrenchBox = UpdateBoundingBox(GetModelBoundingBox(wrenchModel), wrenchPos);
-    //heads
-    Texture don_head = LoadMyTexture("textures/don_head.png");
-    Texture tol_head = LoadMyTexture("textures/tol_head.png");
-    Texture atreyu_head = LoadMyTexture("textures/atreyu_head.png");
-    Texture darrel_head = LoadMyTexture("textures/darrel_head.png");
-    Texture lucy_head = LoadMyTexture("textures/lucy_head.png");
-    Texture wiz_head = LoadMyTexture("textures/wiz_head.png");
-    Texture abby_head = LoadMyTexture("textures/abby_head.png");
-    Texture clerk_head = LoadMyTexture("textures/clerk_head.png");
-    Texture gal_head = LoadMyTexture("textures/gal_head.png");
-    Texture roger_head = LoadMyTexture("textures/roger_head.png");
-    Texture geoff_head = LoadMyTexture("textures/geoff_head.png");
-    Texture mary_head = LoadMyTexture("textures/mary_head.png");
+    //heads (no mipmaps for heads)
+    Texture don_head = LoadTexture("textures/don_head.png");
+    Texture tol_head = LoadTexture("textures/tol_head.png");
+    Texture atreyu_head = LoadTexture("textures/atreyu_head.png");
+    Texture darrel_head = LoadTexture("textures/darrel_head.png");
+    Texture lucy_head = LoadTexture("textures/lucy_head.png");
+    Texture wiz_head = LoadTexture("textures/wiz_head.png");
+    Texture abby_head = LoadTexture("textures/abby_head.png");
+    Texture clerk_head = LoadTexture("textures/clerk_head.png");
+    Texture gal_head = LoadTexture("textures/gal_head.png");
+    Texture roger_head = LoadTexture("textures/roger_head.png");
+    Texture geoff_head = LoadTexture("textures/geoff_head.png");
+    Texture mary_head = LoadTexture("textures/mary_head.png");
+    Texture jared_head = LoadTexture("textures/jared_head.png");
     //truck
     InitTruck();
     //more lb stuff
@@ -6132,6 +6133,9 @@ int main(void) {
             }
             else if (don.who == TALK_TYPE_MARY) {
                 talkee = mary_head;
+            }
+            else if (don.who == TALK_TYPE_JARED) {
+                talkee = jared_head;
             }
             //todo jared head
 

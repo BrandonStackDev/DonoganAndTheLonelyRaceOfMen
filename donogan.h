@@ -2543,18 +2543,6 @@ static void DonSetState(Donogan* d, DonoganState s)
                     || s == DONOGAN_STATE_BOW_AIM
                     || s == DONOGAN_STATE_SLIDE
                     || s == DONOGAN_STATE_SPELL_IDLE);
-    bool locomotion = (s == DONOGAN_STATE_IDLE || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN
-                        || s == DONOGAN_STATE_JUMPING || s == DONOGAN_STATE_JUMP_START || s == DONOGAN_STATE_JUMP_LAND
-                        || s == DONOGAN_STATE_ROLL || s == DONOGAN_STATE_AIR_ROLL
-                        || s == DONOGAN_STATE_BOW_ENTER || s == DONOGAN_STATE_BOW_AIM || s == DONOGAN_STATE_BOW_EXIT
-                        || s == DONOGAN_STATE_BOW_PULL || s == DONOGAN_STATE_BOW_REL
-                        || s==DONOGAN_STATE_PUNCH_IDLE || s == DONOGAN_STATE_PUNCH_JAB || s == DONOGAN_STATE_PUNCH_CROSS 
-                        || s == DONOGAN_STATE_PUNCH_JAB_ENTER || s == DONOGAN_STATE_PUNCH_CROSS_ENTER
-                        || s == DONOGAN_STATE_WRENCH_SWING || s == DONOGAN_STATE_SPELL_SHOOT || s == DONOGAN_STATE_AIR_R2_SPELL_SHOOT);
-    if (!locomotion) {
-        d->runLock = false;      // auto-break on swimming
-        d->runningHeld = false;
-    }
     DonPlay(d, AnimForState(s), loop, true);
 
     if (s == DONOGAN_STATE_JUMPING) d->jumpTimer = 0.0f;
