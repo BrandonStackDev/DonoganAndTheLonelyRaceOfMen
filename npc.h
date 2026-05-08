@@ -415,8 +415,9 @@ void InitAllNPC()
     npcs[NPC_JARED].model = jared_model;
     npcs[NPC_JARED].tex = jared_tex;
     npcs[NPC_JARED].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = jared_tex;
-    npcs[NPC_JARED].pos = (Vector3){ -2401.56, 448.24, -2137.88 };
-    npcs[NPC_JARED].scale = 3.2;
+    npcs[NPC_JARED].pos = (Vector3){ 1700.91, 342, 3870.52 };
+    npcs[NPC_JARED].scale = 1.9;
+    npcs[NPC_MARY].yaw = 90;
     npcs[NPC_JARED].isRescue = false;
 
 }
@@ -462,6 +463,7 @@ static inline void NPC_Update_Simple(NPC* n, const Donogan* d, float dt, bool lo
     else if (n->modelType == NPC_MODEL_TYPE_ROGER) { n->pos.y += 3.33; }
     else if (n->modelType == NPC_MODEL_TYPE_GEOFF) { n->pos.y += 3.33; }
     else if (n->modelType == NPC_MODEL_TYPE_MARY) { n->pos.y += 3.33; }
+    else if (n->modelType == NPC_MODEL_TYPE_JARED) { n->pos.y += 3.33; }
     // Face Donogan
     float targetYaw = atan2f(d->pos.x - n->pos.x, d->pos.z - n->pos.z);
     n->yaw = TurnToward(n->yaw, targetYaw, dt * 6.0f); // gentle turn rate
@@ -597,7 +599,8 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     case NPC_ROGER: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_GEOFF: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_MARY: NPC_Update_Simple(n, d, dt, looped); break;
-    default: break; //jared
+    case NPC_JARED: NPC_Update_Simple(n, d, dt, looped); break;
+    default: break;
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);
 }

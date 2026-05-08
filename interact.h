@@ -386,7 +386,7 @@ static TalkData talkData[] = {
     "Mary",
     {
         "Hey Donogan! (Cough) Im smoking two ... (Cough) ... because Clarence ditched me again. That chicken!",
-        "[Donogan] Do you know where he is?"
+        "[Donogan] Do you know where he is?",
         "No, sometimes he likes to look for whales tho, off the coast. Maybe he is down the road near the open sea?"
     },
     3,

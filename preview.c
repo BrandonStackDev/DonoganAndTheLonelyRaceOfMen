@@ -4130,9 +4130,10 @@ int main(void) {
                                 }
                             }
 
-                            bool wallIsTallEnough = (bhit.maxWallY - 0.2f >= don.outerBox.min.y);
-                            bool dontLowerWalls = (Scenes[i].modelType != MODEL_HOME_NICE);
-                            if (bhit.hitWall && !hitEnvWall && (wallIsTallEnough || dontLowerWalls))
+                            //bool wallIsTallEnough = (bhit.maxWallY - 0.2f >= don.outerBox.min.y);
+                            //bool dontLowerWalls = (Scenes[i].modelType != MODEL_HOME_NICE);
+                            ////&& (wallIsTallEnough || dontLowerWalls)
+                            if (bhit.hitWall && !hitEnvWall)
                             {
                                 disableRoll = true;
                                 Vector3 push = bhit.push;
