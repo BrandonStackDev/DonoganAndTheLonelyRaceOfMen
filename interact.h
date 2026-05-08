@@ -28,6 +28,7 @@ typedef enum {
     TALK_TYPE_ROGER,
     TALK_TYPE_GEOFF,
     TALK_TYPE_MARY,
+    TALK_TYPE_JARED,
     TALK_TYPE_STORE
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
@@ -78,6 +79,7 @@ typedef enum {
     POI_TYPE_ROGER,
     POI_TYPE_GEOFF,
     POI_TYPE_MARY,
+    POI_TYPE_JARED,
     POI_TYPE_TOTAL_COUNT
 } POI_Type;
 
@@ -377,6 +379,17 @@ static TalkData talkData[] = {
         "But the apples youll have to find a way to get them down from the tree...Sorry I dont have a ladder."
     },
     6,
+    TALK_OPTION_OK
+},
+{
+    TALK_TYPE_JARED,
+    "Mary",
+    {
+        "Hey Donogan! (Cough) Im smoking two ... (Cough) ... because Clarence ditched me again. That chicken!",
+        "[Donogan] Do you know where he is?"
+        "No, sometimes he likes to look for whales tho, off the coast. Maybe he is down the road near the open sea?"
+    },
+    3,
     TALK_OPTION_OK
 },
 };

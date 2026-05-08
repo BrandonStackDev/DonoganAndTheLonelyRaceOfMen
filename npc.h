@@ -23,6 +23,7 @@ typedef enum {
     NPC_MODEL_TYPE_ROGER,
     NPC_MODEL_TYPE_GEOFF,
     NPC_MODEL_TYPE_MARY,
+    NPC_MODEL_TYPE_JARED,
 } NPC_Model_Type;
 
 typedef enum {
@@ -41,7 +42,8 @@ typedef enum {
     NPC_ROGER,
     NPC_GEOFF,
     NPC_MARY,
-    NPC_TOTAL,
+    NPC_JARED,
+    NPC_TOTAL
 } NPC_Type;
 
 typedef enum {
@@ -197,6 +199,9 @@ void InitAllNPC()
     Texture geoff_tex = LoadMyTexture("textures/geoff.png");
     Model mary_model = LoadModel("models/mary.obj");
     Texture mary_tex = LoadMyTexture("textures/mary.png");
+    //jared
+    Model jared_model = LoadModel("models/jared.obj");
+    Texture jared_tex = LoadMyTexture("textures/jared.png");
     //setup darrel
     npcs[NPC_DARREL].type = NPC_DARREL;
     npcs[NPC_DARREL].modelType = NPC_MODEL_TYPE_DARREL;
@@ -404,6 +409,16 @@ void InitAllNPC()
     npcs[NPC_MARY].curAnim = 0;
     npcs[NPC_MARY].animFPS = 0;
     npcs[NPC_MARY].animFrame = 0.0f;
+    //setup jared
+    npcs[NPC_JARED].type = NPC_JARED;
+    npcs[NPC_JARED].modelType = NPC_MODEL_TYPE_JARED;
+    npcs[NPC_JARED].model = jared_model;
+    npcs[NPC_JARED].tex = jared_tex;
+    npcs[NPC_JARED].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = jared_tex;
+    npcs[NPC_JARED].pos = (Vector3){ -2401.56, 448.24, -2137.88 };
+    npcs[NPC_JARED].scale = 3.2;
+    npcs[NPC_JARED].isRescue = false;
+
 }
 
 bool IsModelAnimationValidMe(Model model, ModelAnimation anim)
@@ -582,7 +597,7 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     case NPC_ROGER: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_GEOFF: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_MARY: NPC_Update_Simple(n, d, dt, looped); break;
-    default: break;
+    default: break; //jared
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);
 }

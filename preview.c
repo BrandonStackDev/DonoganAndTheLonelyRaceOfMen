@@ -1569,6 +1569,7 @@ int main(void) {
     InteractivePoints[POI_TYPE_ROGER] = (POI){ POI_TYPE_ROGER, &npcs[NPC_ROGER].pos }; //roger
     InteractivePoints[POI_TYPE_GEOFF] = (POI){ POI_TYPE_GEOFF, &npcs[NPC_GEOFF].pos }; //geoff
     InteractivePoints[POI_TYPE_MARY] = (POI){ POI_TYPE_MARY, &npcs[NPC_MARY].pos }; //mary
+    InteractivePoints[POI_TYPE_JARED] = (POI){ POI_TYPE_JARED, &npcs[NPC_JARED].pos }; //jared
     //help maps know things like the important people
     map_tol = &tolPos;
     map_atreyu = &atreyuPos;
@@ -2310,6 +2311,17 @@ int main(void) {
                     Talk_Reset(don.who);
                     prevTalkTri = gpad.btnTriangle;
                     prevTalkX = gpad.btnCross;
+                }
+                else if (!don.isTalking
+                    && Vector3DistanceSqr(*InteractivePoints[POI_TYPE_JARED].pos, don.pos) < 11.44f * 13
+                    && HasTimerElapsed(&don.talkStartTimer))
+                    {
+                        don.isTalking = true;
+                        don.who = TALK_TYPE_JARED;
+                        StartTimer(&don.talkStartTimer);
+                        Talk_Reset(don.who);
+                        prevTalkTri = gpad.btnTriangle;
+                        prevTalkX = gpad.btnCross;
                 }
                 else if (Vector3DistanceSqr(*InteractivePoints[POI_TYPE_NICK].pos, don.pos) < 144
                     && !don.isTalking) //check !isTalking because we want to make sure we hit the exit talk routine if don is talking
@@ -6041,6 +6053,7 @@ int main(void) {
             else if (don.who == TALK_TYPE_MARY) {
                 talkee = mary_head;
             }
+            //todo jared head
 
             Rectangle src = { 0, 0, talkee.width, talkee.height };
             Rectangle dest = { box.x + box.width - 74, box.y + 10, 64, 64 };
