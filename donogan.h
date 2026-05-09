@@ -2439,16 +2439,16 @@ static void DonInitGroundL1GuitarKeyframeGroups(Donogan* d)
         dash->keyFrames[k].kfBones[7].rot = QuatXYZDeg(78, 0, 0);
         dash->keyFrames[k].kfBones[8].rot = QuatXYZDeg(0, 0, 8);
 
-        // Left leg back
-        // Keep thigh back, flip shin X so the knee folds the other way.
-        dash->keyFrames[k].kfBones[9].rot = QuatXYZDeg(-48, 0, -12);  // thigh_L
-        dash->keyFrames[k].kfBones[10].rot = QuatXYZDeg(-36, 0, 0);  // shin_L  was +36
+        // Left planting leg back
+        // Flip thigh X only: was -48.
+        dash->keyFrames[k].kfBones[9].rot = QuatXYZDeg(48, 0, -12);  // thigh_L
+        dash->keyFrames[k].kfBones[10].rot = QuatXYZDeg(-36, 0, 0);  // shin_L
         dash->keyFrames[k].kfBones[11].rot = QuatXYZDeg(0, 0, -6);  // foot_L
 
         // Right/front leg up, knee bent
-        // Keep thigh forward/up, flip shin X so the knee bends naturally.
-        dash->keyFrames[k].kfBones[12].rot = QuatXYZDeg(54, 0, 10);  // thigh_R
-        dash->keyFrames[k].kfBones[13].rot = QuatXYZDeg(78, 0, 0);  // shin_R  was -78
+        // Flip thigh X only: was +54.
+        dash->keyFrames[k].kfBones[12].rot = QuatXYZDeg(-54, 0, 10);  // thigh_R
+        dash->keyFrames[k].kfBones[13].rot = QuatXYZDeg(78, 0, 0);  // shin_R
         dash->keyFrames[k].kfBones[14].rot = QuatXYZDeg(8, 0, 6);  // foot_R
     }
 
