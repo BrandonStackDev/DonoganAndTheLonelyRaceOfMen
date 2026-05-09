@@ -2131,12 +2131,12 @@ static void DonInitAirL1GuitarSlamKeyframeGroups(Donogan* d)
     g->keyFrames[0].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
 
     // Legs: flipped major X direction from the first pass.
-    g->keyFrames[0].kfBones[9].rot = QuatXYZDeg(25, 0, 20);
-    g->keyFrames[0].kfBones[10].rot = QuatXYZDeg(-28, 0, 0);
+    g->keyFrames[0].kfBones[9].rot = QuatXYZDeg(-25, 0, -20);
+    g->keyFrames[0].kfBones[10].rot = QuatXYZDeg(28, 0, 0);
     g->keyFrames[0].kfBones[11].rot = QuatXYZDeg(0, 0, -10);
 
-    g->keyFrames[0].kfBones[12].rot = QuatXYZDeg(25, 0, -20);
-    g->keyFrames[0].kfBones[13].rot = QuatXYZDeg(-28, 0, 0);
+    g->keyFrames[0].kfBones[12].rot = QuatXYZDeg(-25, 0, 20);
+    g->keyFrames[0].kfBones[13].rot = QuatXYZDeg(28, 0, 0);
     g->keyFrames[0].kfBones[14].rot = QuatXYZDeg(0, 0, 10);
 
     // ------------------------------------------------------------
@@ -2156,12 +2156,12 @@ static void DonInitAirL1GuitarSlamKeyframeGroups(Donogan* d)
     g->keyFrames[1].kfBones[7].rot = QuatXYZDeg(18, 0, 0);
     g->keyFrames[1].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
 
-    g->keyFrames[1].kfBones[9].rot = QuatXYZDeg(48, 0, 36);
-    g->keyFrames[1].kfBones[10].rot = QuatXYZDeg(-48, 0, 0);
+    g->keyFrames[1].kfBones[9].rot = QuatXYZDeg(-48, 0, -36);
+    g->keyFrames[1].kfBones[10].rot = QuatXYZDeg(48, 0, 0);
     g->keyFrames[1].kfBones[11].rot = QuatXYZDeg(0, 0, -18);
 
-    g->keyFrames[1].kfBones[12].rot = QuatXYZDeg(48, 0, -36);
-    g->keyFrames[1].kfBones[13].rot = QuatXYZDeg(-48, 0, 0);
+    g->keyFrames[1].kfBones[12].rot = QuatXYZDeg(-48, 0, 36);
+    g->keyFrames[1].kfBones[13].rot = QuatXYZDeg(48, 0, 0);
     g->keyFrames[1].kfBones[14].rot = QuatXYZDeg(0, 0, 18);
 
     // ------------------------------------------------------------
@@ -2183,12 +2183,12 @@ static void DonInitAirL1GuitarSlamKeyframeGroups(Donogan* d)
     g->keyFrames[2].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
 
     // Legs kicked back/wide.
-    g->keyFrames[2].kfBones[9].rot = QuatXYZDeg(62, 0, 44);
-    g->keyFrames[2].kfBones[10].rot = QuatXYZDeg(-66, 0, 0);
+    g->keyFrames[2].kfBones[9].rot = QuatXYZDeg(-62, 0, -44);
+    g->keyFrames[2].kfBones[10].rot = QuatXYZDeg(66, 0, 0);
     g->keyFrames[2].kfBones[11].rot = QuatXYZDeg(8, 0, -22);
 
-    g->keyFrames[2].kfBones[12].rot = QuatXYZDeg(62, 0, -44);
-    g->keyFrames[2].kfBones[13].rot = QuatXYZDeg(-66, 0, 0);
+    g->keyFrames[2].kfBones[12].rot = QuatXYZDeg(-62, 0, 44);
+    g->keyFrames[2].kfBones[13].rot = QuatXYZDeg(66, 0, 0);
     g->keyFrames[2].kfBones[14].rot = QuatXYZDeg(8, 0, 22);
 
     // ------------------------------------------------------------
@@ -2207,12 +2207,12 @@ static void DonInitAirL1GuitarSlamKeyframeGroups(Donogan* d)
     g->keyFrames[3].kfBones[7].rot = QuatXYZDeg(8, 0, 0);
     g->keyFrames[3].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
 
-    g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(18, 0, 16);
-    g->keyFrames[3].kfBones[10].rot = QuatXYZDeg(-25, 0, 0);
+    g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(-18, 0, -16);
+    g->keyFrames[3].kfBones[10].rot = QuatXYZDeg(25, 0, 0);
     g->keyFrames[3].kfBones[11].rot = QuatXYZDeg(0, 0, -8);
 
-    g->keyFrames[3].kfBones[12].rot = QuatXYZDeg(18, 0, -16);
-    g->keyFrames[3].kfBones[13].rot = QuatXYZDeg(-25, 0, 0);
+    g->keyFrames[3].kfBones[12].rot = QuatXYZDeg(-18, 0, 16);
+    g->keyFrames[3].kfBones[13].rot = QuatXYZDeg(25, 0, 0);
     g->keyFrames[3].kfBones[14].rot = QuatXYZDeg(0, 0, 8);
 }
 static void DonInitMachineTurnKeyframeGroups(Donogan* d)
