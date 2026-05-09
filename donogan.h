@@ -3232,11 +3232,11 @@ static void DonApplyProcFrame(Donogan* d)
 
         float t = d->animTime;
 
-        if (t < 0.13f)      G->curKey = 0;
-        else if (t < 0.30f) G->curKey = 1;
-        else if (t < 0.52f) G->curKey = 2;
-        else if (t < 0.68f) G->curKey = 3;
-        else                d->animFinished = true;
+        if (t < 0.06f)       G->curKey = 0;
+        else if (t < 0.08f)  G->curKey = 1;
+        else if (t < 0.20f)  G->curKey = 2;
+        else if (t < 0.245f) G->curKey = 3;
+        else                 d->animFinished = true;
     } break;
     default:
         d->animFinished = true;  // unknown proc id → finish immediately
