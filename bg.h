@@ -630,7 +630,7 @@ static inline void BG_UpdateTruckRagdoll(BadGuy* b, float dt)
         b->vel = (Vector3){ 0 };
         b->pitch = 0;
         b->roll = 0;
-        b->health -= 99;
+        b->health -= 25;
         if (b->type == BG_YETI)
         {
             b->state = YETI_STATE_PLANNING;
@@ -650,6 +650,29 @@ static inline void BG_UpdateTruckRagdoll(BadGuy* b, float dt)
         {
             b->state = SKELETON_STATE_PLAN;
             BG_SetAnimSafe(b, ANIM_SKEL_IDLE, false);
+        }
+        if (b->health <= 0)
+        {
+            b->health = 0;
+
+            if (b->type == BG_YETI)
+            {
+                b->state = YETI_STATE_DYING;
+                BG_SetAnimSafe(b, ANIM_YETI_ROAR, false);
+            }
+            else if (b->type == BG_ROBO)
+            {
+                b->state = ROBO_STATE_DYING;
+            }
+            else if (b->type == BG_PUMPKIN_HOPPER)
+            {
+                b->state = HOPPER_STATE_DEAD;
+            }
+            else if (b->type == BG_SKELETON)
+            {
+                b->state = SKELETON_STATE_DEATH;
+                BG_SetAnimSafe(b, ANIM_SKEL_DEATH, true);
+            }
         }
     }
 }
@@ -1071,6 +1094,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     } break;
 
     case YETI_STATE_DYING:
+        b->pitch = Lerp(b->pitch, -90, Clamp(dt * 4.5f, 0.0f, 1.0f));
         if (b->drawColor.a != 0) { b->drawColor.a--; }
         if (b->drawColor.a == 0)
         {
