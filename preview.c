@@ -4835,7 +4835,7 @@ int main(void) {
                 int b = act_bg[i];
                 if (!bg[b].active) { continue; }
                 bool punching = don.punching;
-                bool bodyHit = CheckCollisionBoxes(bg[b].box, don.outerBox);
+                bool bodyHit = CheckCollisionBoxes(bg[b].box, don.outerBox) && !ShowGuitar(&don); //if the guitar is out, disable body hits
                 bool punchHit = punching && CheckCollisionBoxes(bg[b].box, don.punchBox);
                 bool wrenchHit = DonIsWrenchSwinging(&don) && CheckCollisionBoxes(bg[b].box, don.punchBox);
                 bool airR1Hit = DonIsAirR1HandstandAttack(&don) && CheckCollisionBoxes(bg[b].box, don.punchBox);
