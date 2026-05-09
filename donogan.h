@@ -202,7 +202,8 @@ typedef enum {
     DONOGAN_STATE_AIR_R1_RELEASE,
     DONOGAN_STATE_AIR_L2_SPELL_SLAM,
     DONOGAN_STATE_AIR_L1_GUITAR_SLAM,
-    //DONOGAN_STATE_AIR_GUITAR_NORMAL_ATTACK,
+    DONOGAN_STATE_GROUND_L1_GUITAR_DASH,
+    DONOGAN_STATE_GROUND_L1_GUITAR_SWING,
     DONOGAN_STATE_SWIM_IDLE,
     DONOGAN_STATE_SWIM_MOVE,
     DONOGAN_STATE_BOW_ENTER,
@@ -229,6 +230,8 @@ typedef enum {
 
 // ---------- Anim IDs present in your GLB (+procedural negatives)----------
 typedef enum {
+    DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_SWING = -15,
+    DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_DASH = -14,
     DONOGAN_ANIM_PROC_AIR_L1_GUITAR_SLAM = -13,
     DONOGAN_ANIM_PROC_AIR_L2_SPHERE_SLAM = -12,
     DONOGAN_ANIM_PROC_AIR_R1_RELEASE = -11,
@@ -324,6 +327,8 @@ typedef enum {
     AIR_R1_KFG_RELEASE,
     AIR_L2_KFG_SPHERE_SLAM,
     AIR_L1_KFG_GUITAR_SLAM,
+    GROUND_L1_KFG_GUITAR_DASH,
+    GROUND_L1_KFG_GUITAR_SWING,
     BOW_KFG_COUNT
 } BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
 typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
@@ -392,6 +397,12 @@ typedef struct {
     Texture2D wrenchTex;
 
     //GUITAR!!!!
+    // Ground guitar attack
+    int guitarGroundTargetIndex;
+    Vector3 guitarGroundTargetPos;
+    Vector3 guitarGroundDashStart;
+    float guitarGroundDashTimer;
+    bool guitarGroundHitDone;
     //GUITAR
     Model guitarModel;
     Texture2D guitarTex;
@@ -734,7 +745,11 @@ static inline void UpdateAirL2SlamSphere(float dt)
 }
 static bool ShowGuitar(Donogan* d)
 {
-    return d->state == DONOGAN_STATE_AIR_L1_GUITAR_SLAM; //DONOGAN_STATE_AIR_GUITAR_NORMAL_ATTACK,
+    if (!d) return false;
+
+    return d->state == DONOGAN_STATE_AIR_L1_GUITAR_SLAM ||
+        d->state == DONOGAN_STATE_GROUND_L1_GUITAR_DASH ||
+        d->state == DONOGAN_STATE_GROUND_L1_GUITAR_SWING;
 }
 static inline bool DonIsAirAttackState(const Donogan* d)
 {
@@ -755,6 +770,8 @@ static inline bool DonCanTakeBadGuyTouchDamage(const Donogan* d)
     if (d->state == DONOGAN_STATE_AIR_R1_HAND_STAND) { return false; }
     if (d->state == DONOGAN_STATE_AIR_L2_SPELL_SLAM) { return false; }
     if (d->state == DONOGAN_STATE_AIR_L1_GUITAR_SLAM) { return false; }
+    if (d->state == DONOGAN_STATE_GROUND_L1_GUITAR_DASH) { return false; }
+    if (d->state == DONOGAN_STATE_GROUND_L1_GUITAR_SWING) { return false; }
 
     return true;
 }
@@ -915,7 +932,81 @@ static inline void Don_SetAirR2FindTargetHook(DonAirR2FindTargetFn fn)
 {
     gDonAirR2FindTargetFn = fn;
 }
+typedef bool (*DonGroundGuitarFindTargetFn)(const Donogan* d, int* outIndex, Vector3* outTarget);
 
+static DonGroundGuitarFindTargetFn gDonGroundGuitarFindTargetFn = NULL;
+
+static inline void Don_SetGroundGuitarFindTargetHook(DonGroundGuitarFindTargetFn fn)
+{
+    gDonGroundGuitarFindTargetFn = fn;
+}
+
+static inline void DonFacePointXZ(Donogan* d, Vector3 p)
+{
+    if (!d) return;
+
+    Vector3 dir = Vector3Subtract(p, d->pos);
+    dir.y = 0.0f;
+
+    if (Vector3LengthSqr(dir) > 0.0001f)
+    {
+        d->yawY = atan2f(dir.x, dir.z);
+        d->model.transform = MatrixRotateY(d->yawY);
+    }
+}
+
+static inline bool DonGroundGuitarHitWindow(const Donogan* d)
+{
+    return d &&
+        d->state == DONOGAN_STATE_GROUND_L1_GUITAR_SWING &&
+        d->animTime >= 0.16f &&
+        d->animTime <= 0.36f &&
+        !d->guitarGroundHitDone &&
+        d->guitarGroundTargetIndex >= 0;
+}
+
+static inline bool Don_TryStartGroundL1GuitarDash(Donogan* d)
+{
+    if (!d) return false;
+    if (!d->hasGuitar) return false;
+    //if (!d->ja_l1_unlocked) return false;
+
+    int targetIndex = -1;
+    Vector3 targetPos = { 0 };
+    bool foundTarget = false;
+
+    if (gDonGroundGuitarFindTargetFn)
+    {
+        foundTarget = gDonGroundGuitarFindTargetFn(d, &targetIndex, &targetPos);
+    }
+
+    // No target? Still do the move.
+    // Dash 12 feet straight forward, then swing at empty air.
+    if (!foundTarget)
+    {
+        Vector3 fwd = { sinf(d->yawY), 0.0f, cosf(d->yawY) };
+
+        targetIndex = -1;
+        targetPos = Vector3Add(d->pos, Vector3Scale(fwd, 12.0f));
+        targetPos.y = d->pos.y;
+    }
+
+    d->guitarGroundTargetIndex = targetIndex;
+    d->guitarGroundTargetPos = targetPos;
+    d->guitarGroundDashStart = d->pos;
+    d->guitarGroundDashTimer = 0.0f;
+    d->guitarGroundHitDone = false;
+
+    d->velY = 0.0f;
+    d->velXZ = (Vector3){ 0 };
+    d->rollVel = (Vector3){ 0 };
+    d->onGround = true;
+
+    DonFacePointXZ(d, targetPos);
+    DonSetState(d, DONOGAN_STATE_GROUND_L1_GUITAR_DASH);
+
+    return true;
+}
 static void SpawnAirR2DownBall(const Donogan* d, SpellBall* b)
 {
     // Same basic spell ball, but spawned from above/chest/hand area.
@@ -2292,7 +2383,168 @@ static void DonInitMachineTurnKeyframeGroups(Donogan* d)
     g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);        //lfeft arm stuff
     g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(0, 0, -80);
 }
+static void DonInitGroundL1GuitarKeyframeGroups(Donogan* d)
+{
+    const DonBone BONES[] = {
+        DON_BONE_ROOT,
 
+        DON_BONE_DEF_SPINE002,
+        DON_BONE_DEF_SPINE003,
+
+        DON_BONE_DEF_UPPER_ARM_L,
+        DON_BONE_DEF_FOREARM_L,
+        DON_BONE_DEF_HAND_L,
+
+        DON_BONE_DEF_UPPER_ARM_R,
+        DON_BONE_DEF_FOREARM_R,
+        DON_BONE_DEF_HAND_R,
+
+        DON_BONE_DEF_THIGH_L,
+        DON_BONE_DEF_SHIN_L,
+        DON_BONE_DEF_FOOT_L,
+
+        DON_BONE_DEF_THIGH_R,
+        DON_BONE_DEF_SHIN_R,
+        DON_BONE_DEF_FOOT_R,
+    };
+
+    const int NUM_BONES = (int)(sizeof(BONES) / sizeof(BONES[0]));
+
+    // ---------------------------------------------------------------------
+    // DASH POSE
+    // ---------------------------------------------------------------------
+    KeyFrameGroup* dash = &d->kfGroups[GROUND_L1_KFG_GUITAR_DASH];
+    dash->state = DONOGAN_STATE_GROUND_L1_GUITAR_DASH;
+    dash->anim = DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_DASH;
+    dash->maxKey = 2;
+    dash->curKey = 0;
+
+    KfMakeZeroKey(&dash->keyFrames[0], 0.00f, BONES, NUM_BONES);
+    KfMakeZeroKey(&dash->keyFrames[1], 0.22f, BONES, NUM_BONES);
+
+    for (int k = 0; k < 2; k++)
+    {
+        // Root / body: forward dash lean
+        dash->keyFrames[k].kfBones[0].rot = QuatXYZDeg(8, 0, 0);
+        dash->keyFrames[k].kfBones[1].rot = QuatXYZDeg(12, 0, 0);
+        dash->keyFrames[k].kfBones[2].rot = QuatXYZDeg(18, 0, 0);
+
+        // Left arm bent at side, holding guitar low/ready
+        dash->keyFrames[k].kfBones[3].rot = QuatXYZDeg(34, -18, 58);
+        dash->keyFrames[k].kfBones[4].rot = QuatXYZDeg(82, 0, 0);
+        dash->keyFrames[k].kfBones[5].rot = QuatXYZDeg(0, 0, -8);
+
+        // Right arm bent in front of him
+        dash->keyFrames[k].kfBones[6].rot = QuatXYZDeg(52, -12, -30);
+        dash->keyFrames[k].kfBones[7].rot = QuatXYZDeg(78, 0, 0);
+        dash->keyFrames[k].kfBones[8].rot = QuatXYZDeg(0, 0, 8);
+
+        // Left leg back
+        dash->keyFrames[k].kfBones[9].rot = QuatXYZDeg(-48, 0, -12);
+        dash->keyFrames[k].kfBones[10].rot = QuatXYZDeg(36, 0, 0);
+        dash->keyFrames[k].kfBones[11].rot = QuatXYZDeg(0, 0, -6);
+
+        // Right/front leg up, knee bent
+        dash->keyFrames[k].kfBones[12].rot = QuatXYZDeg(54, 0, 10);
+        dash->keyFrames[k].kfBones[13].rot = QuatXYZDeg(-78, 0, 0);
+        dash->keyFrames[k].kfBones[14].rot = QuatXYZDeg(8, 0, 6);
+    }
+
+    // ---------------------------------------------------------------------
+    // SWING: guitar starts low-left, swings up through center
+    // ---------------------------------------------------------------------
+    KeyFrameGroup* swing = &d->kfGroups[GROUND_L1_KFG_GUITAR_SWING];
+    swing->state = DONOGAN_STATE_GROUND_L1_GUITAR_SWING;
+    swing->anim = DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_SWING;
+    swing->maxKey = 4;
+    swing->curKey = 0;
+
+    KfMakeZeroKey(&swing->keyFrames[0], 0.00f, BONES, NUM_BONES);
+    KfMakeZeroKey(&swing->keyFrames[1], 0.13f, BONES, NUM_BONES);
+    KfMakeZeroKey(&swing->keyFrames[2], 0.30f, BONES, NUM_BONES);
+    KfMakeZeroKey(&swing->keyFrames[3], 0.52f, BONES, NUM_BONES);
+
+    // KEY 0: guitar low-left, ready to rip upward
+    swing->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+    swing->keyFrames[0].kfBones[1].rot = QuatXYZDeg(6, 0, -6);
+    swing->keyFrames[0].kfBones[2].rot = QuatXYZDeg(10, 0, -10);
+
+    swing->keyFrames[0].kfBones[3].rot = QuatXYZDeg(28, -24, 70);
+    swing->keyFrames[0].kfBones[4].rot = QuatXYZDeg(96, 0, 0);
+    swing->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, -12);
+
+    swing->keyFrames[0].kfBones[6].rot = QuatXYZDeg(38, 8, -22);
+    swing->keyFrames[0].kfBones[7].rot = QuatXYZDeg(46, 0, 0);
+    swing->keyFrames[0].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+
+    // Legs planted after dash
+    swing->keyFrames[0].kfBones[9].rot = QuatXYZDeg(-18, 0, -14);
+    swing->keyFrames[0].kfBones[10].rot = QuatXYZDeg(24, 0, 0);
+    swing->keyFrames[0].kfBones[11].rot = QuatXYZDeg(0, 0, -6);
+    swing->keyFrames[0].kfBones[12].rot = QuatXYZDeg(14, 0, 14);
+    swing->keyFrames[0].kfBones[13].rot = QuatXYZDeg(-18, 0, 0);
+    swing->keyFrames[0].kfBones[14].rot = QuatXYZDeg(0, 0, 6);
+
+    // KEY 1: through center / hit moment
+    swing->keyFrames[1].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+    swing->keyFrames[1].kfBones[1].rot = QuatXYZDeg(14, 0, 0);
+    swing->keyFrames[1].kfBones[2].rot = QuatXYZDeg(24, 0, 4);
+
+    swing->keyFrames[1].kfBones[3].rot = QuatXYZDeg(58, -8, 28);
+    swing->keyFrames[1].kfBones[4].rot = QuatXYZDeg(72, 0, 0);
+    swing->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, 8);
+
+    swing->keyFrames[1].kfBones[6].rot = QuatXYZDeg(44, -8, -18);
+    swing->keyFrames[1].kfBones[7].rot = QuatXYZDeg(70, 0, 0);
+    swing->keyFrames[1].kfBones[8].rot = QuatXYZDeg(0, 0, 8);
+
+    swing->keyFrames[1].kfBones[9].rot = QuatXYZDeg(-12, 0, -18);
+    swing->keyFrames[1].kfBones[10].rot = QuatXYZDeg(20, 0, 0);
+    swing->keyFrames[1].kfBones[11].rot = QuatXYZDeg(0, 0, -8);
+    swing->keyFrames[1].kfBones[12].rot = QuatXYZDeg(18, 0, 18);
+    swing->keyFrames[1].kfBones[13].rot = QuatXYZDeg(-22, 0, 0);
+    swing->keyFrames[1].kfBones[14].rot = QuatXYZDeg(0, 0, 8);
+
+    // KEY 2: follow-through upward
+    swing->keyFrames[2].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+    swing->keyFrames[2].kfBones[1].rot = QuatXYZDeg(4, 0, 8);
+    swing->keyFrames[2].kfBones[2].rot = QuatXYZDeg(8, 0, 14);
+
+    swing->keyFrames[2].kfBones[3].rot = QuatXYZDeg(100, 10, -16);
+    swing->keyFrames[2].kfBones[4].rot = QuatXYZDeg(38, 0, 0);
+    swing->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, 16);
+
+    swing->keyFrames[2].kfBones[6].rot = QuatXYZDeg(30, -4, -10);
+    swing->keyFrames[2].kfBones[7].rot = QuatXYZDeg(30, 0, 0);
+    swing->keyFrames[2].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+
+    swing->keyFrames[2].kfBones[9].rot = QuatXYZDeg(-8, 0, -10);
+    swing->keyFrames[2].kfBones[10].rot = QuatXYZDeg(12, 0, 0);
+    swing->keyFrames[2].kfBones[11].rot = QuatXYZDeg(0, 0, -4);
+    swing->keyFrames[2].kfBones[12].rot = QuatXYZDeg(8, 0, 10);
+    swing->keyFrames[2].kfBones[13].rot = QuatXYZDeg(-10, 0, 0);
+    swing->keyFrames[2].kfBones[14].rot = QuatXYZDeg(0, 0, 4);
+
+    // KEY 3: recover
+    swing->keyFrames[3].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
+    swing->keyFrames[3].kfBones[1].rot = QuatXYZDeg(2, 0, 0);
+    swing->keyFrames[3].kfBones[2].rot = QuatXYZDeg(4, 0, 0);
+
+    swing->keyFrames[3].kfBones[3].rot = QuatXYZDeg(42, -8, 18);
+    swing->keyFrames[3].kfBones[4].rot = QuatXYZDeg(56, 0, 0);
+    swing->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);
+
+    swing->keyFrames[3].kfBones[6].rot = QuatXYZDeg(18, 0, -8);
+    swing->keyFrames[3].kfBones[7].rot = QuatXYZDeg(22, 0, 0);
+    swing->keyFrames[3].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+
+    swing->keyFrames[3].kfBones[9].rot = QuatXYZDeg(0, 0, -4);
+    swing->keyFrames[3].kfBones[10].rot = QuatXYZDeg(8, 0, 0);
+    swing->keyFrames[3].kfBones[11].rot = QuatXYZDeg(0, 0, 0);
+    swing->keyFrames[3].kfBones[12].rot = QuatXYZDeg(0, 0, 4);
+    swing->keyFrames[3].kfBones[13].rot = QuatXYZDeg(8, 0, 0);
+    swing->keyFrames[3].kfBones[14].rot = QuatXYZDeg(0, 0, 0);
+}
 static void DonInitWrenchSwingKf(Donogan* d)
 {
     DonBone bones[] = {
@@ -2420,6 +2672,8 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     case DONOGAN_ANIM_PROC_AIR_R1_RELEASE:   return &d->kfGroups[AIR_R1_KFG_RELEASE];
     case DONOGAN_ANIM_PROC_AIR_L2_SPHERE_SLAM: return &d->kfGroups[AIR_L2_KFG_SPHERE_SLAM];
     case DONOGAN_ANIM_PROC_AIR_L1_GUITAR_SLAM: return &d->kfGroups[AIR_L1_KFG_GUITAR_SLAM];
+    case DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_DASH: return &d->kfGroups[GROUND_L1_KFG_GUITAR_DASH];
+    case DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_SWING: return &d->kfGroups[GROUND_L1_KFG_GUITAR_SWING];
     default:                          return NULL;
     }
 }
@@ -2962,6 +3216,26 @@ static void DonApplyProcFrame(Donogan* d)
         else if (t < 0.72f) G->curKey = 3;
         else                d->animFinished = true;
     } break;
+    case DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_DASH:
+    {
+        if (!G) { d->animFinished = true; break; }
+
+        G->curKey = 0;
+        d->animFinished = false;
+    } break;
+
+    case DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_SWING:
+    {
+        if (!G) { d->animFinished = true; break; }
+
+        float t = d->animTime;
+
+        if (t < 0.13f)      G->curKey = 0;
+        else if (t < 0.30f) G->curKey = 1;
+        else if (t < 0.52f) G->curKey = 2;
+        else if (t < 0.68f) G->curKey = 3;
+        else                d->animFinished = true;
+    } break;
     default:
         d->animFinished = true;  // unknown proc id → finish immediately
         break;
@@ -3377,6 +3651,7 @@ static Donogan InitDonogan(void)
     DonInitAirR1HandstandKeyframeGroups(&d);
     DonInitAirL2SphereSlamKeyframeGroups(&d);
     DonInitAirL1GuitarSlamKeyframeGroups(&d);
+    DonInitGroundL1GuitarKeyframeGroups(&d);
     DonInitMachineTurnKeyframeGroups(&d);
     DonInitWrenchSwingKf(&d);
     DonInitArrows(&d);
@@ -3462,6 +3737,8 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_AIR_R1_RELEASE:      return DONOGAN_ANIM_PROC_AIR_R1_RELEASE;
     case DONOGAN_STATE_AIR_L2_SPELL_SLAM:  return DONOGAN_ANIM_PROC_AIR_L2_SPHERE_SLAM;
     case DONOGAN_STATE_AIR_L1_GUITAR_SLAM: return DONOGAN_ANIM_PROC_AIR_L1_GUITAR_SLAM;
+    case DONOGAN_STATE_GROUND_L1_GUITAR_DASH: return DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_DASH;
+    case DONOGAN_STATE_GROUND_L1_GUITAR_SWING: return DONOGAN_ANIM_PROC_GROUND_L1_GUITAR_SWING;
     case DONOGAN_STATE_MACHINE_TURN:      return DONOGAN_ANIM_PROC_MACHINE_TURN;
     case DONOGAN_STATE_WRENCH_SWING:      return DONOGAN_ANIM_PROC_WRENCH_SWING;
     case DONOGAN_STATE_HIT:         return DONOGAN_ANIM_Hit_Chest;
@@ -4046,6 +4323,19 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         }
                         DonSetState(d, DONOGAN_STATE_ROLL);
                     }
+                    else if (!d->bowMode && //what if you dont have the wrench...?
+                        L1Pressed &&
+                        d->hasGuitar &&
+                        d->ja_l1_unlocked &&
+                        (d->state == DONOGAN_STATE_IDLE ||
+                            d->state == DONOGAN_STATE_WALK ||
+                            d->state == DONOGAN_STATE_RUN))
+                    {
+                        if (Don_TryStartGroundL1GuitarDash(d))
+                        {
+                            break;
+                        }
+                    }
                     else if (squarePressed) {
                         DonSetState(d, DONOGAN_STATE_SPELL_ENTER);
                     }
@@ -4165,6 +4455,19 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     }
                     DonSetState(d, DONOGAN_STATE_ROLL);
                     break;
+                }
+                if (!d->bowMode &&
+                    L1Pressed &&
+                    d->hasGuitar &&
+                    d->ja_l1_unlocked &&
+                    (d->state == DONOGAN_STATE_IDLE ||
+                        d->state == DONOGAN_STATE_WALK ||
+                        d->state == DONOGAN_STATE_RUN))
+                {
+                    if (Don_TryStartGroundL1GuitarDash(d))
+                    {
+                        break;
+                    }
                 }
             } break;
 
@@ -4375,6 +4678,90 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 }
 
             } break;
+            case DONOGAN_STATE_GROUND_L1_GUITAR_DASH:
+            {
+                d->guitarGroundDashTimer += dt;
+
+                DonFacePointXZ(d, d->guitarGroundTargetPos);
+
+                Vector3 toTarget = Vector3Subtract(d->guitarGroundTargetPos, d->guitarGroundDashStart);
+                toTarget.y = 0.0f;
+
+                Vector3 dir = toTarget;
+
+                if (Vector3LengthSqr(dir) > 0.0001f)
+                {
+                    dir = Vector3Normalize(dir);
+                }
+                else
+                {
+                    dir = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+                }
+
+                // Stop slightly in front of the bad guy.
+                // If we have a target, stop slightly in front of it.
+                // If no target, dash all the way to the fake 12-foot point.
+                float stopShort = (d->guitarGroundTargetIndex >= 0) ? 3.0f : 0.0f;
+
+                Vector3 stopPos = Vector3Subtract(d->guitarGroundTargetPos,Vector3Scale(dir, stopShort));
+
+                stopPos.y = d->pos.y;
+
+                const float dashTime = 0.22f;
+
+                float t = d->guitarGroundDashTimer / dashTime;
+                if (t > 1.0f) t = 1.0f;
+
+                // Smooth but still snappy.
+                float s = t * t * (3.0f - 2.0f * t);
+
+                d->pos = Vector3Lerp(d->guitarGroundDashStart, stopPos, s);
+
+                // Stay grounded.
+                d->velY = 0.0f;
+                d->onGround = true;
+                d->pos.y = d->groundY - d->firstBB.min.y * d->scale;
+
+                Don_UpdateBoxes(d);
+
+                if (t >= 1.0f)
+                {
+                    DonFacePointXZ(d, d->guitarGroundTargetPos);
+                    DonSetState(d, DONOGAN_STATE_GROUND_L1_GUITAR_SWING);
+                    break;
+                }
+
+            } break;
+
+            case DONOGAN_STATE_GROUND_L1_GUITAR_SWING:
+            {
+                DonFacePointXZ(d, d->guitarGroundTargetPos);
+
+                d->velY = 0.0f;
+                d->velXZ = (Vector3){ 0 };
+                d->onGround = true;
+                d->pos.y = d->groundY - d->firstBB.min.y * d->scale;
+
+                Don_UpdateBoxes(d);
+
+                if (d->animFinished)
+                {
+                    d->guitarGroundTargetIndex = -1;
+                    d->guitarGroundHitDone = false;
+
+                    if (d->runningHeld)
+                    {
+                        DonSetState(d, DONOGAN_STATE_RUN);
+                    }
+                    else
+                    {
+                        DonSetState(d, DONOGAN_STATE_IDLE);
+                    }
+
+                    break;
+                }
+
+            } break;
             case DONOGAN_STATE_HIT:
                 d->bowMode = false;
                 d->bowCur = -1;
@@ -4439,6 +4826,19 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     }
                     DonSetState(d, DONOGAN_STATE_ROLL);
                     break;
+                }
+                if (!d->bowMode &&
+                    L1Pressed &&
+                    d->hasGuitar &&
+                    d->ja_l1_unlocked &&
+                    (d->state == DONOGAN_STATE_IDLE ||
+                        d->state == DONOGAN_STATE_WALK ||
+                        d->state == DONOGAN_STATE_RUN))
+                {
+                    if (Don_TryStartGroundL1GuitarDash(d))
+                    {
+                        break;
+                    }
                 }
                 // --- Steep-slope check: swap to falling + start sliding ---
                 if(onLoad && !d->gluedToPlatform && d->onGround)

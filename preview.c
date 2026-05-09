@@ -1148,7 +1148,147 @@ static void BG_CollideBadGuysWithStaticProps(float dt)
         }
     }
 }
+static bool Preview_FindGroundGuitarTarget(const Donogan* d, int* outIndex, Vector3* outTarget)
+{
+    if (!d || !outIndex || !outTarget) return false;
+    if (!bg || act_bg_count <= 0) return false;
 
+    const float RANGE = 30.0f;
+    const float RANGE_SQ = RANGE * RANGE;
+
+    // Narrow Don-facing cone/frustum.
+    // 22 degrees is narrow but usable.
+    const float COS_HALF_ANGLE = cosf(22.0f * DEG2RAD);
+
+    Vector3 fwd = { sinf(d->yawY), 0.0f, cosf(d->yawY) };
+
+    int bestIndex = -1;
+    Vector3 bestTarget = { 0 };
+    float bestScore = FLT_MAX;
+
+    for (int i = 0; i < act_bg_count; i++)
+    {
+        int bi = act_bg[i];
+
+        if (!BG_ActiveIndexOK(bi)) continue;
+
+        BadGuy* b = &bg[bi];
+
+        if (!b->active) continue;
+        if (b->dead) continue;
+        if (BG_IsActuallyDeadState(b)) continue;
+        if (b->gbm_index < 0) continue;
+
+        Vector3 target = {
+            (b->box.min.x + b->box.max.x) * 0.5f,
+            (b->box.min.y + b->box.max.y) * 0.5f,
+            (b->box.min.z + b->box.max.z) * 0.5f
+        };
+
+        if (Vector3LengthSqr(target) < 0.0001f)
+        {
+            target = b->pos;
+            target.y += 2.0f;
+        }
+
+        Vector3 to = Vector3Subtract(target, d->pos);
+        to.y = 0.0f;
+
+        float distSq = Vector3LengthSqr(to);
+        if (distSq <= 0.0001f) continue;
+        if (distSq > RANGE_SQ) continue;
+
+        Vector3 dir = Vector3Normalize(to);
+        float dot = Vector3DotProduct(fwd, dir);
+
+        // Outside narrow forward cone.
+        if (dot < COS_HALF_ANGLE) continue;
+
+        // Prefer closer and more centered.
+        float centerPenalty = (1.0f - dot) * 12.0f;
+        float score = distSq + centerPenalty;
+
+        if (score < bestScore)
+        {
+            bestScore = score;
+            bestIndex = bi;
+            bestTarget = target;
+        }
+    }
+
+    if (bestIndex < 0) return false;
+
+    *outIndex = bestIndex;
+    *outTarget = bestTarget;
+    return true;
+}
+static void Preview_ResolveGroundGuitarHit(Donogan* d)
+{
+    if (!d) return;
+    if (!DonGroundGuitarHitWindow(d)) return;
+
+    int bi = d->guitarGroundTargetIndex;
+
+    // Mark done even if the target vanished, so it cannot repeat every frame.
+    d->guitarGroundHitDone = true;
+
+    if (!BG_ActiveIndexOK(bi)) return;
+
+    BadGuy* b = &bg[bi];
+
+    if (!b->active) return;
+    if (b->dead) return;
+    if (BG_IsActuallyDeadState(b)) return;
+
+    Vector3 dir = Vector3Subtract(b->pos, d->pos);
+    dir.y = 0.0f;
+
+    if (Vector3LengthSqr(dir) < 0.0001f)
+    {
+        dir = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+    }
+
+    dir = Vector3Normalize(dir);
+
+    // Huge launch. This is intentionally much bigger than a normal hit.
+    Vector3 impulse = Vector3Scale(dir, 135.0f);
+    impulse.y = 32.0f;
+
+    // Give big guys a little less vertical chaos, but still kill them.
+    if (b->type == BG_YETI)
+    {
+        impulse.x *= 0.75f;
+        impulse.z *= 0.75f;
+        impulse.y *= 0.75f;
+    }
+    else if (b->type == BG_PUMPKIN_HOPPER)
+    {
+        impulse.x *= 1.20f;
+        impulse.z *= 1.20f;
+        impulse.y *= 1.15f;
+    }
+
+    // Separate him from Don before ragdoll so it does not immediately overlap.
+    b->pos = Vector3Add(b->pos, Vector3Scale(dir, 1.25f));
+    BG_UpdateMainBox(b);
+
+    if (b->type == BG_GHOST)
+    {
+        // Ghosts may not support truck ragdoll cleanly.
+        // Health 0 lets normal death/puff handling take over.
+        b->health = 0;
+    }
+    else
+    {
+        BG_StartTruckRagdoll(b, impulse, 18.0f);
+        b->health = 0;
+    }
+
+    TraceLog(LOG_INFO,
+        "GROUND GUITAR HIT: target=%d type=%d impulse=(%.2f %.2f %.2f)",
+        bi, b->type, impulse.x, impulse.y, impulse.z
+    );
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5081,6 +5221,7 @@ int main(void) {
             WaterWheel_CollideDonny(&don);
         }
         Don_SetAirR2FindTargetHook(Preview_FindAirR2Target);
+        Don_SetGroundGuitarFindTargetHook(Preview_FindGroundGuitarTarget);
         DonUpdate(&don, havePad ? &gpad : NULL, dt, vehicleMode, disableRoll);
         DetectPortals(&don);
         Garden_Update(&don, gpad.btnSquare);
@@ -5155,6 +5296,8 @@ int main(void) {
         cottageDoorBox = MakeCottageDoorBox(doorPos);
         //shark
         Shark_Update(&shark, &don, dt);
+        //guitar dash/ground-attack
+        Preview_ResolveGroundGuitarHit(&don);
         //punchin and fightin and cusin
         don.punching =
             DonIsPunching(&don) ||
