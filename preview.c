@@ -4834,6 +4834,7 @@ int main(void) {
             {
                 int b = act_bg[i];
                 if (!bg[b].active) { continue; }
+
                 bool punching = don.punching;
                 bool bodyHit = CheckCollisionBoxes(bg[b].box, don.outerBox) && !ShowGuitar(&don); //if the guitar is out, disable body hits
                 bool punchHit = punching && CheckCollisionBoxes(bg[b].box, don.punchBox);
@@ -4845,6 +4846,14 @@ int main(void) {
 
                 if (!bodyHit && !punchHit && !airR1Hit && !guitarHit) { continue; }
                 if (guitarHit) { bg[b].health -= 75; } //base guitar slam hit
+
+                bool bgCannotDealDamage = bg[b].dead || bg[b].ragdoll || 
+                    (bg[b].type == BG_GHOST && (bg[b].state == GHOST_STATE_HIT || bg[b].state == GHOST_STATE_DEATH)) || 
+                    (bg[b].type == BG_YETI && (bg[b].state == YETI_STATE_HIT || bg[b].state == YETI_STATE_DYING || bg[b].state == YETI_STATE_DEAD)) || 
+                    (bg[b].type == BG_ROBO && (bg[b].state == ROBO_STATE_DYING || bg[b].state == ROBO_STATE_DEAD)) || 
+                    (bg[b].type == BG_PUMPKIN_HOPPER && (bg[b].state == HOPPER_STATE_HURT || bg[b].state == HOPPER_STATE_DEAD)) || 
+                    (bg[b].type == BG_SKELETON && (bg[b].state == SKELETON_STATE_HIT || bg[b].state == SKELETON_STATE_DEATH || bg[b].state == SKELETON_STATE_DEAD));
+                if (bgCannotDealDamage) { continue; }
                 // Handstand of death:
                 // This happens before normal body-hit damage, so Don does not get hurt by touching the BG.
                 if (airR1Hit)
