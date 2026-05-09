@@ -2434,10 +2434,11 @@ static void DonInitGroundL1GuitarKeyframeGroups(Donogan* d)
         dash->keyFrames[k].kfBones[4].rot = QuatXYZDeg(82, 0, 0);
         dash->keyFrames[k].kfBones[5].rot = QuatXYZDeg(0, 0, -8);
 
-        // Right arm bent in front of him
-        dash->keyFrames[k].kfBones[6].rot = QuatXYZDeg(52, -12, -30);
-        dash->keyFrames[k].kfBones[7].rot = QuatXYZDeg(78, 0, 0);
-        dash->keyFrames[k].kfBones[8].rot = QuatXYZDeg(0, 0, 8);
+        // Right arm mostly still at his side.
+        // Small elbow bend only; no big forward pose.
+        dash->keyFrames[k].kfBones[6].rot = QuatXYZDeg(12, 0, -10);  // upper_arm_R
+        dash->keyFrames[k].kfBones[7].rot = QuatXYZDeg(24, 0, 0);  // forearm_R
+        dash->keyFrames[k].kfBones[8].rot = QuatXYZDeg(0, 0, 2);  // hand_R
 
         // Left planting leg back
         // Flip thigh X only: was -48.
