@@ -4844,7 +4844,7 @@ int main(void) {
                 DonAttackType atk = (wrenchHit || guitarHit) ? ATTACK_THROW : ATTACK_PUNCH;
 
                 if (!bodyHit && !punchHit && !airR1Hit && !guitarHit) { continue; }
-                if (guitarHit) { bg[b].health = 0; }
+                if (guitarHit) { bg[b].health -= 75; } //base guitar slam hit
                 // Handstand of death:
                 // This happens before normal body-hit damage, so Don does not get hurt by touching the BG.
                 if (airR1Hit)
