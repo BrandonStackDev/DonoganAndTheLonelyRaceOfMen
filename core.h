@@ -233,7 +233,7 @@ static int TileDistSq(const TileEntry* t, int tx, int ty)
 // 
 //very very important
 float scaleNightTransition = 0.00989f;
-float gravityCollected = 0.0f;
+float gravityCollected = 0;
 int chosenX = 7;
 int chosenY = 7;
 int closestCX = 7;
@@ -291,12 +291,12 @@ Color skyboxDay = { 255, 255, 255, 180 };
 Color skyboxNight = { 8,  10,  80, 253 };
 Color backgroundDay = { 255, 255, 255, 255 };
 Color backgroundNight = { 7,   8, 120, 255 };
-Vector3 LightPosTargetDay = { 50.0f, 50.0f, 0.0f };
-Vector3 LightPosTargetNight = { 4.0f, 30.0f, 35.0f };
-Vector3 LightPosDraw = { 4.0f, 30.0f, 35.0f };
-Vector3 LightTargetTargetDay = { 1.0f, 0.0f, 0.0f };
-Vector3 LightTargetTargetNight = { 4.0f, 50.0f, 5.0f };
-Vector3 LightTargetDraw = { 4.0f, 0.0f, 5.0f };
+Vector3 LightPosTargetDay = { 50, 50, 0 };
+Vector3 LightPosTargetNight = { 4.0f, 30, 35.0f };
+Vector3 LightPosDraw = { 4.0f, 30, 35.0f };
+Vector3 LightTargetTargetDay = { 1.0f, 0, 0 };
+Vector3 LightTargetTargetNight = { 4.0f, 50, 5.0f };
+Vector3 LightTargetDraw = { 4.0f, 0, 5.0f };
 Color lightColorTargetNight = { 20,   30, 140, 202 };
 Color lightColorTargetDay = { 102, 191, 255, 255 };
 Color lightColorDraw = { 102, 191, 255, 255 };
@@ -656,20 +656,20 @@ void UpdateStars(Star* stars, int count)
         // === XZ movement ===
         //new stuff
         stars[i].timer -= 0.0001;
-        if (stars[i].timer <= 0.0f)
+        if (stars[i].timer <= 0)
         {
             // 25% chance this bug blinks
             if (GetRandomValue(1, 597) < 13)
             {
                 stars[i].alpha = 1.0f;
             }
-            stars[i].timer = 1.0f + (GetRandomValue(0, 100000) / 100.0f); // reset 1–2 sec
+            stars[i].timer = 1.0f + (GetRandomValue(0, 100000) / 100); // reset 1–2 sec
         }
         // fade out
-        if (stars[i].alpha > 0.0f)
+        if (stars[i].alpha > 0)
         {
             stars[i].alpha -= 0.07f; // fade fast
-            if (stars[i].alpha < 0.0f) stars[i].alpha = 0.0f;
+            if (stars[i].alpha < 0) stars[i].alpha = 0;
         }
     }
 }
@@ -684,7 +684,7 @@ Star* GenerateStars(int count)
     for (int i = 0; i < count; i++)
     {
         float angle = (float)GetRandomValue(0, 359) * 0.88;
-        float dist = ((float)GetRandomValue(0, 1000) / 1000.0f) * 9008; // random 0 to maxDistance
+        float dist = ((float)GetRandomValue(0, 1000) / 1000) * 9008; // random 0 to maxDistance
 
         float x = cosf(angle) * dist;
         float z = sinf(angle) * dist;

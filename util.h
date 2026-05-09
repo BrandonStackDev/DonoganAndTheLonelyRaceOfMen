@@ -37,7 +37,7 @@
 #define MAX_WATER_PATCHES_PER_CHUNK 64
 #define WATER_Y_OFFSET 20.02f //lets get wet!
 #define PLAYER_FLOAT_Y_POSITION 298.75f 
-#define WHALE_SURFACE 300.0f 
+#define WHALE_SURFACE 300 
 
 
 //movement

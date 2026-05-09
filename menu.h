@@ -68,8 +68,8 @@ static inline void   Menu_Toggle(GameState* gs) { if (gs->menuOpen) Menu_Close(g
 // helpers
 static inline float clampf(float v, float lo, float hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
 static inline void  Menu_ApplyVolumes(GameState* gs) {
-    gs->musicVol = clampf(gs->musicVol, 0.0f, 1.0f);
-    gs->soundVol = clampf(gs->soundVol, 0.0f, 1.0f);
+    gs->musicVol = clampf(gs->musicVol, 0, 1.0f);
+    gs->soundVol = clampf(gs->soundVol, 0, 1.0f);
     if (gs->currentMusicLoaded) SetMusicVolume(gs->currentMusic, gs->musicVol);  // immediate feedback  :contentReference[oaicite:2]{index=2}
     SetMasterVolume(gs->soundVol); // affects all SFX
 }
@@ -606,7 +606,7 @@ static void _DrawInventory(GameState* gs) {
     DrawTextEx(GetFontDefault(),
         "X: use  |  Triangle: back",
         (Vector2) {panel.x + 12, panel.y + panel.height - 28},
-        20.0f, 1.0f, MENU_DIM);
+        20, 1.0f, MENU_DIM);
 }
 
 
@@ -636,7 +636,7 @@ static void _DrawOptions(GameState* gs) {
         Menu_DrawRow(rows[i], row, gs->menuSel - gs->menuScroll, panel, MENU_TEXT, false);
     }
 
-    DrawTextEx(GetFontDefault(), "Left/Right: change value  |  Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
+    DrawTextEx(GetFontDefault(), "Left/Right: change value  |  Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20, 1.0f, MENU_DIM);
 }
 
 static void _DrawMissions(GameState* gs) {
@@ -653,7 +653,7 @@ static void _DrawMissions(GameState* gs) {
         bool done = missions[i].complete;
         Menu_DrawRow(nm, row, gs->menuSel - gs->menuScroll, panel, MENU_TEXT, done);
     }
-    DrawTextEx(GetFontDefault(), "X: details   |   Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
+    DrawTextEx(GetFontDefault(), "X: details   |   Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20, 1.0f, MENU_DIM);
 }
 
 static void _DrawMissionDetail(GameState* gs) {
@@ -669,7 +669,7 @@ static void _DrawMissionDetail(GameState* gs) {
     // wrap description
     Rectangle textBox = (Rectangle){ panel.x + 12, panel.y + 48, panel.width - 24, panel.height - 60 };
     DrawTextBoxed(GetFontDefault(), ds, textBox, 22.0f, 2.0f, true, BLACK);
-    DrawTextEx(GetFontDefault(), "Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
+    DrawTextEx(GetFontDefault(), "Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20, 1.0f, MENU_DIM);
 }
 
 static void _DrawWarp(GameState* gs) {
@@ -681,7 +681,7 @@ static void _DrawWarp(GameState* gs) {
     int totalLit = _BuildLitFires(tmp, 256);
     if (totalLit <= 0) {
         DrawTextEx(GetFontDefault(), "No lit fireplaces yet.", (Vector2) { panel.x + 12, panel.y + 12 }, 24.0f, 1.0f, MENU_TEXT);
-        DrawTextEx(GetFontDefault(), "Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
+        DrawTextEx(GetFontDefault(), "Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20, 1.0f, MENU_DIM);
         return;
     }
 
@@ -694,7 +694,7 @@ static void _DrawWarp(GameState* gs) {
         Menu_DrawRow(nm, row, gs->menuSel - gs->menuScroll, panel, MENU_TEXT, false);
     }
 
-    DrawTextEx(GetFontDefault(), "X: warp  |  Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20.0f, 1.0f, MENU_DIM);
+    DrawTextEx(GetFontDefault(), "X: warp  |  Triangle: back", (Vector2) { panel.x + 12, panel.y + panel.height - 28 }, 20, 1.0f, MENU_DIM);
 }
 static void _DrawMaps(GameState* gs)
 {
@@ -725,7 +725,7 @@ static void _DrawMaps(GameState* gs)
         (Vector2) {
         panel.x + 12, panel.y + panel.height - 28
     },
-        20.0f, 1.0f, MENU_DIM);
+        20, 1.0f, MENU_DIM);
 }
 // Public draw entrypoint: call this from your 2D HUD pass (does NOT pause your world)
 static void Menu_DrawOverlay(const GameState* gs, const Donogan* d)

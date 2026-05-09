@@ -63,7 +63,7 @@ static inline void Corn_AddPlant(Vector3 pos, float yaw, float scale)
     if (gCornCount >= CORN_MAX_INSTANCES) return;
 
     float ground = GetTerrainHeightFromMeshXZ(pos.x, pos.z);
-    if (ground > -9000.0f) {
+    if (ground > -9000) {
         pos.y = ground + CORN_GROUND_Y_OFFSET;
     }
 
@@ -88,7 +88,7 @@ static inline void Corn_AddFieldBox(
 )
 {
     if (spacing <= 0.01f) spacing = 1.0f;
-    if (scaleMin <= 0.0f) scaleMin = CORN_DEFAULT_SCALE;
+    if (scaleMin <= 0) scaleMin = CORN_DEFAULT_SCALE;
     if (scaleMax < scaleMin) scaleMax = scaleMin;
 
     int cols = (int)(sizeX / spacing);
@@ -106,10 +106,10 @@ static inline void Corn_AddFieldBox(
             float fx = startX + x * spacing;
             float fz = startZ + z * spacing;
 
-            if (jitter > 0.0f)
+            if (jitter > 0)
             {
-                fx += ((float)GetRandomValue(-1000, 1000) / 1000.0f) * jitter;
-                fz += ((float)GetRandomValue(-1000, 1000) / 1000.0f) * jitter;
+                fx += ((float)GetRandomValue(-1000, 1000) / 1000) * jitter;
+                fz += ((float)GetRandomValue(-1000, 1000) / 1000) * jitter;
             }
 
             float yaw = ((float)GetRandomValue(0, 359)) * DEG2RAD;
@@ -117,7 +117,7 @@ static inline void Corn_AddFieldBox(
             float scale = scaleMin;
             if (scaleMax > scaleMin)
             {
-                float t = (float)GetRandomValue(0, 1000) / 1000.0f;
+                float t = (float)GetRandomValue(0, 1000) / 1000;
                 scale = scaleMin + (scaleMax - scaleMin) * t;
             }
 

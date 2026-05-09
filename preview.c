@@ -47,7 +47,7 @@ static bool Preview_FindAirR2Target(const Donogan* d, Vector3 spawn, Vector3* ou
     if (!d || !outTarget) return false;
     if (!bg || act_bg_count <= 0) return false;
 
-    const float TARGET_RANGE = 70.0f;
+    const float TARGET_RANGE = 70;
     const float TARGET_RANGE_SQ = TARGET_RANGE * TARGET_RANGE;
 
     int bestIndex = -1;
@@ -124,8 +124,8 @@ LightningBug* GenerateLightningBugs(Vector3 cameraPos, int count, float maxDista
         float dist = ((float)GetRandomValue(10, 1000) * 0.001f) * maxDistance;
         float x = cameraPos.x + (cosf(angle) * dist);
         float z = cameraPos.z + (sinf(angle) * dist);
-        bugs[i].angle = 0.0f;
-        bugs[i].pos = (Vector3){ x, 0.0f, z }; // you'll set .y later
+        bugs[i].angle = 0;
+        bugs[i].pos = (Vector3){ x, 0, z }; // you'll set .y later
         bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z);
         bugs[i].pos.y = bugs[i].pos.y + GetRandomValue(1, 10);
         if (bugs[i].pos.y < -5000) { bugs[i].pos.y = 500; }
@@ -152,8 +152,8 @@ void RegenerateLightningBugs(LightningBug* bugs, Vector3 cameraPos, int count, f
 
         float x = cameraPos.x + cosf(angle) * dist;
         float z = cameraPos.z + sinf(angle) * dist;
-        bugs[i].angle = 0.0f;
-        bugs[i].pos = (Vector3){ x, 0.0f, z }; // you'll set .y later
+        bugs[i].angle = 0;
+        bugs[i].pos = (Vector3){ x, 0, z }; // you'll set .y later
         bugs[i].pos.y = GetTerrainHeightFromMeshXZ(bugs[i].pos.x, bugs[i].pos.z);
         bugs[i].pos.y = bugs[i].pos.y + GetRandomValue(1, 10);
         if (bugs[i].pos.y < -5000) { bugs[i].pos.y = 500; }
@@ -176,7 +176,7 @@ void UpdateLightningBugs(LightningBug* bugs, int count, float deltaTime)
         bugs[i].pos.z += sinf(bugs[i].angle) * speed * (deltaTime + randDeltZ);
 
         // Drift the angle slightly (wander)
-        float angleWander = ((float)GetRandomValue(-50, 50) / 360.0f) * PI; // small random
+        float angleWander = ((float)GetRandomValue(-50, 50) / 360) * PI; // small random
         bugs[i].angle += angleWander;
 
         // === Y movement ===
@@ -191,26 +191,26 @@ void UpdateLightningBugs(LightningBug* bugs, int count, float deltaTime)
 
         //new stuff
         bugs[i].timer -= deltaTime;
-        if (bugs[i].timer <= 0.0f)
+        if (bugs[i].timer <= 0)
         {
             // 25% chance this bug blinks
             if (GetRandomValue(0, 99) < 23)
             {
                 bugs[i].alpha = 1.0f;
             }
-            bugs[i].timer = 1.0f + (GetRandomValue(0, 100) / 100.0f); // reset 1–2 sec
+            bugs[i].timer = 1.0f + (GetRandomValue(0, 100) / 100); // reset 1–2 sec
         }
         // fade out
-        if (bugs[i].alpha > 0.0f)
+        if (bugs[i].alpha > 0)
         {
             bugs[i].alpha -= deltaTime * 2.0f; // fade fast
-            if (bugs[i].alpha < 0.0f) bugs[i].alpha = 0.0f;
+            if (bugs[i].alpha < 0) bugs[i].alpha = 0;
         }
     }
 }
 
 static GameMusic gMusic;
-static float gSongPrevPlayed = 0.0f;
+static float gSongPrevPlayed = 0;
 
 // Edge detection for D-pad (so we act on "press", not "hold")
 static int prevDpadUp = 0, prevDpadDown = 0, prevDpadLeft = 0, prevDpadRight = 0;
@@ -226,7 +226,7 @@ static void Audio_SelectAlbumRelative(int delta)
     GM_Select(&gGame, &gMusic, a, 0);
     if (GM_LoadCurrent(&gGame, &gMusic)) {
         PlayMusicStream(gGame.currentMusic);
-        gSongPrevPlayed = 0.0f;  // <-- add
+        gSongPrevPlayed = 0;  // <-- add
     }
 }
 
@@ -241,7 +241,7 @@ static void Audio_SelectSongRelative(int delta)
     GM_Select(&gGame, &gMusic, gGame.currentAlbumIndex, s);
     if (GM_LoadCurrent(&gGame, &gMusic)) {
         PlayMusicStream(gGame.currentMusic);
-        gSongPrevPlayed = 0.0f;  // <-- add
+        gSongPrevPlayed = 0;  // <-- add
     }
 }
 static inline void PushDonnyOutOfMachineWorldBoxes(Donogan* d)
@@ -295,11 +295,11 @@ static inline void PushDonnyOutOfMachineWorldBoxes(Donogan* d)
 
         if (penX < penZ)
         {
-            d->pos.x += (diff.x >= 0.0f) ? penX + SKIN : -penX - SKIN;
+            d->pos.x += (diff.x >= 0) ? penX + SKIN : -penX - SKIN;
         }
         else
         {
-            d->pos.z += (diff.z >= 0.0f) ? penZ + SKIN : -penZ - SKIN;
+            d->pos.z += (diff.z >= 0) ? penZ + SKIN : -penZ - SKIN;
         }
 
         d->box = UpdateBoundingBox(d->origBB, d->pos);
@@ -312,21 +312,21 @@ static inline Vector3 Don_GetRecentMoveXZ(const Donogan* d, Vector3 currentPos, 
 {
     if (!d) return (Vector3) { 0 };
 
-    if (minLen <= 0.0f) minLen = 0.02f;
+    if (minLen <= 0) minLen = 0.02f;
 
     const float minLenSq = minLen * minLen;
 
-    currentPos.y = 0.0f;
+    currentPos.y = 0;
 
     // First: compare current position against older history positions.
     // This works when Don has been stuck/still for a few frames but recently moved.
     for (int hb = 1; hb <= d->posHistoryCount && hb <= DON_POS_HISTORY_MAX; hb++)
     {
         Vector3 old = Don_GetHistoryPosition(d, hb);
-        old.y = 0.0f;
+        old.y = 0;
 
         Vector3 move = Vector3Subtract(currentPos, old);
-        move.y = 0.0f;
+        move.y = 0;
 
         if (Vector3LengthSqr(move) >= minLenSq)
         {
@@ -340,11 +340,11 @@ static inline Vector3 Don_GetRecentMoveXZ(const Donogan* d, Vector3 currentPos, 
         Vector3 newer = Don_GetHistoryPosition(d, hb);
         Vector3 older = Don_GetHistoryPosition(d, hb + 1);
 
-        newer.y = 0.0f;
-        older.y = 0.0f;
+        newer.y = 0;
+        older.y = 0;
 
         Vector3 move = Vector3Subtract(newer, older);
-        move.y = 0.0f;
+        move.y = 0;
 
         if (Vector3LengthSqr(move) >= minLenSq)
         {
@@ -358,8 +358,8 @@ static inline Vector3 Don_GetRecentMoveXZ(const Donogan* d, Vector3 currentPos, 
 static BoundingBox MakeCottageDoorBox(Vector3 center)
 {
     return (BoundingBox) {
-        { center.x - 10.0f, center.y - 8.0f, center.z - 1.67f },
-        { center.x + 10.0f, center.y + 8.0f, center.z + 1.67f }
+        { center.x - 10, center.y - 8.0f, center.z - 1.67f },
+        { center.x + 10, center.y + 8.0f, center.z + 1.67f }
     };
 }
 static inline bool IsInCaveMode(Donogan* d, bool caveMode)
@@ -540,7 +540,7 @@ static void Abby_GiveMedicine(Donogan* d)
 }
 
 #define GALADRIEL_BOOK_GOAL 10
-#define GALADRIEL_BOOK_PRICE 80.0f
+#define GALADRIEL_BOOK_PRICE 80
 
 static TALK_TYPE Galadriel_GetTalkType(Donogan* d)
 {
@@ -631,18 +631,18 @@ static bool Don_BoxHitsSceneMeshAtPos(Donogan* d, int sceneIndex, Vector3 testPo
 }
 static bool Don_HistoryIsWiggingOut(Donogan* d)
 {
-    float path = 0.0f;
+    float path = 0;
     for (int hb = 1; hb < DON_POS_HISTORY_MAX; hb++)
     {
         Vector3 a = Don_GetHistoryPosition(d, hb);
         Vector3 b = Don_GetHistoryPosition(d, hb + 1);
-        a.y = b.y = 0.0f;
+        a.y = b.y = 0;
         path += Vector3Distance(a, b);
     }
 
     Vector3 newest = Don_GetHistoryPosition(d, 1);
     Vector3 oldest = Don_GetHistoryPosition(d, DON_POS_HISTORY_MAX);
-    newest.y = oldest.y = 0.0f;
+    newest.y = oldest.y = 0;
 
     float net = Vector3Distance(newest, oldest);
 
@@ -702,15 +702,15 @@ static inline Vector3 AABB_PushAOutOfB(BoundingBox a, BoundingBox b)
 
     if (ax <= ay && ax <= az)
     {
-        return (Vector3) { ox, 0.0f, 0.0f };
+        return (Vector3) { ox, 0, 0 };
     }
 
     if (az <= ax && az <= ay)
     {
-        return (Vector3) { 0.0f, 0.0f, oz };
+        return (Vector3) { 0, 0, oz };
     }
 
-    return (Vector3) { 0.0f, oy, 0.0f };
+    return (Vector3) { 0, oy, 0 };
 }
 
 static inline bool Truck_FindBadGuyHit(BadGuy* b, Vector3* outPush, TruckHitPart* outPart)
@@ -751,7 +751,7 @@ static inline bool Truck_FindBadGuyHit(BadGuy* b, Vector3* outPush, TruckHitPart
         Vector3 push = AABB_PushAOutOfB(b->box, truckBoxes[i]);
         float score = fabsf(push.x) + fabsf(push.y) + fabsf(push.z);
 
-        if (score > 0.0f && score < bestScore)
+        if (score > 0 && score < bestScore)
         {
             bestScore = score;
             bestPush = push;
@@ -800,9 +800,9 @@ static void Truck_CollideBadGuys(float dt)
         if (b->dead) continue;
         if (b->type == BG_GHOST) continue;
         if (b->gbm_index < 0) continue;
-        if (b->truckHitCooldown > 0.0f) continue;
+        if (b->truckHitCooldown > 0) continue;
         if (b->ragdoll) continue;
-        if (Vector3DistanceSqr(b->pos, truckPosition) > 90.0f * 90.0f) continue;
+        if (Vector3DistanceSqr(b->pos, truckPosition) > 90 * 90) continue;
 
         Vector3 push;
         TruckHitPart part;
@@ -810,17 +810,17 @@ static void Truck_CollideBadGuys(float dt)
         if (!Truck_FindBadGuyHit(b, &push, &part)) continue;
 
         Vector3 dir = push;
-        dir.y = 0.0f;
+        dir.y = 0;
 
         if (Vector3LengthSqr(dir) < 0.0001f)
         {
             dir = Vector3Subtract(b->pos, truckPosition);
-            dir.y = 0.0f;
+            dir.y = 0;
         }
 
         if (Vector3LengthSqr(dir) < 0.0001f)
         {
-            dir = (Vector3){ sinf(truckAngle), 0.0f, cosf(truckAngle) };
+            dir = (Vector3){ sinf(truckAngle), 0, cosf(truckAngle) };
         }
 
         dir = Vector3Normalize(dir);
@@ -829,14 +829,14 @@ static void Truck_CollideBadGuys(float dt)
         if (TruckHitPart_IsRearTire(part) && isTruckSliding && Vector3LengthSqr(truckSlideForward) > 0.0001f)
         {
             Vector3 slideDir = truckSlideForward;
-            slideDir.y = 0.0f;
+            slideDir.y = 0;
 
             if (Vector3LengthSqr(slideDir) > 0.0001f)
             {
                 slideDir = Vector3Normalize(slideDir);
 
                 // Make sure slideDir throws the BG away, not under the truck.
-                if (Vector3DotProduct(slideDir, dir) < 0.0f)
+                if (Vector3DotProduct(slideDir, dir) < 0)
                 {
                     slideDir = Vector3Scale(slideDir, -1.0f);
                 }
@@ -978,7 +978,7 @@ static inline Vector3 AABB_HorizontalPushAOutOfB(BoundingBox a, BoundingBox b, f
     float back = b.max.z - a.min.z; // push A +Z
     float front = a.max.z - b.min.z; // push A -Z
 
-    if (left <= 0.0f || right <= 0.0f || back <= 0.0f || front <= 0.0f)
+    if (left <= 0 || right <= 0 || back <= 0 || front <= 0)
     {
         return (Vector3) { 0 };
     }
@@ -988,10 +988,10 @@ static inline Vector3 AABB_HorizontalPushAOutOfB(BoundingBox a, BoundingBox b, f
 
     if (fabsf(ox) < fabsf(oz))
     {
-        return (Vector3) { ox > 0.0f ? ox + skin : ox - skin, 0.0f, 0.0f };
+        return (Vector3) { ox > 0 ? ox + skin : ox - skin, 0, 0 };
     }
 
-    return (Vector3) { 0.0f, 0.0f, oz > 0.0f ? oz + skin : oz - skin };
+    return (Vector3) { 0, 0, oz > 0 ? oz + skin : oz - skin };
 }
 
 static inline void BG_SendToPlanningAfterProp(BadGuy* b)
@@ -1032,7 +1032,7 @@ static inline void BG_SkeletonTripOnSmallRock(BadGuy* b, StaticGameObject* rock)
 
     // Small stumble away from the rock.
     Vector3 away = Vector3Subtract(b->pos, rock->pos);
-    away.y = 0.0f;
+    away.y = 0;
 
     if (Vector3LengthSqr(away) > 0.0001f)
     {
@@ -1068,10 +1068,10 @@ static void BG_CollideBadGuysWithStaticProps(float dt)
         if (b->ragdoll) continue;
         if (!BG_PropCollisionType(b->type)) continue;
 
-        if (b->propHitCooldown > 0.0f)
+        if (b->propHitCooldown > 0)
         {
             b->propHitCooldown -= dt;
-            if (b->propHitCooldown < 0.0f) b->propHitCooldown = 0.0f;
+            if (b->propHitCooldown < 0) b->propHitCooldown = 0;
         }
 
         bool hitSomething = false;
@@ -1106,8 +1106,8 @@ static void BG_CollideBadGuysWithStaticProps(float dt)
             b->pos = Vector3Add(b->pos, push);
             BG_UpdateMainBox(b);
 
-            b->vel.x = 0.0f;
-            b->vel.z = 0.0f;
+            b->vel.x = 0;
+            b->vel.z = 0;
             b->targetPos = b->pos;
 
             hitSomething = true;
@@ -1117,7 +1117,7 @@ static void BG_CollideBadGuysWithStaticProps(float dt)
             if (b->type == BG_SKELETON &&
                 isRock &&
                 prop->scale <= SMALL_ROCK_SCALE &&
-                b->propHitCooldown <= 0.0f)
+                b->propHitCooldown <= 0)
             {
                 BG_SkeletonTripOnSmallRock(b, prop);
                 skeletonTripped = true;
@@ -1125,7 +1125,7 @@ static void BG_CollideBadGuysWithStaticProps(float dt)
             }
 
             // Trees and bigger rocks just interrupt pathing and send enemy back to planning.
-            if (b->propHitCooldown <= 0.0f)
+            if (b->propHitCooldown <= 0)
             {
                 BG_SendToPlanningAfterProp(b);
                 b->propHitCooldown = 0.35f;
@@ -1188,9 +1188,9 @@ int main(void) {
     bool vehicleMode = false;
     bool hoverMode = false;
     bool prevHoverR3 = false;
-    float hoverLift = 0.0f;        // current visual/physics lift
-    float hoverLiftTarget = 0.0f;  // 0 normal, 3-ish hover
-    float hoverTireFold = 0.0f;    // 0 normal tires, 1 flat tires
+    float hoverLift = 0;        // current visual/physics lift
+    float hoverLiftTarget = 0;  // 0 normal, 3-ish hover
+    float hoverTireFold = 0;    // 0 normal tires, 1 flat tires
     // --- Donny mode state ---
     bool donnyMode = true;
     Vector3 donMove = (Vector3){ 0 };
@@ -1200,11 +1200,11 @@ int main(void) {
     int prevTri = 0;
     bool prevTalkX = false;
     bool prevTalkTri = false;
-    float moveMag = 0.0f;
+    float moveMag = 0;
     //tol stuff for color control during growth
     Color tol_color = WHITE; //gBloom.generating use to decide which to LERP
     // --- Third-person orbit camera state (around don.pos) ---
-    float yaw = 0.0f, pitch = 0.25f, radius = 14.0f;
+    float yaw = 0, pitch = 0.25f, radius = 14.0f;
     int oldLevel = 0;
     //day-night timer
     Timer nightTimer = CreateTimer(128); //128 seconds, just above 2 minutes
@@ -1218,15 +1218,15 @@ int main(void) {
     
     //chase camera
     Vector3 cameraTargetPos = { 0 };
-    Vector3 cameraOffset = { 0.0f, 6.0f, -14.0f };
-    float camYaw = 0.0f;   // Left/right
+    Vector3 cameraOffset = { 0, 6.0f, -14.0f };
+    float camYaw = 0;   // Left/right
     float camPitch = 15.0f; // Up/down, slightly above by default
     float camDistance = 14.0f;  // Distance from truck
-    float relativeYaw = 0.0f;  // <-- instead of camYaw
-    float relativePitch = 0.0f;  // <-- instead of camYaw
+    float relativeYaw = 0;  // <-- instead of camYaw
+    float relativePitch = 0;  // <-- instead of camYaw
     //for the cottage door
     bool cottageDoorOpen = false;
-    float cottageDoorSlide = 0.0f; // 0 closed, 1 open
+    float cottageDoorSlide = 0; // 0 closed, 1 open
     Vector3 cottageDoorClosed = { -600, 806.0f, 2863.95f };
     Vector3 cottageDoorOpenPos = { -617, 806.0f, 2863.95f };
     BoundingBox cottageDoorBox;
@@ -1295,8 +1295,8 @@ int main(void) {
     Vector3 rocketPos = (Vector3){ 2556.61, 732.95, 542.69 };
     BoundingBox rocketBox = UpdateBoundingBox(GetModelBoundingBox(rocketModel), rocketPos);
     //other stuff
-    Rectangle talk_contain = { 25.0f, 160.0f, (SCREEN_WIDTH/2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
-    Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 160.0f, (SCREEN_WIDTH / 2.0f) - 50.0f, (SCREEN_HEIGHT) - 250.0f};
+    Rectangle talk_contain = { 25.0f, 160, (SCREEN_WIDTH/2.0f) - 50, (SCREEN_HEIGHT) - 250};
+    Rectangle res_contain = { (SCREEN_WIDTH / 2.0f) + 25, 160, (SCREEN_WIDTH / 2.0f) - 50, (SCREEN_HEIGHT) - 250};
     Font default_font = GetFontDefault();
     Font req_font = LoadFontEx("res/Tangerine/Tangerine-Bold.ttf", 32, 0, 250);
     Font res_font = LoadFontEx("res/Lexend/static/Lexend-SemiBold.ttf", 15, 0, 250);
@@ -1379,7 +1379,7 @@ int main(void) {
         fish[s].schoolRadius = 25.8f;
         for (int i = 0; i < schoolCount; i++) {
             float a = ((float)GetRandomValue(0, 360)) * DEG2RAD;
-            float r = (float)GetRandomValue(0, 1000) / 1000.0f * fish[s].schoolRadius;
+            float r = (float)GetRandomValue(0, 1000) / 1000 * fish[s].schoolRadius;
             Vector3 c = fish[s].center; // <- use the chosen school center
             fish[s].fish[i].pos = (Vector3){ c.x + sinf(a) * r, c.y + GetRandomValue(-5,5) * 0.2f, c.z + cosf(a) * r };
             fish[s].fish[i].yawDeg = (float)GetRandomValue(0, 359);
@@ -1400,7 +1400,7 @@ int main(void) {
     heightShaderLight.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(heightShaderLight, "mvp");
     heightShaderLight.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(heightShaderLight, "model");
     // Set light direction manually
-    Vector3 lightDir = (Vector3){ -10.2f, -100.0f, -10.3f };
+    Vector3 lightDir = (Vector3){ -10.2f, -100, -10.3f };
     int lightDirLoc = GetShaderLocation(heightShaderLight, "lightDir");
     SetShaderValue(heightShaderLight, lightDirLoc, &lightDir, SHADER_UNIFORM_VEC3);
         // - 
@@ -1699,17 +1699,17 @@ int main(void) {
     StartCloseTileWorker();
 
     Camera3D camera = {
-        .position = (Vector3){ 0.0f, 1400.0f, 0.0f },  // Higher if needed,
-        .target = (Vector3){ 5000.0f, 120.0f, 7000.0f },  // Centered
-        .up = (Vector3){ 0.0f, 1.0f, 0.0f },
-        .fovy = 80.0f,
+        .position = (Vector3){ 0, 1400, 0 },  // Higher if needed,
+        .target = (Vector3){ 5000, 120, 7000 },  // Centered
+        .up = (Vector3){ 0, 1.0f, 0 },
+        .fovy = 80,
         .projection = CAMERA_PERSPECTIVE
     };
     Camera skyCam = camera;
     skyCam.position = (Vector3){ 0, 0, 0 };
     skyCam.target = (Vector3){ 0, 0, 1 };  // looking forward
     skyCam.up = (Vector3){0, 1, 0};
-    skyCam.fovy = 60.0f;
+    skyCam.fovy = 60;
     skyCam.projection = CAMERA_PERSPECTIVE;
 
     StartTimer(&don.hitTimer);
@@ -1750,8 +1750,8 @@ int main(void) {
                 // ---------- CORN FIELDS ----------
                     // Big square split into 4 smaller fields
                 Vector3 bigCornCenter = (Vector3){ -2229.12f, 489.41f, -1807.96f };
-                float bigCornSizeX = 220.0f;
-                float bigCornSizeZ = 180.0f;
+                float bigCornSizeX = 220;
+                float bigCornSizeZ = 180;
 
                 // use smaller measurement so it stays square-ish and does not overreach
                 float bigCornSize = fminf(bigCornSizeX, bigCornSizeZ);
@@ -1762,7 +1762,7 @@ int main(void) {
 
                 Corn_AddFieldBox(
                     (Vector3) {
-                    bigCornCenter.x - quarterOffset, 0.0f, bigCornCenter.z - quarterOffset
+                    bigCornCenter.x - quarterOffset, 0, bigCornCenter.z - quarterOffset
                 },
                     halfField, halfField,
                     4.0f, 1.2f,
@@ -1771,7 +1771,7 @@ int main(void) {
 
                 Corn_AddFieldBox(
                     (Vector3) {
-                    bigCornCenter.x + quarterOffset, 0.0f, bigCornCenter.z - quarterOffset
+                    bigCornCenter.x + quarterOffset, 0, bigCornCenter.z - quarterOffset
                 },
                     halfField, halfField,
                     4.0f, 1.2f,
@@ -1780,7 +1780,7 @@ int main(void) {
 
                 Corn_AddFieldBox(
                     (Vector3) {
-                    bigCornCenter.x - quarterOffset, 0.0f, bigCornCenter.z + quarterOffset
+                    bigCornCenter.x - quarterOffset, 0, bigCornCenter.z + quarterOffset
                 },
                     halfField, halfField,
                     4.0f, 1.2f,
@@ -1789,7 +1789,7 @@ int main(void) {
 
                 Corn_AddFieldBox(
                     (Vector3) {
-                    bigCornCenter.x + quarterOffset, 0.0f, bigCornCenter.z + quarterOffset
+                    bigCornCenter.x + quarterOffset, 0, bigCornCenter.z + quarterOffset
                 },
                     halfField, halfField,
                     4.0f, 1.2f,
@@ -1799,7 +1799,7 @@ int main(void) {
 
                 // Small square as the 5th field
                 Vector3 smallCornCenter = (Vector3){ -2658.74f, 394.61f, -2495.44f };
-                float smallCornSizeX = 80.0f;
+                float smallCornSizeX = 80;
                 float smallCornSizeZ = 65.0f;
 
                 float smallCornSize = fminf(smallCornSizeX, smallCornSizeZ);
@@ -2146,12 +2146,12 @@ int main(void) {
                 PlaySoundVol(wrenchSound);
                 don.xp += 50;
             }
-            bool inBowCam = (don.bowMode || (don.bowReleaseCamHold > 0.0f)) && don.state != DONOGAN_STATE_BOW_EXIT;
+            bool inBowCam = (don.bowMode || (don.bowReleaseCamHold > 0)) && don.state != DONOGAN_STATE_BOW_EXIT;
             float dt = GetFrameTime();
             //as soon as we have dt, increment rotor spin
             // Right stick controls camera orbit (mouse RMB fallback also works)
-            float rsx = havePad ? gpad.normRX : 0.0f;
-            float rsy = havePad ? gpad.normRY : 0.0f;
+            float rsx = havePad ? gpad.normRX : 0;
+            float rsy = havePad ? gpad.normRY : 0;
             const float camStickSens = don.bowMode? 0.76f : 1.6f; // tweak as desired
 
             yaw += rsx * camStickSens * dt;
@@ -2168,14 +2168,14 @@ int main(void) {
             // Update camera position from yaw/pitch/radius
             // Defaults
             float baseRadius = 15.3f;
-            float baseFov = 80.0f;
+            float baseFov = 80;
             float homeRad = 10.2f;
 
             // -- much smaller zoom while aiming --
-            float zoomRadius = 13.2f;   // was 10.0f
+            float zoomRadius = 13.2f;   // was 10
             float zoomFov = 74.0f;   // was 62.0f
 
-            float followRate = don.bowMode ? 10.0f : 6.0f;
+            float followRate = don.bowMode ? 10 : 6.0f;
             float zoomRate = 6.0f;
             float fovRate = 6.0f;
 
@@ -2199,8 +2199,8 @@ int main(void) {
 
                 // 3) composition: fixed meters in camera-space (not scaled by radius)
                 float cy = cosf(yaw), sy = sinf(yaw);
-                Vector3 camRight = (Vector3){ cy, 0.0f, -sy };
-                Vector3 camUp = (Vector3){ 0.0f, 1.0f,  0.0f };
+                Vector3 camRight = (Vector3){ cy, 0, -sy };
+                Vector3 camUp = (Vector3){ 0, 1.0f,  0 };
 
                 const float compMetersX = 3.0f;   // push view right ⇒ Donny appears left
                 const float compMetersY = 1.2f;  // push view down  ⇒ Donny appears lower
@@ -2248,7 +2248,7 @@ int main(void) {
                     if (mi >= 0)
                     {
                         Vector3 toMachine = Vector3Subtract(gMachines[mi].pos, don.pos);
-                        toMachine.y = 0.0f;
+                        toMachine.y = 0;
 
                         if (Vector3LengthSqr(toMachine) > 0.0001f)
                         {
@@ -2412,7 +2412,7 @@ int main(void) {
                         npcs[NPC_NICK].targetPos = (Vector3){ 2846.52, 323.76, -615.60 };
                         //jump right to the run start frame
                         npcs[NPC_NICK].curAnim = npcs[NPC_NICK].state;
-                        npcs[NPC_NICK].animFrame = 0.0f;
+                        npcs[NPC_NICK].animFrame = 0;
                         //mission stuff for rescusing nick
                         toast = "Completed mission! You Rescued Nick!";
                         StartTimer(&toastTimer);
@@ -2649,7 +2649,7 @@ int main(void) {
             if (don.canHasCheeseburger && r3 && !prevHoverR3)
             {
                 hoverMode = !hoverMode;
-                hoverLiftTarget = hoverMode ? 3.5f : 0.0f;
+                hoverLiftTarget = hoverMode ? 3.5f : 0;
                 toast = hoverMode ? "Hover Mode!" : "Truck Mode!";
                 StartTimer(&toastTimer);
             }
@@ -2675,7 +2675,7 @@ int main(void) {
                 {
                     truckPosition.y = hoverY;
                     truckAirState = GROUND;
-                    gravityCollected = 0.0f;
+                    gravityCollected = 0;
                 }
             }
             else if (truckAirState == AIRBORNE) //gravity
@@ -2700,8 +2700,8 @@ int main(void) {
             else if (truckAirState == LANDING)
             {
                 truckAirState = GROUND;
-                truckForward.y = 0.0f;
-                gravityCollected = 0.0f;//temp, dont know what goes here, or if this is valid at all
+                truckForward.y = 0;
+                gravityCollected = 0;//temp, dont know what goes here, or if this is valid at all
                 bounceCollector += fabs(GetFrameTime() * (maxSpeed - truckSpeed + 0.014f)); //maxSpeed - truckSpeed (0->1.5, 1->0.5, 1.5->0 ? +delta)
                 //bounceCollector+=fabs(GetFrameTime() * truckSpeed); //or maybe we want abs value of truck speed ... ?
                 if (bounceCollector > 0.18f)
@@ -2712,26 +2712,26 @@ int main(void) {
             }
             else //GROUND
             {
-                truckForward.y = 0.0f;
-                gravityCollected = 0.0f;
+                truckForward.y = 0;
+                gravityCollected = 0;
             }
             //shut off tricks
             if (doing360 && (truckAirState != AIRBORNE || truckTrickYaw >= 2.0f * PI)) //if weve gone more than two pi, 360!
             {
                 doing360 = false;
-                truckTrickYaw = 0.0f;
+                truckTrickYaw = 0;
                 if (truckAirState == AIRBORNE) { points += 100; }//points 
             }
             if (doingFlip && (truckAirState != AIRBORNE || truckTrickPitch >= 2.0f * PI)) //if weve gone more than two pi, Back Flip!
             {
                 doingFlip = false;
-                truckTrickPitch = 0.0f;
+                truckTrickPitch = 0;
                 if (truckAirState == AIRBORNE) { points += 400; }//points 
             }
             if (doingRoll && (truckAirState != AIRBORNE || truckTrickRoll >= 2.0f * PI)) //if weve gone more than two pi, Kick Flip!
             {
                 doingRoll = false;
-                truckTrickRoll = 0.0f;
+                truckTrickRoll = 0;
                 if (truckAirState == AIRBORNE) { points += 150; }//points 
             }
             if (doingBonkers) //this one is alittle different because of how we identify the completion
@@ -2777,7 +2777,7 @@ int main(void) {
                 float brake = truckSummonAccel * 2.0f * dt;
                 if (truckSpeed > brake) truckSpeed -= brake;
                 else if (truckSpeed < -brake) truckSpeed += brake;
-                else                          truckSpeed = 0.0f;
+                else                          truckSpeed = 0;
 
                 if (fabsf(truckSpeed) < 0.01f) {
                     TruckSummonCancel();
@@ -3125,13 +3125,13 @@ int main(void) {
             else if(!truckCruise)
             {
                 //update truck with friction
-                if (truckSpeed > 0.0f) { //friction
+                if (truckSpeed > 0) { //friction
                     truckSpeed *= friction;
-                    if (truckSpeed < 0.000001f) {truckSpeed = 0.0f;}  // Clamp to zero
+                    if (truckSpeed < 0.000001f) {truckSpeed = 0;}  // Clamp to zero
                 }
-                else if (truckSpeed < 0.0f) {
+                else if (truckSpeed < 0) {
                     truckSpeed *= friction;
-                    if (truckSpeed > -0.00000001f) {truckSpeed = 0.0f;}  // Clamp to zero
+                    if (truckSpeed > -0.00000001f) {truckSpeed = 0;}  // Clamp to zero
                 }
             }
             else if(truckCruise)
@@ -3201,7 +3201,7 @@ int main(void) {
             }
             
             //more steering - for the camera tho
-            float sensitivity = 90.0f;  // degrees per second max
+            float sensitivity = 90;  // degrees per second max
             float deadzone = 8.0f;
 
             float realRy = gpad.ry;
@@ -3224,13 +3224,13 @@ int main(void) {
         else if (donnyMode && don.state != DONOGAN_STATE_SLIDE)
         {
             // -------- Character movement (camera-relative) --------
-            float lx = havePad ? gpad.normLX : 0.0f;
-            float ly = havePad ? gpad.normLY : 0.0f;
+            float lx = havePad ? gpad.normLX : 0;
+            float ly = havePad ? gpad.normLY : 0;
             moveMag = sqrtf(lx * lx + ly * ly);
 
             // Camera forward/right on the XZ plane
-            Vector3 camFwd = { sinf(yaw), 0.0f, cosf(yaw) };
-            Vector3 camRight = { cosf(yaw), 0.0f, -sinf(yaw) };
+            Vector3 camFwd = { sinf(yaw), 0, cosf(yaw) };
+            Vector3 camRight = { cosf(yaw), 0, -sinf(yaw) };
 
             // Left stick up = forward (-ly), right = +lx
             donMove = Vector3Add(Vector3Scale(camRight, lx), Vector3Scale(camFwd, ly));
@@ -3242,7 +3242,7 @@ int main(void) {
         {
             disableDonInputNextFrame = false;
             donMove = (Vector3){ 0 };
-            moveMag = 0.0f;
+            moveMag = 0;
         }
         if (vehicleMode)
         {
@@ -3349,7 +3349,7 @@ int main(void) {
             instanceLight.target = LightTargetDraw;
             instanceLight.color = lightColorDraw;
             UpdateLightValues(instancingLightShader,instanceLight);
-            lightDir = LerpVector3(lightDir,(Vector3){ -10.2f, -100.0f, -10.3f },0.02f * scaleNightTransition);
+            lightDir = LerpVector3(lightDir,(Vector3){ -10.2f, -100, -10.3f },0.02f * scaleNightTransition);
             SetShaderValue(heightShaderLight, lightDirLoc, &lightDir, SHADER_UNIFORM_VEC3);
             lightTileColor = LerpColor(lightTileColor, (Color){160,180,200,254}, 0.02f * scaleNightTransition);
         }
@@ -3363,7 +3363,7 @@ int main(void) {
             instanceLight.target = LightTargetDraw;
             instanceLight.color = lightColorDraw;
             UpdateLightValues(instancingLightShader,instanceLight);
-            lightDir = LerpVector3(lightDir,(Vector3){ -5.2f, -70.0f, 15.3f },0.02f * scaleNightTransition);
+            lightDir = LerpVector3(lightDir,(Vector3){ -5.2f, -70, 15.3f },0.02f * scaleNightTransition);
             SetShaderValue(heightShaderLight, lightDirLoc, &lightDir, SHADER_UNIFORM_VEC3);
             lightTileColor = LerpColor(lightTileColor, (Color){50,50,112,180}, 0.005f * scaleNightTransition);
             if(onLoad && !bugGenHappened)
@@ -3405,7 +3405,7 @@ int main(void) {
                 else
                 {
                     float groundY = GetTerrainHeightFromMeshXZ(don.pos.x, don.pos.z);
-                    if (groundY < -9000.0f) { groundY = don.pos.y; } // if we error, dont change y
+                    if (groundY < -9000) { groundY = don.pos.y; } // if we error, dont change y
                     if (inWater)
                     {
                         don.seabedY = groundY;
@@ -3427,7 +3427,7 @@ int main(void) {
                     {
                         // Cave mode: do not let terrain force Donogan back up.
                         // Keep gravity/freefall working by placing fake ground far below him.
-                        don.groundY = don.pos.y - 500.0f;
+                        don.groundY = don.pos.y - 500;
                         alreadyHandledY = false;
                         don.groundNormal = (Vector3){ 0, 1, 0 };
                     }
@@ -3516,7 +3516,7 @@ int main(void) {
                                     if (bestScore < 1e30f)
                                     {
                                         // Don’t yank the truck downward; allow stepping up but not down
-                                        if (bestPush.y < 0.0f) bestPush.y = 0.0f;
+                                        if (bestPush.y < 0) bestPush.y = 0;
                                         truckPosition = Vector3Add(truckPosition, bestPush);
                                         truckOrigin = Vector3Add(truckOrigin, bestPush);
                                         truckSpeed *= 0.6f;   // soften the impact a bit
@@ -3577,7 +3577,7 @@ int main(void) {
                         if (bestScore < FLT_MAX)
                         {
                             // Bias: don't yank the truck downward (lets you "step up" but not get slammed down)
-                            if (bestPush.y < 0.0f) bestPush.y = 0.0f;
+                            if (bestPush.y < 0) bestPush.y = 0;
 
                             truckPosition = Vector3Add(truckPosition, bestPush);
                             truckOrigin = Vector3Add(truckOrigin, bestPush);
@@ -3624,10 +3624,10 @@ int main(void) {
                                 Vector3 localOffset = RotateY(tireOffsets[t], -truckAngle);
                                 Vector3 pos = Vector3Add(truckOrigin, localOffset);
                                 float groundYy = desiredBottom;
-                                if (groundYy < -9000.0f) { groundYy = pos.y; } // if we error, dont change y
+                                if (groundYy < -9000) { groundYy = pos.y; } // if we error, dont change y
                                 pos.y = groundYy + 1.2;//this actually works well, adding 1.2 here
                                 //tireYPos[t] = pos.y;
-                                tireYPos[t] = Lerp(tireYPos[t], pos.y, 10.0f * dt);
+                                tireYPos[t] = Lerp(tireYPos[t], pos.y, 10 * dt);
                                 tireYOffset[t] -= (tireBottom - groundYy) * dt;
                                 if (tireYOffset[t] > 0.2f) { tireYOffset[t] = 0.2f; }
                                 if (tireYOffset[t] < -0.12f) { tireYOffset[t] = -0.12f; }
@@ -3678,7 +3678,7 @@ int main(void) {
                         if (hit)
                         {
                             // bias: don’t yank the truck downward; allow stepping up, not down
-                            if (push.y < 0.0f) push.y = 0.0f;
+                            if (push.y < 0) push.y = 0;
 
                             truckPosition = Vector3Add(truckPosition, push);
                             truckOrigin = Vector3Add(truckOrigin, push);
@@ -3700,12 +3700,12 @@ int main(void) {
             }
             else
             {
-                front = Vector3Add(truckPosition, RotateY(RotateX((Vector3){ 0.0f, 0.0f, truckFrontDim }, truckPitch), -truckAngle));//
-                back  = Vector3Add(truckPosition, RotateY(RotateX((Vector3){ 0.0f, 0.0f, truckBackDim }, truckPitch), -truckAngle));//
+                front = Vector3Add(truckPosition, RotateY(RotateX((Vector3){ 0, 0, truckFrontDim }, truckPitch), -truckAngle));//
+                back  = Vector3Add(truckPosition, RotateY(RotateX((Vector3){ 0, 0, truckBackDim }, truckPitch), -truckAngle));//
 
                 float frontY = GetTerrainHeightFromMeshXZ(front.x, front.z);
                 float backY  = GetTerrainHeightFromMeshXZ(back.x, back.z);
-                if(truckAirState!=AIRBORNE && frontY > -9000.0f && backY > -9000.0f)
+                if(truckAirState!=AIRBORNE && frontY > -9000 && backY > -9000)
                 {
                     front.y = frontY;
                     back.y = backY;
@@ -3720,7 +3720,7 @@ int main(void) {
 
                     // Check for landing
                     float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
-                    if(groundY < -9000.0f){groundY=truckPosition.y;} 
+                    if(groundY < -9000){groundY=truckPosition.y;} 
                     if (truckPosition.y <= groundY) {
                         if (!anyHitRock) {
                             truckPosition.y = groundY;
@@ -3734,7 +3734,7 @@ int main(void) {
                         Vector3 localOffset = RotateY(RotateX(tireOffsets[i], truckPitch), -truckAngle);
                         Vector3 pos = Vector3Add(truckOrigin, localOffset);
                         float groundYy = GetTerrainHeightFromMeshXZ(pos.x, pos.z);
-                        if(groundYy < -9000.0f){groundYy=pos.y;} // if we error, dont change y
+                        if(groundYy < -9000){groundYy=pos.y;} // if we error, dont change y
                         if(pos.y < groundYy)//tire hit the ground
                         {
                             if (hitRock[i]) continue;
@@ -3759,7 +3759,7 @@ int main(void) {
                     {
                         float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
                         //TraceLog(LOG_INFO, "setting camera y: (%d,%d){%f,%f,%f}[%f]", closestCX, closestCY, camera.position.x, camera.position.y, camera.position.z, groundY);
-                        if(groundY < -9000.0f){groundY=truckPosition.y;} // if we error, dont change y
+                        if(groundY < -9000){groundY=truckPosition.y;} // if we error, dont change y
                         if(truckAirState==GROUND && truckPosition.y>groundY)
                         {
                             if(truckPitch<-PI/4.0f && truckSpeed > 1.01f && !isTruckSliding) //not while sliding, this is basically shut off for now
@@ -3782,7 +3782,7 @@ int main(void) {
                             Vector3 localOffset = RotateY(tireOffsets[i], -truckAngle);
                             Vector3 pos = Vector3Add(truckOrigin, localOffset);
                             float groundYy = GetTerrainHeightFromMeshXZ(pos.x, pos.z);
-                            if(groundYy < -9000.0f){groundYy=pos.y;} // if we error, dont change y
+                            if(groundYy < -9000){groundYy=pos.y;} // if we error, dont change y
                             pos.y = groundYy;
                             tireYPos[i] = pos.y;
                             tireYOffset[i] -= (groundY - groundYy) * dt;
@@ -3795,7 +3795,7 @@ int main(void) {
                 }
             }
             hoverLift = Lerp(hoverLift, hoverLiftTarget, dt * 3.5f);
-            hoverTireFold = Lerp(hoverTireFold, hoverMode ? 1.0f : 0.0f, dt * 5.0f);
+            hoverTireFold = Lerp(hoverTireFold, hoverMode ? 1.0f : 0, dt * 5.0f);
 
             if (hoverMode)
             {
@@ -3803,7 +3803,7 @@ int main(void) {
                 if (truckAirState != AIRBORNE)
                 {
                     float groundY = GetTerrainHeightFromMeshXZ(truckPosition.x, truckPosition.z);
-                    if (groundY > -9000.0f)
+                    if (groundY > -9000)
                     {
                         float desiredY = groundY + TRUCK_Y_OFFSET_DRAW + hoverLift;
                         float minHoverY = WHALE_SURFACE + 3.2f;
@@ -3815,8 +3815,8 @@ int main(void) {
 
                         truckPosition.y = Lerp(truckPosition.y, desiredY, dt * 6.0f);
                         truckAirState = GROUND;
-                        gravityCollected = 0.0f;
-                        truckForward.y = 0.0f;
+                        gravityCollected = 0;
+                        truckForward.y = 0;
                     }
                 }
             }
@@ -3866,7 +3866,7 @@ int main(void) {
                 //float radPitch = relativePitch * DEG2RAD;
                 Vector3 n = GetTerrainNormalFromMeshXZ(truckPosition.x, truckPosition.z);
                 float upDot = Vector3DotProduct(n, (Vector3) { 0, 1, 0 });
-                float slope01 = Clamp(1.0f - upDot, 0.0f, 0.35f);
+                float slope01 = Clamp(1.0f - upDot, 0, 0.35f);
                 float hillCamDistance = camDistance + slope01 * 35.0f;
                 float radPitch = relativePitch * DEG2RAD;
                 //end new section
@@ -3887,10 +3887,10 @@ int main(void) {
 
                 Vector3 desiredTarget = Vector3Add(
                     Vector3Add(truckPosition,
-                        RotateY((Vector3) { 0.0f, 0.0f, truckFrontDim - 0.8f },
+                        RotateY((Vector3) { 0, 0, truckFrontDim - 0.8f },
                             -truckAngle)),
                     (Vector3) {
-                    0.0f, 2.0f, 0.0f
+                    0, 2.0f, 0
                 });
                 camera.target = Vector3Lerp(camera.target, desiredTarget, followSpeed);
             }
@@ -3932,11 +3932,11 @@ int main(void) {
                         // Choose X or Z (horizontal) axis with smaller penetration
                         Vector3 push = { 0 };
                         if (penX < penZ) {
-                            push.x = (d.x > 0.0f) ? penX : -penX;   // push out along +X or -X
+                            push.x = (d.x > 0) ? penX : -penX;   // push out along +X or -X
                             // if you track velocity, you can zero X here: // don.vel.x = 0;
                         }
                         else {
-                            push.z = (d.z > 0.0f) ? penZ : -penZ;   // push out along +Z or -Z
+                            push.z = (d.z > 0) ? penZ : -penZ;   // push out along +Z or -Z
                             // if you track velocity, you can zero Z here: // don.vel.z = 0;
                         }
 
@@ -3962,8 +3962,8 @@ int main(void) {
                 float penX = (ah.x + bh.x) - fabsf(d.x);
                 float penZ = (ah.z + bh.z) - fabsf(d.z);
 
-                if (penX < penZ) don.pos.x += (d.x > 0.0f) ? penX : -penX;
-                else             don.pos.z += (d.z > 0.0f) ? penZ : -penZ;
+                if (penX < penZ) don.pos.x += (d.x > 0) ? penX : -penX;
+                else             don.pos.z += (d.z > 0) ? penZ : -penZ;
                 /*don.pos.x -= 2;*/
                 don.box = UpdateBoundingBox(don.origBB, don.pos);
                 doorCollide = true;
@@ -3993,7 +3993,7 @@ int main(void) {
                 }
                 //some useful stuff
                 Vector3 contactMove = Vector3Subtract(don.pos, don.oldPos);
-                contactMove.y = 0.0f;
+                contactMove.y = 0;
 
                 // If last-frame movement is too tiny, use recent history.
                 // This keeps corner/wall correction stable when Don is pressed against a wall.
@@ -4116,7 +4116,7 @@ int main(void) {
 
                                         don.pos.y += lift;
 
-                                        if (don.velY < 0.0f) don.velY = 0.0f;
+                                        if (don.velY < 0) don.velY = 0;
 
                                         don.onGround = true;
                                         don.groundNormal = bhit.normal.y > 0.1f ? bhit.normal : (Vector3) { 0, 1, 0 };
@@ -4138,9 +4138,9 @@ int main(void) {
 
                             if (bhit.hitCeiling && !bhit.hitFloor)
                             {
-                                if (don.velY > 0.0f) don.velY = 0.0f;
+                                if (don.velY > 0) don.velY = 0;
 
-                                if (bhit.push.y > 0.0f) bhit.push.y = -bhit.push.y;
+                                if (bhit.push.y > 0) bhit.push.y = -bhit.push.y;
                                 if (bhit.push.y < -0.50f) bhit.push.y = -0.50f;
 
                                 don.pos.y += bhit.push.y;
@@ -4178,7 +4178,7 @@ int main(void) {
 
                                             don.pos.y += lift;
 
-                                            if (don.velY < 0.0f) don.velY = 0.0f;
+                                            if (don.velY < 0) don.velY = 0;
 
                                             don.onGround = true;
                                             don.groundNormal = bhit.normal.y > 0.1f ? bhit.normal : (Vector3) { 0, 1, 0 };
@@ -4199,9 +4199,9 @@ int main(void) {
                                 }
                                 else
                                 {
-                                    if (don.velY > 0.0f) don.velY = 0.0f;
+                                    if (don.velY > 0) don.velY = 0;
 
-                                    if (bhit.push.y > 0.0f) bhit.push.y = -bhit.push.y;
+                                    if (bhit.push.y > 0) bhit.push.y = -bhit.push.y;
                                     if (bhit.push.y < -0.50f) bhit.push.y = -0.50f;
 
                                     don.pos.y += bhit.push.y;
@@ -4216,7 +4216,7 @@ int main(void) {
                             {
                                 disableRoll = true;
                                 Vector3 push = bhit.push;
-                                push.y = 0.0f;
+                                push.y = 0;
 
                                 float pushLen = Vector3Length(push);
 
@@ -4246,18 +4246,18 @@ int main(void) {
                                 else
                                 {
                                     Vector3 p = bhit.push;
-                                    p.y = 0.0f;
+                                    p.y = 0;
 
                                     Vector3 prevPos = Don_GetHistoryPosition(&don, 1);
                                     Vector3 moveDir = Vector3Subtract(don.pos, prevPos);
-                                    moveDir.y = 0.0f;
+                                    moveDir.y = 0;
 
                                     if (Vector3LengthSqr(moveDir) > 0.0001f && Vector3LengthSqr(p) > 0.0001f)
                                     {
                                         moveDir = Vector3Normalize(moveDir);
 
                                         // If push points with movement, flip it.
-                                        if (Vector3DotProduct(p, moveDir) > 0.0f)
+                                        if (Vector3DotProduct(p, moveDir) > 0)
                                         {
                                             p = Vector3Negate(p);
                                         }
@@ -4285,7 +4285,7 @@ int main(void) {
                     else
                     {
                         // classify slope: anything flatter than ~50° treated as ground
-                        const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50.0f);
+                        const float groundSlopeCos = DEFAULT_GROUND_SLOPE_COS; // or cosf(DEG2RAD*50);
                         for (int collide = 0; collide < 3; collide++)
                         {
                             DonContactBoxes contactBoxes = Don_MakeContactBoxes(don.outerBox);
@@ -4320,7 +4320,7 @@ int main(void) {
 
                                 // Candidate push from collider.
                                 Vector3 p = hit.push;
-                                p.y = 0.0f;
+                                p.y = 0;
 
                                 float pLen = Vector3Length(p);
                                 if (pLen <= EPS)
@@ -4371,7 +4371,7 @@ int main(void) {
                                 if (foundSafePos)
                                 {
                                     Vector3 toSafe = Vector3Subtract(safePos, don.pos);
-                                    toSafe.y = 0.0f;
+                                    toSafe.y = 0;
 
                                     float toSafeLen = Vector3Length(toSafe);
 
@@ -4485,7 +4485,7 @@ int main(void) {
                 float oz = (back < front) ? back : -front;   float absOz = fabsf(oz);
 
                 // Are we coming down from above and close enough to stand?
-                bool descending = (deltaFrame.y <= 0.0f);
+                bool descending = (deltaFrame.y <= 0);
                 bool wasAbove = (prevBox.min.y >= tree.box.max.y - 0.01f);
                 bool canStep = ((don.outerBox.min.y - tree.box.max.y) <= STEP_HEIGHT + SKIN_EPS);
 
@@ -4498,7 +4498,7 @@ int main(void) {
                     don.outerBox.max.y += snapUp;
 
                     // optional: if you track vertical velocity, zero it here
-                    // don.vel.y = 0.0f;
+                    // don.vel.y = 0;
 
                     // you may also want to mark grounded: don.onGround = true;
                 }
@@ -4506,17 +4506,17 @@ int main(void) {
                     // side hit: push along the smallest horizontal penetration
                     if (absOx < absOz) {
                         // push in X
-                        float pushX = (fabsf(ox) > MIN_PUSH_EPS) ? ox + ((ox > 0) ? SKIN_EPS : -SKIN_EPS) : 0.0f;
+                        float pushX = (fabsf(ox) > MIN_PUSH_EPS) ? ox + ((ox > 0) ? SKIN_EPS : -SKIN_EPS) : 0;
                         don.pos.x += pushX;
                         don.outerBox.min.x += pushX;
                         don.outerBox.max.x += pushX;
 
                         // optional: kill x-velocity into the wall if you track velocity
-                        // if ((pushX > 0 && don.vel.x < 0) || (pushX < 0 && don.vel.x > 0)) don.vel.x = 0.0f;
+                        // if ((pushX > 0 && don.vel.x < 0) || (pushX < 0 && don.vel.x > 0)) don.vel.x = 0;
                     }
                     else {
                         // push in Z
-                        float pushZ = (fabsf(oz) > MIN_PUSH_EPS) ? oz + ((oz > 0) ? SKIN_EPS : -SKIN_EPS) : 0.0f;
+                        float pushZ = (fabsf(oz) > MIN_PUSH_EPS) ? oz + ((oz > 0) ? SKIN_EPS : -SKIN_EPS) : 0;
                         don.pos.z += pushZ;
                         don.outerBox.min.z += pushZ;
                         don.outerBox.max.z += pushZ;
@@ -4894,7 +4894,7 @@ int main(void) {
                     if (bg[b].type == BG_ROBO)
                     {
                         bg[b].health = 0;
-                        bg[b].vel = (Vector3){ 0.0f, -4.0f, 0.0f };
+                        bg[b].vel = (Vector3){ 0, -4.0f, 0 };
                         bg[b].state = ROBO_STATE_DYING;
                         break;
                     }
@@ -4907,17 +4907,17 @@ int main(void) {
                     };
 
                     Vector3 away = Vector3Subtract(bg[b].pos, sceneCenter);
-                    away.y = 0.0f;
+                    away.y = 0;
 
                     if (Vector3Length(away) < 0.001f)
                     {
                         away = Vector3Subtract(bg[b].pos, bg[b].spawnPoint);
-                        away.y = 0.0f;
+                        away.y = 0;
                     }
 
                     if (Vector3Length(away) < 0.001f)
                     {
-                        away = (Vector3){ 0.0f, 0.0f, 1.0f };
+                        away = (Vector3){ 0, 0, 1.0f };
                     }
 
                     away = Vector3Normalize(away);
@@ -4927,7 +4927,7 @@ int main(void) {
                     bg[b].vel = (Vector3){ 0 };
 
                     float gy = BG_GroundY(bg[b].pos);
-                    if (gy > -9000.0f) bg[b].pos.y = gy;
+                    if (gy > -9000) bg[b].pos.y = gy;
 
                     bg[b].box = UpdateBoundingBox(bgModelBorrower[bg[b].gbm_index].origBox, bg[b].pos);
 
@@ -5027,7 +5027,7 @@ int main(void) {
         if (!vehicleMode && donnyMode)
         {
             // Pick speed from Donogan state (will be set by DonUpdate), account for swimming
-            float speed = (don.state == DONOGAN_STATE_RUN) ? don.runSpeed :(don.state == DONOGAN_STATE_WALK) ? don.walkSpeed : 0.0f;
+            float speed = (don.state == DONOGAN_STATE_RUN) ? don.runSpeed :(don.state == DONOGAN_STATE_WALK) ? don.walkSpeed : 0;
 
             if (don.state != DONOGAN_STATE_SLIDE)
             {
@@ -5066,7 +5066,7 @@ int main(void) {
         {
             for (int i = 0; i < NPC_TOTAL; i++)
             {
-                if (Vector3DistanceSqr(don.pos, npcs[i].pos) > 1000.0f*1000) { continue; }
+                if (Vector3DistanceSqr(don.pos, npcs[i].pos) > 1000*1000) { continue; }
                 NPC_Update(&npcs[i], &don, GetFrameTime());
             }
             BG_UpdateAll(&don, dt);
@@ -5132,7 +5132,7 @@ int main(void) {
                 don.state == DONOGAN_STATE_RUN))
             {
                 don.onGround = false;
-                don.velY = 0.0f;
+                don.velY = 0;
                 DonSetState(&don, DONOGAN_STATE_JUMPING);
             }
         }
@@ -5211,9 +5211,9 @@ int main(void) {
             const float EPS = 0.02f; // seconds threshold near the end
             // 3 ways we consider a song "finished":
             // 1) Crossed into the last EPS window this frame
-            bool crossedEnd = (len > 0.0f) && (gSongPrevPlayed < (len - EPS)) && (played >= (len - EPS));
+            bool crossedEnd = (len > 0) && (gSongPrevPlayed < (len - EPS)) && (played >= (len - EPS));
             // 2) Stream wrapped back to small time (in case driver/codec loops internally)
-            bool wrapped = (len > 0.0f) && (gSongPrevPlayed > 1.0f) && (played < 0.05f);
+            bool wrapped = (len > 0) && (gSongPrevPlayed > 1.0f) && (played < 0.05f);
             // 3) Stream reports stopped (extra guard)
             bool stopped = !IsMusicStreamPlaying(gGame.currentMusic) && (gSongPrevPlayed > 0.1f);
             if (crossedEnd || wrapped || stopped) {
@@ -5234,25 +5234,25 @@ int main(void) {
             //skybox stuff
             rlDisableDepthMask();
             Vector3 cam = skyCam.position;
-            float dist = 60.0f;
+            float dist = 60;
             float size = dist * 2.0f; //has to be double to line up
             // FRONT (+Z)
-            DrawSkyboxPanelFixed(skyboxPanelFrontModel, (Vector3) { cam.x, cam.y, cam.z - dist }, 0.0f, (Vector3) { 0, 1, 0 }, size);
+            DrawSkyboxPanelFixed(skyboxPanelFrontModel, (Vector3) { cam.x, cam.y, cam.z - dist }, 0, (Vector3) { 0, 1, 0 }, size);
             // BACK (-Z)
-            DrawSkyboxPanelFixed(skyboxPanelBackModel, (Vector3) { cam.x, cam.y, cam.z + dist }, 180.0f, (Vector3) { 0, 1, 0 }, size);
+            DrawSkyboxPanelFixed(skyboxPanelBackModel, (Vector3) { cam.x, cam.y, cam.z + dist }, 180, (Vector3) { 0, 1, 0 }, size);
             // LEFT (-X)
-            DrawSkyboxPanelFixed(skyboxPanelLeftModel, (Vector3) { cam.x - dist, cam.y, cam.z }, 90.0f, (Vector3) { 0, 1, 0 }, size);
+            DrawSkyboxPanelFixed(skyboxPanelLeftModel, (Vector3) { cam.x - dist, cam.y, cam.z }, 90, (Vector3) { 0, 1, 0 }, size);
             // RIGHT (+X)
-            DrawSkyboxPanelFixed(skyboxPanelRightModel, (Vector3) { cam.x + dist, cam.y, cam.z }, -90.0f, (Vector3) { 0, 1, 0 }, size);
+            DrawSkyboxPanelFixed(skyboxPanelRightModel, (Vector3) { cam.x + dist, cam.y, cam.z }, -90, (Vector3) { 0, 1, 0 }, size);
             // UP (+Y)
-            DrawSkyboxPanelFixed(skyboxPanelUpModel, (Vector3) { cam.x, cam.y + dist, cam.z }, 90.0f, (Vector3) { 1, 0, 0 }, size);
+            DrawSkyboxPanelFixed(skyboxPanelUpModel, (Vector3) { cam.x, cam.y + dist, cam.z }, 90, (Vector3) { 1, 0, 0 }, size);
             //bottom
             //DrawPlane((Vector3) { 0,-400, 0 }, (Vector2) {1000,1000}, (Color) { 5, 5, 20, 255 });
             rlEnableDepthMask();
         EndMode3D();
         //regular scene of the map
         BeginMode3D(camera);
-            if(onLoad){SetCustomCameraProjection(camera, 45.0f, (float)sw/sh, 0.3f, 5000.0f);} // Near = 1, Far = 4000
+            if(onLoad){SetCustomCameraProjection(camera, 45.0f, (float)sw/sh, 0.3f, 5000);} // Near = 1, Far = 4000
             //rlDisableBackfaceCulling();
             bool loadedEem = true;
             int loadCnt = 0;
@@ -5308,6 +5308,19 @@ int main(void) {
                 if (!don.canHasCheeseburger) { DrawModel(rocketModel, rocketPos, 1, WHITE); }
                 // Draw Donogan
                 DrawModel(don.model, don.pos, don.scale, don.drawColor); // uses model.transform for rotation
+                // guitar attached to Donogan left hand
+                if (don.hasGuitar && ShowGuitar(&don)) //guitar
+                {
+                    Matrix guitarM = DonBuildBoneAttachmentMatrix(
+                        &don,
+                        DON_BONE_DEF_HAND_L,
+                        don.guitarGripOffset,
+                        don.guitarGripEulerDeg,
+                        don.guitarScale
+                    );
+
+                    DrawMesh(don.guitarModel.meshes[0], don.guitarModel.materials[0], guitarM);
+                }
                 if (displayBoxes) 
                 { 
                     //DrawBoundingBox(don.box, RED); 
@@ -5365,12 +5378,12 @@ int main(void) {
                 {
                     // hard-coded wrench placement/tuning
                     Vector3 wrenchOffset = { -0.67f, 3.33f, 1.2f };
-                    Vector3 wrenchEulerDeg = { 90.0f, 0.0f, 180.0f };
+                    Vector3 wrenchEulerDeg = { 90, 0, 180 };
                     float wrenchScale = 0.25f;   // start big so we can SEE it first
                     if (don.curAnimId == DONOGAN_ANIM_PROC_WRENCH_SWING)
                     {
                         float t = don.animTime / 0.40f;
-                        if (t < 0.0f) t = 0.0f;
+                        if (t < 0) t = 0;
                         if (t > 1.0f) t = 1.0f;
 
                         Vector3 p0 = { -1.35f, 3.15f, 0.35f }; // back/outside wind-up
@@ -5392,10 +5405,10 @@ int main(void) {
                         }
 
                         // optional: rotate it through the swing too
-                        Vector3 r0 = { 90.0f, 0.0f, 220.0f };
-                        Vector3 r1 = { 70.0f, 0.0f, 145.0f };
-                        Vector3 r2 = { 105.0f, 0.0f, 80.0f };
-                        Vector3 r3 = { 90.0f, 0.0f, 180.0f };
+                        Vector3 r0 = { 90, 0, 220 };
+                        Vector3 r1 = { 70, 0, 145.0f };
+                        Vector3 r2 = { 105.0f, 0, 80 };
+                        Vector3 r3 = { 90, 0, 180 };
 
                         if (t < 0.33f) {
                             float u = t / 0.33f;
@@ -5483,7 +5496,7 @@ int main(void) {
                 {
                     for (int i = 0; i < NPC_TOTAL; i++)
                     {
-                        if (Vector3DistanceSqr(don.pos, npcs[i].pos) > 600.0f*600) { continue; } //todo: add frustum culling here also
+                        if (Vector3DistanceSqr(don.pos, npcs[i].pos) > 600*600) { continue; } //todo: add frustum culling here also
                         NPC_Draw(&npcs[i]);
                     }
                 }
@@ -5510,7 +5523,7 @@ int main(void) {
                         {
                             float v = 0.00f;
                             SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
-                            DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0.0f,
+                            DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0,
                                 (Vector3) {
                                 0.8f, 0.9f, 0.8f
                             }, WHITE);
@@ -5520,7 +5533,7 @@ int main(void) {
                         {
                             float v = 1.37f;
                             SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
-                            DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0.0f,
+                            DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0,
                                 (Vector3) {
                                 0.65f, 1.4f, 0.65f
                             }, WHITE);
@@ -5530,7 +5543,7 @@ int main(void) {
                         {
                             float v = 2.73f;
                             SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
-                            DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0.0f,
+                            DrawModelEx(fireModel, P, (Vector3) { 0, 1, 0 }, 0,
                                 (Vector3) {
                                 1.5f, 1.1f, 1.5f
                             }, WHITE);
@@ -5727,7 +5740,7 @@ int main(void) {
                 {
                     if (Vector3DistanceSqr(donnyMode?don.pos:camera.position, fish[s].fishTarget) > 890*900) { continue; }//good culling on fish because they are expensive
                     // 1) steer the school target a bit each frame (orbit + optional player nudge)
-                    static float schoolTheta = 0.0f;
+                    static float schoolTheta = 0;
                     float dt = GetFrameTime();
                     schoolTheta += dt * 0.4f; // slow orbit
                     fish[s].fishTarget.x = fish[s].center.x + sinf(schoolTheta) * (fish[s].schoolRadius * 0.6f);
@@ -5772,9 +5785,9 @@ int main(void) {
                 for (int i = 0; i < 4; i++)
                 {
                     float tireAngleQ = -(tireTurnPos[i]);//fabsf//
-                    float tireAngleDelta = 0.0f;//float tireAngleDelta = tireAngleQ;  // Default for rear tires
+                    float tireAngleDelta = 0;//float tireAngleDelta = tireAngleQ;  // Default for rear tires
                     // Compute tire-specific spin and steering
-                    float steerAngle = 0.0f;
+                    float steerAngle = 0;
                     if (i < 2 && vehicleMode) {
                         // Front tires only — steer left/right
                         steerAngle = PI / 8.0f * gpad.normLX; // tweak max angle
@@ -5782,22 +5795,22 @@ int main(void) {
                     //if (hoverMode)
                     //{
                     //    truckPitch /= 2;
-                    //    //truckPitch = Lerp(truckPitch, 0.0f, dt * 4.0f);
-                    //    //truckRoll = Lerp(truckRoll, 0.0f, dt * 4.0f);
+                    //    //truckPitch = Lerp(truckPitch, 0, dt * 4.0f);
+                    //    //truckRoll = Lerp(truckRoll, 0, dt * 4.0f);
                     //}
                     // First apply spin around X (wheel axis), then steering around Y
                     // Step 1: Create rotation matrices for yaw (Y), pitch (X), and roll (Z)
                     //printf("steerAngle : %f\n",steerAngle);
                     Matrix yawMatrix = MatrixRotateY((hoverMode?0: truckAngle - steerAngle));     // Turn left/right
                     //Matrix yawMatrix   = MatrixRotateY(tireAngleDelta);
-                    float tireRotAngle = hoverMode ? 90.0f : 0;
+                    float tireRotAngle = hoverMode ? 90 : 0;
                     Matrix pitchMatrix = MatrixRotateX(-tireSpinPos[i]);   // Tilt forward/back //sinf(truckAngle)
                     Matrix rollMatrix = MatrixRotateZ(tireRotAngle);    // Lean left/right
                     //truckTireOffsetMatrix
                     Vector3 tireSpace = RotateY(RotateX(RotateZ(tireOffsets[i], truckRoll + truckTrickRoll), truckPitch - truckTrickPitch), -truckAngle - truckTrickYaw);
                     /*if (hoverMode)
                     {
-                        tireSpace = RotateY(RotateX(RotateZ(tireOffsets[i], 0.0f),0.0f),-truckAngle - truckTrickYaw);
+                        tireSpace = RotateY(RotateX(RotateZ(tireOffsets[i], 0),0),-truckAngle - truckTrickYaw);
                     }*/
                     // Step 2: Combine them in the proper order:
                     // Yaw → Pitch → Roll (you can change order depending on your feel/needs)
@@ -5857,7 +5870,7 @@ int main(void) {
                         toCamera.y = 0; // Optional: lock to horizontal billboard
                         toCamera = Vector3Normalize(toCamera);
                         Vector3 axis = (Vector3){0,1,0};//Vector3Normalize((Vector3){ (float)GetRandomValue(0, 360), (float)GetRandomValue(0, 360), (float)GetRandomValue(0, 360) });
-                        float angle = -bugs[i].angle+PI/2.8f;//float angle = 0.0f;//(float)GetRandomValue(0, 180)*DEG2RAD;
+                        float angle = -bugs[i].angle+PI/2.8f;//float angle = 0;//(float)GetRandomValue(0, 180)*DEG2RAD;
                         Matrix rotation = MatrixRotate(axis, angle);
                         transforms[bugsAdded] = MatrixMultiply(rotation, translation);//todo: add rotations and such
                         bugsAdded++;
@@ -6146,7 +6159,7 @@ int main(void) {
                 (Rectangle){ 0, 0, mapTexture.width, mapTexture.height },
                 dest,
                 (Vector2){ 0, 0 },
-                0.0f,
+                0,
                 WHITE);
 
             // Player marker (assume position normalized to map range)
@@ -6187,7 +6200,7 @@ int main(void) {
             float local_x_sign = vehicleMode|| donnyMode ? 1.0f : -1.0f;
             Vector2 dir = (Vector2){ (local_x_sign)*sinf(local_yaw), (local_x_sign)*cosf(local_yaw) }; // yaw in radians
             // Tiny arrow just outside the 3px circle
-            float tipLen = 10.0f;   // pixels from center to tip
+            float tipLen = 10;   // pixels from center to tip
             float baseAlong = 4.5f;    // how far the base sits from center
             float halfWidth = 3.5f;    // half the triangle base width
             Vector2 tip = (Vector2){ marker.x + dir.x * tipLen,     marker.y + dir.y * tipLen };
@@ -6274,7 +6287,7 @@ int main(void) {
 
             Rectangle src = { 0, 0, talkee.width, talkee.height };
             Rectangle dest = { box.x + box.width - 74, box.y + 10, 64, 64 };
-            DrawTexturePro(talkee, src, dest, (Vector2) { 0, 0 }, 0.0f, WHITE);
+            DrawTexturePro(talkee, src, dest, (Vector2) { 0, 0 }, 0, WHITE);
 
             DrawText(Talk_GetSpeaker(), box.x + 16, box.y + 12, 28, BLACK);
 
@@ -6361,7 +6374,7 @@ int main(void) {
         else if(!onLoad)//this used to do something useful, now it does nothing really but snap the player a bit
         {
             onLoad = true;
-            float totalY = 0.0f;
+            float totalY = 0;
             int totalVerts = 0;
             for (int cy = 0; cy < CHUNK_COUNT; cy++) {
                 for (int cx = 0; cx < CHUNK_COUNT; cx++) {

@@ -57,10 +57,10 @@ static bool ReadControllerWindows(int index, ControllerData* out)
 
     // Simple deadzone to produce the *norm* fields your code uses
     const float DZ = 0.15f;
-    out->normLX = (fabsf(out->lx) < DZ) ? 0.0f : out->lx;
-    out->normLY = (fabsf(out->ly) < DZ) ? 0.0f : out->ly;
-    out->normRX = (fabsf(out->rx) < DZ) ? 0.0f : out->rx;
-    out->normRY = (fabsf(out->ry) < DZ) ? 0.0f : out->ry;
+    out->normLX = (fabsf(out->lx) < DZ) ? 0 : out->lx;
+    out->normLY = (fabsf(out->ly) < DZ) ? 0 : out->ly;
+    out->normRX = (fabsf(out->rx) < DZ) ? 0 : out->rx;
+    out->normRY = (fabsf(out->ry) < DZ) ? 0 : out->ry;
 
     // Face buttons: map to PS naming used in the file
     out->btnSquare = IsGamepadButtonDown(index, GAMEPAD_BUTTON_RIGHT_FACE_LEFT);
@@ -140,14 +140,14 @@ const float rightStickDeadzoneY = 0.1f;
 const float leftTriggerDeadzone = -0.9f;
 const float rightTriggerDeadzone = -0.9f;
 //controller input constants for truck
-float bounceCollector = 0.0f; //gets set
+float bounceCollector = 0; //gets set
 const float acceleration = 0.0178f;
 const float deceleration = 0.046f;
 const float steeringSpeed = 1.5f;
 const float maxSpeed = 1.54321;
 const float maxSpeedReverse = -0.75f;
 float steerInput = 0; //gets set
-float verticalVelocity = 0.0f; //gets set
+float verticalVelocity = 0; //gets set
 
 ////////////////////////////////////////////////////////////////////////////////
 

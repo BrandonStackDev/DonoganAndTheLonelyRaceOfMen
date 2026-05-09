@@ -73,7 +73,7 @@ static inline void DustPuff_SpawnEx(Vector3 pos, float duration, float size, Col
     p->duration = duration;
     p->size = size;
     p->color = color;
-    p->age = 0.0f;
+    p->age = 0;
     p->timer = CreateTimer(duration);
     StartTimer(&p->timer);
 }

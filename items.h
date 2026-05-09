@@ -85,7 +85,7 @@ void DocumentCloseItems(Donogan* d)
         }
 
         // Proximity cull → add pointer to the close list
-        if (Vector3Distance(d->pos, it->pos) < 500.0f)   // tune radius
+        if (Vector3Distance(d->pos, it->pos) < 500)   // tune radius
         {
             if (num_close_map_items < MAX_CLOSE_ITEMS) {
                 close_map_items[num_close_map_items++] = it;  // <-- store pointer

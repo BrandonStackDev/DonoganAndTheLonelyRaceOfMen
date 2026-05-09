@@ -392,15 +392,15 @@ static inline void BG_ClearRuntimeState(BadGuy* b)
     b->attackLanded = false;
 
     b->ragdoll = false;
-    b->ragdollTimer = 0.0f;
+    b->ragdollTimer = 0;
     b->ragdollSpinVel = (Vector3){0};
 
-    b->truckHitCooldown = 0.0f;
-    b->propHitCooldown = 0.0f;
+    b->truckHitCooldown = 0;
+    b->propHitCooldown = 0;
 
     b->vel = (Vector3){ 0 };
 
-    b->animFrame = 0.0f;
+    b->animFrame = 0;
     b->curAnim = 0;
     b->animFPS = 24.0f;
 }
@@ -419,7 +419,7 @@ static inline bool BG_BorrowerIndexOK(int idx)
 // === NEW: helper for ground
 static inline float BG_GroundY(Vector3 p) {
     float g = GetTerrainHeightFromMeshXZ(p.x, p.z);
-    return (g < -9000.0f) ? p.y : g;
+    return (g < -9000) ? p.y : g;
 }
 
 static inline void BG_UpdateMainBox(BadGuy* b)
@@ -451,7 +451,7 @@ static inline bool BG_GroundCheckAndSnap(BadGuy* b, float snapUp, float snapDown
     float diff = bottomY - groundY;
 
     // If the bottom of the box is below ground, always allow a rescue when forceIfBelow is true.
-    if (diff < 0.0f)
+    if (diff < 0)
     {
         if (forceIfBelow || fabsf(diff) <= snapUp)
         {
@@ -569,7 +569,7 @@ static inline void BG_UpdateTruckRagdoll(BadGuy* b, float dt)
     b->ragdollTimer -= dt;
 
     // fake physics
-    b->vel.y -= 30.0f * dt;
+    b->vel.y -= 30 * dt;
 
     b->pos.x += b->vel.x * dt;
     b->pos.y += b->vel.y * dt;
@@ -610,7 +610,7 @@ static inline void BG_UpdateTruckRagdoll(BadGuy* b, float dt)
         }
         else
         {
-            b->vel.y = 0.0f;
+            b->vel.y = 0;
         }
 
         // ground friction
@@ -621,15 +621,15 @@ static inline void BG_UpdateTruckRagdoll(BadGuy* b, float dt)
     BG_UpdateMainBox(b);
 
     bool slowEnough =
-        Vector3LengthSqr((Vector3) { b->vel.x, 0.0f, b->vel.z }) < 1.5f &&
+        Vector3LengthSqr((Vector3) { b->vel.x, 0, b->vel.z }) < 1.5f &&
         fabsf(b->vel.y) < 1.0f;
 
-    if (b->ragdollTimer <= 0.0f && slowEnough)
+    if (b->ragdollTimer <= 0 && slowEnough)
     {
         b->ragdoll = false;
         b->vel = (Vector3){ 0 };
-        b->pitch = 0.0f;
-        b->roll = 0.0f;
+        b->pitch = 0;
+        b->roll = 0;
 
         if (b->health <= 0)
         {
@@ -729,7 +729,7 @@ static inline void BG_AttachBorrowed(BadGuy* b) {
     BadGuyBorrowModel* BM = &bgModelBorrower[b->gbm_index];
     b->anims = BM->anims;
     b->animCount = BM->animCount;
-    if (b->animFPS <= 0.0f) b->animFPS = 24.0f; // default
+    if (b->animFPS <= 0) b->animFPS = 24.0f; // default
     b->curAnim = 0;
     b->animFrame = 0;
 }
@@ -737,8 +737,8 @@ static inline void BG_AttachBorrowed(BadGuy* b) {
 // --- Quaternion helpers for BadGuy full-body rotation -----------------------
 static inline Quaternion BG_ModelFixQuat(const BadGuy* b) {
     // Exporter/model local-axis fix (if needed). Ghost seems fine → 0.
-    // If the ghost appears 90° off, try setting xFixDeg = -90.0f.
-    float xFixDeg = 0.0f;
+    // If the ghost appears 90° off, try setting xFixDeg = -90.
+    float xFixDeg = 0;
     (void)b; // per-type switch if you add more BG types later
     return QuaternionFromAxisAngle((Vector3) { 1, 0, 0 }, DEG2RAD* xFixDeg);
 }
@@ -761,7 +761,7 @@ static inline void DrawBadGuy(BadGuy * b) {
     Quaternion q = BG_BuildWorldQuat(b);
     Matrix R = QuaternionToMatrix(q);
     Matrix T = MatrixTranslate(drawPos.x, drawPos.y, drawPos.z);
-    float s = (b->scale > 0.0f) ? b->scale : 1.0f;
+    float s = (b->scale > 0) ? b->scale : 1.0f;
     Matrix S = MatrixScale(s, s, s);
     Matrix world = MatrixMultiply(S, MatrixMultiply(R, T));
 
@@ -790,7 +790,7 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
     //stuff
     float groundY = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
     if (d->pos.y + 15 < groundY && d->inHome) { groundY = b->spawnPoint.y; }//hack, for cinderSpire cave
-    if (groundY < -9000.0f) groundY = b->pos.y - 3.0f; // safe fallback
+    if (groundY < -9000) groundY = b->pos.y - 3.0f; // safe fallback
     float flyAGL = 3.0f;   // cruise height while flying
     float landAGL = 0.30f;  // near-ground for landing/wander
     float targetY = b->pos.y; // set per-state below
@@ -917,16 +917,16 @@ static inline void BG_Update_Ghost(Donogan* d, BadGuy* b, float dt)
 static inline void Yeti_KnockBackFromDonogan(BadGuy* b, Donogan* d)
 {
     Vector3 away = Vector3Subtract(b->pos, d->pos);
-    away.y = 0.0f;
+    away.y = 0;
 
     if (Vector3Length(away) < 0.001f)
     {
-        away = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+        away = (Vector3){ sinf(d->yawY), 0, cosf(d->yawY) };
     }
 
     away = Vector3Normalize(away);
 
-    b->vel = Vector3Scale(away, 10.0f); // stronger than hopper
+    b->vel = Vector3Scale(away, 10); // stronger than hopper
     //b->vel.y = 8.5f;                    // nice pop
     b->state = YETI_STATE_HIT;
 }
@@ -994,7 +994,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
         //b->pos = Vector3Lerp(b->pos, (Vector3) { b->targetPos.x, BG_GroundY(b->pos), b->targetPos.z }, dt* b->speed);
         Vector3 to = (Vector3){ b->targetPos.x, BG_GroundY(b->pos), b->targetPos.z };
         float dist = Vector3Distance(b->pos, to);
-        float t = (dist > 0.0f) ? fminf((b->speed * dt) / dist, 1.0f) : 1.0f;
+        float t = (dist > 0) ? fminf((b->speed * dt) / dist, 1.0f) : 1.0f;
         b->pos = Vector3Lerp(b->pos, to, t);
         b->pos.y = groundY;//keep him on the ground always
         b->yaw = Lerp(b->yaw, b->targetYaw, dt * 4.0f); // snappier turn for a brawler
@@ -1216,7 +1216,7 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
     case ROBO_STATE_DYING: {
         // Simple gravity + one-or-two tiny bounces, then settle → DEAD
         const float gy = BG_GroundY(b->pos);
-        //if (b->vel.y == 0.0f && b->pos.y > gy + 0.02f) b->vel.y = -6.0f; // give it a push if stationary
+        //if (b->vel.y == 0 && b->pos.y > gy + 0.02f) b->vel.y = -6.0f; // give it a push if stationary
 
         b->vel.y += -24.0f * dt;                  // gravity
         b->pos.y += b->vel.y * dt;
@@ -1262,11 +1262,11 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
 static inline void Hopper_KnockBackFromDonogan(BadGuy* b, Donogan* d)
 {
     Vector3 away = Vector3Subtract(b->pos, d->pos);
-    away.y = 0.0f;
+    away.y = 0;
 
     if (Vector3Length(away) < 0.001f)
     {
-        away = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+        away = (Vector3){ sinf(d->yawY), 0, cosf(d->yawY) };
     }
 
     away = Vector3Normalize(away);
@@ -1280,7 +1280,7 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
 {
     //float groundY = BG_GroundY(b->pos);
     float groundY = b->groundY;
-    if (groundY < -9000.0f)
+    if (groundY < -9000)
     {
         groundY = BG_GroundY(b->pos);
     }
@@ -1307,7 +1307,7 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
         {
             Vector3 dir = Vector3Normalize((Vector3) { toDon.x, 0, toDon.z });
             b->vel = Vector3Scale(dir, b->speed);
-            b->vel.y = 10.0f;
+            b->vel.y = 10;
             b->state = HOPPER_STATE_JUMP;
         }
     } break;
@@ -1325,7 +1325,7 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
             ResetTimer(&b->interactionTimer);
             StartTimer(&b->interactionTimer);
         }
-        if (!b->onPlatform && b->spawnPoint.y > BG_GroundY(b->pos) + 10.0f && b->pos.y < b->spawnPoint.y - 25.0f)
+        if (!b->onPlatform && b->spawnPoint.y > BG_GroundY(b->pos) + 10 && b->pos.y < b->spawnPoint.y - 25.0f)
         {
             b->health = 0;
             b->state = HOPPER_STATE_DEAD;
@@ -1357,7 +1357,7 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
                 StartTimer(&b->interactionTimer);
             }
         }
-        if (!b->onPlatform && b->spawnPoint.y > BG_GroundY(b->pos) + 10.0f && b->pos.y < b->spawnPoint.y - 25.0f)
+        if (!b->onPlatform && b->spawnPoint.y > BG_GroundY(b->pos) + 10 && b->pos.y < b->spawnPoint.y - 25.0f)
         {
             b->health = 0;
             b->state = HOPPER_STATE_DEAD;
@@ -1383,11 +1383,11 @@ static inline void BG_Update_PumpkinHopper(Donogan* d, BadGuy* b, float dt)
 static inline Vector3 BG_FlatDirTo(Vector3 from, Vector3 to)
 {
     Vector3 d = Vector3Subtract(to, from);
-    d.y = 0.0f;
+    d.y = 0;
 
     if (Vector3LengthSqr(d) < 0.0001f)
     {
-        return (Vector3) { 0.0f, 0.0f, 1.0f };
+        return (Vector3) { 0, 0, 1.0f };
     }
 
     return Vector3Normalize(d);
@@ -1396,11 +1396,11 @@ static inline Vector3 BG_FlatDirTo(Vector3 from, Vector3 to)
 static inline float BG_YawTo(Vector3 from, Vector3 to)
 {
     Vector3 d = Vector3Subtract(to, from);
-    d.y = 0.0f;
+    d.y = 0;
 
     if (Vector3LengthSqr(d) < 0.0001f)
     {
-        return 0.0f;
+        return 0;
     }
 
     return RAD2DEG * atan2f(d.x, d.z);
@@ -1418,7 +1418,7 @@ static inline void Skeleton_PickWanderTarget(BadGuy* b)
     };
 
     float gy = GetTerrainHeightFromMeshXZ(p.x, p.z);
-    if (gy > -9000.0f) p.y = gy;
+    if (gy > -9000) p.y = gy;
 
     b->targetPos = p;
 }
@@ -1426,7 +1426,7 @@ static inline void Skeleton_PickWanderTarget(BadGuy* b)
 #define SKEL_TRIP_MIN_DIST          24.0f
 #define SKEL_TRIP_CHANCE_PER_1000    1     // was 3, lower = much less tripping
 
-#define SKEL_JUMP_MIN_DIST          10.0f
+#define SKEL_JUMP_MIN_DIST          10
 #define SKEL_JUMP_MAX_DIST          22.0f
 
 // Jump lands the skeleton root BEFORE Donogan,
@@ -1473,7 +1473,7 @@ static inline void Skeleton_PickWanderTarget(BadGuy* b)
 
 #define SKEL_DON_KNOCKBACK_KICK       7.0f
 #define SKEL_DON_KNOCKBACK_SWIPE      6.0f
-#define SKEL_DON_KNOCKBACK_JUMP      10.0f
+#define SKEL_DON_KNOCKBACK_JUMP      10
 
 #define SKEL_TAKE_HIT_KNOCKBACK       8.5f
 #define SKEL_TAKE_WRENCH_KNOCKBACK   16.0f
@@ -1509,12 +1509,12 @@ static inline bool Skeleton_IsAttackState(int state)
 static inline void Skeleton_StartJumpAttack(BadGuy* b, Donogan* d, float groundY)
 {
     Vector3 toDon = Vector3Subtract(d->pos, b->pos);
-    toDon.y = 0.0f;
+    toDon.y = 0;
 
     float dist = Vector3Length(toDon);
     Vector3 dir = (dist > 0.001f)
         ? Vector3Scale(toDon, 1.0f / dist)
-        : (Vector3) { 0.0f, 0.0f, 1.0f };
+        : (Vector3) { 0, 0, 1.0f };
 
     // Land/finish THROUGH Donogan, not before him.
     // This should make the dive/clutch look more aggressive.
@@ -1526,7 +1526,7 @@ static inline void Skeleton_StartJumpAttack(BadGuy* b, Donogan* d, float groundY
     b->targetPos = land;
 
     Vector3 delta = Vector3Subtract(land, b->pos);
-    delta.y = 0.0f;
+    delta.y = 0;
 
     // Face Donogan at launch.
     b->yaw = BG_YawTo(b->pos, d->pos);
@@ -1553,14 +1553,14 @@ static inline bool BG_AnimNearEnd(BadGuy* b)
 
 static inline float BG_AnimT(BadGuy* b)
 {
-    if (!b || !b->anims || b->animCount <= 0) return 0.0f;
-    if (b->curAnim < 0 || b->curAnim >= b->animCount) return 0.0f;
+    if (!b || !b->anims || b->animCount <= 0) return 0;
+    if (b->curAnim < 0 || b->curAnim >= b->animCount) return 0;
 
     int frames = b->anims[b->curAnim].keyframeCount;
-    if (frames <= 1) return 0.0f;
+    if (frames <= 1) return 0;
 
     float t = (float)b->animFrame / (float)(frames - 1);
-    if (t < 0.0f) t = 0.0f;
+    if (t < 0) t = 0;
     if (t > 1.0f) t = 1.0f;
     return t;
 }
@@ -1568,7 +1568,7 @@ static inline float BG_AnimT(BadGuy* b)
 static inline Vector3 BG_ForwardFromYawDeg(float yawDeg)
 {
     float r = yawDeg * DEG2RAD;
-    return (Vector3) { sinf(r), 0.0f, cosf(r) };
+    return (Vector3) { sinf(r), 0, cosf(r) };
 }
 
 static inline BoundingBox BG_MakeBoxCenterHalf(Vector3 c, Vector3 h)
@@ -1641,7 +1641,7 @@ static inline BoundingBox Skeleton_JumpAttackBox(BadGuy* b)
 static inline Vector3 Skeleton_DirFromSkeletonToDon(BadGuy* b, Donogan* d)
 {
     Vector3 dir = Vector3Subtract(d->pos, b->pos);
-    dir.y = 0.0f;
+    dir.y = 0;
 
     if (Vector3LengthSqr(dir) < 0.0001f)
     {
@@ -1701,11 +1701,11 @@ static inline bool Skeleton_TryHitDon(Donogan* d, BadGuy* b,
 static inline void Skeleton_KnockBackFromDonogan(BadGuy* b, Donogan* d, bool wrench)
 {
     Vector3 dir = Vector3Subtract(b->pos, d->pos);
-    dir.y = 0.0f;
+    dir.y = 0;
 
     if (Vector3LengthSqr(dir) < 0.0001f)
     {
-        dir = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) };
+        dir = (Vector3){ sinf(d->yawY), 0, cosf(d->yawY) };
     }
     else
     {
@@ -1728,10 +1728,10 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     if (!d || !b) return;
 
     float groundY = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
-    if (groundY < -9000.0f) groundY = b->spawnPoint.y;
+    if (groundY < -9000) groundY = b->spawnPoint.y;
 
     Vector3 toDon = Vector3Subtract(d->pos, b->pos);
-    toDon.y = 0.0f;
+    toDon.y = 0;
     float distDon = Vector3Length(toDon);
 
     if (b->health <= 0) { b->dead = true; b->state = SKELETON_STATE_DEATH; }
@@ -1818,12 +1818,12 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         if (!Skeleton_IsAttackState(b->state) && distDon < SKEL_TOO_CLOSE_DIST)
         {
             Vector3 away = Vector3Subtract(b->pos, d->pos);
-            away.y = 0.0f;
+            away.y = 0;
 
             if (Vector3LengthSqr(away) < 0.0001f)
             {
                 // fallback: back away from current facing
-                away = (Vector3){ -sinf(b->yaw * DEG2RAD), 0.0f, -cosf(b->yaw * DEG2RAD) };
+                away = (Vector3){ -sinf(b->yaw * DEG2RAD), 0, -cosf(b->yaw * DEG2RAD) };
             }
             else
             {
@@ -1930,7 +1930,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         }
 
         float groundHere = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
-        if (groundHere < -9000.0f) groundHere = groundY;
+        if (groundHere < -9000) groundHere = groundY;
 
         // Do not allow landing too early. Let the animation reach about 2/3 first.
         if (b->animFrame >= SKEL_JUMP_LAND_FRAME && b->pos.y <= groundHere)
@@ -2021,11 +2021,11 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         if (animT <= SKEL_KICK_BACKUP_UNTIL)
         {
             Vector3 away = Vector3Subtract(b->pos, d->pos);
-            away.y = 0.0f;
+            away.y = 0;
 
             if (Vector3LengthSqr(away) < 0.0001f)
             {
-                away = (Vector3){ -sinf(b->yaw * DEG2RAD), 0.0f, -cosf(b->yaw * DEG2RAD) };
+                away = (Vector3){ -sinf(b->yaw * DEG2RAD), 0, -cosf(b->yaw * DEG2RAD) };
             }
             else
             {
@@ -2080,7 +2080,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
         b->vel.z *= 0.92f;
 
         float gy = GetTerrainHeightFromMeshXZ(b->pos.x, b->pos.z);
-        if (gy < -9000.0f) gy = groundY;
+        if (gy < -9000) gy = groundY;
 
         if (b->pos.y <= gy)
         {
@@ -2088,7 +2088,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 
             if (fabsf(b->vel.y) < 2.0f)
             {
-                b->vel.y = 0.0f;
+                b->vel.y = 0;
             }
         }
 
@@ -2231,12 +2231,12 @@ static inline BadGuy CreatePumpkinHopper(Vector3 pos)
     b.scale = 0.001f;
     b.desiredScale = 1.8;
     b.state = HOPPER_STATE_SLEEP;
-    b.spawnRadius = 120.0f;
+    b.spawnRadius = 120;
     b.awareRadius = 35.0f;
     b.speed = 8.0f;
     b.health = 20;
     b.startHealth = b.health;
-    b.respawnTimer = CreateTimer(30.0f);
+    b.respawnTimer = CreateTimer(30);
     b.interactionTimer = CreateTimer(1.0f);
     b.gbm_index = -1;
     b.drawColor = WHITE;
@@ -2249,8 +2249,8 @@ BadGuy CreateSkeleton(Vector3 pos)
 
     b.type = BG_SKELETON;
     b.spawnPoint = pos;
-    b.spawnRadius = 180.0f;   // activates when Don gets near
-    b.awareRadius = 80.0f;    // notices Don
+    b.spawnRadius = 180;   // activates when Don gets near
+    b.awareRadius = 80;    // notices Don
     b.tetherRadius = 45.0f;
 
     b.gbm_index = -1;
@@ -2592,10 +2592,10 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
             continue;
         }
         //ragdoll
-        if (bg[i].truckHitCooldown > 0.0f)
+        if (bg[i].truckHitCooldown > 0)
         {
             bg[i].truckHitCooldown -= dt;
-            if (bg[i].truckHitCooldown < 0.0f) bg[i].truckHitCooldown = 0.0f;
+            if (bg[i].truckHitCooldown < 0) bg[i].truckHitCooldown = 0;
         }
 
         if (bg[i].ragdoll)
@@ -2606,7 +2606,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         // Truck horn kills nearby ghosts.
         if (bg[i].type == BG_GHOST && BG_HornRecentlyActive(d))
         {
-            const float HORN_GHOST_KILL_RADIUS = 90.0f;
+            const float HORN_GHOST_KILL_RADIUS = 90;
 
             if (Vector3DistanceSqr(d->pos, bg[i].pos) <
                 HORN_GHOST_KILL_RADIUS * HORN_GHOST_KILL_RADIUS)
@@ -2671,7 +2671,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
                 if (d->spellTimer.running)
                 {
                     //make em raise up
-                    bg[i].pos.y += dt / 100.0f;
+                    bg[i].pos.y += dt / 100;
                     //make em spin
                     float deltaDeg = d->yawY - d->cached_yawY;       // Donogan's spin since last frame
                     if (deltaDeg > 4 * PI) { deltaDeg = 4 * PI; } //limit spin speed
@@ -2824,16 +2824,16 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                     else if (bg[b].type == BG_SKELETON)
                     {
                         float gy = GetTerrainHeightFromMeshXZ(bg[b].spawnPoint.x, bg[b].spawnPoint.z);
-                        if (gy < -9000.0f) gy = bg[b].spawnPoint.y;
+                        if (gy < -9000) gy = bg[b].spawnPoint.y;
 
                         bg[b].spawnPoint.y = gy;
                         bg[b].pos = bg[b].spawnPoint;
                         bg[b].targetPos = bg[b].spawnPoint;
                         bg[b].pos.y -= 2.1;
                         bg[b].vel = (Vector3){ 0 };
-                        bg[b].yaw = 0.0f;
-                        bg[b].pitch = 0.0f;
-                        bg[b].roll = 0.0f;
+                        bg[b].yaw = 0;
+                        bg[b].pitch = 0;
+                        bg[b].roll = 0;
                         bg[b].state = SKELETON_STATE_RISE;
                         BG_SetAnimSafe(&bg[b], ANIM_SKEL_RISE, true);
                     }

@@ -78,10 +78,10 @@ Platform plats[NUM_PLATS];
 // Tunables
 // ------------------------------------------------------------
 #ifndef PLATFORM_FALL_GRAVITY
-#define PLATFORM_FALL_GRAVITY   (-40.0f)   // m/s^2
+#define PLATFORM_FALL_GRAVITY   (-40)   // m/s^2
 #endif
 #ifndef PLATFORM_FALL_MAX_SPEED
-#define PLATFORM_FALL_MAX_SPEED (-70.0f)
+#define PLATFORM_FALL_MAX_SPEED (-70)
 #endif
 #ifndef PLATFORM_FALL_DELAY_SEC
 #define PLATFORM_FALL_DELAY_SEC (0.9999f)     // seconds standing before it drops
@@ -137,7 +137,7 @@ static inline Mover Mover_Make(Vector3 posA, Vector3 posB, float speed, Bounding
     m.clover = false;              // explicit
     m.boundTo[0] = m.boundTo[1] = m.boundTo[2] = -1;   // INVALID until you wire it up
     m.state = MOVER_FWD; m.posA = posA; m.posB = posB;
-    m.dir = Vector3Scale(d, 1.0f / L); m.oldPos = posA; m.speed = fmaxf(speed, 0.0f);
+    m.dir = Vector3Scale(d, 1.0f / L); m.oldPos = posA; m.speed = fmaxf(speed, 0);
     m.justSnapped = false; m.t_wait = CreateTimer(PLATFORM_WAIT_SEC); StartTimer(&m.t_wait); // start with a tiny settle if you want
     m.glue = world;
     m.glue.min.y -= 0.3;
@@ -165,7 +165,7 @@ static inline Platform Platform_MakeFaller(Vector3 pos, Vector3 dim, Texture2D t
     p.t_fallDelay = CreateTimer(PLATFORM_FALL_DELAY_SEC);
     p.t_fellDelay = CreateTimer(30);
     p.origPos = pos;
-    p.falling = false; p.vy = 0.0f;
+    p.falling = false; p.vy = 0;
     return p;
 }
 
@@ -248,7 +248,7 @@ static inline void Platform_UpdateFaller(Platform* p, float dt)
         if (bottom <= gy) {
             float offset = p->dim.y * 0.5f;
             p->pos.y = gy + offset; // rest on ground
-            p->vy = 0.0f; p->falling = false; // done
+            p->vy = 0; p->falling = false; // done
             StartTimer(&p->t_fellDelay);
         }
         p->box = UpdateBoundingBox(p->origBox, p->pos);
@@ -325,7 +325,7 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
             d->pos = Vector3Add(d->pos, delta);
 
             d->groundY = topY;
-            d->velY = 0.0f;
+            d->velY = 0;
             d->onGround = true;
             DonSnapToGround(d);
             return;
@@ -353,7 +353,7 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
 
     // LAND: set Don’s ground to the platform top and snap.
     d->groundY = topY;
-    d->velY = 0.0f;
+    d->velY = 0;
     d->onGround = true;
     DonSnapToGround(d);
 
@@ -361,7 +361,7 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
     if (p->type == PLATFORM_FALLER && !p->falling)
     {
         if (!p->t_fallDelay.running) { StartTimer(&p->t_fallDelay); }
-        else if (HasTimerElapsed(&p->t_fallDelay)) { p->falling = true; p->vy = 0.0f; }
+        else if (HasTimerElapsed(&p->t_fallDelay)) { p->falling = true; p->vy = 0; }
     }
 
     // If it’s a mover, carry Don by the platform delta and claim glue ownership
@@ -371,7 +371,7 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
         d->pos = Vector3Add(d->pos, delta);
 
         
-        d->velY = 0.0f;
+        d->velY = 0;
         d->onGround = true;
         DonSnapToGround(d);
         d->gluedToPlatform = true;
@@ -383,7 +383,7 @@ static inline void Platform_CollideAndRide(Platform* p, Donogan* d, float dt, Pl
     {
         d->gluedToPlatform = true;
         d->gluedPlatId = platId;
-        d->velY = 0.0f;
+        d->velY = 0;
         d->onGround = true;
         d->groundY = topY;
     }
@@ -608,15 +608,15 @@ void InitPlats()
     plats[101] = Platform_MakeStill((Vector3) { 823.44f, 891.19f, -1826.03f }, (Vector3) { 16, 1, 10 }, tex_plat, WHITE);
     //movers
     plats[102] = Platform_MakeMover((Vector3) { 1680, 605, -1713.86 }, (Vector3) { 1665, 611, -1718.74f }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
-    plats[103] = Platform_MakeMover((Vector3) { 1035.0f, 826.0f, -1800.0f }, (Vector3) { 1018.0f, 832.0f, -1802.0f }, (Vector3) { 8, 1, 8 }, 7.0f, tex_plat, WHITE);
+    plats[103] = Platform_MakeMover((Vector3) { 1035.0f, 826.0f, -1800 }, (Vector3) { 1018.0f, 832.0f, -1802.0f }, (Vector3) { 8, 1, 8 }, 7.0f, tex_plat, WHITE);
     plats[104] = Platform_MakeMover((Vector3) { 996.0f, 838.0f, -1805.0f }, (Vector3) { 978.0f, 844.0f, -1807.0f }, (Vector3) { 10, 1, 8 }, 7.0f, tex_plat, WHITE);
-    plats[105] = Platform_MakeMover((Vector3) { 956.0f, 850.0f, -1810.0f }, (Vector3) { 938.0f, 856.0f, -1812.0f }, (Vector3) { 8, 1, 8 }, 7.0f, tex_plat, WHITE);
-    plats[106] = Platform_MakeMover((Vector3) { 918.0f, 862.0f, -1815.0f }, (Vector3) { 900.0f, 868.0f, -1817.0f }, (Vector3) { 10, 1, 8 }, 7.0f, tex_plat, WHITE);
+    plats[105] = Platform_MakeMover((Vector3) { 956.0f, 850, -1810 }, (Vector3) { 938.0f, 856.0f, -1812.0f }, (Vector3) { 8, 1, 8 }, 7.0f, tex_plat, WHITE);
+    plats[106] = Platform_MakeMover((Vector3) { 918.0f, 862.0f, -1815.0f }, (Vector3) { 900, 868.0f, -1817.0f }, (Vector3) { 10, 1, 8 }, 7.0f, tex_plat, WHITE);
     plats[107] = Platform_MakeMover((Vector3) { 882.0f, 872.0f, -1819.0f }, (Vector3) { 864.0f, 878.0f, -1821.0f }, (Vector3) { 8, 1, 8 }, 7.0f, tex_plat, WHITE);
-    plats[108] = Platform_MakeMover((Vector3) { 850.0f, 882.0f, -1823.0f }, (Vector3) { 835.0f, 888.0f, -1825.0f }, (Vector3) { 10, 1, 8 }, 6.0f, tex_plat, WHITE);
-    plats[109] = Platform_MakeMover((Vector3) { 956.0f, 850.0f, -1801.0f }, (Vector3) { 938.0f, 856.0f, -1803.0f }, (Vector3) { 8, 1, 8 }, 6.0f, tex_plat, WHITE);
-    plats[110] = Platform_MakeMover((Vector3) { 918.0f, 862.0f, -1826.0f }, (Vector3) { 900.0f, 868.0f, -1828.0f }, (Vector3) { 8, 1, 8 }, 6.0f, tex_plat, WHITE);
-    plats[111] = Platform_MakeMover((Vector3) { 872.0f, 876.0f, -1810.0f }, (Vector3) { 852.0f, 884.0f, -1813.0f }, (Vector3) { 8, 1, 8 }, 6.0f, tex_plat, WHITE);
+    plats[108] = Platform_MakeMover((Vector3) { 850, 882.0f, -1823.0f }, (Vector3) { 835.0f, 888.0f, -1825.0f }, (Vector3) { 10, 1, 8 }, 6.0f, tex_plat, WHITE);
+    plats[109] = Platform_MakeMover((Vector3) { 956.0f, 850, -1801.0f }, (Vector3) { 938.0f, 856.0f, -1803.0f }, (Vector3) { 8, 1, 8 }, 6.0f, tex_plat, WHITE);
+    plats[110] = Platform_MakeMover((Vector3) { 918.0f, 862.0f, -1826.0f }, (Vector3) { 900, 868.0f, -1828.0f }, (Vector3) { 8, 1, 8 }, 6.0f, tex_plat, WHITE);
+    plats[111] = Platform_MakeMover((Vector3) { 872.0f, 876.0f, -1810 }, (Vector3) { 852.0f, 884.0f, -1813.0f }, (Vector3) { 8, 1, 8 }, 6.0f, tex_plat, WHITE);
     plats[111].disabled = true;
     //by hand
     plats[112] = Platform_MakeMover((Vector3) { 1555, 645, -1733.37f }, (Vector3) { 1515, 655, -1738.24f }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);
@@ -625,10 +625,10 @@ void InitPlats()
     plats[115] = Platform_MakeStill((Vector3) { 1406.04, 691, -1749.15 }, (Vector3) { 4, 1, 8 }, tex_plat, WHITE);
     plats[116] = Platform_MakeStill((Vector3) { 1290, 734, -1757.50f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     plats[117] = Platform_MakeStill((Vector3) { 1255, 745, -1767.98 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
-    plats[118] = Platform_MakeStill((Vector3) { 1220.0f, 756.0f, -1773.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
-    plats[119] = Platform_MakeStill((Vector3) { 1182.0f, 770.0f, -1780.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[118] = Platform_MakeStill((Vector3) { 1220, 756.0f, -1773.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[119] = Platform_MakeStill((Vector3) { 1182.0f, 770, -1780 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     plats[120] = Platform_MakeStill((Vector3) { 1143.0f, 784.0f, -1785.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
-    plats[121] = Platform_MakeStill((Vector3) { 1106.0f, 798.0f, -1790.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
+    plats[121] = Platform_MakeStill((Vector3) { 1106.0f, 798.0f, -1790 }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     plats[122] = Platform_MakeStill((Vector3) { 1068.0f, 812.0f, -1795.0f }, (Vector3) { 8, 1, 8 }, tex_plat, WHITE);
     /////////////////////////////////////////////////////NEAR WATER WHEEL////////////////////////////////////////////////////////////////////////////
     plats[123] = Platform_MakeMover((Vector3) { -1670.57, 365, -1551.97 }, (Vector3) { -1670.57, 400, -1551.97 }, (Vector3) { 8, 1, 8 }, 8.0f, tex_plat, WHITE);

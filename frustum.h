@@ -91,7 +91,7 @@ static inline bool IsPointInFrustum(Vector3 p, Frustum frustum)
     {
         Plane plane = frustum.planes[i];
         float distance = Vector3DotProduct(plane.normal, p) + plane.d;
-        if (distance < 0.0f) return false; // outside this plane -> outside frustum
+        if (distance < 0) return false; // outside this plane -> outside frustum
     }
     return true;
 }

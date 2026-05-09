@@ -31,19 +31,19 @@ EnvBoundingBox gEnvBoundingBoxes[gEnvBoundingBoxCount] = { 0 };
 
 void GoGoGadgetDuctTape()
 {
-    gEnvBoundingBoxes[0] = (EnvBoundingBox){EBBT_WALL,(BoundingBox) {(Vector3) {2960.0f, 320.0f, 4026.0f},(Vector3) {2987.0f, 340.0f, 4027.0f}}};//don home side wall one
-    gEnvBoundingBoxes[1] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2960.0f, 320.0f, 4058.0f },(Vector3) { 2987.0f, 340.0f, 4059.0f } } };//don home side wall
-    gEnvBoundingBoxes[2] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1281.0f, 327.0f, 1270.0f },(Vector3) { 1288.0f, 340.0f, 1272.0f } } };//truck short
-    gEnvBoundingBoxes[3] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1259.0f, 327.0f, 1270.0f },(Vector3) { 1266.0f, 340.0f, 1272.0f } } };//truck short
-    gEnvBoundingBoxes[4] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1257.8f, 327.0f, 1243.0f },(Vector3) { 1261.0f, 340.0f, 1270.0f } } };//truck side
-    gEnvBoundingBoxes[5] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1286.0f, 327.0f, 1243.0f },(Vector3) { 1289.2f, 340.0f, 1270.0f } } };//truck other side
-    gEnvBoundingBoxes[6] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1259.0f, 327.0f, 1240.0f },(Vector3) { 1288.0f, 340.0f, 1244.0f } } };//truck back wall
-    gEnvBoundingBoxes[7] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { -2331.0f, 312, 3378.0f },(Vector3) { -2198.0f, 330, 3550.0f } } };//temple wall
-    gEnvBoundingBoxes[8] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { -2331.0f, 330, 3378.0f },(Vector3) { -2198.0f, 333, 3550.0f } } };//temple ground
-    gEnvBoundingBoxes[9] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1900.0f, 360, 4119.0f },(Vector3) { 1909.0f, 370, 4181.0f } } };//nice 01 wall 1
+    gEnvBoundingBoxes[0] = (EnvBoundingBox){EBBT_WALL,(BoundingBox) {(Vector3) {2960, 320, 4026.0f},(Vector3) {2987.0f, 340, 4027.0f}}};//don home side wall one
+    gEnvBoundingBoxes[1] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2960, 320, 4058.0f },(Vector3) { 2987.0f, 340, 4059.0f } } };//don home side wall
+    gEnvBoundingBoxes[2] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1281.0f, 327.0f, 1270 },(Vector3) { 1288.0f, 340, 1272.0f } } };//truck short
+    gEnvBoundingBoxes[3] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1259.0f, 327.0f, 1270 },(Vector3) { 1266.0f, 340, 1272.0f } } };//truck short
+    gEnvBoundingBoxes[4] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1257.8f, 327.0f, 1243.0f },(Vector3) { 1261.0f, 340, 1270 } } };//truck side
+    gEnvBoundingBoxes[5] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1286.0f, 327.0f, 1243.0f },(Vector3) { 1289.2f, 340, 1270 } } };//truck other side
+    gEnvBoundingBoxes[6] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1259.0f, 327.0f, 1240 },(Vector3) { 1288.0f, 340, 1244.0f } } };//truck back wall
+    gEnvBoundingBoxes[7] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { -2331.0f, 312, 3378.0f },(Vector3) { -2198.0f, 330, 3550 } } };//temple wall
+    gEnvBoundingBoxes[8] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { -2331.0f, 330, 3378.0f },(Vector3) { -2198.0f, 333, 3550 } } };//temple ground
+    gEnvBoundingBoxes[9] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1900, 360, 4119.0f },(Vector3) { 1909.0f, 370, 4181.0f } } };//nice 01 wall 1
     gEnvBoundingBoxes[10] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1823.0f, 360, 4176.0f },(Vector3) { 1842.0f, 368.6f, 4183.0f } } };//nice 01 wall 2
     gEnvBoundingBoxes[11] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { -685, 560, 3723.0f },(Vector3) { -662.0f, 570, 3752.0f } } };//nice 02 wall 1
-    gEnvBoundingBoxes[12] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { -605.0f, 558, 3690.0f },(Vector3) { -599.0f, 572, 3752.0f } } };//nice 02 wall 2
+    gEnvBoundingBoxes[12] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { -605.0f, 558, 3690 },(Vector3) { -599.0f, 572, 3752.0f } } };//nice 02 wall 2
     gEnvBoundingBoxes[13] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2626, 333, 4490 },(Vector3) { 2749, 350, 4493 } } };//brick book temple wall
     gEnvBoundingBoxes[14] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2708, 320, 4614 },(Vector3) { 2751, 350, 4620.5f } } };//brick book temple wall small 01
     gEnvBoundingBoxes[15] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2627, 320, 4614 },(Vector3) { 2670, 350, 4620.5f } } };//brick book temple wall small 02
@@ -51,7 +51,7 @@ void GoGoGadgetDuctTape()
     gEnvBoundingBoxes[17] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 2140, 520, 540 },(Vector3) { 2390, 540, 552 } } };//castle wall 2
     gEnvBoundingBoxes[18] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1826.0f, 364, 4154.0f },(Vector3) { 1839.0f, 366.0f, 4182.0f } } };//nice 01 wall 3
     gEnvBoundingBoxes[19] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1839.4f, 360, 4119.7f },(Vector3) { 1844.2f, 372.0f, 4182.0f } } };//nice 01 wall 4
-    gEnvBoundingBoxes[20] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1830.0f, 360, 4136.0f },(Vector3) { 1845.0f, 364.4f, 4140.0f } } };//nice 01 wall 5
+    gEnvBoundingBoxes[20] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { 1830, 360, 4136.0f },(Vector3) { 1845.0f, 364.4f, 4140 } } };//nice 01 wall 5
     gEnvBoundingBoxes[21] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { 1841.0f, 372, 4119.7f },(Vector3) { 1844.2f, 374.4f, 4182.0f } } };//nice 01 ground 1
     gEnvBoundingBoxes[22] = (EnvBoundingBox){ EBBT_WALL,(BoundingBox) { (Vector3) { -2313.59, 333.08, 3503.79 },(Vector3) { -2222.63, 350.00, 3524.00 } } };//temple wall
     gEnvBoundingBoxes[23] = (EnvBoundingBox){ EBBT_GROUND,(BoundingBox) { (Vector3) { -669.12, 574, 3726.89 },(Vector3) { -668.00, 575.67, 3748.53 } } };//lucyies sisters ground
@@ -60,7 +60,7 @@ void GoGoGadgetDuctTape()
     gEnvBoundingBoxes[25] = (EnvBoundingBox){ EBBT_WALL, (BoundingBox) { (Vector3) { -596.3f, 793.0f, 2866.8f }, (Vector3) { -576.5f, 809.0f, 2870.2f } } };
     gEnvBoundingBoxes[26] = (EnvBoundingBox){ EBBT_WALL, (BoundingBox) { (Vector3) { -627.5f, 793.0f, 2866.8f }, (Vector3) { -576.5f, 809.0f, 2870.2f } } };
     //cinderSpire
-    gEnvBoundingBoxes[27] = (EnvBoundingBox){ EBBT_CAVE_START, (BoundingBox) { (Vector3) { -445.0f, 655.0f, -1140.0f },(Vector3) { -420.0f, 670.0f, -1122.0f } } }; //cinderspire
+    gEnvBoundingBoxes[27] = (EnvBoundingBox){ EBBT_CAVE_START, (BoundingBox) { (Vector3) { -445.0f, 655.0f, -1140 },(Vector3) { -420, 670, -1122.0f } } }; //cinderspire
 }
 
 #endif // DUCT_TAPE_H

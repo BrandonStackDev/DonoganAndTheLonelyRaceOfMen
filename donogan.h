@@ -201,7 +201,7 @@ typedef enum {
     DONOGAN_STATE_AIR_R1_HAND_STAND,
     DONOGAN_STATE_AIR_R1_RELEASE,
     DONOGAN_STATE_AIR_L2_SPELL_SLAM,
-    //DONOGAN_STATE_AIR_L1_GUITAR_SLAM,
+    DONOGAN_STATE_AIR_L1_GUITAR_SLAM,
     //DONOGAN_STATE_AIR_GUITAR_NORMAL_ATTACK,
     DONOGAN_STATE_SWIM_IDLE,
     DONOGAN_STATE_SWIM_MOVE,
@@ -226,8 +226,10 @@ typedef enum {
     DONOGAN_STATE_DEATH,
 } DonoganState;
 
+
 // ---------- Anim IDs present in your GLB (+procedural negatives)----------
 typedef enum {
+    DONOGAN_ANIM_PROC_AIR_L1_GUITAR_SLAM = -13,
     DONOGAN_ANIM_PROC_AIR_L2_SPHERE_SLAM = -12,
     DONOGAN_ANIM_PROC_AIR_R1_RELEASE = -11,
     DONOGAN_ANIM_PROC_AIR_R1_HAND_STAND = -10,
@@ -321,6 +323,7 @@ typedef enum {
     AIR_R1_KFG_HAND_STAND,
     AIR_R1_KFG_RELEASE,
     AIR_L2_KFG_SPHERE_SLAM,
+    AIR_L1_KFG_GUITAR_SLAM,
     BOW_KFG_COUNT
 } BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
 typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
@@ -387,6 +390,19 @@ typedef struct {
     bool     wrenchMode, hasWrench;
     Model wrenchModel;
     Texture2D wrenchTex;
+
+    //GUITAR!!!!
+    //GUITAR
+    Model guitarModel;
+    Texture2D guitarTex;
+    float guitarScale;
+    Vector3 guitarGripOffset;
+    Vector3 guitarGripEulerDeg;
+
+    // Current animated/proc pose cache.
+    // Used for attaching held props to bones.
+    Transform poseNow[DON_BONE_COUNT];
+    bool poseNowValid;
 
     // Playback
     DonoganAnim curAnimId;
@@ -642,7 +658,7 @@ static inline void DonAirL2SlamSpawnAtHand(const Donogan* d)
     gAirL2Slam.groundY = d->groundY;
     gAirL2Slam.life = 0.18f;
 
-    gAirL2Slam.damageTimer = 0.0f;
+    gAirL2Slam.damageTimer = 0;
     gAirL2Slam.damagePulse = true;
 }
 
@@ -669,7 +685,7 @@ static inline void DonAirL2SlamLockToGround(const Donogan* d)
     gAirL2Slam.pos.y = gAirL2Slam.groundY + gAirL2Slam.radius * 0.35f;
 
     // Immediate damage pulse on impact.
-    gAirL2Slam.damageTimer = 0.0f;
+    gAirL2Slam.damageTimer = 0;
     gAirL2Slam.damagePulse = true;
 }
 
@@ -680,7 +696,7 @@ static inline void UpdateAirL2SlamSphere(float dt)
     if (!gAirL2Slam.active) return;
 
     gAirL2Slam.damageTimer -= dt;
-    if (gAirL2Slam.damageTimer <= 0.0f)
+    if (gAirL2Slam.damageTimer <= 0)
     {
         gAirL2Slam.damagePulse = true;
         gAirL2Slam.damageTimer = 0.13f;
@@ -705,7 +721,7 @@ static inline void UpdateAirL2SlamSphere(float dt)
         gAirL2Slam.radius = gAirL2Slam.maxRadius;
         gAirL2Slam.life -= dt;
 
-        if (gAirL2Slam.life <= 0.0f)
+        if (gAirL2Slam.life <= 0)
         {
             gAirL2Slam.active = false;
             gAirL2Slam.lockedToGround = false;
@@ -715,6 +731,10 @@ static inline void UpdateAirL2SlamSphere(float dt)
 
     // As it grows, keep it rising out of the ground.
     gAirL2Slam.pos.y = gAirL2Slam.groundY + gAirL2Slam.radius * 0.35f;
+}
+static bool ShowGuitar(Donogan* d)
+{
+    return d->state == DONOGAN_STATE_AIR_L1_GUITAR_SLAM; //DONOGAN_STATE_AIR_GUITAR_NORMAL_ATTACK,
 }
 static inline bool DonIsAirAttackState(const Donogan* d)
 {
@@ -750,7 +770,7 @@ static inline bool Don_TryStartAirL2SphereSlam(Donogan* d)
     d->gluedPlatId = -1;
 
     // Slam downward.
-    if (d->velY > -10.0f) d->velY = -10.0f;
+    if (d->velY > -10) d->velY = -10;
 
     // Keep a little drift but mostly commit to the slam.
     d->velXZ = Vector3Scale(d->velXZ, 0.30f);
@@ -771,7 +791,76 @@ static inline void Don_UpdateBoxes(Donogan* d)
     d->innerBox = UpdateBoundingBox(d->origInnerBB, d->pos);
     d->outerBox = UpdateBoundingBox(d->origOuterBB, d->pos);
 }
+static inline Transform DonGetPoseOrBind(const Donogan* d, int boneId)
+{
+    Transform t = { 0 };
 
+    if (!d) return t;
+
+    if (boneId < 0 || boneId >= d->model.skeleton.boneCount)
+    {
+        return t;
+    }
+
+    if (d->poseNowValid && boneId < DON_BONE_COUNT)
+    {
+        return d->poseNow[boneId];
+    }
+
+    if (d->model.skeleton.bindPose)
+    {
+        return d->model.skeleton.bindPose[boneId];
+    }
+
+    return t;
+}
+
+static inline Matrix DonTransformToMatrix(Transform t)
+{
+    Matrix R = QuaternionToMatrix(QuaternionNormalize(t.rotation));
+    Matrix T = MatrixTranslate(t.translation.x, t.translation.y, t.translation.z);
+
+    // Matches the style used elsewhere: local rotation, then local translation.
+    return MatrixMultiply(R, T);
+}
+
+static inline Matrix DonBuildBoneAttachmentMatrix(
+    const Donogan* d,
+    int boneId,
+    Vector3 localOffset,
+    Vector3 localEulerDeg,
+    float itemScale
+)
+{
+    if (!d)
+    {
+        return MatrixIdentity();
+    }
+
+    Transform bt = DonGetPoseOrBind(d, boneId);
+
+    Matrix Sitem = MatrixScale(itemScale, itemScale, itemScale);
+
+    Matrix Ritem = MatrixRotateXYZ((Vector3) {
+        localEulerDeg.x* DEG2RAD,
+            localEulerDeg.y* DEG2RAD,
+            localEulerDeg.z* DEG2RAD
+    });
+
+    Matrix Titem = MatrixTranslate(localOffset.x, localOffset.y, localOffset.z);
+
+    Matrix Mbone = DonTransformToMatrix(bt);
+
+    Matrix Schar = MatrixScale(d->scale, d->scale, d->scale);
+    Matrix Rchar = d->model.transform;
+    Matrix Tchar = MatrixTranslate(d->pos.x, d->pos.y, d->pos.z);
+
+    // item local -> grip offset -> bone pose -> Donogan scale -> Donogan transform -> world
+    Matrix itemLocal = MatrixMultiply(Sitem, MatrixMultiply(Ritem, Titem));
+    Matrix charWorld = MatrixMultiply(Schar, MatrixMultiply(Rchar, Tchar));
+
+    return MatrixMultiply(itemLocal, MatrixMultiply(Mbone, charWorld));
+}
 static inline void Don_ResetPositionHistory(Donogan* d)
 {
     if (!d) return;
@@ -828,12 +917,12 @@ static inline void Don_SetAirR2FindTargetHook(DonAirR2FindTargetFn fn)
 static void SpawnAirR2DownBall(const Donogan* d, SpellBall* b)
 {
     // Same basic spell ball, but spawned from above/chest/hand area.
-    Vector3 spawnOff = { 0.0f, 2.6f, 0.25f };
+    Vector3 spawnOff = { 0, 2.6f, 0.25f };
     Vector3 spawn = Vector3Add(d->pos, RotYawOffset(spawnOff, d->yawY, d->scale, false));
 
     const float ballSpeed = 38.0f;
 
-    Vector3 dir = { 0.0f, -1.0f, 0.0f };
+    Vector3 dir = { 0, -1.0f, 0 };
 
     // Ask preview/bg side for a target.
     // If none found, keep the old straight-down shot.
@@ -896,7 +985,7 @@ static inline BoundingBox DonMakePunchBox(const Donogan* d)
 {
     Vector3 fwd = {
         sinf(d->yawY),
-        0.0f,
+        0,
         cosf(d->yawY)
     };
 
@@ -920,7 +1009,7 @@ static inline bool DonIsWrenchSwinging(const Donogan* d)
 
 static inline BoundingBox DonMakeWrenchBox(const Donogan* d)
 {
-    Vector3 fwd = { sinf(d->yawY), 0.0f, cosf(d->yawY) };
+    Vector3 fwd = { sinf(d->yawY), 0, cosf(d->yawY) };
 
     float size = 4.2f;
     float reach = 3.0f;
@@ -968,7 +1057,7 @@ static inline void UpdateLasers(float dt) {
         Laser* L = &gLasers[i];
         if (!L->alive) continue;
         L->life -= dt;
-        if (L->life <= 0.0f) L->alive = 0;
+        if (L->life <= 0) L->alive = 0;
     }
 }
 
@@ -978,19 +1067,19 @@ static inline void DrawLasers(void) {
         Laser* L = &gLasers[i];
         if (!L->alive) continue;
 
-        float t = (L->maxLife > 0.0f) ? (L->life / L->maxLife) : 0.0f;
+        float t = (L->maxLife > 0) ? (L->life / L->maxLife) : 0;
         float w = L->width * (0.65f + 0.35f * t); // small shrink over time
 
         // soft outer pass (cheap glow)
-        Color halo = (Color){ 200, 60, 40, (unsigned char)(90.0f * t) };
+        Color halo = (Color){ 200, 60, 40, (unsigned char)(90 * t) };
         DrawCylinderEx(L->a, L->b, w * 2.2f, w * 2.2f, 8, halo);
 
         // bright core
-        Color core = (Color){ 255, 100, 100, (unsigned char)(220.0f * t) };
+        Color core = (Color){ 255, 100, 100, (unsigned char)(220 * t) };
         DrawCylinderEx(L->a, L->b, w, w, 10, core);
 
         // end caps
-        DrawSphere(L->a, w * 0.9f, (Color) { 255, 180, 200, (unsigned char)(180.0f * t) });
+        DrawSphere(L->a, w * 0.9f, (Color) { 255, 180, 200, (unsigned char)(180 * t) });
         DrawSphere(L->b, w * 1.2f, core);
     }
     EndBlendMode();
@@ -1006,7 +1095,7 @@ static inline float DonFeetWorldY(const Donogan* d) {
 }
 static inline void DonSnapToGround(Donogan* d) {
     d->pos.y = d->groundY - d->firstBB.min.y * d->scale; // place feet exactly on ground
-    d->velY = 0.0f;
+    d->velY = 0;
     d->onGround = true;
     d->box = UpdateBoundingBox(d->origBB,d->pos);
 }
@@ -1022,8 +1111,8 @@ static inline float StepBlend01(float cur, float target, float rate, float dt, I
 // Fill one KeyFrameBone with zeros + identity rotation + linear interpolator
 static inline void KfBoneZero(KeyFrameBone* kb, DonBone bone) {
     kb->boneId = bone;
-    kb->rate = 0.0f;                      // not used yet, but kept for future
-    kb->pos = (Vector3){ 0.0f,0.0f,0.0f }; // delta translation (local)
+    kb->rate = 0;                      // not used yet, but kept for future
+    kb->pos = (Vector3){ 0,0,0 }; // delta translation (local)
     kb->rot = QuaternionIdentity();      // delta rotation (local)
     kb->interpol = LerpFloat;                 // linear
 }
@@ -1046,7 +1135,7 @@ static inline Vector3 DonAimForward(const Donogan* d, float upBiasDeg)
     // camera → world forward (opposite of target→camera):
     Vector3 dir = (Vector3){ -sy * cp, -sp, -cy * cp };
 
-    if (upBiasDeg != 0.0f) dir.y += sinf(DEG2RAD * upBiasDeg);
+    if (upBiasDeg != 0) dir.y += sinf(DEG2RAD * upBiasDeg);
     return Vector3Normalize(dir);
 }
 
@@ -1054,9 +1143,9 @@ static inline Vector3 DonAimForward(const Donogan* d, float upBiasDeg)
 static inline Vector3 RotYawOffset(Vector3 localOff, float yaw, float scale, bool useScale)
 {
     float cy = cosf(yaw), sy = sinf(yaw);
-    Vector3 right = (Vector3){ cy, 0.0f, -sy };
-    Vector3 fwd = (Vector3){ sy, 0.0f,  cy };
-    Vector3 up = (Vector3){ 0.0f, 1.0f, 0.0f };
+    Vector3 right = (Vector3){ cy, 0, -sy };
+    Vector3 fwd = (Vector3){ sy, 0,  cy };
+    Vector3 up = (Vector3){ 0, 1.0f, 0 };
 
     if (useScale) localOff = (Vector3){ localOff.x * scale, localOff.y * scale, localOff.z * scale };
 
@@ -1076,7 +1165,7 @@ static Vector3 PredictArrowImpact(const Donogan* d,
     Vector3 pos = origin;
     Vector3 vel = Vector3Scale(dir, speed);
     const float g = d->arrowGravity;     // negative
-    const float dt = 1.0f / 120.0f;        // fine-grained but cheap
+    const float dt = 1.0f / 120;        // fine-grained but cheap
 
     for (float t = 0; t < tMax; t += dt) {
         // integrate
@@ -1160,7 +1249,7 @@ static void DonUpdateArrows(Donogan* d, float dt) {
         }
 
         a->life -= dt;
-        if (a->life <= 0.0f) a->alive = 0;
+        if (a->life <= 0) a->alive = 0;
     }
 }
 
@@ -1201,7 +1290,7 @@ static void BowPlay(Donogan* d, int clip, bool loop, bool reset)
         d->bowCur = clip;
         d->bowLoop = loop;
         d->bowFinished = false;
-        d->bowTime = 0.0f;
+        d->bowTime = 0;
         d->bowFrame = 0;
     }
 }
@@ -1260,7 +1349,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g0->anim = DONOGAN_ANIM_PROC_BOW_ENTER;
     g0->maxKey = 1;
     g0->curKey = 0;
-    KfMakeZeroKey(&g0->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+    KfMakeZeroKey(&g0->keyFrames[0], 0, BOW_BONES, NUM_BOW_BONES);
     g0->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, -85.0f);
     g0->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0,  85.0f);
 
@@ -1270,7 +1359,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g1->anim = DONOGAN_ANIM_PROC_BOW_AIM;
     g1->maxKey = 1;
     g1->curKey = 0;
-    KfMakeZeroKey(&g1->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+    KfMakeZeroKey(&g1->keyFrames[0], 0, BOW_BONES, NUM_BOW_BONES);
     g1->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -12.0f);
     g1->keyFrames[0].kfBones[1].rot = QuatXYZDeg(45, 85, 120);
     g1->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0,0,0);
@@ -1286,7 +1375,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g2->anim = DONOGAN_ANIM_PROC_BOW_PULL;
     g2->maxKey = 1;
     g2->curKey = 0;
-    KfMakeZeroKey(&g2->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+    KfMakeZeroKey(&g2->keyFrames[0], 0, BOW_BONES, NUM_BOW_BONES);
     g2->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -11.0f);
     g2->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 100);
     g2->keyFrames[0].kfBones[2].rot = QuatXYZDeg(135, 0, 0);
@@ -1302,8 +1391,8 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g3->anim = DONOGAN_ANIM_PROC_BOW_REL;
     g3->maxKey = 1;
     g3->curKey = 0;
-    KfMakeZeroKey(&g3->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
-    g3->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -10.0f);
+    KfMakeZeroKey(&g3->keyFrames[0], 0, BOW_BONES, NUM_BOW_BONES);
+    g3->keyFrames[0].kfBones[0].rot = QuatXYZDeg(-2.0f, -88.0f, -10);
     g3->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 100);
     g3->keyFrames[0].kfBones[2].rot = QuatXYZDeg(135, 0, -10);
     g3->keyFrames[0].kfBones[3].rot = QuatXYZDeg(0, 76.0f, 0);
@@ -1318,7 +1407,7 @@ static void DonInitBowKeyframeGroups(Donogan* d)
     g4->anim = DONOGAN_ANIM_PROC_BOW_EXIT;
     g4->maxKey = 1;
     g4->curKey = 0;
-    KfMakeZeroKey(&g4->keyFrames[0], 0.0f, BOW_BONES, NUM_BOW_BONES);
+    KfMakeZeroKey(&g4->keyFrames[0], 0, BOW_BONES, NUM_BOW_BONES);
     g4->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, -85.0f);
     g4->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 85.0f);
 }
@@ -1387,7 +1476,7 @@ static inline Vector3 DonRootFrontFlipPivotCompensate(float pitchDeg, Vector3 pi
     Vector3 pos = { 0 };
 
     // X does not change for pure X-axis pitch.
-    pos.x = 0.0f;
+    pos.x = 0;
 
     // Keep pivot's Y from bobbing around the flip circle.
     pos.y = pivot.y - (pivot.y * c - pivot.z * s);
@@ -1489,7 +1578,7 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     // ------------------------------------------------------------
 
     // Root: pivot-corrected whole-body rotation.
-    DonAirJumpAttackSetRoot(&g->keyFrames[0], d, 0.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&g->keyFrames[0], d, 0, 0, 0);
 
     // Arms start moving forward/down.
     g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(35, -8, 8);
@@ -1513,7 +1602,7 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     // X = front flip pitch
     // Y = twist/yaw
     // Z = side roll/aerial flavor
-    DonAirJumpAttackSetRoot(&g->keyFrames[1], d, 120.0f, 0,0);
+    DonAirJumpAttackSetRoot(&g->keyFrames[1], d, 120, 0,0);
 
     g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(75, -10, 12);
     g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(45, 0, 0);
@@ -1534,7 +1623,7 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     // ------------------------------------------------------------
 
     // Almost one full flip with some twist/roll.
-    DonAirJumpAttackSetRoot(&g->keyFrames[2], d, 270.0f, 0,0);
+    DonAirJumpAttackSetRoot(&g->keyFrames[2], d, 270, 0,0);
 
     // Arms reach out/down for the shot.
     g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(125, -8, 12);
@@ -1556,7 +1645,7 @@ static void DonInitAirR2SpellKeyframeGroups(Donogan* d)
     // ------------------------------------------------------------
 
     // Full pitch rotation, but pivot-corrected so he rotates around center.
-    DonAirJumpAttackSetRoot(&g->keyFrames[3], d, 360.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&g->keyFrames[3], d, 360, 0, 0);
 
     g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(25, 0, 0);
     g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(10, 0, 0);
@@ -1625,7 +1714,7 @@ static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
     // 12 foot_R
 
     // KEY 0: start like R2 flip
-    DonAirJumpAttackSetRoot(&g->keyFrames[0], d, 0.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&g->keyFrames[0], d, 0, 0, 0);
 
     g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(45, -6, 8);
     g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(20, 0, 0);
@@ -1644,7 +1733,7 @@ static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
     g->keyFrames[0].kfBones[12].rot = QuatXYZDeg(0, 0, 0);
 
     // KEY 1: dive forward/down
-    DonAirJumpAttackSetRoot(&g->keyFrames[1], d, 105.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&g->keyFrames[1], d, 105.0f, 0, 0);
 
     g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(115, -4, 6);
     g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(15, 0, 0);
@@ -1663,7 +1752,7 @@ static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
     g->keyFrames[1].kfBones[12].rot = QuatXYZDeg(10, 0, 0);
 
     // KEY 2: almost handstand
-    DonAirJumpAttackSetRoot(&g->keyFrames[2], d, 170.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&g->keyFrames[2], d, 170, 0, 0);
 
     g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(160, -2, 4);
     g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(5, 0, 0);
@@ -1682,7 +1771,7 @@ static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
     g->keyFrames[2].kfBones[12].rot = QuatXYZDeg(12, 0, 0);
 
     // KEY 3: full handstand HOLD pose
-    DonAirJumpAttackSetRoot(&g->keyFrames[3], d, 180.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&g->keyFrames[3], d, 180, 0, 0);
 
     g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(168, -2, 2);
     g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
@@ -1716,7 +1805,7 @@ static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
     KfMakeZeroKey(&r->keyFrames[3], 0.42f, BONES, NUM_BONES);
 
     // KEY 0: starts from handstand
-    DonAirJumpAttackSetRoot(&r->keyFrames[0], d, 180.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&r->keyFrames[0], d, 180, 0, 0);
 
     r->keyFrames[0].kfBones[1].rot = QuatXYZDeg(168, -2, 2);
     r->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
@@ -1734,7 +1823,7 @@ static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
     r->keyFrames[0].kfBones[12].rot = QuatXYZDeg(8, 0, 0);
 
     // KEY 1: spring away from handstand
-    DonAirJumpAttackSetRoot(&r->keyFrames[1], d, 245.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&r->keyFrames[1], d, 245.0f, 0, 0);
 
     r->keyFrames[1].kfBones[1].rot = QuatXYZDeg(120, -4, 5);
     r->keyFrames[1].kfBones[2].rot = QuatXYZDeg(12, 0, 0);
@@ -1752,7 +1841,7 @@ static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
     r->keyFrames[1].kfBones[12].rot = QuatXYZDeg(8, 0, 0);
 
     // KEY 2: almost upright
-    DonAirJumpAttackSetRoot(&r->keyFrames[2], d, 315.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&r->keyFrames[2], d, 315.0f, 0, 0);
 
     r->keyFrames[2].kfBones[1].rot = QuatXYZDeg(70, -4, 6);
     r->keyFrames[2].kfBones[2].rot = QuatXYZDeg(20, 0, 0);
@@ -1770,7 +1859,7 @@ static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
     r->keyFrames[2].kfBones[12].rot = QuatXYZDeg(0, 0, 0);
 
     // KEY 3: upright / return toward normal jump
-    DonAirJumpAttackSetRoot(&r->keyFrames[3], d, 360.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&r->keyFrames[3], d, 360, 0, 0);
 
     r->keyFrames[3].kfBones[1].rot = QuatXYZDeg(25, 0, 0);
     r->keyFrames[3].kfBones[2].rot = QuatXYZDeg(10, 0, 0);
@@ -1839,7 +1928,7 @@ static void DonInitAirL2SphereSlamKeyframeGroups(Donogan* d)
     // 12 shin_R
 
     // KEY 0: start raising arm
-    DonAirJumpAttackSetRoot(&g->keyFrames[0], d, 0.0f, 0.0f, 0.0f);
+    DonAirJumpAttackSetRoot(&g->keyFrames[0], d, 0, 0, 0);
 
     g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 0);
     g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
@@ -1858,7 +1947,7 @@ static void DonInitAirL2SphereSlamKeyframeGroups(Donogan* d)
     g->keyFrames[0].kfBones[12].rot = QuatXYZDeg(40, 0, 0);
 
     // KEY 1: arm almost straight up, knees tucked, spin starts
-    DonAirJumpAttackSetRoot(&g->keyFrames[1], d, 120.0f,0,0);
+    DonAirJumpAttackSetRoot(&g->keyFrames[1], d, 120,0,0);
 
     g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(0, 0, -4);
     g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(0, 0, -8);
@@ -1877,7 +1966,7 @@ static void DonInitAirL2SphereSlamKeyframeGroups(Donogan* d)
     g->keyFrames[1].kfBones[12].rot = QuatXYZDeg(100, 0, 0);
 
     // KEY 2: full spin, sphere overhead, falling hard
-    DonAirJumpAttackSetRoot(&g->keyFrames[2], d, 250.0f, 0, 0);
+    DonAirJumpAttackSetRoot(&g->keyFrames[2], d, 250, 0, 0);
 
     g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(8, 0, -8);
     g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(12, 0, -12);
@@ -1896,7 +1985,7 @@ static void DonInitAirL2SphereSlamKeyframeGroups(Donogan* d)
     g->keyFrames[2].kfBones[12].rot = QuatXYZDeg(110, 0, 0);
 
     // KEY 3: slam/follow-through, full 360
-    DonAirJumpAttackSetRoot(&g->keyFrames[3], d, 360.0f, 0, 0);
+    DonAirJumpAttackSetRoot(&g->keyFrames[3], d, 360, 0, 0);
 
     g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(18, 0, 0);
     g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(25, 0, 0);
@@ -2121,7 +2210,7 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
 static inline void DonUpdateBowBlend(Donogan* d, float dt)
 {
     // Decide the target for the blend
-    float target = (d->state == DONOGAN_STATE_BOW_EXIT) ? 0.0f : 1.0f;
+    float target = (d->state == DONOGAN_STATE_BOW_EXIT) ? 0 : 1.0f;
 
     // Use the active keyframe group's first bone to pick a rate + interpol
     float rate = 8.0f;                      // sensible default
@@ -2129,7 +2218,7 @@ static inline void DonUpdateBowBlend(Donogan* d, float dt)
     KeyFrameGroup* G = DonActiveKfGroup(d); // picks the BOW_* group from curAnimId
     if (G && G->maxKey > 0 && G->keyFrames[G->curKey].maxBones > 0) {
         const KeyFrameBone* k0 = &G->keyFrames[G->curKey].kfBones[0];
-        if (k0->rate > 0.0f) rate = k0->rate;
+        if (k0->rate > 0) rate = k0->rate;
         if (k0->interpol)    f = k0->interpol;
     }
 
@@ -2240,7 +2329,7 @@ static inline Transform MatrixToTransform(Matrix m)
         - cx.y * (cy.x * cz.z - cy.z * cz.x)
         + cx.z * (cy.x * cz.y - cy.y * cz.x));
 
-    if (det < 0.0f) {
+    if (det < 0) {
         sz = -sz;
         cz.x = -cz.x; cz.y = -cz.y; cz.z = -cz.z;
     }
@@ -2256,7 +2345,7 @@ static inline Transform MatrixToTransform(Matrix m)
     // 6) Convert 3x3 rotation to quaternion (stable branch selection)
     float trace = r00 + r11 + r22;
     Quaternion q;
-    if (trace > 0.0f) {
+    if (trace > 0) {
         float s = sqrtf(trace + 1.0f) * 2.0f; // s = 4*qw
         q.w = 0.25f * s;
         q.x = (r21 - r12) / s;
@@ -2430,7 +2519,7 @@ static void DonApplyProcPoseFromKF(Donogan* d)
     if (G && G->maxKey > 0)
     {
         int keyA = 0, keyB = 0;
-        float keyT = 0.0f;
+        float keyT = 0;
         DonGetProcBlendKeys(d, G, &keyA, &keyB, &keyT);
 
         const KeyFrame* A = &G->keyFrames[keyA];
@@ -2460,6 +2549,19 @@ static void DonApplyProcPoseFromKF(Donogan* d)
     A1.keyframePoses = framesArr;
 
     UpdateModelAnimation(d->model, A1, 0);
+
+    // Cache current pose so attached props can follow bones.
+    // This is especially important for guitar/bow/etc.
+    int copyCount = bc;
+    if (copyCount > DON_BONE_COUNT) copyCount = DON_BONE_COUNT;
+
+    for (int i = 0; i < copyCount; i++)
+    {
+        d->poseNow[i] = out[i];
+    }
+
+    d->poseNowValid = true;
+
     MemFree(out);
 }
 // Tunable durations for the one-shot proc anims
@@ -2471,7 +2573,7 @@ static void DonApplyProcPoseFromKF(Donogan* d)
 #endif
 static inline float ProcClamp01(float x)
 {
-    if (x < 0.0f) return 0.0f;
+    if (x < 0) return 0;
     if (x > 1.0f) return 1.0f;
     return x;
 }
@@ -2481,7 +2583,7 @@ static void DonGetProcBlendKeys(const Donogan* d, const KeyFrameGroup* G,
 {
     *outKeyA = 0;
     *outKeyB = 0;
-    *outT = 0.0f;
+    *outT = 0;
 
     if (!d || !G || G->maxKey <= 0) return;
     if (G->maxKey == 1) return;
@@ -2492,7 +2594,7 @@ static void DonGetProcBlendKeys(const Donogan* d, const KeyFrameGroup* G,
     {
         *outKeyA = 0;
         *outKeyB = 0;
-        *outT = 0.0f;
+        *outT = 0;
         return;
     }
 
@@ -2515,7 +2617,7 @@ static void DonGetProcBlendKeys(const Donogan* d, const KeyFrameGroup* G,
 
     *outKeyA = G->maxKey - 1;
     *outKeyB = G->maxKey - 1;
-    *outT = 0.0f;
+    *outT = 0;
 }
 // Minimal “procedural anim stepper”:
 // - ENTER/EXIT finish after fixed time
@@ -2748,7 +2850,7 @@ static void FreeRemapped(ModelAnimation* a) {
 }
 
 static inline float frand01(void) {
-    return (float)GetRandomValue(0, 1000) * (1.0f / 1000.0f);
+    return (float)GetRandomValue(0, 1000) * (1.0f / 1000);
 }
 
 // Approx butt world-space anchor: ~55% up from feet, nudged backward along facing
@@ -2756,7 +2858,7 @@ static inline Vector3 DonButtWorld(const Donogan* d) {
     float height = (d->firstBB.max.y - d->firstBB.min.y) * d->scale;
     float feetY = DonFeetWorldY(d);                           // you already have this helper
     float buttY = feetY + 0.55f * height;                       // “hips”
-    Vector3 fwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) }; // your yaw-only forward
+    Vector3 fwd = (Vector3){ sinf(d->yawY), 0, cosf(d->yawY) }; // your yaw-only forward
     Vector3 butt = d->pos;
     butt.y = buttY;
     butt = Vector3Add(butt, Vector3Scale(fwd, -0.12f * height)); // small back offset
@@ -2773,8 +2875,8 @@ static inline void DonSpawnBubbles(Donogan* d, int count, float strength) {
         base.z += (frand01() - 0.5f) * 0.05f;
         // Upward + some backwash + sideways randomness
         Vector3 up = (Vector3){ 0,1,0 };
-        Vector3 fwd = (Vector3){ sinf(d->yawY), 0.0f, cosf(d->yawY) }; // yaw forward
-        Vector3 side = (Vector3){ cosf(d->yawY), 0.0f,-sinf(d->yawY) };
+        Vector3 fwd = (Vector3){ sinf(d->yawY), 0, cosf(d->yawY) }; // yaw forward
+        Vector3 side = (Vector3){ cosf(d->yawY), 0,-sinf(d->yawY) };
         // New (spreads faster)
         Vector3 vel = Vector3Add(Vector3Scale(up, 1.4f + 1.2f * frand01()),
             Vector3Add(Vector3Scale(fwd, -0.7f * strength),
@@ -2782,7 +2884,7 @@ static inline void DonSpawnBubbles(Donogan* d, int count, float strength) {
         b->pos = base;
         b->vel = vel;
         b->radius = 0.03f + 0.04f * frand01();
-        b->life = 0.0f;
+        b->life = 0;
         b->maxLife = 0.9f + 0.5f * frand01();
         b->alive = 1;
         b->origBox = (BoundingBox){ (Vector3) { -1,-1,-1 },(Vector3) { 1,1,1 } };
@@ -2857,7 +2959,7 @@ static Donogan InitDonogan(void)
     d.bowMode = false;
     d.hasBow = false;
     d.prevL2Held = false;
-    d.bowBlend = 0.0f;
+    d.bowBlend = 0;
 
     //things
     d.unlockedTruck = false;
@@ -2869,6 +2971,25 @@ static Donogan InitDonogan(void)
     d.wrenchTex = LoadMyTexture("textures/wrench.png");
     SetMaterialTexture(&d.wrenchModel.materials[0], MATERIAL_MAP_ALBEDO, d.wrenchTex);
 
+    //guitar load
+    d.guitarModel = LoadModel("models/guitar.obj");
+    d.guitarTex = LoadMyTexture("textures/guitar.png");
+    SetMaterialTexture(&d.guitarModel.materials[0], MATERIAL_MAP_ALBEDO, d.guitarTex);
+
+    // Since the OBJ origin is already near the neck/headstock grip,
+    // start with nearly zero offset.
+    d.guitarScale = 0.52f;
+    d.guitarGripOffset = (Vector3){ 0, 0, 0 };
+
+    // First-pass orientation. Tune this only after confirming it follows the hand.
+    d.guitarGripEulerDeg = (Vector3){ 0, 180, 0 };
+
+    d.poseNowValid = false;
+    for (int i = 0; i < DON_BONE_COUNT; i++)
+    {
+        d.poseNow[i] = (Transform){ 0 };
+    }
+
     // Load animations and build remapped copies by bone name
     d.animsRaw = LoadModelAnimations(GLB_ANIM, &d.animCount);
     if (d.animCount > 0) {
@@ -2878,13 +2999,13 @@ static Donogan InitDonogan(void)
 
     // Bounds + autoscale to ~2m tall
     //float height = d.firstBB.max.y - d.firstBB.min.y;
-    //d.scale = (height > 0.0001f) ? Clampf(2.0f / height, 0.01f, 100.0f) : 1.0f;
+    //d.scale = (height > 0.0001f) ? Clampf(2.0f / height, 0.01f, 100) : 1.0f;
     d.scale = 2.8;
     // Pose/orient
-    d.modelYawX = 0.0f; // set -90 if needed; we’ll bake it into model.transform below
+    d.modelYawX = 0; // set -90 if needed; we’ll bake it into model.transform below
     d.model.transform = MatrixMultiply(d.model.transform, MatrixRotateX(DEG2RAD * d.modelYawX));
     d.pos = (Vector3){ 0 };
-    d.yawY = 0.0f;
+    d.yawY = 0;
     d.firstBB = GetMeshBoundingBox(d.model.meshes[0]);
     d.bbCenter = Vector3Scale(Vector3Add(d.firstBB.min, d.firstBB.max), 0.5f);
     d.origBB = ScaleBoundingBox(d.firstBB, d.scale);
@@ -2900,7 +3021,7 @@ static Donogan InitDonogan(void)
     d.curAnimId = DONOGAN_ANIM_Idle_Loop;
     d.animLoop = true;
     d.animFinished = false;
-    d.animTime = 0.0f;
+    d.animTime = 0;
     d.curFrame = 0;
     d.animFps = 24.0f; // nominal
 
@@ -2909,26 +3030,26 @@ static Donogan InitDonogan(void)
     d.bowFrame = 0;
     d.bowLoop = false;
     d.bowFinished = true;
-    d.bowTime = 0.0f;
+    d.bowTime = 0;
     d.bowFps = 24.0f;
 
     // Movement tunables
     d.walkSpeed = 12.2f;
     d.runSpeed = 24.8f;
-    d.turnSpeed = DEG2RAD * 540.0f; // turn quickly to face motion
+    d.turnSpeed = DEG2RAD * 540; // turn quickly to face motion
     d.runningHeld = false;
 
     // Jump timing
     d.prevCross = false;
-    d.jumpTimer = 0.0f;
+    d.jumpTimer = 0;
     d.minAirTime = 0.28f;
 
     // --- Physics defaults ---
-    d.groundY = 0.0f;
-    d.gravity = -40.0f;  // gamey gravity; tweak  (-9.81 feels floaty with 24fps anims)
+    d.groundY = 0;
+    d.gravity = -40;  // gamey gravity; tweak  (-9.81 feels floaty with 24fps anims)
     d.jumpSpeed = 12.0f;    // ~1.5m jump apex with gravity=-20
-    d.runJumpSpeed = 20.0f;    //
-    d.velY = 0.0f;
+    d.runJumpSpeed = 20;    //
+    d.velY = 0;
     d.onGround = false;
     d.startToLoopTime = 0.18f; // how long Jump_Start should play before switching to Jump_Loop
     d.velXZ = (Vector3){ 0,0,0 };   // <-- start with no horizontal velocity
@@ -2936,7 +3057,7 @@ static Donogan InitDonogan(void)
     //water swimming
     d.inWater = false;
     d.swimSpeed = 13.666f;
-    d.swimTurnSpeed = DEG2RAD * 240.0f;
+    d.swimTurnSpeed = DEG2RAD * 240;
     //d.swimFloatOffset = 0.90f;   // ~chest at surface
 
     d.groundEps = 0.81f;
@@ -2945,7 +3066,7 @@ static Donogan InitDonogan(void)
 
     d.fallGapThreshold = 1.20f;   // your “only fall if > 1.2f”
     d.stepUpMax = 0.60f;   // how high he can “step up” instantly
-    d.slopeFollowRate = 0.0f;    // 0 = snap; try 12.0f for smoothing
+    d.slopeFollowRate = 0;    // 0 = snap; try 12.0f for smoothing
 
     d.swimMoveEnter = 0.14f;  // enter when stick > 14%
     d.swimMoveExit = 0.08f;  // stay moving until < 8%
@@ -2958,7 +3079,7 @@ static Donogan InitDonogan(void)
     d.runLock = false;
     d.prevL3 = false;
 
-    d.camPitch = 0.0f;
+    d.camPitch = 0;
     d.waterY = PLAYER_FLOAT_Y_POSITION;      // start same; preview will set both properly
     d.seabedY = d.groundY;
 
@@ -2986,8 +3107,8 @@ static Donogan InitDonogan(void)
     d.cached_yawY = 0;
     //bow speed turn
     d.bowTurnSpeed = DEG2RAD * 90; // turn quickly to face motion
-    d.bowDrawTLatch = 0.0f;
-    d.bowReleaseCamHold = 0.0f;
+    d.bowDrawTLatch = 0;
+    d.bowReleaseCamHold = 0;
 
     d.hitTimer = CreateTimer(2.4f);
     d.drawColor = WHITE;
@@ -3000,7 +3121,7 @@ static Donogan InitDonogan(void)
     d.health = 100;
     d.mana = 100;
     d.maxMana = 100;
-    d.shook = 0.0f;
+    d.shook = 0;
     d.money = 0;
     d.hasGuitar = false;
     d.galBooksGiven = 0;
@@ -3050,7 +3171,7 @@ static void DonPlay(Donogan* d, DonoganAnim anim, bool loop, bool resetTime)
         d->curAnimId = anim;
         d->animLoop = loop;
         d->animFinished = false;
-        d->animTime = 0.0f;
+        d->animTime = 0;
         d->curFrame = 0;
     }
 }
@@ -3129,7 +3250,7 @@ static void DonSetState(Donogan* d, DonoganState s)
                     || s == DONOGAN_STATE_SPELL_IDLE);
     DonPlay(d, AnimForState(s), loop, true);
 
-    if (s == DONOGAN_STATE_JUMPING) d->jumpTimer = 0.0f;
+    if (s == DONOGAN_STATE_JUMPING) d->jumpTimer = 0;
 }
 //r1 and other jump attack helpers
 static inline bool DonIsAirR1HandstandAttack(const Donogan* d)
@@ -3190,7 +3311,7 @@ static inline void DonClampToWater(Donogan* d) {
     // Keep the body riding at the surface
     float surfaceY = d->waterY; // treat groundY as water level 
     d->pos.y = surfaceY - d->firstBB.min.y * d->scale; // +d->swimFloatOffset;
-    d->velY = 0.0f;
+    d->velY = 0;
 }
 
 static inline void DonEnterWater(Donogan* d, float moveMag) {
@@ -3271,8 +3392,8 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         //d->squareThrowRequest = false;
         // --- Input ---
         bool padPresent = (pad != NULL);
-        float lx = padPresent ? pad->normLX : 0.0f;
-        float ly = padPresent ? pad->normLY : 0.0f;
+        float lx = padPresent ? pad->normLX : 0;
+        float ly = padPresent ? pad->normLY : 0;
         bool cross = padPresent ? pad->btnCross : false;
         if (d->gs->menuOpen || d->isTalking)
         {
@@ -3313,8 +3434,8 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             // camera-derived forward (you already compute this for swimming)
             float cy = cosf(d->yawY), sy = sinf(d->yawY);
             float cp = cosf(d->camPitch), sp = sinf(d->camPitch);
-            Vector3 fwd = DonAimForward(d, 0.0f);
-            Vector3 right = (Vector3){ cy, 0.0f, -sy };
+            Vector3 fwd = DonAimForward(d, 0);
+            Vector3 right = (Vector3){ cy, 0, -sy };
             Vector3 up = (Vector3){ 0,1,0 };
 
             // spawn near right face / bow notch
@@ -3323,8 +3444,8 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             Vector3 spawn = Vector3Add(d->pos, offW);
 
             // draw strength -> speed: simple “held time” mapping (tweak)
-            float drawT = Clamp(d->bowTime * 2.0f, 0.0f, 1.0f); // ~0.5s to full
-            float speed = Lerp(100.0f, 200.0f, drawT);
+            float drawT = Clamp(d->bowTime * 2.0f, 0, 1.0f); // ~0.5s to full
+            float speed = Lerp(100, 200, drawT);
 
             DonFireArrow(d, spawn, fwd, speed);
         }
@@ -3375,7 +3496,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             //4) Apply dive velocity
             d->pos = Vector3Add(d->pos, Vector3Scale(d->swimDiveVel, dt));
             // drag
-            float drag = fmaxf(0.0f, 1.0f - d->swimDiveDrag * dt);
+            float drag = fmaxf(0, 1.0f - d->swimDiveDrag * dt);
             d->swimDiveVel = Vector3Scale(d->swimDiveVel, drag);
 
             // 5) Clamp vertical between seabed (with clearance) and surface (never pop out)
@@ -3408,7 +3529,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 // Switch Jump_Start -> Jump_Loop after some time OR after we stop rising
                 if (d->state == DONOGAN_STATE_JUMP_START) {
                     d->jumpTimer += dt;
-                    if (d->jumpTimer >= d->startToLoopTime || d->velY <= 0.0f) {
+                    if (d->jumpTimer >= d->startToLoopTime || d->velY <= 0) {
                         DonSetState(d, DONOGAN_STATE_JUMPING); // loops
                     }
                 }
@@ -3438,7 +3559,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         DonSetState(d, DONOGAN_STATE_AIR_R2_SPELL_SHOOT);
 
                         // Optional: small hover/stall so the move reads clearly.
-                        if (d->velY < 0.0f) d->velY *= 0.35f;
+                        if (d->velY < 0) d->velY *= 0.35f;
 
                         break;
                     }
@@ -3467,7 +3588,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     break;
                 }
                 // Land if feet cross ground while falling
-                if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY) {
+                if (d->velY <= 0 && DonFeetWorldY(d) <= d->groundY) {
                     DonSnapToGround(d);
                     DonSetState(d, DONOGAN_STATE_JUMP_LAND); // one-shot
                 }
@@ -3508,14 +3629,14 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 // Propel forward using the seeded roll velocity
                 d->pos = Vector3Add(d->pos, Vector3Scale(d->rollVel, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
                 // Exponential-ish damping
-                float drag = fmaxf(0.0f, 1.0f - d->rollDrag * dt);
+                float drag = fmaxf(0, 1.0f - d->rollDrag * dt);
                 d->rollVel = Vector3Scale(d->rollVel, drag);
                 //stick to ground
                 // // --- Ground stick logic ---
                 float targetY = d->groundY - d->firstBB.min.y * d->scale;
                 float dy = targetY - d->pos.y;
 
-                //if (dy >= 0.0f)
+                //if (dy >= 0)
                 d->pos.y += dy;// climb;
                 d->onGround = true;
                 
@@ -3539,11 +3660,11 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 //d->pos = Vector3Add(d->pos, Vector3Scale(d->rollVel, dt));
                 d->pos = Vector3Add(d->pos, Vector3Scale(d->rollVel, (dt) * (d->runningHeld ? d->runSpeed : d->walkSpeed)));
                 // Exponential-ish damping
-                float drag = fmaxf(0.0f, 1.0f - d->rollDrag * dt);
+                float drag = fmaxf(0, 1.0f - d->rollDrag * dt);
                 d->rollVel = Vector3Scale(d->rollVel, drag);
 
                 // If we touch ground during/after air roll, snap & exit
-                if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY) {
+                if (d->velY <= 0 && DonFeetWorldY(d) <= d->groundY) {
                     DonSnapToGround(d);
                     DonSetState(d, DONOGAN_STATE_JUMP_LAND);
                     break;
@@ -3570,7 +3691,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             } break;
 
             case DONOGAN_STATE_BOW_PULL: {
-                float curT = Clamp(d->bowTime * 2.0f, 0.0f, 1.0f);  // same mapping you use elsewhere
+                float curT = Clamp(d->bowTime * 2.0f, 0, 1.0f);  // same mapping you use elsewhere
                 d->bowDrawTLatch = curT;
                 if (L2Released) { DonSetState(d, DONOGAN_STATE_BOW_EXIT); break; } // optional: or go REL then EXIT
                 if (R2Released) { DonSetState(d, DONOGAN_STATE_BOW_REL);  break; } // NEW
@@ -3730,10 +3851,10 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 d->onGround = false;
 
                 // 5a) Push downhill along the plane (project gravity onto plane)
-                Vector3 g = (Vector3){ 0.0f, d->gravity, 0.0f }; // gravity is negative
+                Vector3 g = (Vector3){ 0, d->gravity, 0 }; // gravity is negative
                 float gdotn = Vector3DotProduct(g, d->groundNormal);
                 Vector3 aSlide = Vector3Subtract(g, Vector3Scale(d->groundNormal, gdotn)); // parallel to plane
-                Vector3 aXZ = (Vector3){ aSlide.x, 0.0f, aSlide.z };
+                Vector3 aXZ = (Vector3){ aSlide.x, 0, aSlide.z };
 
                 // accelerate + friction + clamp
                 d->velXZ = Vector3Add(d->velXZ, Vector3Scale(aXZ, d->steepSlideAccel * dt));
@@ -3741,7 +3862,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 if (sp > d->steepSlideMax && sp > 1e-5f) {
                     d->velXZ = Vector3Scale(d->velXZ, d->steepSlideMax / sp);
                 }
-                d->velXZ = Vector3Scale(d->velXZ, fmaxf(0.0f, 1.0f - d->steepSlideFriction * dt));
+                d->velXZ = Vector3Scale(d->velXZ, fmaxf(0, 1.0f - d->steepSlideFriction * dt));
 
                 d->pos.x += d->velXZ.x * dt;
                 d->pos.z += d->velXZ.z * dt;
@@ -3752,7 +3873,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 Vector3 newN = GetTerrainNormalFromMeshXZ(d->pos.x, d->pos.z);
 
                 // If there's no ground under the new XZ, we truly left the wall: go to air.
-                if (newGroundY <= -9000.0f || Vector3Length(newN) < 1e-6f) {
+                if (newGroundY <= -9000 || Vector3Length(newN) < 1e-6f) {
                     DonSetState(d, DONOGAN_STATE_JUMPING);
                     break;
                 }
@@ -3766,7 +3887,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
                 // HARD set Y to follow the face (this is the key change)
                 d->pos.y = d->groundY + feetOff + hover;
-                d->velY = 0.0f;
+                d->velY = 0;
 
                 // (optional) face slide direction if moving
                 if (sp > 0.05f) d->yawY = atan2f(d->velXZ.x, d->velXZ.z);
@@ -3782,8 +3903,8 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     break;
                 }
                 // or if we lose ground under us, go to air
-                if (d->groundY < -9000.0f && HasTimerElapsed(&d->slideDwell)) {
-                    d->velY = 0.0f;
+                if (d->groundY < -9000 && HasTimerElapsed(&d->slideDwell)) {
+                    d->velY = 0;
                     DonSetState(d, DONOGAN_STATE_JUMPING);
                     break;
                 }
@@ -3872,7 +3993,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 );
 
                 // Landing cancels into land state.
-                if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY)
+                if (d->velY <= 0 && DonFeetWorldY(d) <= d->groundY)
                 {
                     DonSnapToGround(d);
                     DonSetState(d, DONOGAN_STATE_JUMP_LAND);
@@ -3909,7 +4030,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
                 // Anything that has already set groundY can trigger the bounce:
                 // terrain, home floors, platforms, water wheel, etc.
-                if (d->velY <= 0.0f && d->outerBox.min.y <= d->groundY + 0.15f)
+                if (d->velY <= 0 && d->outerBox.min.y <= d->groundY + 0.15f)
                 {
                     DonSnapToGround(d);
                     DonStartAirR1Release(d);
@@ -3932,7 +4053,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
                 // If he hits ground again before the release anim finishes,
                 // break out into normal landing.
-                if (d->velY <= 0.0f && d->outerBox.min.y <= d->groundY + 0.10f)
+                if (d->velY <= 0 && d->outerBox.min.y <= d->groundY + 0.10f)
                 {
                     DonSnapToGround(d);
                     DonSetState(d, DONOGAN_STATE_JUMP_LAND);
@@ -3957,7 +4078,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
                 if (d->velY > -32.0f)
                 {
-                    d->velY -= 80.0f * dt;
+                    d->velY -= 80 * dt;
                     if (d->velY < -32.0f) d->velY = -32.0f;
                 }
 
@@ -3973,7 +4094,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
                 // Anything that sets groundY counts:
                 // terrain, authored home floors, platforms, etc.
-                if (d->velY <= 0.0f && d->outerBox.min.y <= d->groundY + 0.18f)
+                if (d->velY <= 0 && d->outerBox.min.y <= d->groundY + 0.18f)
                 {
                     DonSnapToGround(d);
 
@@ -3990,7 +4111,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 d->bowMode = false;
                 d->bowCur = -1;
                 d->bowFinished = true;
-                d->bowReleaseCamHold = 0.0f;
+                d->bowReleaseCamHold = 0;
                 d->runLock = false;
                 d->runningHeld = false;
                 d->squareThrowRequest = false;
@@ -4002,7 +4123,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 d->bowMode = false;
                 d->bowCur = -1;
                 d->bowFinished = true;
-                d->bowReleaseCamHold = 0.0f;
+                d->bowReleaseCamHold = 0;
                 d->squareThrowRequest = false;
                 
                 ResetTimer(&d->spellTimer);
@@ -4030,7 +4151,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     d->velY = d->runningHeld ? d->runJumpSpeed : d->jumpSpeed;
                     d->pos.y += d->liftoffBump;   // you already have this bump
                     d->onGround = false;
-                    d->jumpTimer = 0.0f;
+                    d->jumpTimer = 0;
                     DonSetState(d, DONOGAN_STATE_JUMP_START);
                     break;
                 }
@@ -4066,23 +4187,23 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
                     if (tooSteep) {
                         // downhill direction = gravity projected onto the plane
-                        Vector3 g = (Vector3){ 0.0f, -1.0f, 0.0f };
+                        Vector3 g = (Vector3){ 0, -1.0f, 0 };
                         Vector3 n = d->groundNormal;
                         Vector3 along = Vector3Subtract(g, Vector3Scale(n, Vector3DotProduct(g, n)));
 
                         // planar XZ push
-                        Vector3 slideXZ = (Vector3){ along.x, 0.0f, along.z };
+                        Vector3 slideXZ = (Vector3){ along.x, 0, along.z };
                         float m = Vector3Length(slideXZ);
                         if (m > 1e-4f) slideXZ = Vector3Scale(slideXZ, 1.0f / m);
 
                         Vector3 target = Vector3Scale(slideXZ, d->steepSlideMax);
-                        d->velXZ = Vector3Lerp(d->velXZ, target, Clampf(d->steepSlideAccel * dt, 0.0f, 1.0f));
-                        d->velXZ = Vector3Scale(d->velXZ, fmaxf(0.0f, 1.0f - d->steepSlideFriction * dt));
+                        d->velXZ = Vector3Lerp(d->velXZ, target, Clampf(d->steepSlideAccel * dt, 0, 1.0f));
+                        d->velXZ = Vector3Scale(d->velXZ, fmaxf(0, 1.0f - d->steepSlideFriction * dt));
 
                         ResetTimer(&d->slideDwell);
                         StartTimer(&d->slideDwell);
                         d->onGround = false;        // very important: we are not “grounded” while sliding
-                        d->velY = 0.0f;         // pinned to face (we don’t accumulate airborne vertical)
+                        d->velY = 0;         // pinned to face (we don’t accumulate airborne vertical)
                         DonSetState(d, DONOGAN_STATE_SLIDE);
                         break;
                     }
@@ -4111,7 +4232,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 float targetY = d->groundY - d->firstBB.min.y * d->scale;
                 float dy = targetY - d->pos.y;
 
-                if (dy >= 0.0f) {
+                if (dy >= 0) {
                     float maxUpThisFrame = d->stepUpMaxInstant + d->stepUpRate * dt;
                     float climb = (dy < maxUpThisFrame) ? dy : maxUpThisFrame;
                     d->pos.y += climb;
@@ -4121,14 +4242,14 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     float drop = -dy;
                     if (drop <= d->fallGapThreshold) {
                         // follow downward (snap or smooth if you’ve set slopeFollowRate)
-                        if (d->slopeFollowRate <= 0.0f) d->pos.y = targetY;
-                        else d->pos.y -= drop * Clampf(d->slopeFollowRate * dt, 0.0f, 1.0f);
+                        if (d->slopeFollowRate <= 0) d->pos.y = targetY;
+                        else d->pos.y -= drop * Clampf(d->slopeFollowRate * dt, 0, 1.0f);
                         d->onGround = true;
                     }
                     else if(!d->gluedToPlatform) {
                         // big cliff: go airborne
                         d->onGround = false;
-                        d->velY = 0.0f;
+                        d->velY = 0;
                         DonSetState(d, DONOGAN_STATE_JUMPING);
                         break;
                     }
@@ -4201,7 +4322,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
     }
 
     DonUpdateBubbles(d, dt);
-    if (d->bowReleaseCamHold > 0.0f) d->bowReleaseCamHold -= dt;
+    if (d->bowReleaseCamHold > 0) d->bowReleaseCamHold -= dt;
     DonUpdateArrows(d, dt);
     UpdateBalls(dt);
     UpdateLasers(dt);
@@ -4235,11 +4356,11 @@ static inline void DrawArrow3D(Vector3 tip, Vector3 dir, float totalLen,
     float shaftR, float headLen, float headR,
     Color shaftCol, Color headCol)
 {
-    if (totalLen <= 0.0f) return;
+    if (totalLen <= 0) return;
     Vector3 f = Vector3Normalize(dir);
     if (Vector3Length(f) < 1e-6f) f = (Vector3){ 0,0,1 };
 
-    float Ls = fmaxf(0.0f, totalLen - headLen);      // shaft length
+    float Ls = fmaxf(0, totalLen - headLen);      // shaft length
     Vector3 tail = Vector3Add(tip, Vector3Scale(f, -totalLen));
     Vector3 headBase = Vector3Add(tip, Vector3Scale(f, -headLen));
     Vector3 shaftEnd = headBase;
@@ -4247,7 +4368,7 @@ static inline void DrawArrow3D(Vector3 tip, Vector3 dir, float totalLen,
     // shaft: cylinder
     DrawCylinderEx(tail, shaftEnd, shaftR, shaftR, 8, shaftCol);
     // head: cone (radius -> 0 at tip)
-    DrawCylinderEx(headBase, tip, headR, 0.0f, 16, headCol);
+    DrawCylinderEx(headBase, tip, headR, 0, 16, headCol);
     // optional little tip bead
     DrawSphere(tip, headR * 0.22f, headCol);
 }
@@ -4318,7 +4439,7 @@ static void DrawDonShadow(Donogan* d)
     if (!d) return;
 
     float gy = GetTerrainHeightFromMeshXZ(d->pos.x, d->pos.z);
-    if (gy < -9000.0f) return;
+    if (gy < -9000) return;
 
     Vector3 n = GetTerrainNormalFromMeshXZ(d->pos.x, d->pos.z);
     if (Vector3Length(n) < 0.001f) n = (Vector3){ 0, 1, 0 };
@@ -4327,12 +4448,12 @@ static void DrawDonShadow(Donogan* d)
     float heightAboveGround = d->pos.y - gy;
 
     float radius = 0.8f;
-    float alpha = 220.0f;
+    float alpha = 220;
 
     if (heightAboveGround > 1.0f)
     {
         radius = Clamp(0.8f - heightAboveGround * 0.08f, 0.001f, 0.8f);
-        alpha = Clamp(220.0f - heightAboveGround * 12.0f, 25.0f, 220.0f);
+        alpha = Clamp(220 - heightAboveGround * 12.0f, 25.0f, 220);
     }
 
     Vector3 center = (Vector3){ d->pos.x, gy, d->pos.z };

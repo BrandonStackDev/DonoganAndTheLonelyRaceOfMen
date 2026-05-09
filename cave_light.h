@@ -199,7 +199,7 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
 
     // Basic PBR material controls.
     Vector2 tiling = { 1.0f, 1.0f };
-    Vector2 offset = { 0.0f, 0.0f };
+    Vector2 offset = { 0, 0 };
 
     int useTexAlbedo = 1;
     int useTexNormal = 0;    // keep OFF first; OBJ tangents may be bad/missing
@@ -210,7 +210,7 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
     Vector4 emissiveColor = { 1.0f, 0.45f, 0.12f, 1.0f };
 
     float normalValue = 1.0f;
-    float metallicValue = 0.0f;
+    float metallicValue = 0;
     float roughnessValue = 0.55f;
     float aoValue = 1.0f;
     float emissivePower = 1.25f;
@@ -253,7 +253,7 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
         Vector3 lightPos = t->pos;
         lightPos.y += 3.45f;
 
-        Vector3 target = { 0.0f, 0.0f, 0.0f };
+        Vector3 target = { 0, 0, 0 };
         Vector4 color = { 1.0f, 0.48f, 0.16f, 1.0f };
         float intensity = t->strength;
 
@@ -271,10 +271,10 @@ static inline void CaveLight_UpdateShader(Vector3 viewPos, bool caveMode)
     {
         int enabled = 0;
         int type = 1;
-        Vector3 pos = { 0.0f, 0.0f, 0.0f };
-        Vector3 target = { 0.0f, 0.0f, 0.0f };
-        Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f };
-        float intensity = 0.0f;
+        Vector3 pos = { 0, 0, 0 };
+        Vector3 target = { 0, 0, 0 };
+        Vector4 color = { 0, 0, 0, 1.0f };
+        float intensity = 0;
 
         SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightEnabled[i], &enabled, SHADER_UNIFORM_INT);
         SetShaderValue(gCaveLight.pbrShader, gCaveLight.locLightType[i], &type, SHADER_UNIFORM_INT);
@@ -337,7 +337,7 @@ static inline void CaveLight_DrawTorches(Model fireModel, Shader fireShader, int
                 (Vector3) {
                 0, 1, 0
             },
-                0.0f,
+                0,
                 (Vector3) {
                 0.55f, 0.75f, 0.55f
             },
@@ -353,7 +353,7 @@ static inline void CaveLight_DrawTorches(Model fireModel, Shader fireShader, int
                 (Vector3) {
                 0, 1, 0
             },
-                0.0f,
+                0,
                 (Vector3) {
                 0.85f, 0.55f, 0.85f
             },

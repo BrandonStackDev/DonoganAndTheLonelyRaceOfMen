@@ -12,7 +12,7 @@
 
 #define MAX_GARDENS 64
 #define GARDEN_INTERACT_DIST 16.0f
-#define GARDEN_DRAW_DIST 650.0f
+#define GARDEN_DRAW_DIST 650
 
 typedef enum {
     GARDEN_WILD = 0,
@@ -85,7 +85,7 @@ static inline Color Garden_RandLeafColor(void)
 static inline Vector3 Garden_GroundSnap(Vector3 p)
 {
     float gy = GetTerrainHeightFromMeshXZ(p.x, p.z);
-    if (gy > -9000.0f) { p.y = gy+0.7; } //lil' offset (my rap name)
+    if (gy > -9000) { p.y = gy+0.7; } //lil' offset (my rap name)
     return p;
 }
 
@@ -128,27 +128,27 @@ static inline void Garden_Init(void)
         gGardenWildModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = gGardenWildTex;
     }
     // HOME gardens: outside houses / farms
-    Garden_Add(GARDEN_HOME, (Vector3) { -2149.87f, 439.09f, -2363.05f }, 0.0f, 4.0f);
-    Garden_Add(GARDEN_HOME, (Vector3) { -2122.53f, 445.52f, -2349.19f }, 0.0f, 4.0f);
-    Garden_Add(GARDEN_HOME, (Vector3) { -2097.77f, 444.89f, -2379.44f }, 0.0f, 4.0f);
-    Garden_Add(GARDEN_HOME, (Vector3) { -2104.81f, 442.16f, -2400.18f }, 0.0f, 4.0f);
-    Garden_Add(GARDEN_HOME, (Vector3) { -2126.55f, 440.34f, -2402.00f }, 0.0f, 4.0f);
-    Garden_Add(GARDEN_HOME, (Vector3) { -2069.41f, 466.82f, -2234.02f }, 0.0f, 4.0f);
-    Garden_Add(GARDEN_HOME, (Vector3) { -2069.88f, 470.59f, -2193.36f }, 0.0f, 4.0f);
+    Garden_Add(GARDEN_HOME, (Vector3) { -2149.87f, 439.09f, -2363.05f }, 0, 4.0f);
+    Garden_Add(GARDEN_HOME, (Vector3) { -2122.53f, 445.52f, -2349.19f }, 0, 4.0f);
+    Garden_Add(GARDEN_HOME, (Vector3) { -2097.77f, 444.89f, -2379.44f }, 0, 4.0f);
+    Garden_Add(GARDEN_HOME, (Vector3) { -2104.81f, 442.16f, -2400.18f }, 0, 4.0f);
+    Garden_Add(GARDEN_HOME, (Vector3) { -2126.55f, 440.34f, -2402.00f }, 0, 4.0f);
+    Garden_Add(GARDEN_HOME, (Vector3) { -2069.41f, 466.82f, -2234.02f }, 0, 4.0f);
+    Garden_Add(GARDEN_HOME, (Vector3) { -2069.88f, 470.59f, -2193.36f }, 0, 4.0f);
 
     // WILD gardens: near foliage
-    Garden_Add(GARDEN_WILD, (Vector3) { 1431.01f, 350.12f, -3297.20f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1463.42f, 355.63f, -3289.28f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1481.17f, 361.41f, -3266.42f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1524.64f, 365.18f, -3295.97f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1564.51f, 368.94f, -3301.56f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1595.97f, 372.71f, -3301.52f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1593.21f, 374.34f, -3289.06f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1587.74f, 376.47f, -3272.20f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1595.70f, 384.00f, -3229.90f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1586.67f, 391.53f, -3172.58f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1591.08f, 395.29f, -3151.57f }, 0.0f, 3.0f);
-    Garden_Add(GARDEN_WILD, (Vector3) { 1655.96f, 402.82f, -3146.91f }, 0.0f, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1431.01f, 350.12f, -3297.20f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1463.42f, 355.63f, -3289.28f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1481.17f, 361.41f, -3266.42f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1524.64f, 365.18f, -3295.97f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1564.51f, 368.94f, -3301.56f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1595.97f, 372.71f, -3301.52f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1593.21f, 374.34f, -3289.06f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1587.74f, 376.47f, -3272.20f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1595.70f, 384.00f, -3229.90f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1586.67f, 391.53f, -3172.58f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1591.08f, 395.29f, -3151.57f }, 0, 3.0f);
+    Garden_Add(GARDEN_WILD, (Vector3) { 1655.96f, 402.82f, -3146.91f }, 0, 3.0f);
 }
 
 static inline int Garden_FindFreeBorrower(BadGuyType type)
@@ -221,9 +221,9 @@ static inline bool Garden_CommandeerHopper(Garden* g, Donogan* d)
         b->targetPos = spawn;
         b->groundY = spawn.y;
 
-        b->spawnRadius = 220.0f;
+        b->spawnRadius = 220;
         b->awareRadius = 999.0f;
-        b->tetherRadius = 140.0f;
+        b->tetherRadius = 140;
 
         b->scale = 0.001;
 

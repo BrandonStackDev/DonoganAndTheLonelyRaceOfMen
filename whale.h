@@ -87,7 +87,7 @@ static float AngleWrapDeg(float a) { while (a > 180) a -= 360; while (a < -180) 
 static float AngleLerpDeg(float a, float b, float k) { float d = AngleWrapDeg(b - a); return a + d * k; }
 static float Clamp01(float x) { return (x < 0) ? 0 : (x > 1 ? 1 : x); }
 static float SmoothStep(float t) { t = Clamp01(t); return t * t * (3.0f - 2.0f * t); }
-static float Frand(float a, float b) { return a + (b - a) * ((float)GetRandomValue(0, 1000000) / 1000000.0f); }
+static float Frand(float a, float b) { return a + (b - a) * ((float)GetRandomValue(0, 1000000) / 1000000); }
 //helpers
 static void PoseResetToBind(const Model* m, ModelAnimation* p) {
     for (int b = 0; b < p->boneCount; b++) { p->keyframePoses[0][b] = m->skeleton.bindPose[b]; }
@@ -145,9 +145,9 @@ static bool LoadWhale(Whale* A) {
 
 static void InitWhale(Whale* A, Vector3 home, float bottomY, float surfaceY) {
     A->pos = home;
-    A->yaw = 0.0f; A->pitch = 0.0f; A->roll = 0.0f;
+    A->yaw = 0; A->pitch = 0; A->roll = 0;
     A->speed = 1.4f;       // gentle default
-    A->xFixDeg = -90.0f;   // exporter fix
+    A->xFixDeg = -90;   // exporter fix
     A->yFixPos = 2.2f;   // exporter fix
 
     // Tunable params
@@ -159,11 +159,11 @@ static void InitWhale(Whale* A, Vector3 home, float bottomY, float surfaceY) {
 
     A->goal = A->home;
     A->state = SWIM_PLAN;
-    A->stateTime = 0.0f;
+    A->stateTime = 0;
     A->spinTarget = 0;
-    A->spinAccum = 0.0f;
-    A->turnYawDelta = 0.0f;
-    A->verticalBoost = 0.0f;
+    A->spinAccum = 0;
+    A->turnYawDelta = 0;
+    A->verticalBoost = 0;
 
     A->origBox = (BoundingBox){
     (Vector3) {
@@ -214,7 +214,7 @@ static void FacePoint(Whale* A, Vector3 target, float dt, float yawLerp, float p
 
     A->yaw = AngleLerpDeg(A->yaw, yawTarget, yawLerp);
     A->pitch = AngleLerpDeg(A->pitch, pitchTarget, pitchLerp);
-    A->roll = AngleLerpDeg(A->roll, 0.0f, 0.08f);  // auto-level roll
+    A->roll = AngleLerpDeg(A->roll, 0, 0.08f);  // auto-level roll
 }
 // Translate-only step toward target (rotation independent)
 static void MoveToward(Whale* A, Vector3 target, float dt) {
@@ -229,7 +229,7 @@ static void MoveToward(Whale* A, Vector3 target, float dt) {
 // Your nice Cruise bones, factored so FSM can call it
 static void ApplyCruiseBones(Whale* A, float t) {
     float s2 = sinf(t * 2.0f), s3 = sinf(t * 3.0f);
-    SetFromBindPlusEuler(&A->model, &A->proc, WHALE_BONE_TAIL, DEG2RAD * 10.0f * s2, 0, 0);
+    SetFromBindPlusEuler(&A->model, &A->proc, WHALE_BONE_TAIL, DEG2RAD * 10 * s2, 0, 0);
     SetFromBindPlusEuler(&A->model, &A->proc, WHALE_BONE_AB, DEG2RAD * 4.0f * s2, 0, 0);
     SetFromBindPlusEuler(&A->model, &A->proc, WHALE_BONE_CHEST, DEG2RAD * 2.0f * s2, 0, 0);
     SetFromBindPlusEuler(&A->model, &A->proc, WHALE_BONE_LEFTFIN, 0, 0, DEG2RAD * 5.0f * s3);
@@ -252,7 +252,7 @@ static void ApplyBreachBones(Whale* A, float t, float tailDeg) {
 
 // Pick a new far-ish horizontal goal around home
 static Vector3 PickGoalAroundHome(Whale* A) {
-    float ang = Frand(0.0f, 2.0f * PI);
+    float ang = Frand(0, 2.0f * PI);
     float r = Frand(A->homeRadius * 0.4f, A->homeRadius);
     float gy = Frand(A->home.y - 1.0f, A->home.y + 1.0f);
     Vector3 res = { A->home.x + r * cosf(ang), gy, A->home.z + r * sinf(ang) };
@@ -268,25 +268,25 @@ static void DecideAfterCruise(Whale* A) {
     else if (r == 3 || r==4) { A->state = TURN_DIVE; } //3 -> breach
     else { A->state = GENTLE_BREACH_SWIM; } //4..
     //A->state = GENTLE_BREACH_SWIM;//manually set what we are testing
-    A->stateTime = 0.0f;
+    A->stateTime = 0;
 }
 
 // Enter helper preserving your existing init behavior
 static void EnterState(Whale* A, AnimState s) {
-    A->state = s; A->stateTime = 0.0f;
+    A->state = s; A->stateTime = 0;
     switch (s) {
     case SWIM_PLAN:       A->goal = PickGoalAroundHome(A); A->speed = 1.3f; break;
     case SWIM_CRUISE:     A->speed = 1.5f; break;
-    case SPIN_ROLL:       A->spinTarget = (GetRandomValue(0, 1) ? 3 : 4); A->spinAccum = 0.0f; A->speed = 1.7f; break;
+    case SPIN_ROLL:       A->spinTarget = (GetRandomValue(0, 1) ? 3 : 4); A->spinAccum = 0; A->speed = 1.7f; break;
     case SPIN_ROLL_UNDO:  A->speed = 1.7f; break;
-    case TURN_DIVE:       A->turnYawDelta = Frand(-60.0f, +60.0f); A->speed = 1.8f; break;
+    case TURN_DIVE:       A->turnYawDelta = Frand(-60, +60); A->speed = 1.8f; break;
     case SWIM_DIVE:       A->speed = 1.6f; break;
     case TURN_ASCEND:     A->speed = 1.6f; break;
     case SWIM_ASCEND:     A->speed = 1.9f; break;
     case BREACH: {
         A->verticalBoost = 7.0f;             // initial upward velocity (units/s) — tune
         A->breachApex = 0;
-        A->descendTimer = 0.0f;
+        A->descendTimer = 0;
         A->breachEulerStart = (Vector3){ A->yaw, A->pitch, A->roll };
         // gentle random twist for the fall
         A->breachEulerTarget = (Vector3){
@@ -337,7 +337,7 @@ static void FSM_Tick(Whale* A, float t, float dt) {
         A->spinAccum += rollRate;
         ApplyDiveBones(A, t, 8.0f);
         // NEW: require at least 0.8s AND the target spins.
-        if (A->stateTime > 5.8f && A->spinAccum >= 360.0f * A->spinTarget) {
+        if (A->stateTime > 5.8f && A->spinAccum >= 360 * A->spinTarget) {
             EnterState(A, SPIN_ROLL_UNDO);
         }
     } break;
@@ -368,7 +368,7 @@ static void FSM_Tick(Whale* A, float t, float dt) {
 
     case TURN_ASCEND: {
         // brief settle, then do a quick spin before swimming up fast
-        ApplyDiveBones(A, t, 10.0f);
+        ApplyDiveBones(A, t, 10);
         if (A->stateTime > 0.4f) EnterState(A, SWIM_ASCEND);
     } break;
 
@@ -392,7 +392,7 @@ static void FSM_Tick(Whale* A, float t, float dt) {
         A->verticalBoost -= g * dt;
 
         // 3) Small forward drift (use yaw heading)
-        Vector3 fwd = (Vector3){ sinf(DEG2RAD * A->yaw), 0.0f, cosf(DEG2RAD * A->yaw) };
+        Vector3 fwd = (Vector3){ sinf(DEG2RAD * A->yaw), 0, cosf(DEG2RAD * A->yaw) };
         A->pos = Vector3Add(A->pos, Vector3Scale(fwd, A->speed * dt));
 
         // 4) Start the gentle twist only AFTER the apex
@@ -401,9 +401,9 @@ static void FSM_Tick(Whale* A, float t, float dt) {
         float kRoll = SmoothStep(Clamp01(A->stateTime / 1.5f));
         A->roll = AngleLerpDeg(A->breachEulerStart.z, A->breachEulerTarget.z, kRoll);
         // Trigger apex if we haven't yet
-        if (!A->breachApex && A->verticalBoost <= 0.0f) {
+        if (!A->breachApex && A->verticalBoost <= 0) {
             A->breachApex = 1;
-            A->descendTimer = 0.0f;
+            A->descendTimer = 0;
         }
         // Yaw/Pitch: only start blending after the apex, over ~1.2s.
         if (A->breachApex) {
@@ -421,9 +421,9 @@ static void FSM_Tick(Whale* A, float t, float dt) {
 
     case BREACH_END: {
         // gently correct, then re-plan
-        A->roll = AngleLerpDeg(A->roll, 0.0f, 0.08f);
-        A->pitch = AngleLerpDeg(A->pitch, 0.0f, 0.08f);
-        A->yaw = AngleLerpDeg(A->yaw, 0.0f, 0.08f);
+        A->roll = AngleLerpDeg(A->roll, 0, 0.08f);
+        A->pitch = AngleLerpDeg(A->pitch, 0, 0.08f);
+        A->yaw = AngleLerpDeg(A->yaw, 0, 0.08f);
         if (A->stateTime > 2.6f) EnterState(A, SWIM_PLAN);
     } break;
 
@@ -447,7 +447,7 @@ static void FSM_Tick(Whale* A, float t, float dt) {
         //SetFromBindPlusEuler(&A->model, &A->proc, WHALE_BONE_CHEST, DEG2RAD * (-4.0f * s), 0, 0);
         // slow forward glide along heading (+Z in model space is forward)
         const float glideSpeed = 8.2f;// tune
-        Vector3 fwd = (Vector3){ sinf(DEG2RAD * A->yaw), 0.0f, cosf(DEG2RAD * A->yaw) };
+        Vector3 fwd = (Vector3){ sinf(DEG2RAD * A->yaw), 0, cosf(DEG2RAD * A->yaw) };
         A->pos = Vector3Add(A->pos, Vector3Scale(fwd, glideSpeed * dt));
         // gently keep the body near the surface while gliding
         A->pos.y = Lerp(A->pos.y, A->surfaceY - 0.6f, 0.04f); // lower = more “skimming”

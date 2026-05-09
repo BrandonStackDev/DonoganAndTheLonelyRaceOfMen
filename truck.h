@@ -29,15 +29,15 @@ Timer truckInteractTimer;
 bool displayTruckPoints = false;
 bool displayTruckForward = false;
 Vector3 truckPosition = { 1281.42, 332.4, 1251.01 }; //orig > { 1279.45f, 333.71f, 1249.00f }; //
-Vector3 truckBedPosition = { 0.0f, 1.362f, 0.0f };
-Vector3 truckForward = { 0.0f, 0.0f, 1.0f };  // Forward is along +Z
+Vector3 truckBedPosition = { 0, 1.362f, 0 };
+Vector3 truckForward = { 0, 0, 1.0f };  // Forward is along +Z
 Vector3 rearAxleOffset = { 0, 0, -1.5f }; // adjust Z as needed
 Vector3 truckOrigin = { 0 };
 Vector3 front = { 0 };
 Vector3 back = { 0 };
 bool truckCruise = false;
 bool prevTruckL3 = false;
-float truckCruiseTarget = 0.0f;
+float truckCruiseTarget = 0;
 #define truckFrontDim 3.4f
 #define truckBackDim -4.4f
 #define truckLength truckFrontDim - truckBackDim
@@ -49,18 +49,18 @@ float tireSpinDelta[4] = { 0,0,0,0 };
 float tireSpinPos[4] = { 0,0,0,0 };
 float tireTurnDelta[4] = { 0,0,0,0 };
 float tireTurnPos[4] = { 0,0,0,0 };
-float truckSpeed = 0.0f;
-float truckAngle = 0.0f; // Yaw angle
-float truckPitch = 0.0f;
-float truckPitchYOffset = 0.0f;
-float truckRoll = 0.0f;
+float truckSpeed = 0;
+float truckAngle = 0; // Yaw angle
+float truckPitch = 0;
+float truckPitchYOffset = 0;
+float truckRoll = 0;
 float friction = 0.96f;//I dont want this to fight too much with rolling down hills
-const float spinRate = 720.0f; // degrees per unit of speed, tweak as needed
+const float spinRate = 720; // degrees per unit of speed, tweak as needed
 Truck_Air_State truckAirState = GROUND;
 //sliding truck when moving fast and turning too hard
 bool isTruckSliding = false;
 bool truckSlidePeek = false;
-Vector3 truckSlideForward = { 0.0f, 0.0f, 0.0f }; //well set this bycorrectly rotating forward
+Vector3 truckSlideForward = { 0, 0, 0 }; //well set this bycorrectly rotating forward
 float truckSlideSpeed = 0;
 float rotSlide = 0;
 //tricks
@@ -74,10 +74,10 @@ bool doingRoll = false;
 bool doingBonkers = false;
 bool bonkersPeeked = false;
 Vector3 bonkersStartOffsets[4] = {
-    {  1.6f, 0.0f,  3.36f }, // Front-right
-    { -1.58f, 0.0f,  3.36f }, // Front-left - stubby
-    {  1.6f, 0.0f, -2.64f }, // Rear-right
-    { -1.6f, 0.0f, -2.64f }  // Rear-left
+    {  1.6f, 0,  3.36f }, // Front-right
+    { -1.58f, 0,  3.36f }, // Front-left - stubby
+    {  1.6f, 0, -2.64f }, // Rear-right
+    { -1.6f, 0, -2.64f }  // Rear-left
 };
 Vector3 bonkersPeekOffsets[4] = {
     {  6.0f, -3.0f,  6.0f }, // Front-right
@@ -179,10 +179,10 @@ void InitTruck()
     tires[2] = tire;
     tires[3] = tire;
     // Set tire offsets relative to truck
-    tireOffsets[0] = (Vector3) { 1.6f, 0.0f,  3.36f }; // Front-right
-    tireOffsets[1] = (Vector3) { -1.58f, 0.0f, 3.36f }; // Front-left - stubby
-    tireOffsets[2] = (Vector3) { 1.6f, 0.0f, -2.64f }; // Rear-right
-    tireOffsets[3] = (Vector3) { -1.6f, 0.0f, -2.64f };  // Rear-left
+    tireOffsets[0] = (Vector3) { 1.6f, 0,  3.36f }; // Front-right
+    tireOffsets[1] = (Vector3) { -1.58f, 0, 3.36f }; // Front-left - stubby
+    tireOffsets[2] = (Vector3) { 1.6f, 0, -2.64f }; // Rear-right
+    tireOffsets[3] = (Vector3) { -1.6f, 0, -2.64f };  // Rear-left
 
     TruckBoxFront = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
     TruckBoxBack = (BoundingBox){ (Vector3) { -1,-1,-1 }, (Vector3) { 1,1,1 } };
@@ -207,8 +207,8 @@ void UpdateTruckBoxes()
     const float boxY = 1.0f; // tweak if you want them higher/lower on the chassis
 
     // Body box local centers
-    Vector3 cFront = (Vector3){ 0.0f, boxY, TruckFrontZ_Local() };
-    Vector3 cBack = (Vector3){ 0.0f, boxY, TruckBackZ_Local() };
+    Vector3 cFront = (Vector3){ 0, boxY, TruckFrontZ_Local() };
+    Vector3 cBack = (Vector3){ 0, boxY, TruckBackZ_Local() };
     Vector3 cLeft = (Vector3){ TruckSideX_Local(false), boxY, TruckMidZ_Local() };
     Vector3 cRight = (Vector3){ TruckSideX_Local(true),  boxY, TruckMidZ_Local() };
 
@@ -268,7 +268,7 @@ static inline void DrawHoverFlameShadered(
     {
         float v = variantBase + 0.00f;
         SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
-        DrawModelEx(fireModel, P, (Vector3) { 1, 0, 0 }, 180.0f,
+        DrawModelEx(fireModel, P, (Vector3) { 1, 0, 0 }, 180,
             (Vector3) {
             0.35f, 0.75f, 0.35f
         }, WHITE);
@@ -277,7 +277,7 @@ static inline void DrawHoverFlameShadered(
     {
         float v = variantBase + 1.37f;
         SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
-        DrawModelEx(fireModel, P, (Vector3) { 1, 0, 0 }, 180.0f,
+        DrawModelEx(fireModel, P, (Vector3) { 1, 0, 0 }, 180,
             (Vector3) {
             0.28f, 1.05f, 0.28f
         }, WHITE);
@@ -286,7 +286,7 @@ static inline void DrawHoverFlameShadered(
     {
         float v = variantBase + 2.73f;
         SetShaderValue(fireShader, fireVariantLoc, &v, SHADER_UNIFORM_FLOAT);
-        DrawModelEx(fireModel, P, (Vector3) { 1, 0, 0 }, 180.0f,
+        DrawModelEx(fireModel, P, (Vector3) { 1, 0, 0 }, 180,
             (Vector3) {
             0.60f, 0.75f, 0.60f
         }, WHITE);
@@ -308,7 +308,7 @@ static inline float WrapAngle(float a) {
     return a;
 }
 
-static inline Vector3 YOnly(Vector3 v) { return (Vector3) { v.x, 0.0f, v.z }; }
+static inline Vector3 YOnly(Vector3 v) { return (Vector3) { v.x, 0, v.z }; }
 
 static void TruckSummonStart(void) {
     truckSummonActive = true;

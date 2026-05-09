@@ -181,7 +181,7 @@ void UpdateApples(float dt) {
 
         if (a->falling && !a->fallen) {
             a->vel.y -= 9.8f * dt * 0.35f;        // light gravity
-            a->pos = Vector3Add(a->pos, Vector3Scale(a->vel, dt * 60.0f));
+            a->pos = Vector3Add(a->pos, Vector3Scale(a->vel, dt * 60));
             a->box = UpdateBoundingBox(a->origBox, a->pos);
 
             float ground = GetTerrainHeightFromMeshXZ(a->pos.x, a->pos.z);
@@ -332,16 +332,16 @@ void UpdateTreeOfLifeBloomGeneration(void)
 
             float treeScale = g->scale;
 
-            float sizeMul = Clamp(treeScale / 10.0f, 1.0f, 7.5f);
+            float sizeMul = Clamp(treeScale / 10, 1.0f, 7.5f);
             float spreadXZ = Clamp(treeScale * 0.22f, 1.2f, 6.5f);
             float spreadY = Clamp(treeScale * 0.12f, 0.8f, 4.0f);
 
             float a = GetRandomValue(0, 359) * DEG2RAD;
-            float rr = sqrtf(GetRandomValue(0, 10000) / 10000.0f) * spreadXZ;
+            float rr = sqrtf(GetRandomValue(0, 10000) / 10000) * spreadXZ;
 
             p.x += cosf(a) * rr;
             p.z += sinf(a) * rr;
-            p.y += GetRandomValue(0, 10000) / 10000.0f * spreadY;
+            p.y += GetRandomValue(0, 10000) / 10000 * spreadY;
 
             float scale = isGreen
                 ? GetRandomValue(65, 140) * 0.022f
@@ -472,14 +472,14 @@ void UpdateTreeOfLifeBloomSpell(Donogan* d, ControllerData* pad, float dt)
 
     if (Vector3DistanceSqr(d->pos, tolPos) > BLOOM_RADIUS) //BLOOM_RADIUS == 32^2, so 32 units away
     {
-        gBloom.hold = 0.0f;
+        gBloom.hold = 0;
         gBloom.manaPaid = 0;
         return;
     }
 
     if (!pad->btnSquare)
     {
-        gBloom.hold = 0.0f;
+        gBloom.hold = 0;
         gBloom.manaPaid = 0;
         return;
     }
@@ -494,7 +494,7 @@ void UpdateTreeOfLifeBloomSpell(Donogan* d, ControllerData* pad, float dt)
     {
         if (d->mana < chunk)
         {
-            gBloom.hold = 0.0f;
+            gBloom.hold = 0;
             gBloom.manaPaid = 0;
             return;
         }

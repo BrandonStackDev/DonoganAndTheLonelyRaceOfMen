@@ -439,7 +439,7 @@ void InitHomes() {
         .type = SCENE_HOME_CABIN_01,
         .modelType = MODEL_HOME_CABIN,
         .pos = (Vector3){ 1273.47f, 327.12f, 1256.42f },
-        .yaw = 0.0f,          // adjust if you want a different facing
+        .yaw = 0,          // adjust if you want a different facing
         .scale = 16.0f,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
@@ -674,7 +674,7 @@ void InitHomes() {
         .modelType = MODEL_HOME_COTTAGE,
         .pos = (Vector3){ -600.53, 810.34, 2838.54 },
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
-        .scale = 30.0f,
+        .scale = 30,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
@@ -683,7 +683,7 @@ void InitHomes() {
         .modelType = MODEL_HOME_COTTAGE,
         .pos = (Vector3){ 2500.96, 347, 2418.06},
         .yaw = PI, // PI / 2.0f,          // adjust if you want a different facing
-        .scale = 30.0f,
+        .scale = 30,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
@@ -747,7 +747,7 @@ void InitHomes() {
         .modelType = MODEL_HOME_COTTAGE,
         .pos = (Vector3){ -2098.71, 473, -2207.61 },
         .yaw = 0, // PI / 2.0f,          // adjust if you want a different facing
-        .scale = 30.0f,
+        .scale = 30,
         .origBox = (BoundingBox){0},
         .box = (BoundingBox){0}
     };
@@ -795,10 +795,10 @@ static inline void WaterWheel_Init(void)
     memset(w, 0, sizeof(*w));
 
     w->pos = (Vector3){ -1660, 322, -1400 }; //
-    w->yaw = 0.0f;
+    w->yaw = 0;
     w->scale = 16.0f;
-    w->spin = 0.0f;
-    w->spinSpeed = 70.0f; // degrees/sec
+    w->spin = 0;
+    w->spinSpeed = 70; // degrees/sec
 
     w->rotor = LoadModel("models/ww_rotor.obj");
     w->rotorTex = LoadMyTexture("textures/ww_rotor.png");
@@ -845,7 +845,7 @@ w->pos.x + 5, w->pos.y + 5, w->pos.z + 5
 //    {
 //        WaterWheel* w = &gWaterWheels[i];
 //        w->spin += w->spinSpeed * dt;
-//        if (w->spin > 360.0f) w->spin -= 360.0f;
+//        if (w->spin > 360) w->spin -= 360;
 //    }
 //}
 
@@ -857,7 +857,7 @@ static inline void WaterWheel_CollideDonny(Donogan* d)
     {
         WaterWheel* w = &gWaterWheels[i];
 
-        if (Vector3DistanceSqr(d->pos, w->pos) > 120.0f * 120.0f) continue;
+        if (Vector3DistanceSqr(d->pos, w->pos) > 120 * 120) continue;
 
         // Base/mount is a wall-ish block. Push X/Z only.
         if (CheckCollisionBoxes(d->box, w->mountBox))
@@ -874,8 +874,8 @@ static inline void WaterWheel_CollideDonny(Donogan* d)
             float penX = (ah.x + bh.x) - fabsf(diff.x);
             float penZ = (ah.z + bh.z) - fabsf(diff.z);
 
-            if (penX < penZ) d->pos.x += (diff.x >= 0.0f) ? penX + 0.03f : -penX - 0.03f;
-            else             d->pos.z += (diff.z >= 0.0f) ? penZ + 0.03f : -penZ - 0.03f;
+            if (penX < penZ) d->pos.x += (diff.x >= 0) ? penX + 0.03f : -penX - 0.03f;
+            else             d->pos.z += (diff.z >= 0) ? penZ + 0.03f : -penZ - 0.03f;
 
             d->box = UpdateBoundingBox(d->origBB, d->pos);
             d->innerBox = UpdateBoundingBox(d->origInnerBB, d->pos);
@@ -902,7 +902,7 @@ static inline void WaterWheel_CollideDonny(Donogan* d)
                 d->groundY = b.max.y;
                 d->groundNormal = (Vector3){ 0, 1, 0 };
                 d->onGround = true;
-                d->velY = 0.0f;
+                d->velY = 0;
 
                 // Snap his feet to the top.
                 d->pos.y = d->groundY - d->firstBB.min.y * d->scale;
@@ -926,7 +926,7 @@ static inline Matrix WaterWheel_BaseMatrix(WaterWheel* w)
     Matrix S = MatrixScale(w->scale, w->scale, w->scale);
 
     // yaw placement + fixed 90 degree local turn for the whole wheel assembly
-    Matrix R = MatrixRotateY(w->yaw + -90.0f * DEG2RAD);
+    Matrix R = MatrixRotateY(w->yaw + -90 * DEG2RAD);
 
     Matrix T = MatrixTranslate(w->pos.x, w->pos.y, w->pos.z);
 
@@ -940,8 +940,8 @@ static inline void WaterWheel_Update(float dt)
         WaterWheel* w = &gWaterWheels[i];
 
         w->spin += w->spinSpeed * dt;
-        if (w->spin > 360.0f) w->spin -= 360.0f;
-        if (w->spin < 0.0f)   w->spin += 360.0f;
+        if (w->spin > 360) w->spin -= 360;
+        if (w->spin < 0)   w->spin += 360;
 
         for (int k = 0; k < WATER_WHEEL_BUCKET_COUNT; k++)
         {
@@ -956,8 +956,8 @@ static inline void WaterWheel_Update(float dt)
         w->mountBox = WaterWheel_TransformBoundingBox(w->mountOrigBox, mountM);
 
         w->box = (BoundingBox){
-            (Vector3) {w->pos.x - 70.0f, w->pos.y - 70.0f, w->pos.z - 70.0f},
-            (Vector3) {w->pos.x + 70.0f, w->pos.y + 70.0f, w->pos.z + 70.0f}
+            (Vector3) {w->pos.x - 70, w->pos.y - 70, w->pos.z - 70},
+            (Vector3) {w->pos.x + 70, w->pos.y + 70, w->pos.z + 70}
         };
     }
 }
@@ -967,7 +967,7 @@ static inline Matrix WaterWheel_BaseMatrixRotor(WaterWheel* w)
     Matrix S = MatrixScale(w->scale*2, w->scale*2, w->scale*2);
 
     // yaw placement + fixed 90 degree local turn for the whole wheel assembly
-    Matrix R = MatrixRotateY(w->yaw + -90.0f * DEG2RAD);
+    Matrix R = MatrixRotateY(w->yaw + -90 * DEG2RAD);
 
     Matrix T = MatrixTranslate(w->pos.x, w->pos.y, w->pos.z);
 
@@ -987,12 +987,12 @@ static inline Matrix WaterWheel_BucketMatrix(WaterWheel* w, int k)
     float localY = cosf(total) * r;
     float localZ = sinf(total) * r;
 
-    Matrix bucketHang = MatrixTranslate(0.0f, localY, localZ);
+    Matrix bucketHang = MatrixTranslate(0, localY, localZ);
 
     // Optional fixed art correction only. This is NOT spin.
     // If your trough model faces wrong, tweak this constant.
     Matrix bucketFace = MatrixIdentity();
-    // Matrix bucketFace = MatrixRotateY(90.0f * DEG2RAD);
+    // Matrix bucketFace = MatrixRotateY(90 * DEG2RAD);
 
     return MatrixMultiply(MatrixMultiply(bucketFace, bucketHang), base);
 }
@@ -1000,7 +1000,7 @@ static inline Matrix WaterWheel_BucketMatrix(WaterWheel* w, int k)
 static inline Matrix WaterWheel_MountMatrix(WaterWheel* w)
 {
     Matrix base = WaterWheel_BaseMatrix(w);
-    Matrix mountLocal = MatrixTranslate(-3.4f, 0.0f, 0.0f);
+    Matrix mountLocal = MatrixTranslate(-3.4f, 0, 0);
     return MatrixMultiply(mountLocal, base);
 }
 static inline void WaterWheel_DrawOne(WaterWheel* w)
@@ -1013,11 +1013,11 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
     Matrix spin = MatrixRotateX(w->spin * DEG2RAD);
 
     // side offsets
-    Matrix leftSide = MatrixTranslate(-0.55f, 0.0f, 0.0f);
-    Matrix rightSide = MatrixTranslate(0.55f, 0.0f, 0.0f);
+    Matrix leftSide = MatrixTranslate(-0.55f, 0, 0);
+    Matrix rightSide = MatrixTranslate(0.55f, 0, 0);
 
     // torus default orientation may need a 90 degree turn
-    Matrix torusFace = MatrixRotateY(90.0f * DEG2RAD);
+    Matrix torusFace = MatrixRotateY(90 * DEG2RAD);
 
     // spinning rotor center
     Matrix rotorM = MatrixMultiply(spin, baseRotor);
@@ -1049,18 +1049,18 @@ static inline void WaterWheel_DrawOne(WaterWheel* w)
     }
 
     // axle spins too
-    Matrix axleFace = MatrixRotateZ(90.0f * DEG2RAD);
+    Matrix axleFace = MatrixRotateZ(90 * DEG2RAD);
     DrawMesh(w->axle.meshes[0], w->axle.materials[0],
         MatrixMultiply(MatrixMultiply(axleFace, spin), base));
 
     // back mount DOES NOT spin
-    /*Matrix mountLocal = MatrixTranslate(0.0f, 0.0f, -2.15f);
+    /*Matrix mountLocal = MatrixTranslate(0, 0, -2.15f);
     DrawMesh(w->mount.meshes[0], w->mount.materials[0],
         MatrixMultiply(mountLocal, base));*/
         // back mount DOES NOT spin
     // Behind rotor is local X after your wheel yaw fix.
     // If it goes in front, flip -2.15f to +2.15f.
-    Matrix mountLocal = MatrixTranslate(-3.4f, 0.0f, 0.0f);
+    Matrix mountLocal = MatrixTranslate(-3.4f, 0, 0);
 
     DrawMesh(w->mount.meshes[0], w->mount.materials[0], WaterWheel_MountMatrix(w));
 }

@@ -90,7 +90,7 @@ static inline DonContactBoxes Don_MakeContactBoxes(BoundingBox outer)
 }
 static inline int Don_PrimaryMoveSide(Vector3 moveXZ)
 {
-    moveXZ.y = 0.0f;
+    moveXZ.y = 0;
 
     const float EPS = 0.001f;
 
@@ -104,15 +104,15 @@ static inline int Don_PrimaryMoveSide(Vector3 moveXZ)
 
     if (ax >= az)
     {
-        return (moveXZ.x < 0.0f) ? 0 : 1; // xMin / xMax
+        return (moveXZ.x < 0) ? 0 : 1; // xMin / xMax
     }
 
-    return (moveXZ.z < 0.0f) ? 2 : 3; // zMin / zMax
+    return (moveXZ.z < 0) ? 2 : 3; // zMin / zMax
 }
 
 static inline int Don_SecondaryMoveSide(Vector3 moveXZ)
 {
-    moveXZ.y = 0.0f;
+    moveXZ.y = 0;
 
     const float EPS = 0.001f;
 
@@ -126,10 +126,10 @@ static inline int Don_SecondaryMoveSide(Vector3 moveXZ)
 
     if (ax >= az)
     {
-        return (moveXZ.z < 0.0f) ? 2 : 3;
+        return (moveXZ.z < 0) ? 2 : 3;
     }
 
-    return (moveXZ.x < 0.0f) ? 0 : 1;
+    return (moveXZ.x < 0) ? 0 : 1;
 }
 
 static inline int Don_BuildSideOrder(Vector3 moveXZ, int outOrder[4])
@@ -185,10 +185,10 @@ float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
 
     // Compute barycentric coordinates
     float denom = d00 * d11 - d01 * d01;
-    if (denom == 0.0f)
+    if (denom == 0)
     {
         //TraceLog(LOG_INFO, "denom == 0");
-        return -10000.0f;
+        return -10000;
     }
 
     float v = (d11 * d20 - d01 * d21) / denom;
@@ -199,7 +199,7 @@ float GetHeightOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
     if (u < 0 || v < 0 || w < 0)
     {
         //TraceLog(LOG_INFO, "Outside of plane (%.2f,%.2f,%.2f)", u, v, w);
-        return -10000.0f;
+        return -10000;
     }
 
     // Interpolate Y
@@ -232,10 +232,10 @@ float GetTerrainHeightFromMeshXZ(float x, float z)
             if (!verts) { TraceLog(LOG_WARNING, "!verts"); }
             if (mesh.vertexCount < 3) { TraceLog(LOG_WARNING, "mesh.vertexCount < 3"); }
             if (mesh.triangleCount < 1) { TraceLog(LOG_WARNING, "mesh.triangleCount < 1"); }
-            return -10000.0f;
+            return -10000;
         }
 
-        Vector3 p = { x, 0.0f, z };
+        Vector3 p = { x, 0, z };
 
         for (int i = firstTri; i < lastTri; i++)
         {
@@ -279,7 +279,7 @@ float GetTerrainHeightFromMeshXZ(float x, float z)
 
     //TraceLog(LOG_WARNING, "Not found in any triangle: (%f , %f)", x, z);
     //TraceLog(LOG_WARNING, "Not found in any triangle: (%.3f , %.3f) (%d %d)", (double)x, (double)z, cx, cy);
-    return -10000.0f; // Not found in any triangle
+    return -10000; // Not found in any triangle
 }
 
 // Returns the up-facing terrain normal under (x, z).
@@ -318,7 +318,7 @@ Vector3 GetTerrainNormalFromMeshXZ(float x, float z)
             return (Vector3) { 0, 1, 0 };
         }
 
-        Vector3 p = (Vector3){ x, 0.0f, z };
+        Vector3 p = (Vector3){ x, 0, z };
 
         for (int i = firstTri; i < lastTri; i++)
         {
@@ -359,7 +359,7 @@ Vector3 GetTerrainNormalFromMeshXZ(float x, float z)
                 Vector3 e1 = Vector3Subtract(b, a);
                 Vector3 e2 = Vector3Subtract(c, a);
                 Vector3 n = Vector3Normalize(Vector3CrossProduct(e1, e2));
-                if (n.y < 0.0f) n = Vector3Negate(n); // ensure "up"
+                if (n.y < 0) n = Vector3Negate(n); // ensure "up"
                 return n;
             }
         }
@@ -392,7 +392,7 @@ static inline float AxisOverlap(float aMin, float aMax, float bMin, float bMax) 
     float left = bMax - aMin; // push left -> right
     float right = aMax - bMin; // push right -> left
     float o = (left < right) ? left : right;
-    return (o > 0.0f) ? o : 0.0f;
+    return (o > 0) ? o : 0;
 }
 
 // classify “flat enough” using cosine of max slope angle.
@@ -610,7 +610,7 @@ static inline bool AABBVsBuildingOBB(
 
         float overlap = fminf(amax, bmax) - fmaxf(amin, bmin);
 
-        if (overlap <= 0.0f)
+        if (overlap <= 0)
         {
             return false;
         }
@@ -623,7 +623,7 @@ static inline bool AABBVsBuildingOBB(
     }
 
     // Make push direction point from collider toward Don.
-    if (Vector3DotProduct(bestAxis, toA) < 0.0f)
+    if (Vector3DotProduct(bestAxis, toA) < 0)
     {
         bestAxis = Vector3Negate(bestAxis);
     }
@@ -703,7 +703,7 @@ static inline bool AABBVsBuildingOBBEx(
         // This prevents wall colliders from catching Don at floor/ledge seams.
         if (c->type == BCOL_WALL && fabsf(axis.y) > 0.4f)
         {
-            useSkin = 0.0f;
+            useSkin = 0;
         }
 
         bmin -= useSkin;
@@ -711,7 +711,7 @@ static inline bool AABBVsBuildingOBBEx(
 
         float overlap = fminf(amax, bmax) - fmaxf(amin, bmin);
 
-        if (overlap <= 0.0f)
+        if (overlap <= 0)
         {
             return false;
         }
@@ -723,7 +723,7 @@ static inline bool AABBVsBuildingOBBEx(
         }
     }
 
-    if (Vector3DotProduct(bestAxis, toA) < 0.0f)
+    if (Vector3DotProduct(bestAxis, toA) < 0)
     {
         bestAxis = Vector3Negate(bestAxis);
     }
@@ -751,16 +751,16 @@ static inline Vector3 ClampWallPush(Vector3 p)
     if (p.z > MAX_PUSH) p.z = MAX_PUSH;
     if (p.z < -MAX_PUSH) p.z = -MAX_PUSH;
 
-    p.y = 0.0f;
+    p.y = 0;
     return p;
 }
 static inline Vector3 SafeNormalizeXZ(Vector3 v, Vector3 fallback)
 {
-    v.y = 0.0f;
+    v.y = 0;
 
     if (Vector3LengthSqr(v) < 0.0001f)
     {
-        fallback.y = 0.0f;
+        fallback.y = 0;
 
         if (Vector3LengthSqr(fallback) < 0.0001f)
         {
@@ -775,8 +775,8 @@ static inline Vector3 SafeNormalizeXZ(Vector3 v, Vector3 fallback)
 
 static inline Vector3 Don_MultiWallBlendPush(Vector3 avgPushDir, Vector3 moveXZ, float pushMag)
 {
-    avgPushDir.y = 0.0f;
-    moveXZ.y = 0.0f;
+    avgPushDir.y = 0;
+    moveXZ.y = 0;
 
     Vector3 safeDir = avgPushDir;
 
@@ -812,7 +812,7 @@ static inline float BuildingColliderFloorYAtXZ(const BuildingColliderWorld* c, f
     // Try the top/selected quad as two triangles.
     // Your authored prism stores 0-3 as one side and 4-7 as the other side.
     // For floors, one of those sides is the actual sloped surface.
-    Vector3 p = { x, 0.0f, z };
+    Vector3 p = { x, 0, z };
 
     float yA = GetHeightOnTriangle(p, c->v[0], c->v[1], c->v[2]);
     if (yA > -9999.0f) return yA;
@@ -826,7 +826,7 @@ static inline float BuildingColliderFloorYAtXZ(const BuildingColliderWorld* c, f
     float yD = GetHeightOnTriangle(p, c->v[4], c->v[6], c->v[7]);
     if (yD > -9999.0f) return yD;
 
-    return -10000.0f;
+    return -10000;
 }
 
 static inline float BuildingColliderMinY(const BuildingColliderWorld* c)
@@ -848,7 +848,7 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingFloorCeilingSensor(
     float donVelY)
 {
     BuildingBoxHit out = { 0 };
-    out.groundY = -10000.0f;
+    out.groundY = -10000;
 
     BoundingBox cb = Building_WorldColliderAABB(c);
 
@@ -898,7 +898,7 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingFloorCeilingSensor(
         {
             out.hit = true;
             out.hitCeiling = true;
-            out.push = (Vector3){ 0.0f, -0.25f, 0.0f };
+            out.push = (Vector3){ 0, -0.25f, 0 };
             out.normal = (Vector3){ 0, -1, 0 };
         }
     }
@@ -912,7 +912,7 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingCollider(
     float donVelY)
 {
     BuildingBoxHit out = { 0 };
-    out.groundY = -10000.0f;
+    out.groundY = -10000;
 
     if (c->type == BCOL_FLOOR || c->type == BCOL_CEILING)
     {
@@ -922,7 +922,7 @@ static inline BuildingBoxHit CollideDonAABBWithBuildingCollider(
     Vector3 push = { 0 };
     Vector3 normal = { 0 };
 
-    float skin = 0.0f;
+    float skin = 0;
 
     if (c->type == BCOL_WALL)
     {
@@ -985,7 +985,7 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingCollidersSweptY(
     float donVelY)
 {
     BuildingBoxHit best = { 0 };
-    best.groundY = -10000.0f;
+    best.groundY = -10000;
 
     if (!scene) return best;
     if (scene->modelType < 0 || scene->modelType >= MODEL_HOME_TOTAL_COUNT) return best;
@@ -1060,7 +1060,7 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingCollidersSweptY(
             {
                 best.hit = true;
                 best.hitCeiling = true;
-                best.push = (Vector3){ 0.0f, -0.35f, 0.0f };
+                best.push = (Vector3){ 0, -0.35f, 0 };
                 best.normal = (Vector3){ 0, -1, 0 };
             }
         }
@@ -1074,7 +1074,7 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingColliders(
     float donVelY)
 {
     BuildingBoxHit best = { 0 };
-    best.groundY = -10000.0f;
+    best.groundY = -10000;
 
     if (!scene) return best;
     if (scene->modelType < 0 || scene->modelType >= MODEL_HOME_TOTAL_COUNT) return best;
@@ -1124,7 +1124,7 @@ static inline BuildingBoxHit CollideDonAABBWithSceneBuildingColliders(
             best.hitWall = true;
 
             // Prefer horizontal wall push.
-            h.push.y = 0.0f;
+            h.push.y = 0;
 
             if (Vector3LengthSqr(h.push) > Vector3LengthSqr(best.push))
             {
@@ -1144,10 +1144,10 @@ static inline BuildingBoxHit CollideDonContactBoxesWithScene(
     Vector3 moveXZ)
 {
     BuildingBoxHit out = { 0 };
-    out.groundY = -10000.0f;
+    out.groundY = -10000;
 
     // Fast falling: do not let side/ceiling weirdness steal floor detection.
-    bool floorOnly = (donVelY <= -30.0f);
+    bool floorOnly = (donVelY <= -30);
 
     // 1) Floor: bottom third only.
     BuildingBoxHit floorHit = CollideDonAABBWithSceneBuildingColliders(
@@ -1199,8 +1199,8 @@ static inline BuildingBoxHit CollideDonContactBoxesWithScene(
     };
 
     Vector3 pushSum = { 0 };
-    float magSum = 0.0f;
-    float maxMag = 0.0f;
+    float magSum = 0;
+    float maxMag = 0;
     int hitCount = 0;
 
     Vector3 singlePush = { 0 };
@@ -1218,7 +1218,7 @@ static inline BuildingBoxHit CollideDonContactBoxesWithScene(
         if (!wh.hitWall) continue;
 
         Vector3 p = wh.push;
-        p.y = 0.0f;
+        p.y = 0;
 
         if (Vector3LengthSqr(p) < 0.0001f)
         {
@@ -1226,7 +1226,7 @@ static inline BuildingBoxHit CollideDonContactBoxesWithScene(
         }
 
         // Keep this: per-sensor direction sanity.
-        if (Vector3DotProduct(p, sideFallback[i]) < 0.0f)
+        if (Vector3DotProduct(p, sideFallback[i]) < 0)
         {
             p = Vector3Negate(p);
         }
@@ -1287,7 +1287,7 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
     bool  wallsOnly           // true => ignore ground classification
 ) {
     MeshBoxHit out = (MeshBoxHit){ 0 };
-    out.groundY = -10000.0f;
+    out.groundY = -10000;
     if (!mesh || mesh->vertexCount < 3 || mesh->triangleCount < 1) return out;
 
     float* verts = (float*)mesh->vertices;
@@ -1303,7 +1303,7 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
         0.5f * (box.min.z + box.max.z)
     };
 
-    float bestGroundY = -10000.0f;
+    float bestGroundY = -10000;
     Vector3 bestGroundN = (Vector3){ 0,1,0 };
     Vector3 wallPushAccum = (Vector3){ 0 };
     float feetY = box.min.y;
@@ -1341,7 +1341,7 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
         Vector3 e1 = Vector3Subtract(b, a);
         Vector3 e2 = Vector3Subtract(c3, a);
         Vector3 n = Vector3Normalize(Vector3CrossProduct(e1, e2));
-        if (n.y < 0.0f)  { n = Vector3Negate(n); }
+        if (n.y < 0)  { n = Vector3Negate(n); }
 
         if (n.y >= groundSlopeCos) {
             float y = GetHeightOnTriangle((Vector3) { boxCenter.x, 0, boxCenter.z }, a, b, c3);
@@ -1369,7 +1369,7 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
             if ((box.min.y <= triBox.max.y) && (box.max.y >= triBox.min.y)) {
                 float ox = AxisOverlap(box.min.x, box.max.x, triBox.min.x, triBox.max.x);
                 float oz = AxisOverlap(box.min.z, box.max.z, triBox.min.z, triBox.max.z);
-                if (ox > 0.0f && oz > 0.0f) {
+                if (ox > 0 && oz > 0) {
                     Vector3 push = (Vector3){ 0 };
                     if (ox < oz) {
                         float sign = (boxCenter.x < 0.5f * (triBox.min.x + triBox.max.x)) ? -1.0f : +1.0f;
@@ -1388,14 +1388,14 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
                     Vector3 toBox = Vector3Subtract(boxCenter, triCenter);
 
                     // 1) ensure our axis MTV "push" points away from the tri
-                    if (Vector3DotProduct(push, toBox) < 0.0f) { push = Vector3Negate(push); }
+                    if (Vector3DotProduct(push, toBox) < 0) { push = Vector3Negate(push); }
 
                     // 2) add a bit of horizontal normal, also guaranteed to face the box
-                    Vector3 hn = (Vector3){ n.x, 0.0f, n.z };
+                    Vector3 hn = (Vector3){ n.x, 0, n.z };
                     float hlen = Vector3Length(hn);
                     if (hlen > HORIZ_EPS) {
                         hn = Vector3Scale(hn, 1.0f / hlen);
-                        if (Vector3DotProduct(hn, toBox) < 0.0f) hn = Vector3Negate(hn);
+                        if (Vector3DotProduct(hn, toBox) < 0) hn = Vector3Negate(hn);
                         float amt = (ox < oz ? ox : oz) * (WALL_PUSH_SCALE * 0.5f);
                         push = Vector3Add(push, Vector3Scale(hn, amt));
                     }
@@ -1408,12 +1408,12 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
     }
 
     out.hitGround = false;
-    out.groundY = -10000.0f;
+    out.groundY = -10000;
     out.normal = (Vector3){ 0,0,0 };
     out.push = (Vector3){ 0,0,0 };
 
     const bool hasGround = (bestGroundY > -9988.0f);
-    bool hasWall = (Vector3LengthSqr(wallPushAccum) > 0.0f);
+    bool hasWall = (Vector3LengthSqr(wallPushAccum) > 0);
 
     if (hasGround) {
         out.hit = true;
@@ -1427,7 +1427,7 @@ static inline MeshBoxHit CollideAABBWithMeshTriangles(
         out.hit = true;
         out.hitWall = true;
 
-        wallPushAccum.y = 0.0f;
+        wallPushAccum.y = 0;
         out.push = Vector3Scale(wallPushAccum, WALL_PUSH_SCALE);
 
         if (!hasGround) out.normal = bestGroundN;
@@ -1471,9 +1471,9 @@ static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
 )
 {
     MeshBoxHit out = { 0 };
-    out.groundY = -10000.0f;
+    out.groundY = -10000;
 
-    bool floorOnly = (donVelY <= -30.0f);
+    bool floorOnly = (donVelY <= -30);
 
     // 1) Floor: bottom third only.
     MeshBoxHit floorHit = CollideAABBWithMeshTriangles(
@@ -1513,8 +1513,8 @@ static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
     };
 
     Vector3 pushSum = { 0 };
-    float magSum = 0.0f;
-    float maxMag = 0.0f;
+    float magSum = 0;
+    float maxMag = 0;
     int hitCount = 0;
 
     Vector3 singlePush = { 0 };
@@ -1535,14 +1535,14 @@ static inline MeshBoxHit CollideDonContactBoxesWithMeshTriangles(
         if (!wh.hitWall) continue;
 
         Vector3 p = wh.push;
-        p.y = 0.0f;
+        p.y = 0;
 
         if (Vector3LengthSqr(p) < 0.0001f)
         {
             p = Vector3Scale(sideFallback[i], 0.18f);
         }
 
-        if (Vector3DotProduct(p, sideFallback[i]) < 0.0f)
+        if (Vector3DotProduct(p, sideFallback[i]) < 0)
         {
             p = Vector3Negate(p);
         }

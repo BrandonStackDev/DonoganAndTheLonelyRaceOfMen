@@ -22,7 +22,7 @@ typedef struct {
 } School;
 
 void UpdateSchool(Fish* f, int n, Vector3 target, float dt) {
-    const float maxSpeed = 3.5f, maxTurn = 90.0f; // deg/s
+    const float maxSpeed = 3.5f, maxTurn = 90; // deg/s
     const float neighbor = 2.0f, sep = 0.8f;
 
     for (int i = 0; i < n; i++) {
@@ -55,7 +55,7 @@ void UpdateSchool(Fish* f, int n, Vector3 target, float dt) {
         // Update yaw smoothly (turn-rate limited)
         float yawNow = f[i].yawDeg;
         float yawWant = RAD2DEG * atan2f(v.x, v.z);        // +Z forward
-        float dy = fmodf(yawWant - yawNow + 540.0f, 360.0f) - 180.0f;
+        float dy = fmodf(yawWant - yawNow + 540, 360) - 180;
         float step = Clamp(dy, -maxTurn * dt, maxTurn * dt);
         f[i].yawDeg = yawNow + step;
 
