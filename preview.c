@@ -4871,7 +4871,7 @@ int main(void) {
 
                     if (bg[b].type == BG_YETI)
                     {
-                        bg[b].health = 1; //cant kill a yeti with this, but almost, need one more hit
+                        bg[b].health -= 88; //cant kill a yeti with this, but almost, need one more hit
                         Yeti_KnockBackFromDonogan(&bg[b], &don);
                         BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
                     }
