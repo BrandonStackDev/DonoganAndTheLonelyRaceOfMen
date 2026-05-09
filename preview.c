@@ -4702,10 +4702,11 @@ int main(void) {
                 bool punchHit = punching && CheckCollisionBoxes(bg[b].box, don.punchBox);
                 bool wrenchHit = DonIsWrenchSwinging(&don) && CheckCollisionBoxes(bg[b].box, don.punchBox);
                 bool airR1Hit = DonIsAirR1HandstandAttack(&don) && CheckCollisionBoxes(bg[b].box, don.punchBox);
+                bool guitarHit = DonIsGuitarSlamming(&don) && CheckCollisionBoxes(bg[b].box, don.punchBox);
 
-                DonAttackType atk = wrenchHit ? ATTACK_THROW : ATTACK_PUNCH;
+                DonAttackType atk = (wrenchHit || guitarHit) ? ATTACK_THROW : ATTACK_PUNCH;
 
-                if (!bodyHit && !punchHit && !airR1Hit) { continue; }
+                if (!bodyHit && !punchHit && !airR1Hit && !guitarHit) { continue; }
 
                 // Handstand of death:
                 // This happens before normal body-hit damage, so Don does not get hurt by touching the BG.
@@ -4772,7 +4773,7 @@ int main(void) {
                             TraceLog(LOG_INFO, "punched a yeti!");
                             bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
                             Yeti_KnockBackFromDonogan(&bg[b], &don);
-                            if (wrenchHit) {
+                            if (wrenchHit || guitarHit) {
                                 Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
                                 dir.y = 0.35f;
                                 dir = Vector3Normalize(dir);
@@ -4793,7 +4794,7 @@ int main(void) {
                     }
                     else if (bg[b].type == BG_ROBO)
                     {
-                        if (wrenchHit)
+                        if (wrenchHit || guitarHit)
                         {
                             bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
                             Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
@@ -4826,7 +4827,7 @@ int main(void) {
                             don.state = DONOGAN_STATE_JUMPING;
                             don.onGround = false;
                         }
-                        else if (wrenchHit)
+                        else if (wrenchHit || guitarHit)
                         {
                             bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
                             Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
@@ -4855,7 +4856,7 @@ int main(void) {
                         bg[b].state != SKELETON_STATE_DEATH &&
                         bg[b].state != SKELETON_STATE_DEAD)
                     {
-                        if (wrenchHit || punchHit)
+                        if (wrenchHit || guitarHit || punchHit)
                         {
                             DonAttackType atk = wrenchHit ? ATTACK_THROW : ATTACK_PUNCH;
 
@@ -5155,10 +5156,19 @@ int main(void) {
         //shark
         Shark_Update(&shark, &don, dt);
         //punchin and fightin and cusin
-        don.punching =DonIsPunching(&don) ||DonIsWrenchSwinging(&don) ||DonIsAirR1HandstandAttack(&don);
+        don.punching =
+            DonIsPunching(&don) ||
+            DonIsWrenchSwinging(&don) ||
+            DonIsAirR1HandstandAttack(&don) ||
+            DonIsGuitarSlamming(&don);
+
         if (DonIsAirR1HandstandAttack(&don))
         {
             don.punchBox = DonMakeAirR1HandstandBox(&don);
+        }
+        else if (DonIsGuitarSlamming(&don))
+        {
+            don.punchBox = DonMakeGuitarSlamBox(&don);
         }
         else if (DonIsWrenchSwinging(&don))
         {
