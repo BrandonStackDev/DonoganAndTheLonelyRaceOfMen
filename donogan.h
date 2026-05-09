@@ -959,8 +959,8 @@ static inline bool DonGroundGuitarHitWindow(const Donogan* d)
 {
     return d &&
         d->state == DONOGAN_STATE_GROUND_L1_GUITAR_SWING &&
-        d->animTime >= 0.16f &&
-        d->animTime <= 0.36f &&
+        //d->animTime >= 0.16f &&
+        //d->animTime <= 0.36f &&
         !d->guitarGroundHitDone &&
         d->guitarGroundTargetIndex >= 0;
 }

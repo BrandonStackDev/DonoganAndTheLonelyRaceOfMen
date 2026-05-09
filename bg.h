@@ -39,7 +39,7 @@ typedef enum {
     ATTACK_FREEZE,
     ATTACK_THROW,
     ATTACK_ARROW,
-    ATTACK_HOP
+    ATTACK_HOP,
 } DonAttackType;
 
 //todo: badguy specific (because ghosts are one hit and I only have the yeti it doesnt make sense yet)

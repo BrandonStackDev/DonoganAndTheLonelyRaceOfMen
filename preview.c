@@ -1259,7 +1259,7 @@ static void Preview_ResolveGroundGuitarHit(Donogan* d)
     {
         impulse.x *= 0.75f;
         impulse.z *= 0.75f;
-        impulse.y *= 0.75f;
+        impulse.y *= 0.2f;
     }
     else if (b->type == BG_PUMPKIN_HOPPER)
     {
@@ -1272,13 +1272,7 @@ static void Preview_ResolveGroundGuitarHit(Donogan* d)
     b->pos = Vector3Add(b->pos, Vector3Scale(dir, 1.25f));
     BG_UpdateMainBox(b);
 
-    if (b->type == BG_GHOST)
-    {
-        // Ghosts may not support truck ragdoll cleanly.
-        // Health 0 lets normal death/puff handling take over.
-        b->health = 0;
-    }
-    else
+    if (b->type != BG_GHOST)
     {
         BG_StartTruckRagdoll(b, impulse, 18.0f);
         b->health = 0;
@@ -4850,7 +4844,7 @@ int main(void) {
                 DonAttackType atk = (wrenchHit || guitarHit) ? ATTACK_THROW : ATTACK_PUNCH;
 
                 if (!bodyHit && !punchHit && !airR1Hit && !guitarHit) { continue; }
-
+                if (guitarHit) { bg[b].health = 0; }
                 // Handstand of death:
                 // This happens before normal body-hit damage, so Don does not get hurt by touching the BG.
                 if (airR1Hit)
@@ -5004,7 +4998,6 @@ int main(void) {
                             DonAttackType atk = wrenchHit ? ATTACK_THROW : ATTACK_PUNCH;
 
                             bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
-                            if (guitarHit) { bg[b].health = 0; }
                             Skeleton_KnockBackFromDonogan(&bg[b], &don, wrenchHit);
 
                             TraceLog(LOG_INFO, "Don hit skeleton! hp=%d", bg[b].health);
