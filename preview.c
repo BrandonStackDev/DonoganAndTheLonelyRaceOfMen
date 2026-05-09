@@ -4861,7 +4861,7 @@ int main(void) {
                             DonAttackType atk = wrenchHit ? ATTACK_THROW : ATTACK_PUNCH;
 
                             bg[b].health -= GetDamageDone(&gGame, &don, atk, bg[b].type);
-
+                            if (guitarHit) { bg[b].health = 0; }
                             Skeleton_KnockBackFromDonogan(&bg[b], &don, wrenchHit);
 
                             TraceLog(LOG_INFO, "Don hit skeleton! hp=%d", bg[b].health);

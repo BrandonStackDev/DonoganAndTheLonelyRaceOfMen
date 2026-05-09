@@ -2089,10 +2089,14 @@ static void DonInitAirL1GuitarSlamKeyframeGroups(Donogan* d)
     g->maxKey = 4;
     g->curKey = 0;
 
-    KfMakeZeroKey(&g->keyFrames[0], 0.00f, BONES, NUM_BONES);
+    /*KfMakeZeroKey(&g->keyFrames[0], 0.00f, BONES, NUM_BONES);
     KfMakeZeroKey(&g->keyFrames[1], 0.14f, BONES, NUM_BONES);
     KfMakeZeroKey(&g->keyFrames[2], 0.34f, BONES, NUM_BONES);
-    KfMakeZeroKey(&g->keyFrames[3], 0.56f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[3], 0.56f, BONES, NUM_BONES);*/
+    KfMakeZeroKey(&g->keyFrames[0], 0.00f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[1], 0.24f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[2], 0.55f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[3], 0.86f, BONES, NUM_BONES);
 
     // Index map:
     // 0  root
@@ -2120,15 +2124,16 @@ static void DonInitAirL1GuitarSlamKeyframeGroups(Donogan* d)
     g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(6, 0, 0);
     g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(10, 0, 4);
 
-    // Left arm holds guitar high/left, but not straight through his head.
-    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(95, -16, 28);
-    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(52, 0, 0);
-    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 6);
+    // Left arm: guitar starts up and to Don's left side.
+    // This keeps the guitar held out/sideways, not buried in his face.
+    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(70, -18, 82);   // upper_arm_L
+    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(22, 0, 0);   // forearm_L
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, 0);   // hand_L
 
-    // Right arm balances outward.
-    g->keyFrames[0].kfBones[6].rot = QuatXYZDeg(35, 0, -18);
-    g->keyFrames[0].kfBones[7].rot = QuatXYZDeg(15, 0, 0);
-    g->keyFrames[0].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+    // Right arm loosely follows, like he is preparing the slam.
+    g->keyFrames[0].kfBones[6].rot = QuatXYZDeg(35, 10, -32);  // upper_arm_R
+    g->keyFrames[0].kfBones[7].rot = QuatXYZDeg(18, 0, 0);  // forearm_R
+    g->keyFrames[0].kfBones[8].rot = QuatXYZDeg(0, 0, 0);  // hand_R
 
     // Legs: flipped major X direction from the first pass.
     g->keyFrames[0].kfBones[9].rot = QuatXYZDeg(-25, 0, -20);
@@ -2148,13 +2153,15 @@ static void DonInitAirL1GuitarSlamKeyframeGroups(Donogan* d)
     g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(28, 0, -8);
 
     // Wind-up: guitar hand high and a bit back/side, not waving in front.
-    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(128, -22, 42);
-    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(38, 0, 0);
-    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, 12);
+    // Wind-up: guitar goes higher/side, like he is about to smash downward.
+    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(105, -26, 92);  // upper_arm_L
+    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(28, 0, 0);  // forearm_L
+    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, 4);  // hand_L
 
-    g->keyFrames[1].kfBones[6].rot = QuatXYZDeg(45, 0, -22);
-    g->keyFrames[1].kfBones[7].rot = QuatXYZDeg(18, 0, 0);
-    g->keyFrames[1].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+    // Right arm comes up slightly for balance.
+    g->keyFrames[1].kfBones[6].rot = QuatXYZDeg(48, 12, -38);  // upper_arm_R
+    g->keyFrames[1].kfBones[7].rot = QuatXYZDeg(24, 0, 0);  // forearm_R
+    g->keyFrames[1].kfBones[8].rot = QuatXYZDeg(0, 0, 0);  // hand_R
 
     g->keyFrames[1].kfBones[9].rot = QuatXYZDeg(-48, 0, -36);
     g->keyFrames[1].kfBones[10].rot = QuatXYZDeg(48, 0, 0);
@@ -2173,14 +2180,16 @@ static void DonInitAirL1GuitarSlamKeyframeGroups(Donogan* d)
     g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(48, 0, 8);
 
     // Main slam: left hand should pull the attached guitar down in front of feet.
-    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(28, -18, 22);
-    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(118, 0, 0);
-    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, -10);
+    // Main slam: left hand/guitar comes down into the middle in front of him.
+    // Lower upper_arm X + bigger forearm X = hand/guitar comes down instead of staying high.
+    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(28, -8, 34);    // upper_arm_L
+    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(112, 0, 0);    // forearm_L
+    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, -10);   // hand_L
 
-    // Right arm follows/opens so body does not look stiff.
-    g->keyFrames[2].kfBones[6].rot = QuatXYZDeg(28, 0, -10);
-    g->keyFrames[2].kfBones[7].rot = QuatXYZDeg(12, 0, 0);
-    g->keyFrames[2].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+    // Right arm follows the slam toward center, like a big two-arm smash pose.
+    g->keyFrames[2].kfBones[6].rot = QuatXYZDeg(38, -8, -24);   // upper_arm_R
+    g->keyFrames[2].kfBones[7].rot = QuatXYZDeg(72, 0, 0);   // forearm_R
+    g->keyFrames[2].kfBones[8].rot = QuatXYZDeg(0, 0, 8);   // hand_R
 
     // Legs kicked back/wide.
     g->keyFrames[2].kfBones[9].rot = QuatXYZDeg(-62, 0, -44);
@@ -2199,13 +2208,15 @@ static void DonInitAirL1GuitarSlamKeyframeGroups(Donogan* d)
     g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(10, 0, 0);
     g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(14, 0, 0);
 
-    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(46, -8, 10);
-    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(62, 0, 0);
-    g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);
+    // Recover: guitar comes back up a little, still forward/center-ish.
+    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(45, -10, 48);   // upper_arm_L
+    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(62, 0, 0);   // forearm_L
+    g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, -4);   // hand_L
 
-    g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(18, 0, -8);
-    g->keyFrames[3].kfBones[7].rot = QuatXYZDeg(8, 0, 0);
-    g->keyFrames[3].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+    // Right arm relaxes back out.
+    g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(24, 0, -18);   // upper_arm_R
+    g->keyFrames[3].kfBones[7].rot = QuatXYZDeg(28, 0, 0);   // forearm_R
+    g->keyFrames[3].kfBones[8].rot = QuatXYZDeg(0, 0, 0);   // hand_R
 
     g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(-18, 0, -16);
     g->keyFrames[3].kfBones[10].rot = QuatXYZDeg(25, 0, 0);
@@ -3203,9 +3214,9 @@ static Donogan InitDonogan(void)
     // Since the OBJ origin is already near the neck/headstock grip,
     // start with nearly zero offset.
     d.guitarScale = 0.52f;
-    d.guitarGripOffset = (Vector3){ -0.10f, -0.08f, 0.16f };
+    d.guitarGripOffset = (Vector3){ -0.010f, -0.008f, 0.016f };
     // Rotate the guitar slightly so the body is not straight through Don's torso.
-    d.guitarGripEulerDeg = (Vector3){ 0.0f, 180.0f, -28.0f };
+    d.guitarGripEulerDeg = (Vector3){ 180, 0, 0 };
 
     d.poseNowValid = false;
     for (int i = 0; i < DON_BONE_COUNT; i++)
