@@ -2462,8 +2462,8 @@ static void DonInitGroundL1GuitarKeyframeGroups(Donogan* d)
 
     KfMakeZeroKey(&swing->keyFrames[0], 0.00f, BONES, NUM_BONES);
     KfMakeZeroKey(&swing->keyFrames[1], 0.06f, BONES, NUM_BONES);
-    KfMakeZeroKey(&swing->keyFrames[2], 0.10f, BONES, NUM_BONES);
-    KfMakeZeroKey(&swing->keyFrames[3], 0.28f, BONES, NUM_BONES);
+    KfMakeZeroKey(&swing->keyFrames[2], 0.08f, BONES, NUM_BONES);
+    KfMakeZeroKey(&swing->keyFrames[3], 0.20f, BONES, NUM_BONES);
 
     // KEY 0: guitar low-left, ready to rip upward
     swing->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
@@ -2532,9 +2532,9 @@ static void DonInitGroundL1GuitarKeyframeGroups(Donogan* d)
     swing->keyFrames[3].kfBones[2].rot = QuatXYZDeg(4, 0, 0);
 
     // KEY 3: recover / follow-through
-    swing->keyFrames[3].kfBones[3].rot = QuatXYZDeg(0, 0, 0);  // upper_arm_L
-    swing->keyFrames[3].kfBones[4].rot = QuatXYZDeg(0, 0, 0);  // forearm_L
-    swing->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);  // hand_L
+    swing->keyFrames[3].kfBones[3].rot = QuatXYZDeg(26, 0, 10);  // upper_arm_L
+    swing->keyFrames[3].kfBones[4].rot = QuatXYZDeg(10, 0, 0);  // forearm_L
+    swing->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 4);  // hand_L
 
     swing->keyFrames[3].kfBones[6].rot = QuatXYZDeg(18, 0, -8);
     swing->keyFrames[3].kfBones[7].rot = QuatXYZDeg(22, 0, 0);
