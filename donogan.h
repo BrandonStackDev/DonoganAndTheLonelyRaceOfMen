@@ -200,7 +200,7 @@ typedef enum {
     DONOGAN_STATE_AIR_R2_SPELL_SHOOT,
     DONOGAN_STATE_AIR_R1_HAND_STAND,
     DONOGAN_STATE_AIR_R1_RELEASE,
-    //DONOGAN_STATE_AIR_L2_SPELL_SLAM,
+    DONOGAN_STATE_AIR_L2_SPELL_SLAM,
     //DONOGAN_STATE_AIR_L1_GUITAR_SLAM,
     //DONOGAN_STATE_AIR_GUITAR_NORMAL_ATTACK,
     DONOGAN_STATE_SWIM_IDLE,
@@ -228,6 +228,7 @@ typedef enum {
 
 // ---------- Anim IDs present in your GLB (+procedural negatives)----------
 typedef enum {
+    DONOGAN_ANIM_PROC_AIR_L2_SPHERE_SLAM = -12,
     DONOGAN_ANIM_PROC_AIR_R1_RELEASE = -11,
     DONOGAN_ANIM_PROC_AIR_R1_HAND_STAND = -10,
     DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT = -9,
@@ -319,6 +320,7 @@ typedef enum {
     AIR_R2_KFG_SHOOT,
     AIR_R1_KFG_HAND_STAND,
     AIR_R1_KFG_RELEASE,
+    AIR_L2_KFG_SPHERE_SLAM,
     BOW_KFG_COUNT
 } BowKfgIndex; // ensure MAX_KEY_FRAMES_GROUPS >= BOW_KFG_COUNT
 typedef float (*InterpolateFunc)(float*, float*, float*); //to from dt
@@ -573,8 +575,194 @@ typedef struct SpellBall {
 #define MAX_BALLS 32
 SpellBall balls[MAX_BALLS] = { 0 };
 
-void DonGetProcBlendKeys(const Donogan* d, const KeyFrameGroup* G, int* outKeyA, int* outKeyB, float* outT);
+typedef struct AirL2SlamSphere {
+    bool active;
+    bool lockedToGround;
 
+    Vector3 pos;
+
+    float radius;
+    float preImpactMaxRadius;
+    float maxRadius;
+
+    float airGrowRate;
+    float groundGrowRate;
+
+    float groundY;
+
+    // After it reaches max size, linger briefly, then vanish.
+    float life;
+
+    // Damage pulse so it does not damage every single frame.
+    float damageTimer;
+    bool damagePulse;
+} AirL2SlamSphere;
+
+static AirL2SlamSphere gAirL2Slam = { 0 };
+
+//protos
+Vector3 RotYawOffset(Vector3 localOff, float yaw, float scale, bool useScale);
+void DonGetProcBlendKeys(const Donogan* d, const KeyFrameGroup* G, int* outKeyA, int* outKeyB, float* outT);
+static void DonSetState(Donogan* d, DonoganState s);
+
+static inline bool DonAirL2SlamIsActive(void)
+{
+    return gAirL2Slam.active;
+}
+
+static inline bool DonAirL2SlamCanDamage(void)
+{
+    // Let it damage once it is big enough or once it hits the ground.
+    return gAirL2Slam.active &&
+        (gAirL2Slam.lockedToGround || gAirL2Slam.radius >= 1.25f);
+}
+
+static inline Vector3 DonAirL2SlamHandPos(const Donogan* d)
+{
+    // Fake "near fingertip" position.
+    // x = Don's right, y = up, z = forward.
+    Vector3 off = { 0.95f, 5.55f, 0.10f };
+    return Vector3Add(d->pos, RotYawOffset(off, d->yawY, d->scale, false));
+}
+
+static inline void DonAirL2SlamSpawnAtHand(const Donogan* d)
+{
+    gAirL2Slam.active = true;
+    gAirL2Slam.lockedToGround = false;
+
+    gAirL2Slam.pos = DonAirL2SlamHandPos(d);
+
+    gAirL2Slam.radius = 0.40f;
+    gAirL2Slam.preImpactMaxRadius = 2.40f;
+    gAirL2Slam.maxRadius = 24.0f;
+
+    gAirL2Slam.airGrowRate = 7.0f;
+    gAirL2Slam.groundGrowRate = 18.0f;
+
+    gAirL2Slam.groundY = d->groundY;
+    gAirL2Slam.life = 0.18f;
+
+    gAirL2Slam.damageTimer = 0.0f;
+    gAirL2Slam.damagePulse = true;
+}
+
+static inline void DonAirL2SlamFollowHand(const Donogan* d)
+{
+    if (!gAirL2Slam.active) return;
+    if (gAirL2Slam.lockedToGround) return;
+
+    gAirL2Slam.pos = DonAirL2SlamHandPos(d);
+}
+
+static inline void DonAirL2SlamLockToGround(const Donogan* d)
+{
+    if (!gAirL2Slam.active) return;
+
+    gAirL2Slam.lockedToGround = true;
+    gAirL2Slam.groundY = d->groundY;
+
+    // Center follows Don's XZ impact point.
+    gAirL2Slam.pos.x = d->pos.x;
+    gAirL2Slam.pos.z = d->pos.z;
+
+    // Keep the sphere visually coming out of the ground instead of totally buried.
+    gAirL2Slam.pos.y = gAirL2Slam.groundY + gAirL2Slam.radius * 0.35f;
+
+    // Immediate damage pulse on impact.
+    gAirL2Slam.damageTimer = 0.0f;
+    gAirL2Slam.damagePulse = true;
+}
+
+static inline void UpdateAirL2SlamSphere(float dt)
+{
+    gAirL2Slam.damagePulse = false;
+
+    if (!gAirL2Slam.active) return;
+
+    gAirL2Slam.damageTimer -= dt;
+    if (gAirL2Slam.damageTimer <= 0.0f)
+    {
+        gAirL2Slam.damagePulse = true;
+        gAirL2Slam.damageTimer = 0.13f;
+    }
+
+    if (!gAirL2Slam.lockedToGround)
+    {
+        gAirL2Slam.radius += gAirL2Slam.airGrowRate * dt;
+
+        if (gAirL2Slam.radius > gAirL2Slam.preImpactMaxRadius)
+        {
+            gAirL2Slam.radius = gAirL2Slam.preImpactMaxRadius;
+        }
+
+        return;
+    }
+
+    gAirL2Slam.radius += gAirL2Slam.groundGrowRate * dt;
+
+    if (gAirL2Slam.radius >= gAirL2Slam.maxRadius)
+    {
+        gAirL2Slam.radius = gAirL2Slam.maxRadius;
+        gAirL2Slam.life -= dt;
+
+        if (gAirL2Slam.life <= 0.0f)
+        {
+            gAirL2Slam.active = false;
+            gAirL2Slam.lockedToGround = false;
+            gAirL2Slam.damagePulse = false;
+        }
+    }
+
+    // As it grows, keep it rising out of the ground.
+    gAirL2Slam.pos.y = gAirL2Slam.groundY + gAirL2Slam.radius * 0.35f;
+}
+static inline bool DonIsAirAttackState(const Donogan* d)
+{
+    if (!d) return false;
+
+    return d->state == DONOGAN_STATE_AIR_R2_SPELL_SHOOT ||
+        d->state == DONOGAN_STATE_AIR_R1_HAND_STAND ||
+        d->state == DONOGAN_STATE_AIR_R1_RELEASE ||
+        d->state == DONOGAN_STATE_AIR_L2_SPELL_SLAM;
+}
+
+static inline bool DonCanTakeBadGuyTouchDamage(const Donogan* d)
+{
+    if (!d) return true;
+
+    if (d->state == DONOGAN_STATE_AIR_R1_RELEASE) return false;
+    if (d->state == DONOGAN_STATE_AIR_R1_HAND_STAND) return false;
+    if (d->state == DONOGAN_STATE_AIR_L2_SPELL_SLAM) return false;
+
+    return true;
+}
+static inline bool Don_TryStartAirL2SphereSlam(Donogan* d)
+{
+    if (!d) return false;
+    if (!d->ja_l2_unlocked) return false;
+    if (d->mana < 20) return false;
+
+    d->mana -= 20;
+
+    DonAirL2SlamSpawnAtHand(d);
+
+    d->gluedToPlatform = false;
+    d->gluedPlatId = -1;
+
+    // Slam downward.
+    if (d->velY > -10.0f) d->velY = -10.0f;
+
+    // Keep a little drift but mostly commit to the slam.
+    d->velXZ = Vector3Scale(d->velXZ, 0.30f);
+    d->rollVel = (Vector3){ 0 };
+
+    d->onGround = false;
+
+    DonSetState(d, DONOGAN_STATE_AIR_L2_SPELL_SLAM);
+    return true;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////
 static inline void Don_UpdateBoxes(Donogan* d)
 {
     if (!d) return;
@@ -1600,6 +1788,133 @@ static void DonInitAirR1HandstandKeyframeGroups(Donogan* d)
     r->keyFrames[3].kfBones[12].rot = QuatXYZDeg(0, 0, 0);
 }
 
+static void DonInitAirL2SphereSlamKeyframeGroups(Donogan* d)
+{
+    const DonBone BONES[] = {
+        DON_BONE_ROOT,
+
+        DON_BONE_DEF_SPINE002,
+        DON_BONE_DEF_SPINE003,
+
+        DON_BONE_DEF_UPPER_ARM_R,
+        DON_BONE_DEF_FOREARM_R,
+        DON_BONE_DEF_HAND_R,
+
+        DON_BONE_DEF_UPPER_ARM_L,
+        DON_BONE_DEF_FOREARM_L,
+        DON_BONE_DEF_HAND_L,
+
+        DON_BONE_DEF_THIGH_L,
+        DON_BONE_DEF_SHIN_L,
+        DON_BONE_DEF_THIGH_R,
+        DON_BONE_DEF_SHIN_R,
+    };
+
+    const int NUM_BONES = (int)(sizeof(BONES) / sizeof(BONES[0]));
+
+    KeyFrameGroup* g = &d->kfGroups[AIR_L2_KFG_SPHERE_SLAM];
+    g->state = DONOGAN_STATE_AIR_L2_SPELL_SLAM;
+    g->anim = DONOGAN_ANIM_PROC_AIR_L2_SPHERE_SLAM;
+    g->maxKey = 4;
+    g->curKey = 0;
+
+    KfMakeZeroKey(&g->keyFrames[0], 0.00f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[1], 0.16f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[2], 0.34f, BONES, NUM_BONES);
+    KfMakeZeroKey(&g->keyFrames[3], 0.52f, BONES, NUM_BONES);
+
+    // Index map:
+    // 0 root
+    // 1 spine002
+    // 2 spine003
+    // 3 upper_arm_R
+    // 4 forearm_R
+    // 5 hand_R
+    // 6 upper_arm_L
+    // 7 forearm_L
+    // 8 hand_L
+    // 9 thigh_L
+    // 10 shin_L
+    // 11 thigh_R
+    // 12 shin_R
+
+    // KEY 0: start raising arm
+    DonAirJumpAttackSetRoot(&g->keyFrames[0], d, 0.0f, 0.0f, 0.0f);
+
+    g->keyFrames[0].kfBones[1].rot = QuatXYZDeg(0, 0, 0);
+    g->keyFrames[0].kfBones[2].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[0].kfBones[3].rot = QuatXYZDeg(70, 0, -20);
+    g->keyFrames[0].kfBones[4].rot = QuatXYZDeg(25, 0, 0);
+    g->keyFrames[0].kfBones[5].rot = QuatXYZDeg(0, 0, -8);
+
+    g->keyFrames[0].kfBones[6].rot = QuatXYZDeg(20, 0, 12);
+    g->keyFrames[0].kfBones[7].rot = QuatXYZDeg(10, 0, 0);
+    g->keyFrames[0].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[0].kfBones[9].rot = QuatXYZDeg(-20, 0, 4);
+    g->keyFrames[0].kfBones[10].rot = QuatXYZDeg(40, 0, 0);
+    g->keyFrames[0].kfBones[11].rot = QuatXYZDeg(-20, 0, -4);
+    g->keyFrames[0].kfBones[12].rot = QuatXYZDeg(40, 0, 0);
+
+    // KEY 1: arm almost straight up, knees tucked, spin starts
+    DonAirJumpAttackSetRoot(&g->keyFrames[1], d, 120.0f,0,0);
+
+    g->keyFrames[1].kfBones[1].rot = QuatXYZDeg(0, 0, -4);
+    g->keyFrames[1].kfBones[2].rot = QuatXYZDeg(0, 0, -8);
+
+    g->keyFrames[1].kfBones[3].rot = QuatXYZDeg(145, 0, -18);
+    g->keyFrames[1].kfBones[4].rot = QuatXYZDeg(12, 0, 0);
+    g->keyFrames[1].kfBones[5].rot = QuatXYZDeg(0, 0, -4);
+
+    g->keyFrames[1].kfBones[6].rot = QuatXYZDeg(35, 0, 20);
+    g->keyFrames[1].kfBones[7].rot = QuatXYZDeg(15, 0, 0);
+    g->keyFrames[1].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[1].kfBones[9].rot = QuatXYZDeg(-60, 0, 6);
+    g->keyFrames[1].kfBones[10].rot = QuatXYZDeg(100, 0, 0);
+    g->keyFrames[1].kfBones[11].rot = QuatXYZDeg(-60, 0, -6);
+    g->keyFrames[1].kfBones[12].rot = QuatXYZDeg(100, 0, 0);
+
+    // KEY 2: full spin, sphere overhead, falling hard
+    DonAirJumpAttackSetRoot(&g->keyFrames[2], d, 250.0f, 0, 0);
+
+    g->keyFrames[2].kfBones[1].rot = QuatXYZDeg(8, 0, -8);
+    g->keyFrames[2].kfBones[2].rot = QuatXYZDeg(12, 0, -12);
+
+    g->keyFrames[2].kfBones[3].rot = QuatXYZDeg(165, 0, -10);
+    g->keyFrames[2].kfBones[4].rot = QuatXYZDeg(4, 0, 0);
+    g->keyFrames[2].kfBones[5].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[2].kfBones[6].rot = QuatXYZDeg(45, 0, 26);
+    g->keyFrames[2].kfBones[7].rot = QuatXYZDeg(20, 0, 0);
+    g->keyFrames[2].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[2].kfBones[9].rot = QuatXYZDeg(-70, 0, 8);
+    g->keyFrames[2].kfBones[10].rot = QuatXYZDeg(110, 0, 0);
+    g->keyFrames[2].kfBones[11].rot = QuatXYZDeg(-70, 0, -8);
+    g->keyFrames[2].kfBones[12].rot = QuatXYZDeg(110, 0, 0);
+
+    // KEY 3: slam/follow-through, full 360
+    DonAirJumpAttackSetRoot(&g->keyFrames[3], d, 360.0f, 0, 0);
+
+    g->keyFrames[3].kfBones[1].rot = QuatXYZDeg(18, 0, 0);
+    g->keyFrames[3].kfBones[2].rot = QuatXYZDeg(25, 0, 0);
+
+    g->keyFrames[3].kfBones[3].rot = QuatXYZDeg(130, 0, -4);
+    g->keyFrames[3].kfBones[4].rot = QuatXYZDeg(15, 0, 0);
+    g->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[3].kfBones[6].rot = QuatXYZDeg(30, 0, 10);
+    g->keyFrames[3].kfBones[7].rot = QuatXYZDeg(10, 0, 0);
+    g->keyFrames[3].kfBones[8].rot = QuatXYZDeg(0, 0, 0);
+
+    g->keyFrames[3].kfBones[9].rot = QuatXYZDeg(-30, 0, 4);
+    g->keyFrames[3].kfBones[10].rot = QuatXYZDeg(45, 0, 0);
+    g->keyFrames[3].kfBones[11].rot = QuatXYZDeg(-30, 0, -4);
+    g->keyFrames[3].kfBones[12].rot = QuatXYZDeg(45, 0, 0);
+}
+
 static void DonInitMachineTurnKeyframeGroups(Donogan* d)
 {
     const DonBone BONES[] = {
@@ -1792,6 +2107,7 @@ static inline KeyFrameGroup* DonActiveKfGroup(Donogan* d) {
     case DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT:   return &d->kfGroups[AIR_R2_KFG_SHOOT];
     case DONOGAN_ANIM_PROC_AIR_R1_HAND_STAND:   return &d->kfGroups[AIR_R1_KFG_HAND_STAND];
     case DONOGAN_ANIM_PROC_AIR_R1_RELEASE:   return &d->kfGroups[AIR_R1_KFG_RELEASE];
+    case DONOGAN_ANIM_PROC_AIR_L2_SPHERE_SLAM: return &d->kfGroups[AIR_L2_KFG_SPHERE_SLAM];
     default:                          return NULL;
     }
 }
@@ -2295,6 +2611,20 @@ static void DonApplyProcFrame(Donogan* d)
         else if (t < 0.54f) G->curKey = 3;
         else                d->animFinished = true;
     } break;
+    case DONOGAN_ANIM_PROC_AIR_L2_SPHERE_SLAM:
+    {
+        if (!G) { d->animFinished = true; break; }
+
+        float t = d->animTime;
+
+        if (t < 0.16f)      G->curKey = 0;
+        else if (t < 0.34f) G->curKey = 1;
+        else if (t < 0.52f) G->curKey = 2;
+        else                G->curKey = 3;
+
+        // Hold final slam pose until we actually hit ground/platform/home-floor/etc.
+        d->animFinished = false;
+    } break;
     default:
         d->animFinished = true;  // unknown proc id → finish immediately
         break;
@@ -2690,6 +3020,7 @@ static Donogan InitDonogan(void)
     DonInitSpellShootKeyframeGroups(&d);
     DonInitAirR2SpellKeyframeGroups(&d);
     DonInitAirR1HandstandKeyframeGroups(&d);
+    DonInitAirL2SphereSlamKeyframeGroups(&d);
     DonInitMachineTurnKeyframeGroups(&d);
     DonInitWrenchSwingKf(&d);
     DonInitArrows(&d);
@@ -2773,6 +3104,7 @@ static DonoganAnim AnimForState(DonoganState s)
     case DONOGAN_STATE_AIR_R2_SPELL_SHOOT:      return DONOGAN_ANIM_PROC_AIR_R2_SPELL_SHOOT;
     case DONOGAN_STATE_AIR_R1_HAND_STAND:      return DONOGAN_ANIM_PROC_AIR_R1_HAND_STAND;
     case DONOGAN_STATE_AIR_R1_RELEASE:      return DONOGAN_ANIM_PROC_AIR_R1_RELEASE;
+    case DONOGAN_STATE_AIR_L2_SPELL_SLAM:  return DONOGAN_ANIM_PROC_AIR_L2_SPHERE_SLAM;
     case DONOGAN_STATE_MACHINE_TURN:      return DONOGAN_ANIM_PROC_MACHINE_TURN;
     case DONOGAN_STATE_WRENCH_SWING:      return DONOGAN_ANIM_PROC_WRENCH_SWING;
     case DONOGAN_STATE_HIT:         return DONOGAN_ANIM_Hit_Chest;
@@ -2908,6 +3240,7 @@ void UpdateBalls(float dt) {
         balls[i].life -= dt;
         if (balls[i].life <= 0) balls[i].alive = 0;
     }
+    UpdateAirL2SlamSphere(dt);
 }
 
 // ---------- Per-frame update (controller → state → anim/frame) ----------
@@ -2947,9 +3280,12 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
         }
         bool circle = padPresent ? pad->btnCircle : false;
         bool L3 = padPresent ? pad->btnL3 : false;
+       
         bool L2 = padPresent ? pad->btnL2 : false;
+        bool L2JumpPressed = L2 && !d->prevL2;
         bool L2Pressed = d->hasBow && L2 && !d->prevL2; //prevent the bow mode if not have bow
         bool L2Released = !L2 && d->prevL2;
+
         bool R2 = padPresent ? pad->btnR2 : false;
         bool R2Pressed = (R2 && !d->prevR2);
         bool R2Released = (!R2 && d->prevR2);
@@ -3106,6 +3442,29 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
 
                         break;
                     }
+                }
+                else if (d->state == DONOGAN_STATE_JUMPING &&
+                    !d->bowMode &&
+                    L2JumpPressed &&
+                    d->ja_l2_unlocked &&
+                    d->mana >= 20)
+                {
+                    if (Don_TryStartAirL2SphereSlam(d))
+                    {
+                        break;
+                    }
+                }
+                else if (d->state == DONOGAN_STATE_JUMPING &&
+                    !d->bowMode &&
+                    R1Pressed &&
+                    d->ja_r1_unlocked)
+                {
+                    DonSetState(d, DONOGAN_STATE_AIR_R1_HAND_STAND);
+
+                    if (d->velY > -6.0f) d->velY = -6.0f;
+                    d->velXZ = Vector3Scale(d->velXZ, 0.65f);
+
+                    break;
                 }
                 // Land if feet cross ground while falling
                 if (d->velY <= 0.0f && DonFeetWorldY(d) <= d->groundY) {
@@ -3558,7 +3917,6 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 }
 
             } break;
-
             case DONOGAN_STATE_AIR_R1_RELEASE:
             {
                 // Bounce upward and right himself.
@@ -3586,6 +3944,45 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 if (d->animFinished)
                 {
                     DonSetState(d, DONOGAN_STATE_JUMPING);
+                }
+
+            } break;
+            case DONOGAN_STATE_AIR_L2_SPELL_SLAM:
+            {
+                // Keep the sphere near the raised fingertip until impact.
+                DonAirL2SlamFollowHand(d);
+
+                // Fast committed slam downward.
+                d->velY += d->gravity * dt * 1.35f;
+
+                if (d->velY > -32.0f)
+                {
+                    d->velY -= 80.0f * dt;
+                    if (d->velY < -32.0f) d->velY = -32.0f;
+                }
+
+                d->pos.y += d->velY * dt;
+
+                // Small XZ drift.
+                d->pos = Vector3Add(
+                    d->pos,
+                    Vector3Scale(d->velXZ, dt * (d->runningHeld ? d->runSpeed : d->walkSpeed) * 0.25f)
+                );
+
+                Don_UpdateBoxes(d);
+
+                // Anything that sets groundY counts:
+                // terrain, authored home floors, platforms, etc.
+                if (d->velY <= 0.0f && d->outerBox.min.y <= d->groundY + 0.18f)
+                {
+                    DonSnapToGround(d);
+
+                    // Slam sphere becomes the ground shock sphere.
+                    DonAirL2SlamLockToGround(d);
+
+                    // Exit into normal land anim while the sphere keeps growing independently.
+                    DonSetState(d, DONOGAN_STATE_JUMP_LAND);
+                    break;
                 }
 
             } break;
@@ -3892,6 +4289,25 @@ void DrawBalls(Camera3D cam, Model ball, Shader lightningBall) {
             MatrixScale(balls[i].radius, balls[i].radius, balls[i].radius),
             MatrixTranslate(balls[i].pos.x, balls[i].pos.y, balls[i].pos.z)
         );
+        DrawMesh(ball.meshes[0], ball.materials[0], m);
+    }
+    if (gAirL2Slam.active)
+    {
+        Vector3 slamColor = { 0.85f, 0.55f, 1.0f };
+        float slamIntensity = 2.4f;
+        float slamDispAmp = 0.14f;
+        float slamNoiseScale = 2.2f;
+
+        SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uColor"), &slamColor, SHADER_UNIFORM_VEC3);
+        SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uIntensity"), &slamIntensity, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uDispAmp"), &slamDispAmp, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(lightningBall, GetShaderLocation(lightningBall, "uNoiseScale"), &slamNoiseScale, SHADER_UNIFORM_FLOAT);
+
+        Matrix m = MatrixMultiply(
+            MatrixScale(gAirL2Slam.radius, gAirL2Slam.radius, gAirL2Slam.radius),
+            MatrixTranslate(gAirL2Slam.pos.x, gAirL2Slam.pos.y, gAirL2Slam.pos.z)
+        );
+
         DrawMesh(ball.meshes[0], ball.materials[0], m);
     }
     EndBlendMode();

@@ -4614,6 +4614,82 @@ int main(void) {
                 }
             }
         }
+        //single slammer pog
+        // L2 AIR SPHERE SLAM: big radius pulse, does not disappear on hit.
+        if (DonAirL2SlamCanDamage() && gAirL2Slam.damagePulse)
+        {
+            for (int i = 0; i < act_bg_count; i++)
+            {
+                int b = act_bg[i];
+                if (!BG_ActiveIndexOK(b)) continue;
+                if (!bg[b].active) continue;
+                if (bg[b].dead) continue;
+                if (BG_IsActuallyDeadState(&bg[b])) continue;
+                if (bg[b].gbm_index < 0) continue;
+
+                if (!CheckCollisionBoxSphere(bg[b].box, gAirL2Slam.pos, gAirL2Slam.radius))
+                {
+                    continue;
+                }
+
+                TraceLog(LOG_INFO,
+                    "L2 SPHERE SLAM hit bg=%d type=%d radius=%.2f hp=%d",
+                    b, bg[b].type, gAirL2Slam.radius, bg[b].health
+                );
+
+                int dmg = GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
+
+                // This is a 20-mana jump attack, so make it meaningfully stronger.
+                dmg = (int)((float)dmg * 1.65f);
+
+                if (dmg < 1) dmg = 1;
+
+                bg[b].health -= dmg;
+
+                Vector3 dir = Vector3Subtract(bg[b].pos, gAirL2Slam.pos);
+                dir.y = 0.35f;
+
+                if (Vector3LengthSqr(dir) < 0.0001f)
+                {
+                    dir = Vector3Subtract(bg[b].pos, don.pos);
+                    dir.y = 0.35f;
+                }
+
+                if (Vector3LengthSqr(dir) < 0.0001f)
+                {
+                    dir = (Vector3){ sinf(don.yawY), 0.35f, cosf(don.yawY) };
+                }
+
+                dir = Vector3Normalize(dir);
+
+                if (bg[b].type == BG_GHOST)
+                {
+                    bg[b].state = GHOST_STATE_HIT;
+                }
+                else if (bg[b].type == BG_YETI)
+                {
+                    bg[b].state = YETI_STATE_HIT;
+                    Yeti_KnockBackFromDonogan(&bg[b], &don);
+                    BG_SetAnim(&bg[b], ANIM_YETI_ROAR, false);
+                }
+                else if (bg[b].type == BG_ROBO)
+                {
+                    bg[b].vel = Vector3Scale(dir, 38.0f);
+                    bg[b].vel.y = 15.0f;
+                    bg[b].state = ROBO_STATE_PLAN;
+                }
+                else if (bg[b].type == BG_PUMPKIN_HOPPER)
+                {
+                    bg[b].vel = Vector3Scale(dir, 42.0f);
+                    bg[b].vel.y = 18.0f;
+                    bg[b].state = HOPPER_STATE_HURT;
+                }
+                else if (bg[b].type == BG_SKELETON)
+                {
+                    Skeleton_KnockBackFromDonogan(&bg[b], &don, true);
+                }
+            }
+        }
         //donny collision with bg
         if (donnyMode)
         {
