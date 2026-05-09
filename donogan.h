@@ -3171,7 +3171,7 @@ static inline void DonStartAirR1Release(Donogan* d)
     d->gluedPlatId = -1;
 
     // Slightly higher-than-normal pop.
-    d->velY = d->jumpSpeed * 1.18f;
+    d->velY = d->jumpSpeed * 1.5f;
 
     // Keep some motion, but do not launch him wildly sideways.
     d->velXZ = Vector3Scale(d->velXZ, 0.45f);
