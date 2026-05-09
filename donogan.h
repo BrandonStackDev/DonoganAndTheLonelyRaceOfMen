@@ -2461,9 +2461,9 @@ static void DonInitGroundL1GuitarKeyframeGroups(Donogan* d)
     swing->curKey = 0;
 
     KfMakeZeroKey(&swing->keyFrames[0], 0.00f, BONES, NUM_BONES);
-    KfMakeZeroKey(&swing->keyFrames[1], 0.13f, BONES, NUM_BONES);
-    KfMakeZeroKey(&swing->keyFrames[2], 0.30f, BONES, NUM_BONES);
-    KfMakeZeroKey(&swing->keyFrames[3], 0.52f, BONES, NUM_BONES);
+    KfMakeZeroKey(&swing->keyFrames[1], 0.06f, BONES, NUM_BONES);
+    KfMakeZeroKey(&swing->keyFrames[2], 0.10f, BONES, NUM_BONES);
+    KfMakeZeroKey(&swing->keyFrames[3], 0.28f, BONES, NUM_BONES);
 
     // KEY 0: guitar low-left, ready to rip upward
     swing->keyFrames[0].kfBones[0].rot = QuatXYZDeg(0, 0, 0);
