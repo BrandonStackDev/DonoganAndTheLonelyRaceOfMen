@@ -630,37 +630,26 @@ static inline void BG_UpdateTruckRagdoll(BadGuy* b, float dt)
         b->vel = (Vector3){ 0 };
         b->pitch = 0;
         b->roll = 0;
-
-        if (b->health <= 0)
+        b->health -= 99;
+        if (b->type == BG_YETI)
         {
-            /*if (b->type == BG_YETI) b->state = YETI_STATE_DYING;
-            else if (b->type == BG_ROBO) b->state = ROBO_STATE_DYING;
-            else if (b->type == BG_PUMPKIN_HOPPER) b->state = HOPPER_STATE_DEAD;
-            else if (b->type == BG_SKELETON) b->state = SKELETON_STATE_DEATH;*/
-            b->health = 2;
+            b->state = YETI_STATE_PLANNING;
+            BG_SetAnimSafe(b, ANIM_YETI_WALK, false);
         }
-        else
+        else if (b->type == BG_ROBO)
         {
-            if (b->type == BG_YETI)
-            {
-                b->state = YETI_STATE_PLANNING;
-                BG_SetAnimSafe(b, ANIM_YETI_WALK, false);
-            }
-            else if (b->type == BG_ROBO)
-            {
-                b->state = ROBO_STATE_PLAN;
-            }
-            else if (b->type == BG_PUMPKIN_HOPPER)
-            {
-                b->state = HOPPER_STATE_WAIT;
-                ResetTimer(&b->interactionTimer);
-                StartTimer(&b->interactionTimer);
-            }
-            else if (b->type == BG_SKELETON)
-            {
-                b->state = SKELETON_STATE_PLAN;
-                BG_SetAnimSafe(b, ANIM_SKEL_IDLE, false);
-            }
+            b->state = ROBO_STATE_PLAN;
+        }
+        else if (b->type == BG_PUMPKIN_HOPPER)
+        {
+            b->state = HOPPER_STATE_WAIT;
+            ResetTimer(&b->interactionTimer);
+            StartTimer(&b->interactionTimer);
+        }
+        else if (b->type == BG_SKELETON)
+        {
+            b->state = SKELETON_STATE_PLAN;
+            BG_SetAnimSafe(b, ANIM_SKEL_IDLE, false);
         }
     }
 }
