@@ -2204,6 +2204,8 @@ int main(void) {
         }
         //controller and truck stuff
         havePad = ReadControllerWindows(0, &gpad);
+        ApplyKeyboardToControllerData(&gpad);
+        havePad = true;
         UpdateTreeOfLifeBloomSpell(&don, &gpad, GetFrameTime());
         UpdateTreeOfLifeBloomGeneration();
         if (!onLoad) 
@@ -3153,22 +3155,6 @@ int main(void) {
         if (!donnyMode || !don.isTalking)
         {
             //if (IsKeyPressed(KEY_C)) { DisableCursor(); }
-            if (IsKeyPressed(KEY_D)) 
-            {
-                if (dream_land)
-                {
-                    don.pos = reality_cache;
-                    dream_land = false;
-                }
-                else
-                {
-                    dream_land = true;
-                    don.pos = dream_location;
-                }
-            }
-            if (IsKeyPressed(KEY_X)) { EnableCursor(); }
-            if (IsKeyPressed(KEY_Y)) { contInvertY = !contInvertY; }
-            if (IsKeyPressed(KEY_M)) { showMap = !showMap; } // Toggle map
             //if (IsKeyDown(KEY_EQUAL)) mapZoom += 0.01f;  // Zoom in (+ key)
             //if (IsKeyDown(KEY_EQUAL)) mapZoom += 0.01f;  // Zoom in (+ key)
             //if (IsKeyDown(KEY_MINUS)) mapZoom -= 0.01f;  // Zoom out (- key)
@@ -3186,7 +3172,8 @@ int main(void) {
                 EnableCursor(); 
             }
             if (IsKeyPressed(KEY_B)) { displayBoxes = !displayBoxes; }
-            if (IsKeyPressed(KEY_L)) { displayLod = !displayLod; }
+            if (IsKeyPressed(KEY_Z)) { dayTime = !dayTime; }
+            //if (IsKeyPressed(KEY_L)) { displayLod = !displayLod; }
             if (IsKeyPressed(KEY_F12)) { TakeScreenshotWithTimestamp(); }
             //if (IsKeyPressed(KEY_F11)) { reportOn = true; }
             //if (IsKeyPressed(KEY_F10)) { MemoryReport(); }
@@ -3203,7 +3190,23 @@ int main(void) {
                     SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT); // your preferred windowed size
                 }
             }
-            if (IsKeyPressed(KEY_Z)) { dayTime = !dayTime; }
+            if (IsKeyPressed(KEY_F3)) { EnableCursor(); }
+            if (IsKeyPressed(KEY_F4)) { contInvertY = !contInvertY; }
+            if (IsKeyPressed(KEY_F5)) { showMap = !showMap; } // Toggle map
+            if (IsKeyPressed(KEY_F6))
+            {
+                if (dream_land)
+                {
+                    don.pos = reality_cache;
+                    dream_land = false;
+                }
+                else
+                {
+                    dream_land = true;
+                    don.pos = dream_location;
+                }
+            }
+            
         }
         else if (don.isTalking)
         {

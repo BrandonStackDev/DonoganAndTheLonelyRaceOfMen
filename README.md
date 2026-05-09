@@ -20,10 +20,10 @@ Check out the previews on itch - https://fiver-156.itch.io/donogan-light-preview
 
 how to play...
 
-For Donogan, you need a keyboard and a controller. The controller will need the typical "psx" buttons, so analog sticks, d-pad, start button is on the right of the middle, L&R 1,2,&3, and the 4 important buttons (like A and B and stuff, or X, Square, Circle..., that stuff). 
+For Donogan, you need a keyboard or a controller. The controller will need the typical "psx" buttons, so analog sticks, d-pad, start button is on the right of the middle, L&R 1,2,&3, and the 4 important buttons (like A and B and stuff, or X, Square, Circle..., that stuff). 
 
-64 bit only. You will want a modern and decent GPU so you can run Ollama locally. (you dont have to run ollama, but the conversations are lame without it.)
-You probably will want 16GB RAM on your system as well.
+64 bit only. 
+For now Windows only.
 
 Controls:
 
@@ -51,7 +51,7 @@ x - jump
 
 Square - freeze spell (hold it, spin fast to throw enemies, higher level equals higher effective radius)
 
-Triangle - interact with NPC's and other things
+Triangle - interact with NPC's and other things (To talk to NPC's, press triangle when near them.)
 
 Circle - roll (use to sometimes dodge or travel a little faster on foot)
 
@@ -62,6 +62,8 @@ L2 - enter bow mode
 R2 in bow mode fires (you can really pump out the arrows in this game, no ammo limits yet, possibly will never add them, its fun as is I think)
 
 R1 and L1 - punch
+
+* L1-R2 (bumpers) can be used for unlockable ariel attacks for Donogan later in the game, after completing a certain mission for each attack.
 
 L3 - Run toggle (just punch it, dont hold it)
 
@@ -80,7 +82,34 @@ circle - honk the horn. Will make Atreyu mad.
 R1,L1,R2,L2 - tricks when air born. You need speed to jump high.
 L3 cruise, R3 hover if unlocked
 
-Helpful keyboard stuff
+
+Keyboard Controls for game:
+
+Movement: WASD
+Camera / Aim: Arrow Keys
+
+Cross / X / Confirm / Jump: Space
+Square / Spell: J
+Circle / Roll: K
+Triangle / Interact / Exit Talk: E
+
+L1: Q
+R1: R
+L2 / Bow Aim: Left Shift
+R2 / Shoot: F
+
+L3 / Run Toggle: Left Ctrl
+R3 / Special / Summon / Hover Toggle: C
+
+D-Pad Up: I
+D-Pad Down: M
+D-Pad Left: U
+D-Pad Right: O
+
+Start / Pause/Menu: Enter
+Select: Tab
+
+Other Helpful keyboard stuff:
 
 F1 - full screen
 
@@ -90,19 +119,10 @@ F12 - take a screenshot
 
 Z - toggle day and night
 
-X/C - toggle the mouse capture
+B - show boxes
 
 V - toggle between truck mode and camera mode (Really useful if you just want to jump to the truck as donogan, but use triangle to exit)
-
-CTRL - (Possibly Left only I cant remember...) - toggle between donogan and camera mode.
-
- - I cant remember if camera mode works anymore, this program started as a map builder/previewer pair. That was the way to explore the map.
-
- - At this point its probably not very usable.
-
- - if you get stuck in a building, use V to jump to the truck.
-
-To talk to NPC's, press triangle when near them.
+		- if you get stuck in a building, use V to jump to the truck.
 
 
 Happy adventuring! Put on some FlannelKat and drive the truck around.

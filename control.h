@@ -149,6 +149,90 @@ const float maxSpeedReverse = -0.75f;
 float steerInput = 0; //gets set
 float verticalVelocity = 0; //gets set
 
+static void ApplyKeyboardToControllerData(ControllerData* out)
+{
+    if (!out) return;
+
+    // Left stick: movement
+    float lx = 0.0f;
+    float ly = 0.0f;
+
+    if (IsKeyDown(KEY_A)) lx -= 1.0f;
+    if (IsKeyDown(KEY_D)) lx += 1.0f;
+    if (IsKeyDown(KEY_W)) ly -= 1.0f;
+    if (IsKeyDown(KEY_S)) ly += 1.0f;
+
+    // Right stick: camera / aim
+    float rx = 0.0f;
+    float ry = 0.0f;
+
+    if (IsKeyDown(KEY_LEFT))  rx -= 1.0f;
+    if (IsKeyDown(KEY_RIGHT)) rx += 1.0f;
+    if (IsKeyDown(KEY_UP))    ry -= 1.0f;
+    if (IsKeyDown(KEY_DOWN))  ry += 1.0f;
+
+    // Normalize diagonal keyboard movement so WASD is not faster diagonally.
+    float lLen = sqrtf(lx * lx + ly * ly);
+    if (lLen > 1.0f) {
+        lx /= lLen;
+        ly /= lLen;
+    }
+
+    float rLen = sqrtf(rx * rx + ry * ry);
+    if (rLen > 1.0f) {
+        rx /= rLen;
+        ry /= rLen;
+    }
+
+    // Keyboard overwrites matching controller axes only when used.
+    if (lLen > 0.0f) {
+        out->lx = lx;
+        out->ly = ly;
+        out->normLX = lx;
+        out->normLY = ly;
+    }
+
+    if (rLen > 0.0f) {
+        out->rx = rx;
+        out->ry = ry;
+        out->normRX = rx;
+        out->normRY = ry;
+    }
+
+    // Face buttons, PS-style
+    if (IsKeyDown(KEY_J))          out->btnSquare = 1;   // Square
+    if (IsKeyDown(KEY_SPACE))      out->btnCross = 1;    // Cross / X / confirm / jump
+    if (IsKeyDown(KEY_K))          out->btnCircle = 1;   // Circle / roll / cancel-ish
+    if (IsKeyDown(KEY_E))          out->btnTriangle = 1; // Triangle / interact / exit talk
+
+    // Shoulder / trigger buttons
+    if (IsKeyDown(KEY_Q))          out->btnL1 = 1;
+    if (IsKeyDown(KEY_R))          out->btnR1 = 1;
+    if (IsKeyDown(KEY_LEFT_SHIFT)) out->btnL2 = 1;
+    if (IsKeyDown(KEY_F))          out->btnR2 = 1;
+
+    // Stick clicks
+    if (IsKeyDown(KEY_LEFT_CONTROL)) out->btnL3 = 1;
+    if (IsKeyDown(KEY_C))            out->btnR3 = 1;
+
+    // D-pad: IJKL, since arrow keys are right stick.
+    if (IsKeyDown(KEY_I)) out->dpad_up = 1;
+    if (IsKeyDown(KEY_M)) out->dpad_down = 1;
+    if (IsKeyDown(KEY_U)) out->dpad_left = 1;
+    if (IsKeyDown(KEY_O)) out->dpad_right = 1;
+
+    // Menu buttons
+    if (IsKeyDown(KEY_ENTER)) out->btnStart = 1;
+    if (IsKeyDown(KEY_TAB))   out->btnSelect = 1;
+
+    // Optional packed dpad value, if you ever use out->dpad directly.
+    out->dpad = 0;
+    if (out->dpad_up)    out->dpad |= 1;
+    if (out->dpad_down)  out->dpad |= 2;
+    if (out->dpad_left)  out->dpad |= 4;
+    if (out->dpad_right) out->dpad |= 8;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif // CONTROL_H
