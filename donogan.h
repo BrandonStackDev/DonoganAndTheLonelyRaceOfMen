@@ -2440,17 +2440,15 @@ static void DonInitGroundL1GuitarKeyframeGroups(Donogan* d)
         dash->keyFrames[k].kfBones[7].rot = QuatXYZDeg(24, 0, 0);  // forearm_R
         dash->keyFrames[k].kfBones[8].rot = QuatXYZDeg(0, 0, 2);  // hand_R
 
-        // Left planting leg back
-        // Flip thigh X only: was -48.
-        dash->keyFrames[k].kfBones[9].rot = QuatXYZDeg(48, 0, -12);  // thigh_L
-        dash->keyFrames[k].kfBones[10].rot = QuatXYZDeg(-36, 0, 0);  // shin_L
-        dash->keyFrames[k].kfBones[11].rot = QuatXYZDeg(0, 0, -6);  // foot_L
+        // Left planting leg: closer to center, a little back, mild bend
+        dash->keyFrames[k].kfBones[9].rot = QuatXYZDeg(28, 0, -4);  // thigh_L
+        dash->keyFrames[k].kfBones[10].rot = QuatXYZDeg(18, 0, 0);  // shin_L
+        dash->keyFrames[k].kfBones[11].rot = QuatXYZDeg(0, 0, -2);  // foot_L
 
-        // Right/front leg up, knee bent
-        // Flip thigh X only: was +54.
-        dash->keyFrames[k].kfBones[12].rot = QuatXYZDeg(-54, 0, 10);  // thigh_R
-        dash->keyFrames[k].kfBones[13].rot = QuatXYZDeg(78, 0, 0);  // shin_R
-        dash->keyFrames[k].kfBones[14].rot = QuatXYZDeg(8, 0, 6);  // foot_R
+        // Right/front leg: forward/up, knee bent, but not spread way out
+        dash->keyFrames[k].kfBones[12].rot = QuatXYZDeg(-40, 0, 6);  // thigh_R
+        dash->keyFrames[k].kfBones[13].rot = QuatXYZDeg(58, 0, 0);  // shin_R
+        dash->keyFrames[k].kfBones[14].rot = QuatXYZDeg(4, 0, 2);  // foot_R
     }
 
     // ---------------------------------------------------------------------
@@ -2533,9 +2531,10 @@ static void DonInitGroundL1GuitarKeyframeGroups(Donogan* d)
     swing->keyFrames[3].kfBones[1].rot = QuatXYZDeg(2, 0, 0);
     swing->keyFrames[3].kfBones[2].rot = QuatXYZDeg(4, 0, 0);
 
-    swing->keyFrames[3].kfBones[3].rot = QuatXYZDeg(42, -8, 18);
-    swing->keyFrames[3].kfBones[4].rot = QuatXYZDeg(56, 0, 0);
-    swing->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);
+    // KEY 3: recover / follow-through
+    swing->keyFrames[3].kfBones[3].rot = QuatXYZDeg(0, 0, 0);  // upper_arm_L
+    swing->keyFrames[3].kfBones[4].rot = QuatXYZDeg(0, 0, 0);  // forearm_L
+    swing->keyFrames[3].kfBones[5].rot = QuatXYZDeg(0, 0, 0);  // hand_L
 
     swing->keyFrames[3].kfBones[6].rot = QuatXYZDeg(18, 0, -8);
     swing->keyFrames[3].kfBones[7].rot = QuatXYZDeg(22, 0, 0);
