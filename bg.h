@@ -2639,6 +2639,9 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
     } break;
     }
 
+    b->yaw = Lerp(b->yaw, b->targetYaw, dt * 5.0f);
+    b->pitch = Lerp(b->pitch, 15.0f, dt * 4.0f);
+    b->roll = Lerp(b->roll, b->targetYaw, dt * 3.0f);
     BG_UpdateMainBox(b);
 }
 
