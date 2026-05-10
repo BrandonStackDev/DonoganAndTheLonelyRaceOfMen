@@ -347,7 +347,7 @@ static inline void Alister_StartRunAwayFromDonogan(BadGuy* b, Donogan* d)
     float gy = BG_GroundY(target);
     if (gy > -9000)
     {
-        target.y = gy;
+        target.y = gy + 3.7;
     }
     else
     {
@@ -2421,11 +2421,10 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         float gy = BG_GroundY(b->pos);
         if (gy > -9000)
         {
-            b->pos.y = gy;
+            b->pos.y = gy+3.7;
         }
 
-        if (Vector3DistanceSqr(b->pos, b->targetPos) <
-            ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST)
+        if (Vector3DistanceSqr(b->pos, b->targetPos) < ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST)
         {
             // If the Mech encounter has started, go back to command.
             // Otherwise chill.

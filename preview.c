@@ -5186,7 +5186,7 @@ int main(void) {
                     {
                         if (wrenchHit || guitarHit || punchHit)
                         {
-                            if (bg[b].state != ALISTER_STATE_HURT && bg[b].state >= ALISTER_STATE_COMMAND)
+                            if (bg[b].state == ALISTER_STATE_COMMAND)
                             {
                                 bg[b].health -= 25;
                                 bg[b].state = ALISTER_STATE_HURT;
