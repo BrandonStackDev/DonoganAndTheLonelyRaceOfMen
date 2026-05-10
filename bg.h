@@ -148,6 +148,7 @@ typedef enum {
     MECH_STATE_DEFEATED,
     MECH_STATE_ACTIVE,
     MECH_STATE_FLY,     // fly to a hover point
+    MECH_STATE_WARN,
     MECH_STATE_ATTACK   // drop toward Donogan and hit
 } MechState;
 
@@ -277,6 +278,9 @@ typedef struct {
     Color drawColor;
     bool     throwing;
     Vector3  throwVel;
+    Vector3 warnPos;
+    float warnTimer;
+    float warnSpin;
 
     bool bounced;
     float groundY;
@@ -297,6 +301,10 @@ BadGuy * bg;
 int total_bg_models_all_types, bg_count;
 
 void BG_SetAnimSafe(BadGuy* b, int animIndex, bool forceRestart);
+#define MECH_WARN_TIME          1.15f
+#define MECH_WARN_SPIN_SPEED  145.0f
+#define MECH_WARN_RADIUS       6.4f
+Texture2D mechWarnTexture;
 
 static inline BoundingBox UpdateBoundingBoxFromFeet(BoundingBox orig, Vector3 feetPos)
 {
@@ -339,6 +347,7 @@ void InitBadGuyModels(Shader ghostShader)
     Texture ali_tex = LoadMyTexture("textures/alister.png");
     Model mech_model = LoadModel("models/mech.obj");
     Texture mech_tex = LoadMyTexture("textures/mech.png");
+    mechWarnTexture = LoadMyTexture("textures/warn.png");
 
     for (int bg_t = 0; bg_t < BG_TYPE_COUNT; bg_t++)
     {
@@ -824,6 +833,53 @@ static inline Quaternion BG_BuildWorldQuat(const BadGuy* b) {
     return QuaternionMultiply(qWorld, BG_ModelFixQuat(b));  // apply local fix last
 }
 
+static inline void DrawMechWarningCircle(BadGuy* b)
+{
+    if (!b) return;
+    if (b->type != BG_MECH) return;
+    if (b->state != MECH_STATE_WARN) return;
+    if (mechWarnTexture.id == 0) return;
+
+    Vector3 c = b->warnPos;
+    c.y += 0.16f; // small lift above ground to avoid z-fighting
+
+    float half = MECH_WARN_RADIUS;
+    float a = b->warnSpin * DEG2RAD;
+
+    Vector3 right = {
+        cosf(a) * half,
+        0,
+        sinf(a) * half
+    };
+
+    Vector3 forward = {
+        -sinf(a) * half,
+        0,
+        cosf(a) * half
+    };
+
+    Vector3 p0 = Vector3Subtract(Vector3Subtract(c, right), forward);
+    Vector3 p1 = Vector3Add(Vector3Subtract(c, right), forward);
+    Vector3 p2 = Vector3Add(Vector3Add(c, right), forward);
+    Vector3 p3 = Vector3Subtract(Vector3Add(c, right), forward);
+
+    // Important: transparent decals should not write depth.
+    rlDisableDepthMask();
+
+    rlSetTexture(mechWarnTexture.id);
+    rlBegin(RL_QUADS);
+    rlColor4ub(255, 255, 255, 225);
+
+    rlTexCoord2f(0, 1); rlVertex3f(p0.x, p0.y, p0.z);
+    rlTexCoord2f(0, 0); rlVertex3f(p1.x, p1.y, p1.z);
+    rlTexCoord2f(1, 0); rlVertex3f(p2.x, p2.y, p2.z);
+    rlTexCoord2f(1, 1); rlVertex3f(p3.x, p3.y, p3.z);
+
+    rlEnd();
+    rlSetTexture(0);
+
+    rlEnableDepthMask();
+}
 static inline void DrawBadGuy(BadGuy * b) {
     if (!b || !b->active || b->gbm_index < 0) return;
     Vector3 drawPos = b->pos;
@@ -2223,9 +2279,9 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 }
 
 #define MECH_FLY_HEIGHT          34.0f
-#define MECH_ATTACK_HEIGHT        6.0f
-#define MECH_FLY_SPEED           44.0f
-#define MECH_ATTACK_SPEED        72.0f
+#define MECH_ATTACK_HEIGHT       14.0f
+#define MECH_FLY_SPEED           32.0f
+#define MECH_ATTACK_SPEED        42.0f
 #define MECH_REPLAN_DIST          7.0f
 #define MECH_HIT_DAMAGE          18
 #define MECH_HIT_SHAKE            0.65f
@@ -2263,7 +2319,7 @@ static inline void Mech_PickFlyTarget(BadGuy* b, Donogan* d)
 
     b->targetPos = p;
     b->targetYaw = BG_YawTo(b->pos, p);
-    b->targetPitch = 90; // keep your current mech orientation
+    b->targetPitch = 75; // keep your current mech orientation
     b->targetRoll = 0;
 
     b->state = MECH_STATE_FLY;
@@ -2320,29 +2376,67 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
 
         if (Vector3DistanceSqr(b->pos, b->targetPos) < MECH_REPLAN_DIST * MECH_REPLAN_DIST)
         {
-            // Now commit to a drop/attack point above Donogan.
-            b->targetPos = d->pos;
-            b->targetPos.y = d->pos.y + MECH_ATTACK_HEIGHT;
+            // Decide the attack position ONCE.
+            b->warnPos = d->pos;
 
-            b->targetYaw = BG_YawTo(b->pos, d->pos);
+            float gy = BG_GroundY(b->warnPos);
+            if (gy > -9000)
+            {
+                b->warnPos.y = gy + 0.08f; // tiny lift so it does not z-fight
+            }
+
+            // Mech waits above the target during warning.
+            b->targetPos = b->warnPos;
+            b->targetPos.y = b->warnPos.y + MECH_ATTACK_HEIGHT;
+
+            b->warnTimer = MECH_WARN_TIME;
+            b->warnSpin = 0;
+
+            b->targetYaw = BG_YawTo(b->pos, b->warnPos);
+            b->attackLanded = false;
+
+            b->state = MECH_STATE_WARN;
+        }
+    } break;
+    case MECH_STATE_WARN:
+    {
+        b->warnTimer -= dt;
+        b->warnSpin += MECH_WARN_SPIN_SPEED * dt;
+
+        // Hover over the chosen attack point while warning.
+        Vector3 hover = b->warnPos;
+        hover.y += MECH_ATTACK_HEIGHT;
+
+        b->targetPos = hover;
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_FLY_SPEED * 0.65f * dt);
+
+        b->targetYaw = BG_YawTo(b->pos, b->warnPos);
+        b->yaw = Lerp(b->yaw, b->targetYaw, dt * 4.0f);
+        b->pitch = Lerp(b->pitch, 15.0f, dt * 4.0f);
+        b->roll = Lerp(b->roll, 0.0f, dt * 4.0f);
+
+        if (b->warnTimer <= 0)
+        {
+            b->targetPos = b->warnPos;
+            b->targetPos.y = b->warnPos.y + MECH_ATTACK_HEIGHT;
+
             b->attackLanded = false;
             b->state = MECH_STATE_ATTACK;
         }
     } break;
-
     case MECH_STATE_ATTACK:
     {
         // Slight homing while attacking. This makes it scary but not perfectly unfair.
-        Vector3 attackTarget = d->pos;
-        attackTarget.y = d->pos.y + MECH_ATTACK_HEIGHT;
+        Vector3 attackTarget = b->warnPos;
+        attackTarget.y = b->warnPos.y + MECH_ATTACK_HEIGHT;
 
         b->targetPos = attackTarget;
-        b->targetYaw = BG_YawTo(b->pos, d->pos);
+        b->targetYaw = BG_YawTo(b->pos, b->warnPos);
 
         b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_ATTACK_SPEED * dt);
 
         b->yaw = Lerp(b->yaw, b->targetYaw, dt * 5.0f);
-        b->pitch = Lerp(b->pitch, 90.0f, dt * 4.0f);
+        b->pitch = Lerp(b->pitch, 15.0f, dt * 4.0f);
 
         BG_UpdateMainBox(b);
 

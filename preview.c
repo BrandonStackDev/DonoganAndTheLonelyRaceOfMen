@@ -5990,37 +5990,6 @@ int main(void) {
                     Platform_Draw(&plats[i], displayBoxes, caveMode);
                 }
             }
-            //bg
-            if (onLoad)
-            {
-                for (int i = 0; i < act_bg_count; i++)
-                {
-                    int b = act_bg[i];
-                    if (!bg[b].active) { continue; }
-                    if (!IsBoxInFrustum(bg[b].box, frustum)) { continue; }
-                    rlDisableBackfaceCulling();
-                    DrawBadGuy(&bg[b]);
-                    rlEnableBackfaceCulling();
-                    if (displayBoxes) { DrawBoundingBox(bg[b].box, PURPLE); }
-                    if (displayBoxes && bg[b].type == BG_SKELETON)
-                    {
-                        DrawBoundingBox(bg[b].box, RED);
-
-                        if (bg[b].state == SKELETON_STATE_KICK_ATTACK)
-                        {
-                            DrawBoundingBox(Skeleton_KickBox(&bg[b]), ORANGE);
-                        }
-                        else if (bg[b].state == SKELETON_STATE_GRAB_ATTACK)
-                        {
-                            DrawBoundingBox(Skeleton_SwipeBox(&bg[b]), PURPLE);
-                        }
-                        else if (bg[b].state == SKELETON_STATE_JUMP_ATTACK_AIR)
-                        {
-                            DrawBoundingBox(Skeleton_JumpAttackBox(&bg[b]), YELLOW);
-                        }
-                    }
-                }
-            }
             //whales and fish
             if (onLoad && !caveMode)
             {
@@ -6374,6 +6343,38 @@ int main(void) {
                                     //if (displayBoxes) { DrawBoundingBox(chunks[cx][cy].water[w].box, VIOLET); }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+            //bg
+            if (onLoad)
+            {
+                for (int i = 0; i < act_bg_count; i++)
+                {
+                    int b = act_bg[i];
+                    if (!bg[b].active) { continue; }
+                    DrawMechWarningCircle(&bg[b]);
+                    if (!IsBoxInFrustum(bg[b].box, frustum)) { continue; }
+                    rlDisableBackfaceCulling();
+                    DrawBadGuy(&bg[b]);
+                    rlEnableBackfaceCulling();
+                    if (displayBoxes) { DrawBoundingBox(bg[b].box, PURPLE); }
+                    if (displayBoxes && bg[b].type == BG_SKELETON)
+                    {
+                        DrawBoundingBox(bg[b].box, RED);
+
+                        if (bg[b].state == SKELETON_STATE_KICK_ATTACK)
+                        {
+                            DrawBoundingBox(Skeleton_KickBox(&bg[b]), ORANGE);
+                        }
+                        else if (bg[b].state == SKELETON_STATE_GRAB_ATTACK)
+                        {
+                            DrawBoundingBox(Skeleton_SwipeBox(&bg[b]), PURPLE);
+                        }
+                        else if (bg[b].state == SKELETON_STATE_JUMP_ATTACK_AIR)
+                        {
+                            DrawBoundingBox(Skeleton_JumpAttackBox(&bg[b]), YELLOW);
                         }
                     }
                 }
