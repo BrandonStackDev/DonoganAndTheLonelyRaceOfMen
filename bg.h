@@ -2412,7 +2412,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 
     case ALISTER_STATE_RUN:
     {
-        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * dt);
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 1024 * dt);
 
         b->yaw = Lerp(b->yaw, b->targetYaw, dt * 7.0f);
         b->pitch = Lerp(b->pitch, 0.0f, dt * 6.0f);
@@ -2458,7 +2458,8 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         // Idle / talk / command do not need movement yet.
     } break;
     }
-
+    if (b->yaw > 360) { b->yaw = 0; }
+    if (b->yaw < -360) { b->yaw = 0; }
     BG_UpdateMainBox(b);
 }
 static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
