@@ -1298,7 +1298,10 @@ static void Preview_ResolveGroundGuitarHit(Donogan* d)
     if (b->type != BG_GHOST)
     {
         BG_StartTruckRagdoll(b, impulse, 18.0f);
-        b->health = 0;
+        if (b->type != BG_ALISTER && b->type != BG_MECH)
+        {
+            b->health = 0;
+        }
     }
 
     TraceLog(LOG_INFO,
@@ -5017,11 +5020,11 @@ int main(void) {
                 if (bgCannotDealDamage) { continue; }
                 // Handstand of death:
                 // This happens before normal body-hit damage, so Don does not get hurt by touching the BG.
-                if (airR1Hit)
+                if (airR1Hit && bg[b].type != BG_ALISTER && bg[b].type != BG_MECH)
                 {
                     TraceLog(LOG_INFO, "HANDSTAND OF DEATH hit bad guy %d type=%d", b, bg[b].type);
 
-                    bg[b].health = 0; //make em easy, one more hit
+                    bg[b].health = 0;
 
                     Vector3 dir = Vector3Subtract(bg[b].pos, don.pos);
                     dir.y = 0.35f;

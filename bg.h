@@ -2408,11 +2408,13 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     case ALISTER_STATE_HURT:
     {
         Alister_StartRunAwayFromDonogan(b, d);
+        b->steerTimer = 0.65;
     } break;
 
     case ALISTER_STATE_RUN:
     {
-        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 1024 * dt);
+        b->steerTimer -= dt;
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 64 * dt);
 
         b->yaw = Lerp(b->yaw, b->targetYaw, dt * 7.0f);
         b->pitch = Lerp(b->pitch, 0.0f, dt * 6.0f);
@@ -2424,8 +2426,10 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
             b->pos.y = gy+3.7;
         }
 
-        if (Vector3DistanceSqr(b->pos, b->targetPos) < ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST)
+        if (Vector3DistanceSqr(b->pos, b->targetPos) < ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST
+            || b->steerTimer < 0)
         {
+            b->steerTimer = 0;
             // If the Mech encounter has started, go back to command.
             // Otherwise chill.
             b->state = ALISTER_STATE_COMMAND;
@@ -2435,11 +2439,11 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 
     case ALISTER_STATE_DEFEATED:
     {
-        d->alisterDead = true;
         b->pitch = Lerp(b->pitch, -90.0f, dt * 4.0f);
-
         if (fabsf(b->pitch + 90.0f) < 2.0f)
         {
+            d->alisterDead = true;
+            toast = "You defeated Alister! The land of Elyndor thanks you!";
             b->active = false;
             b->dead = true;
 
