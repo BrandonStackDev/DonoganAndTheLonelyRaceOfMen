@@ -24,6 +24,8 @@ typedef enum {
     BG_ROBO,
     BG_PUMPKIN_HOPPER,
     BG_SKELETON,
+    BG_ALISTER,
+    BG_MECH,
     BG_TYPE_COUNT
 } BadGuyType;
 
@@ -133,6 +135,19 @@ typedef enum {
     GHOST_STATE_HIT, //nothing yet, for when damage is taken
     GHOST_STATE_DEATH, //nothing yet, for death animation
 } GhostState;
+
+typedef enum {
+    ALISTER_STATE_IDLE,
+    ALISTER_STATE_TALK,
+    ALISTER_STATE_COMMAND,
+    ALISTER_STATE_RUN,
+    ALISTER_STATE_DEFEATED,
+} AlisterState;
+typedef enum {
+    MECH_STATE_IDLE,
+    MECH_STATE_DEFEATED,
+    MECH_STATE_ACTIVE
+} MechState;
 
 typedef enum {
     //for the yeti
@@ -317,6 +332,12 @@ void InitBadGuyModels(Shader ghostShader)
     int skel_animCount = 0;
     ModelAnimation* skel_anims = LoadModelAnimations("models/skeleton.glb", &skel_animCount);
 
+    //alister and mech
+    Model ali_model = LoadModel("models/alister.obj");
+    Texture ali_tex = LoadMyTexture("textures/alister.png");
+    Model mech_model = LoadModel("models/mech.obj");
+    Texture mech_tex = LoadMyTexture("textures/mech.png");
+
     for (int bg_t = 0; bg_t < BG_TYPE_COUNT; bg_t++)
     {
         for (int i = 0; i < MAX_BG_PER_TYPE_AT_ONCE; i++)
@@ -380,6 +401,44 @@ void InitBadGuyModels(Shader ghostShader)
 
                 bgModelBorrower[index].anims = skel_anims;
                 bgModelBorrower[index].animCount = skel_animCount;
+            }
+            else if (bg_t == BG_ALISTER)
+            {
+                bgModelBorrower[index].model = ali_model;
+                bgModelBorrower[index].tex = ali_tex;
+
+                if (bgModelBorrower[index].model.materialCount > 0 && bgModelBorrower[index].tex.id != 0)
+                {
+                    for (int m = 0; m < bgModelBorrower[index].model.materialCount; m++)
+                    {
+                        bgModelBorrower[index].model.materials[m].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
+                    }
+                }
+
+                //bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12);
+                bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
+
+                /*bgModelBorrower[index].anims = skel_anims;
+                bgModelBorrower[index].animCount = skel_animCount;*/
+            }
+            else if (bg_t == BG_MECH)
+            {
+                bgModelBorrower[index].model = mech_model;
+                bgModelBorrower[index].tex = mech_tex;
+
+                if (bgModelBorrower[index].model.materialCount > 0 && bgModelBorrower[index].tex.id != 0)
+                {
+                    for (int m = 0; m < bgModelBorrower[index].model.materialCount; m++)
+                    {
+                        bgModelBorrower[index].model.materials[m].maps[MATERIAL_MAP_DIFFUSE].texture = bgModelBorrower[index].tex;
+                    }
+                }
+
+                //bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12);
+                bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
+
+                /*bgModelBorrower[index].anims = skel_anims;
+                bgModelBorrower[index].animCount = skel_animCount;*/
             }
         }
     }
@@ -2164,6 +2223,49 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 }
 
 //create functions
+BadGuy CreateMech(Vector3 pos)
+{
+    BadGuy b = { 0 };
+    b.type = BG_MECH;
+    b.spawnPoint = pos;
+    b.spawnRadius = 1000000;
+    b.health = 10000000;
+    b.awareRadius = 700;
+    b.tetherRadius = 700;
+    b.gbm_index = -1;
+    b.active = false;
+    b.dead = false;
+    b.aware = false;
+    b.pos = pos;
+    b.pitch = 90;
+    b.scale = 12;
+    b.speed = 1;
+    //b.respawnTimer = CreateTimer(360);//6 minutes
+    //b.interactionTimer = CreateTimer(120);//2 minutes
+    b.drawColor = WHITE;
+    return b;
+}
+BadGuy CreateAlister(Vector3 pos)
+{
+    BadGuy b = { 0 };
+    b.type = BG_ALISTER;
+    b.spawnPoint = pos;
+    b.spawnRadius = 1000000;
+    b.awareRadius = 700;
+    b.tetherRadius = 700;
+    b.gbm_index = -1;
+    b.active = false;
+    b.dead = false;
+    b.aware = false;
+    b.pos = pos;
+    b.scale = 4;
+    b.speed = 1;
+    b.health = 1000;
+    //b.respawnTimer = CreateTimer(360);//6 minutes
+    //b.interactionTimer = CreateTimer(120);//2 minutes
+    b.drawColor = WHITE;
+    return b;
+}
 BadGuy CreateGhost(Vector3 pos)
 {
     BadGuy b = { 0 };
@@ -2297,7 +2399,7 @@ BadGuy CreateSkeleton(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 217; //increment this, every time, you add, a bg...
+    bg_count = 219; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -2554,6 +2656,10 @@ void InitBadGuys(Shader ghostShader)
     bg[214] = CreateSkeleton((Vector3) { -10019.24f, 10001.00f, -9899.24f });
     bg[215] = CreateSkeleton((Vector3) { -9988.51f, 10001.00f, -9877.22f });
     bg[216] = CreateSkeleton((Vector3) { -9976.92f, 10001.00f, -9898.58f });
+
+    //alister and the mech...
+    bg[217] = CreateAlister((Vector3) { -3788.46, 327.53, 1524.95 });
+    bg[218] = CreateMech((Vector3) { -3761.57, 327.53, 1545.34 });
 }
 
 static inline bool BG_HornRecentlyActive(Donogan* d)
@@ -2595,7 +2701,11 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
     for (int b = 0; b < act_bg_count; b++) {
         int i = act_bg[b];
         if (!bg[i].active) { continue; }
-        if (Vector3DistanceSqr(d->pos, bg[i].pos) > 800*800) //general guard to help enforce that when don is far away, bad guys get put away
+        if (bg[i].type == BG_ALISTER && bg[i].state < ALISTER_STATE_COMMAND) { continue; }
+        if (bg[i].type == BG_MECH && bg[i].state < MECH_STATE_ACTIVE) { continue; }
+        if (Vector3DistanceSqr(d->pos, bg[i].pos) > 800*800
+            && bg[i].type != BG_ALISTER 
+            && bg[i].type != BG_MECH) //general guard to help enforce that when don is far away, bad guys get put away
         {
             bg[i].active = false;
             bg[i].dead = true;

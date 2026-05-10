@@ -1,16 +1,16 @@
 DON_SAVE_V1
-don_pos = -606.818 791.614 2891.639
+don_pos = -3820.636 331.294 1335.770
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
-don_health = 8
-don_mana   = 84
-don_starthealth = 100
-don_startmana   = 100
-don_level  = 14
-don_xp     = 11171
-don_money     = 10984.000000
-don_hover  = 0
+don_health = 122
+don_mana   = 101
+don_starthealth = 122
+don_startmana   = 122
+don_level  = 17
+don_xp     = 16042
+don_money     = 9605.549805
+don_hover  = 1
 don_wiz  = 1
 don_gal_books = 0
 don_guitar = 1
@@ -22,7 +22,7 @@ ja_r1_unlocked = 1
 ja_r2_unlocked = 1
 invY = 0
 invX = 0
-musicVol = 1.0000
+musicVol = 0.0000
 soundVol = 1.0000
 difficulty = 1
 --FIREPLACES-BEGIN--
@@ -38,30 +38,30 @@ FIRE[8] = 1
 FIRE[9] = 1
 --FIREPLACES-END--
 --MACHINES-BEGIN--
-MACHINES[0] = 0
+MACHINES[0] = 1
 MACHINES[1] = 0
 MACHINES[2] = 0
 MACHINES[3] = 0
 MACHINES[4] = 0
 MACHINES[5] = 0
-MACHINES[6] = 0
+MACHINES[6] = 1
 MACHINES[7] = 0
 MACHINES[8] = 0
-MACHINES[9] = 0
+MACHINES[9] = 1
 MACHINES[10] = 1
 MACHINES[11] = 0
 --MACHINES-END--
 --MISSIONS-BEGIN--
-MISSION[0] = 0
+MISSION[0] = 1
 MISSION[1] = 0
 MISSION[2] = 0
-MISSION[3] = 0
-MISSION[4] = 0
+MISSION[3] = 1
+MISSION[4] = 1
 MISSION[5] = 0
-MISSION[6] = 0
+MISSION[6] = 1
 MISSION[7] = 0
-MISSION[8] = 0
-MISSION[9] = 0
+MISSION[8] = 1
+MISSION[9] = 1
 MISSION[10] = 0
 MISSION[11] = 0
 MISSION[12] = 0
@@ -72,42 +72,42 @@ MISSION[16] = 0
 --MISSIONS-END--
 --ITEMS-BEGIN--
 ITEM[0] = 0
-ITEM[1] = 0
+ITEM[1] = 1
 ITEM[2] = 0
-ITEM[3] = 0
-ITEM[4] = 0
+ITEM[3] = 1
+ITEM[4] = 1
 ITEM[5] = 0
 ITEM[6] = 0
 ITEM[7] = 1
-ITEM[8] = 0
+ITEM[8] = 1
 ITEM[9] = 0
 ITEM[10] = 0
-ITEM[11] = 0
+ITEM[11] = 1
 ITEM[12] = 0
-ITEM[13] = 0
-ITEM[14] = 0
+ITEM[13] = 1
+ITEM[14] = 1
 ITEM[15] = 0
 ITEM[16] = 0
 ITEM[17] = 1
-ITEM[18] = 0
+ITEM[18] = 1
 ITEM[19] = 0
 --ITEMS-END--
 --INV-BEGIN--
-INV[0] = 0
-INV[1] = 0
-INV[2] = 0
-INV[3] = 0
+INV[0] = 20
+INV[1] = 20
+INV[2] = 26
+INV[3] = 20
 INV[4] = 0
 INV[5] = 0
-INV[6] = 1
-INV[7] = 1
+INV[6] = 5
+INV[7] = 5
 --INV-END--
 --MAPS-BEGIN--
-MAP[0] = 0 0
-MAP[1] = 0 0
-MAP[2] = 0 0
+MAP[0] = 1 0
+MAP[1] = 1 0
+MAP[2] = 1 1
 MAP[3] = 0 0
 MAP[4] = 0 0
 MAP[5] = 0 0
-MAP[6] = 0 0
+MAP[6] = 1 0
 --MAPS-END--
