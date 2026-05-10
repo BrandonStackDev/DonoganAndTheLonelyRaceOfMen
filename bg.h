@@ -2284,7 +2284,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
 
     float distToDonSq = Vector3DistanceSqr(b->spawnPoint, d->pos);
     b->aware = distToDonSq < b->awareRadius * b->awareRadius;
-
+    if (!b->aware) { b->state = MECH_STATE_ACTIVE; }
     // Face Donogan unless we are flying to a chosen side point.
     b->targetYaw = BG_YawTo(b->pos, d->pos);
 
