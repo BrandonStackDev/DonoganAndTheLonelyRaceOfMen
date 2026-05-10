@@ -1,15 +1,15 @@
 DON_SAVE_V1
-don_pos = -3782.233 327.529 1543.171
+don_pos = -3768.101 327.529 1443.865
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
 don_health = 122
-don_mana   = 103
+don_mana   = 107
 don_starthealth = 122
 don_startmana   = 122
 don_level  = 28
 don_xp     = 16042
-don_money     = 10400.000000
+don_money     = 10368.000000
 don_hover  = 1
 don_wiz  = 1
 don_gal_books = 0

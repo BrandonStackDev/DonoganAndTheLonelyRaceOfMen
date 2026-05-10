@@ -301,7 +301,7 @@ BadGuy * bg;
 int total_bg_models_all_types, bg_count;
 
 void BG_SetAnimSafe(BadGuy* b, int animIndex, bool forceRestart);
-#define MECH_WARN_TIME          1.15f
+#define MECH_WARN_TIME          3
 #define MECH_WARN_SPIN_SPEED  145.0f
 #define MECH_WARN_RADIUS       6.4f
 Texture2D mechWarnTexture;
@@ -2422,6 +2422,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
 
             b->attackLanded = false;
             b->state = MECH_STATE_ATTACK;
+            b->warnTimer = MECH_WARN_TIME;
         }
     } break;
     case MECH_STATE_ATTACK:
@@ -2440,10 +2441,10 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
 
         BG_UpdateMainBox(b);
 
-        bool closeEnough = Vector3DistanceSqr(b->pos, attackTarget) < 10.0f * 10.0f;
+        //bool closeEnough = Vector3DistanceSqr(b->pos, attackTarget) < 10.0f * 10.0f;
         bool boxHit = CheckCollisionBoxes(b->box, d->outerBox) || CheckCollisionBoxes(b->box, d->box);
 
-        if (!b->attackLanded && HasTimerElapsed(&d->hitTimer) && (closeEnough || boxHit))
+        if (!b->attackLanded && HasTimerElapsed(&d->hitTimer) && boxHit)
         {
             Vector3 dir = Vector3Subtract(d->pos, b->pos);
             dir.y = 0;
@@ -2477,6 +2478,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->targetPos.y += MECH_FLY_HEIGHT;
 
             b->state = MECH_STATE_ACTIVE;
+            b->warnTimer = MECH_WARN_TIME;
         }
     } break;
 
