@@ -590,6 +590,8 @@ typedef struct {
     Vector3 posHistory[DON_POS_HISTORY_MAX];
     int posHistoryHead;
     int posHistoryCount;
+
+    bool alisterDead;
 } Donogan;
 
 typedef struct SpellBall {

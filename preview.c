@@ -4852,6 +4852,10 @@ int main(void) {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
                         Skeleton_KnockBackFromDonogan(&bg[b], &don, false);
                     }
+                    else if (bg[b].type == BG_ALISTER)
+                    {
+                        bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
+                    }
                 }
             }
         }
@@ -4897,6 +4901,10 @@ int main(void) {
                     bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
                     Skeleton_KnockBackFromDonogan(&bg[b], &don, false);
                     TraceLog(LOG_INFO, "Spell ball hit skeleton! hp=%d", bg[b].health);
+                }
+                else if (bg[b].type == BG_ALISTER)
+                {
+                    bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
                 }
             }
         }
@@ -4974,6 +4982,10 @@ int main(void) {
                 {
                     Skeleton_KnockBackFromDonogan(&bg[b], &don, true);
                 }
+                else if (bg[b].type == BG_ALISTER)
+                {
+                    //what to do here?
+                }
             }
         }
         //donny collision with bg
@@ -5043,6 +5055,10 @@ int main(void) {
                     {
                         Skeleton_KnockBackFromDonogan(&bg[b], &don, true);
                     }
+                    else if (bg[b].type == BG_ALISTER)
+                    {
+                        //what to do here?
+                    }
 
                     // Treat bad guy top like a temporary ground contact and bounce.
                     don.groundY = bg[b].box.max.y;
@@ -5051,7 +5067,7 @@ int main(void) {
 
                     continue;
                 }
-                else if (don.state != DONOGAN_STATE_AIR_R1_RELEASE) //todo: function, don attacking, and add all attack states there?
+                else if (don.state != DONOGAN_STATE_AIR_R1_RELEASE)
                 {
                     if (bg[b].type == BG_GHOST && HasTimerElapsed(&don.hitTimer))
                     {
@@ -5164,6 +5180,21 @@ int main(void) {
                         {
                             // Optional body bump. Do NOT damage Don just because the skeleton body touches him.
                             // Skeleton damage is handled by its attack boxes in bg.h now.
+                        }
+                    }
+                    else if (bg[b].type == BG_ALISTER)
+                    {
+                        if (wrenchHit || guitarHit || punchHit)
+                        {
+                            if (bg[b].state != ALISTER_STATE_HURT && bg[b].state >= ALISTER_STATE_COMMAND)
+                            {
+                                bg[b].health -= 25;
+                                bg[b].state = ALISTER_STATE_HURT;
+                                TraceLog(LOG_WARNING, "Don hit Alister! hp=%d", bg[b].health);
+                            }
+                        }
+                        else if (bodyHit)
+                        {
                         }
                     }
                 }
@@ -5353,7 +5384,7 @@ int main(void) {
         }
         if (vehicleMode) { UpdateTruckBoxes(); }
         //update bg
-        if (onLoad && donnyMode && loop_counter%69==0 && CheckSpawnAndActivateNext(don.pos)) //hopefully we support short circuiting, I would assume
+        if (onLoad && donnyMode && loop_counter%69==0 && CheckSpawnAndActivateNext(don.pos, &don)) //hopefully we support short circuiting, I would assume
         { 
             TraceLog(LOG_INFO, "Uh Oh! Here Comes Trouble...!"); 
         }

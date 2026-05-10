@@ -141,6 +141,7 @@ typedef enum {
     ALISTER_STATE_TALK,
     ALISTER_STATE_COMMAND,
     ALISTER_STATE_RUN,
+    ALISTER_STATE_HURT,
     ALISTER_STATE_DEFEATED,
 } AlisterState;
 typedef enum {
@@ -306,6 +307,61 @@ void BG_SetAnimSafe(BadGuy* b, int animIndex, bool forceRestart);
 #define MECH_WARN_RADIUS       6.4f
 Texture2D mechWarnTexture;
 
+#define ALISTER_RUN_AWAY_DIST      34.0f
+#define ALISTER_RUN_SPEED          15.0f
+#define ALISTER_RUN_ARRIVE_DIST     3.5f
+
+static inline Vector3 BG_ForwardFromYawDeg(float yawDeg);
+
+static inline void Alister_StartRunAwayFromDonogan(BadGuy* b, Donogan* d)
+{
+    if (!b || !d) return;
+
+    Vector3 away = Vector3Subtract(b->pos, d->pos);
+    away.y = 0;
+
+    if (Vector3LengthSqr(away) < 0.0001f)
+    {
+        away = BG_ForwardFromYawDeg(b->yaw);
+    }
+    else
+    {
+        away = Vector3Normalize(away);
+    }
+
+    Vector3 target = Vector3Add(b->pos, Vector3Scale(away, ALISTER_RUN_AWAY_DIST));
+
+    // Optional: keep him from running too far from his post.
+    if (Vector3DistanceSqr(target, b->spawnPoint) > b->spawnRadius * b->spawnRadius)
+    {
+        Vector3 backToPost = Vector3Subtract(b->spawnPoint, b->pos);
+        backToPost.y = 0;
+
+        if (Vector3LengthSqr(backToPost) > 0.0001f)
+        {
+            backToPost = Vector3Normalize(backToPost);
+            target = Vector3Add(b->pos, Vector3Scale(backToPost, ALISTER_RUN_AWAY_DIST * 0.65f));
+        }
+    }
+
+    float gy = BG_GroundY(target);
+    if (gy > -9000)
+    {
+        target.y = gy;
+    }
+    else
+    {
+        target.y = b->pos.y;
+    }
+
+    b->targetPos = target;
+    b->targetYaw = BG_YawTo(b->pos, target);
+    b->targetPitch = 0;
+    b->targetRoll = 0;
+    b->vel = (Vector3){ 0 };
+
+    b->state = ALISTER_STATE_RUN;
+}
 static inline BoundingBox UpdateBoundingBoxFromFeet(BoundingBox orig, Vector3 feetPos)
 {
     return (BoundingBox) {
@@ -2278,8 +2334,8 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     }
 }
 
-#define MECH_FLY_HEIGHT          34.0f
-#define MECH_ATTACK_HEIGHT       14.0f
+#define MECH_FLY_HEIGHT          52
+#define MECH_ATTACK_HEIGHT       14
 #define MECH_FLY_SPEED           32.0f
 #define MECH_ATTACK_SPEED        42.0f
 #define MECH_REPLAN_DIST          7.0f
@@ -2326,6 +2382,84 @@ static inline void Mech_PickFlyTarget(BadGuy* b, Donogan* d)
 }
 static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 {
+    if (!b || !d) return;
+
+    if (b->health <= 0 && b->state < ALISTER_STATE_COMMAND)
+    {
+        b->health = b->startHealth;
+        d->alisterDead = false;
+    }
+
+    if (d->alisterDead)
+    {
+        b->dead = true; b->active = false;
+        return;
+    }
+
+    if (b->health <= 0 && b->state != ALISTER_STATE_DEFEATED)
+    {
+        b->state = ALISTER_STATE_DEFEATED;
+        b->targetPos = b->pos;
+        b->vel = (Vector3){ 0 };
+    }
+
+    switch (b->state)
+    {
+    case ALISTER_STATE_HURT:
+    {
+        Alister_StartRunAwayFromDonogan(b, d);
+    } break;
+
+    case ALISTER_STATE_RUN:
+    {
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * dt);
+
+        b->yaw = Lerp(b->yaw, b->targetYaw, dt * 7.0f);
+        b->pitch = Lerp(b->pitch, 0.0f, dt * 6.0f);
+        b->roll = Lerp(b->roll, 0.0f, dt * 6.0f);
+
+        float gy = BG_GroundY(b->pos);
+        if (gy > -9000)
+        {
+            b->pos.y = gy;
+        }
+
+        if (Vector3DistanceSqr(b->pos, b->targetPos) <
+            ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST)
+        {
+            // If the Mech encounter has started, go back to command.
+            // Otherwise chill.
+            b->state = ALISTER_STATE_COMMAND;
+            b->targetPos = b->pos;
+        }
+    } break;
+
+    case ALISTER_STATE_DEFEATED:
+    {
+        d->alisterDead = true;
+        b->pitch = Lerp(b->pitch, -90.0f, dt * 4.0f);
+
+        if (fabsf(b->pitch + 90.0f) < 2.0f)
+        {
+            b->active = false;
+            b->dead = true;
+
+            if (b->gbm_index >= 0)
+            {
+                bgModelBorrower[b->gbm_index].isInUse = false;
+            }
+
+            b->gbm_index = -1;
+            d->xp += 5000;
+        }
+    } break;
+
+    default:
+    {
+        // Idle / talk / command do not need movement yet.
+    } break;
+    }
+
     BG_UpdateMainBox(b);
 }
 static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
@@ -2335,6 +2469,11 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
     if (b->state < MECH_STATE_ACTIVE)
     {
         BG_UpdateMainBox(b);
+        return;
+    }
+    if (d->alisterDead)
+    {
+        b->state = MECH_STATE_DEFEATED;
         return;
     }
 
@@ -2484,7 +2623,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
 
     case MECH_STATE_DEFEATED:
     {
-        b->targetPos = b->pos;
+        b->targetPos = b->spawnPoint;
         b->targetPos.y = BG_GroundY(b->pos);
         b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, 30.0f * dt);
     } break;
@@ -3187,11 +3326,12 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
 
 
 //only activate one per call
-bool CheckSpawnAndActivateNext(Vector3 pos)
+bool CheckSpawnAndActivateNext(Vector3 pos, Donogan * d)
 {
     for (int b = 0; b < bg_count; b++)
     {
         if (bg[b].active) { continue; }//if its turned on, dont turn it on again
+        if (d->alisterDead && bg[b].type == BG_ALISTER) { continue; }
         else 
         {
             if (Vector3DistanceSqr(pos, bg[b].spawnPoint) < bg[b].spawnRadius * bg[b].spawnRadius && (!bg[b].respawnTimer.running || HasTimerElapsed(&bg[b].respawnTimer)))
@@ -3248,7 +3388,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                         bg[b].state = SKELETON_STATE_RISE;
                         BG_SetAnimSafe(&bg[b], ANIM_SKEL_RISE, true);
                     }
-                    else if (bg[b].type == BG_ALISTER)
+                    else if (bg[b].type == BG_ALISTER && !d->alisterDead)
                     {
                         float gy = GetTerrainHeightFromMeshXZ(bg[b].spawnPoint.x, bg[b].spawnPoint.z);
                         if (gy < -9000) gy = bg[b].spawnPoint.y;
