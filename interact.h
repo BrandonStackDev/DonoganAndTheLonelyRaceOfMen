@@ -29,7 +29,10 @@ typedef enum {
     TALK_TYPE_GEOFF,
     TALK_TYPE_MARY,
     TALK_TYPE_JARED,
-    TALK_TYPE_STORE
+    TALK_TYPE_STORE,
+    TALK_TYPE_ALISTER_1, // no shadow books
+    TALK_TYPE_ALISTER_2, // has shadow books, asks yes/no
+    TALK_TYPE_ALISTER_3, // gave all 10, mech wakes up
 } TALK_TYPE;
 static TALK_TYPE g_currentTalkWho = TALK_TYPE_TOL; // sane default
 
@@ -391,6 +394,43 @@ static TalkData talkData[] = {
         "No, sometimes he likes to look for whales tho, off the coast. Maybe he is down the road near the open sea?"
     },
     3,
+    TALK_OPTION_OK
+},
+{
+    TALK_TYPE_ALISTER_1,
+    "Alister",
+    {
+        "Donogan. You found me.",
+        "I require the shadow books.",
+        "Bring them to me. All ten.",
+        "The work is almost complete."
+    },
+    4,
+    TALK_OPTION_OK
+},
+{
+    TALK_TYPE_ALISTER_2,
+    "Alister",
+    {
+        "Ahhh, shadow books.",
+        "Give them to me, Donogan.",
+        "Press X to hand them over, or Triangle to refuse."
+    },
+    3,
+    TALK_OPTION_YES_NO
+},
+{
+    TALK_TYPE_ALISTER_3,
+    "Alister",
+    {
+        "Ten shadow books. Perfect.",
+        "The ink remembers what men forget.",
+        "I created the Mech to be my worker.",
+        "My tireless hand. My iron servant.",
+        "Mwahahaha!",
+        "Rise, Mech. We have work to do."
+    },
+    6,
     TALK_OPTION_OK
 },
 };

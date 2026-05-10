@@ -2222,14 +2222,24 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     }
 }
 
+static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
+{
+    BG_UpdateMainBox(b);
+}
+static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
+{
+    BG_UpdateMainBox(b);
+}
+
 //create functions
 BadGuy CreateMech(Vector3 pos)
 {
     BadGuy b = { 0 };
     b.type = BG_MECH;
     b.spawnPoint = pos;
-    b.spawnRadius = 1000000;
+    b.spawnRadius = 10000;
     b.health = 10000000;
+    b.startHealth = b.health;
     b.awareRadius = 700;
     b.tetherRadius = 700;
     b.gbm_index = -1;
@@ -2243,6 +2253,7 @@ BadGuy CreateMech(Vector3 pos)
     //b.respawnTimer = CreateTimer(360);//6 minutes
     //b.interactionTimer = CreateTimer(120);//2 minutes
     b.drawColor = WHITE;
+    BG_UpdateMainBox(&b);
     return b;
 }
 BadGuy CreateAlister(Vector3 pos)
@@ -2250,7 +2261,7 @@ BadGuy CreateAlister(Vector3 pos)
     BadGuy b = { 0 };
     b.type = BG_ALISTER;
     b.spawnPoint = pos;
-    b.spawnRadius = 1000000;
+    b.spawnRadius = 10000;
     b.awareRadius = 700;
     b.tetherRadius = 700;
     b.gbm_index = -1;
@@ -2260,10 +2271,12 @@ BadGuy CreateAlister(Vector3 pos)
     b.pos = pos;
     b.scale = 4;
     b.speed = 1;
-    b.health = 1000;
+    b.health = 800;
+    b.startHealth = b.health;
     //b.respawnTimer = CreateTimer(360);//6 minutes
     //b.interactionTimer = CreateTimer(120);//2 minutes
     b.drawColor = WHITE;
+    BG_UpdateMainBox(&b);
     return b;
 }
 BadGuy CreateGhost(Vector3 pos)
@@ -2841,6 +2854,14 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         {
             BG_Update_Skeleton(d, &bg[i], dt);
         }
+        else if (bg[i].type == BG_ALISTER)
+        {
+            BG_Update_Alister(d, &bg[i], dt);
+        }
+        else if (bg[i].type == BG_MECH)
+        {
+            BG_Update_Mech(d, &bg[i], dt);
+        }
         if (bg[i].active && bg[i].gbm_index >= 0)
         {
             //update boxes and height hacks
@@ -2959,6 +2980,37 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                         bg[b].roll = 0;
                         bg[b].state = SKELETON_STATE_RISE;
                         BG_SetAnimSafe(&bg[b], ANIM_SKEL_RISE, true);
+                    }
+                    else if (bg[b].type == BG_ALISTER)
+                    {
+                        float gy = GetTerrainHeightFromMeshXZ(bg[b].spawnPoint.x, bg[b].spawnPoint.z);
+                        if (gy < -9000) gy = bg[b].spawnPoint.y;
+
+                        bg[b].spawnPoint.y = gy;
+                        bg[b].pos = bg[b].spawnPoint;
+                        bg[b].targetPos = bg[b].spawnPoint;
+                        bg[b].pos.y += 3.5;
+                        bg[b].vel = (Vector3){ 0 };
+                        bg[b].yaw = 0;
+                        bg[b].pitch = 0;
+                        bg[b].roll = 0;
+                        bg[b].state = ALISTER_STATE_IDLE;
+                        BG_UpdateMainBox(&bg[b]);
+                    }
+                    else if (bg[b].type == BG_MECH)
+                    {
+                        float gy = GetTerrainHeightFromMeshXZ(bg[b].spawnPoint.x, bg[b].spawnPoint.z);
+                        if (gy < -9000) gy = bg[b].spawnPoint.y;
+
+                        bg[b].spawnPoint.y = gy;
+                        bg[b].pos = bg[b].spawnPoint;
+                        bg[b].targetPos = bg[b].spawnPoint;
+                        bg[b].vel = (Vector3){ 0 };
+                        bg[b].yaw = 0;
+                        bg[b].pitch = 90;
+                        bg[b].roll = 0;
+                        bg[b].state = MECH_STATE_IDLE;
+                        BG_UpdateMainBox(&bg[b]);
                     }
                     return true;
                 }

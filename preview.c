@@ -1283,6 +1283,128 @@ static void Preview_ResolveGroundGuitarHit(Donogan* d)
         bi, b->type, impulse.x, impulse.y, impulse.z
     );
 }
+#define ALISTER_BOOK_GOAL 10
+#define ALISTER_BOOK_PRICE 80
+
+static BadGuy* FindNearbyBadGuyByType(BadGuyType type, Vector3 pos, float radius)
+{
+    if (!bg) return NULL;
+
+    BadGuy* best = NULL;
+    float bestDistSq = radius * radius;
+
+    for (int i = 0; i < bg_count; i++)
+    {
+        if (bg[i].type != type) continue;
+        if (bg[i].dead) continue;
+
+        float d2 = Vector3DistanceSqr(bg[i].pos, pos);
+        if (d2 < bestDistSq)
+        {
+            bestDistSq = d2;
+            best = &bg[i];
+        }
+    }
+
+    return best;
+}
+
+static TALK_TYPE Alister_GetTalkType(Donogan* d)
+{
+    if (!d) return TALK_TYPE_ALISTER_1;
+
+    if (d->aliBooksGiven >= ALISTER_BOOK_GOAL || missions[MISSION_ALISTER].complete)
+    {
+        return TALK_TYPE_ALISTER_3;
+    }
+
+    if (inventory[INV_EVIL_BOOK].count > 0)
+    {
+        return TALK_TYPE_ALISTER_2;
+    }
+
+    return TALK_TYPE_ALISTER_1;
+}
+
+static void Alister_ActivateMech(void)
+{
+    for (int i = 0; i < bg_count; i++)
+    {
+        if (bg[i].type == BG_ALISTER)
+        {
+            bg[i].state = ALISTER_STATE_COMMAND;
+            bg[i].targetPos = bg[i].pos;
+        }
+        else if (bg[i].type == BG_MECH)
+        {
+            bg[i].state = MECH_STATE_ACTIVE;
+            bg[i].active = true; // usually already true from spawn, but this makes intent clear
+            bg[i].dead = false;
+            bg[i].targetPos = bg[i].pos;
+        }
+    }
+}
+
+char alisterToast[128];
+
+static void Alister_GiveBooks(Donogan* d)
+{
+    if (!d) return;
+
+    if (d->aliBooksGiven >= ALISTER_BOOK_GOAL)
+    {
+        d->who = TALK_TYPE_ALISTER_3;
+        Talk_Reset(d->who);
+        Alister_ActivateMech();
+        return;
+    }
+
+    int needed = ALISTER_BOOK_GOAL - d->aliBooksGiven;
+    int available = inventory[INV_EVIL_BOOK].count;
+
+    if (available <= 0)
+    {
+        toast = "You do not have any shadow books.";
+        StartTimer(&toastTimer);
+        FinishTalking(d);
+        return;
+    }
+
+    int giveCount = available;
+    if (giveCount > needed) giveCount = needed;
+
+    inventory[INV_EVIL_BOOK].count -= giveCount;
+    d->aliBooksGiven += giveCount;
+    d->money += (float)giveCount * ALISTER_BOOK_PRICE;
+
+    snprintf(alisterToast, sizeof(alisterToast),
+        "Gave %d shadow book%s to Alister.",
+        giveCount,
+        giveCount == 1 ? "" : "s");
+
+    toast = alisterToast;
+    StartTimer(&toastTimer);
+    PlaySoundVolContinuousAllowed(menuSaveOrLoad);
+
+    if (d->aliBooksGiven >= ALISTER_BOOK_GOAL)
+    {
+        d->alisterEvilRevealed = 1;
+        d->aliBooksGiven = ALISTER_BOOK_GOAL;
+        missions[MISSION_ALISTER].complete = true;
+
+        toast = "Alister activated the Mech!";
+        StartTimer(&toastTimer);
+
+        Alister_ActivateMech();
+
+        d->who = TALK_TYPE_ALISTER_3;
+        Talk_Reset(d->who);
+    }
+    else
+    {
+        FinishTalking(d);
+    }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2685,7 +2807,26 @@ int main(void) {
                         prevTalkTri = gpad.btnTriangle;
                         prevTalkX = gpad.btnCross;
                         StartTimer(&don.talkStartTimer);
-                        }
+                }
+                else if (!don.isTalking && HasTimerElapsed(&don.talkStartTimer) && !don.alisterEvilRevealed)
+                {
+                    BadGuy* alister = FindNearbyBadGuyByType(BG_ALISTER, don.pos, 14.0f);
+
+                    if (alister)
+                    {
+                        don.isTalking = true;
+                        don.who = Alister_GetTalkType(&don);
+
+                        alister->state = ALISTER_STATE_TALK;
+                        alister->targetPos = alister->pos;
+
+                        Talk_Reset(don.who);
+
+                        prevTalkTri = gpad.btnTriangle;
+                        prevTalkX = gpad.btnCross;
+                        StartTimer(&don.talkStartTimer);
+                    }
+                }
                 if (!don.isTalking && HasTimerElapsed(&don.talkStartTimer))
                 { //stores
                     NPC* clerk = NULL;
@@ -3221,6 +3362,10 @@ int main(void) {
                 else if (don.who == TALK_TYPE_GAL_2)
                 {
                     Galadriel_GiveBooks(&don);
+                }
+                else if (don.who == TALK_TYPE_ALISTER_2)
+                {
+                    Alister_GiveBooks(&don);
                 }
             }
             else if (talkResult == TALK_RESULT_NO || talkResult == TALK_RESULT_FINISHED)
