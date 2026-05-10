@@ -150,6 +150,7 @@ typedef enum {
     MECH_STATE_FLY,     // fly to a hover point
     MECH_STATE_WARN,
     MECH_STATE_ATTACK,   // drop toward Donogan and hit
+    MECH_STATE_FALLBACK,
     MECH_STATE_DEFEATED,
 } MechState;
 
@@ -2380,12 +2381,13 @@ static inline void Mech_PickFlyTarget(BadGuy* b, Donogan* d)
 
     b->state = MECH_STATE_FLY;
 }
+Vector3* aliPos;
 static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 {
     if (!b || !d) return;
-
     if (b->health <= 0 && b->state < ALISTER_STATE_COMMAND)
     {
+        aliPos = &b->pos;
         b->health = b->startHealth;
         d->alisterDead = false;
     }
@@ -2504,10 +2506,46 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->yaw = Lerp(b->yaw, b->targetYaw, dt * 2.0f);
             break;
         }
-
+        if (Vector3DistanceSqr(d->pos, *aliPos) < 120*120 
+            && Vector3DistanceSqr(d->pos, *aliPos) < Vector3DistanceSqr(b->pos, *aliPos)) //120
+        {
+            Vector3 blockPath = Vector3Scale(Vector3Normalize(Vector3Subtract(d->pos, *aliPos)), 28);
+            b->targetPos = Vector3Add(d->pos, blockPath);
+            b->targetPitch = 15;
+            b->targetYaw = BG_YawTo(b->pos, b->targetPos);
+            b->state = MECH_STATE_FALLBACK;
+        }
         Mech_PickFlyTarget(b, d);
     } break;
+    case MECH_STATE_FALLBACK:
+    {
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_ATTACK_SPEED * dt);
+        if (Vector3DistanceSqr(b->pos, b->targetPos) < MECH_REPLAN_DIST * MECH_REPLAN_DIST)
+        {
+            // Decide the attack position ONCE.
+            b->warnPos = d->pos;
 
+            float gy = BG_GroundY(b->warnPos);
+            if (gy > -9000)
+            {
+                b->warnPos.y = gy + 0.08f; // tiny lift so it does not z-fight
+            }
+
+            // Mech waits above the target during warning.
+            b->targetPos = b->warnPos;
+            b->targetPos.y = b->warnPos.y + MECH_ATTACK_HEIGHT;
+
+            b->warnTimer = MECH_WARN_TIME - 1;//less time here
+            if (gGame.diff == DIFF_EASY) { b->warnTimer++; }
+            if (gGame.diff == DIFF_HARD) { b->warnTimer--; }
+            b->warnSpin = 0;
+
+            b->targetYaw = BG_YawTo(b->pos, b->warnPos);
+            b->attackLanded = false;
+
+            b->state = MECH_STATE_WARN;
+        }
+    } break;
     case MECH_STATE_FLY:
     {
         b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_FLY_SPEED * dt);
@@ -2532,6 +2570,8 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->targetPos.y = b->warnPos.y + MECH_ATTACK_HEIGHT;
 
             b->warnTimer = MECH_WARN_TIME;
+            if (gGame.diff == DIFF_EASY) { b->warnTimer++; }
+            if (gGame.diff == DIFF_HARD) { b->warnTimer--; }
             b->warnSpin = 0;
 
             b->targetYaw = BG_YawTo(b->pos, b->warnPos);
@@ -3419,6 +3459,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos, Donogan * d)
 
                         bg[b].spawnPoint.y = gy;
                         bg[b].pos = bg[b].spawnPoint;
+                        aliPos = &bg[b].pos;
                         bg[b].targetPos = bg[b].spawnPoint;
                         bg[b].vel = (Vector3){ 0 };
                         bg[b].yaw = 0;
