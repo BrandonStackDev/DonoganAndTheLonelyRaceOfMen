@@ -2628,8 +2628,10 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
     case MECH_STATE_DEFEATED:
     {
         b->targetPos = b->spawnPoint;
-        b->targetPos.y = BG_GroundY(b->pos);
+        float targetY = BG_GroundY(b->pos) + 14;
+        b->targetPos.y = targetY;
         b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, 30.0f * dt);
+        if (b->pos.y < targetY) {b->pos.y = targetY;}
     } break;
 
     default:
