@@ -146,11 +146,11 @@ typedef enum {
 } AlisterState;
 typedef enum {
     MECH_STATE_IDLE,
-    MECH_STATE_DEFEATED,
     MECH_STATE_ACTIVE,
     MECH_STATE_FLY,     // fly to a hover point
     MECH_STATE_WARN,
-    MECH_STATE_ATTACK   // drop toward Donogan and hit
+    MECH_STATE_ATTACK,   // drop toward Donogan and hit
+    MECH_STATE_DEFEATED,
 } MechState;
 
 typedef enum {
@@ -2478,7 +2478,6 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
     if (d->alisterDead)
     {
         b->state = MECH_STATE_DEFEATED;
-        return;
     }
 
     float distToDonSq = Vector3DistanceSqr(b->spawnPoint, d->pos);
@@ -2628,7 +2627,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
     case MECH_STATE_DEFEATED:
     {
         b->targetPos = b->spawnPoint;
-        float targetY = BG_GroundY(b->pos) + 14;
+        float targetY = BG_GroundY(b->pos) + 12;
         b->targetPos.y = targetY;
         b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, 30.0f * dt);
         if (b->pos.y < targetY) {b->pos.y = targetY;}
