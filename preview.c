@@ -42,6 +42,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void Alister_ActivateMech(void)
+{
+    for (int i = 0; i < bg_count; i++)
+    {
+        if (bg[i].type == BG_ALISTER)
+        {
+            bg[i].state = ALISTER_STATE_COMMAND;
+            bg[i].targetPos = bg[i].pos;
+        }
+        else if (bg[i].type == BG_MECH)
+        {
+            bg[i].state = MECH_STATE_ACTIVE;
+            bg[i].active = true; // usually already true from spawn, but this makes intent clear
+            bg[i].dead = false;
+            bg[i].targetPos = bg[i].pos;
+        }
+    }
+}
+
 static bool Preview_FindAirR2Target(const Donogan* d, Vector3 spawn, Vector3* outTarget)
 {
     if (!d || !outTarget) return false;
@@ -503,6 +522,10 @@ static void FinishTalking(Donogan* d)
         Vector3 wp = npcs[NPC_WIZARD].pos; //wizard position
         wp.y -= 2;
         DustPuff_Spawn(wp);
+    }
+    if (d->who == TALK_TYPE_ALISTER_3)
+    {
+        Alister_ActivateMech();
     }
     //abby not needed, galdriel not needed?, new guys not needed
 }
@@ -1324,25 +1347,6 @@ static TALK_TYPE Alister_GetTalkType(Donogan* d)
     }
 
     return TALK_TYPE_ALISTER_1;
-}
-
-static void Alister_ActivateMech(void)
-{
-    for (int i = 0; i < bg_count; i++)
-    {
-        if (bg[i].type == BG_ALISTER)
-        {
-            bg[i].state = ALISTER_STATE_COMMAND;
-            bg[i].targetPos = bg[i].pos;
-        }
-        else if (bg[i].type == BG_MECH)
-        {
-            bg[i].state = MECH_STATE_ACTIVE;
-            bg[i].active = true; // usually already true from spawn, but this makes intent clear
-            bg[i].dead = false;
-            bg[i].targetPos = bg[i].pos;
-        }
-    }
 }
 
 char alisterToast[128];

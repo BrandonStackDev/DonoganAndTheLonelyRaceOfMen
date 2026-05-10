@@ -146,7 +146,9 @@ typedef enum {
 typedef enum {
     MECH_STATE_IDLE,
     MECH_STATE_DEFEATED,
-    MECH_STATE_ACTIVE
+    MECH_STATE_ACTIVE,
+    MECH_STATE_FLY,     // fly to a hover point
+    MECH_STATE_ATTACK   // drop toward Donogan and hit
 } MechState;
 
 typedef enum {
@@ -415,8 +417,7 @@ void InitBadGuyModels(Shader ghostShader)
                     }
                 }
 
-                //bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12);
-                bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
+                bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 4);
 
                 /*bgModelBorrower[index].anims = skel_anims;
                 bgModelBorrower[index].animCount = skel_animCount;*/
@@ -434,8 +435,7 @@ void InitBadGuyModels(Shader ghostShader)
                     }
                 }
 
-                //bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 1.12);
-                bgModelBorrower[index].origBox = GetModelBoundingBox(bgModelBorrower[index].model);
+                bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 12);
 
                 /*bgModelBorrower[index].anims = skel_anims;
                 bgModelBorrower[index].animCount = skel_animCount;*/
@@ -2222,12 +2222,183 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
     }
 }
 
+#define MECH_FLY_HEIGHT          34.0f
+#define MECH_ATTACK_HEIGHT        6.0f
+#define MECH_FLY_SPEED           44.0f
+#define MECH_ATTACK_SPEED        72.0f
+#define MECH_REPLAN_DIST          7.0f
+#define MECH_HIT_DAMAGE          18
+#define MECH_HIT_SHAKE            0.65f
+#define MECH_HIT_KNOCKBACK       16.0f
+
+static inline Vector3 BG_MoveTowardVec3(Vector3 from, Vector3 to, float maxStep)
+{
+    Vector3 delta = Vector3Subtract(to, from);
+    float len = Vector3Length(delta);
+
+    if (len <= 0.0001f || len <= maxStep)
+    {
+        return to;
+    }
+
+    return Vector3Add(from, Vector3Scale(delta, maxStep / len));
+}
+
+static inline void Mech_PickFlyTarget(BadGuy* b, Donogan* d)
+{
+    float a = (float)GetRandomValue(0, 359) * DEG2RAD;
+    float r = (float)GetRandomValue(28, 75);
+
+    Vector3 p = {
+        d->pos.x + sinf(a) * r,
+        d->pos.y + MECH_FLY_HEIGHT,
+        d->pos.z + cosf(a) * r
+    };
+
+    float gy = BG_GroundY(p);
+    if (gy > -9000)
+    {
+        p.y = gy + MECH_FLY_HEIGHT;
+    }
+
+    b->targetPos = p;
+    b->targetYaw = BG_YawTo(b->pos, p);
+    b->targetPitch = 90; // keep your current mech orientation
+    b->targetRoll = 0;
+
+    b->state = MECH_STATE_FLY;
+}
 static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 {
     BG_UpdateMainBox(b);
 }
 static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
 {
+    if (!d || !b) return;
+
+    if (b->state < MECH_STATE_ACTIVE)
+    {
+        BG_UpdateMainBox(b);
+        return;
+    }
+
+    float distToDonSq = Vector3DistanceSqr(b->spawnPoint, d->pos);
+    b->aware = distToDonSq < b->awareRadius * b->awareRadius;
+
+    // Face Donogan unless we are flying to a chosen side point.
+    b->targetYaw = BG_YawTo(b->pos, d->pos);
+
+    switch (b->state)
+    {
+    case MECH_STATE_ACTIVE:
+    {
+        // ACTIVE is the planning state.
+        b->attackLanded = false;
+
+        // Stay awake, hover, then choose a fly point.
+        if (!b->aware)
+        {
+            Vector3 idle = b->spawnPoint;
+            idle.y = BG_GroundY(idle) + MECH_FLY_HEIGHT;
+
+            b->targetPos = idle;
+            b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_FLY_SPEED * 0.35f * dt);
+            b->yaw = Lerp(b->yaw, b->targetYaw, dt * 2.0f);
+            break;
+        }
+
+        Mech_PickFlyTarget(b, d);
+    } break;
+
+    case MECH_STATE_FLY:
+    {
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_FLY_SPEED * dt);
+
+        b->yaw = Lerp(b->yaw, b->targetYaw, dt * 3.0f);
+        b->pitch = Lerp(b->pitch, b->targetPitch, dt * 3.0f);
+        b->roll = Lerp(b->roll, b->targetRoll, dt * 3.0f);
+
+        if (Vector3DistanceSqr(b->pos, b->targetPos) < MECH_REPLAN_DIST * MECH_REPLAN_DIST)
+        {
+            // Now commit to a drop/attack point above Donogan.
+            b->targetPos = d->pos;
+            b->targetPos.y = d->pos.y + MECH_ATTACK_HEIGHT;
+
+            b->targetYaw = BG_YawTo(b->pos, d->pos);
+            b->attackLanded = false;
+            b->state = MECH_STATE_ATTACK;
+        }
+    } break;
+
+    case MECH_STATE_ATTACK:
+    {
+        // Slight homing while attacking. This makes it scary but not perfectly unfair.
+        Vector3 attackTarget = d->pos;
+        attackTarget.y = d->pos.y + MECH_ATTACK_HEIGHT;
+
+        b->targetPos = attackTarget;
+        b->targetYaw = BG_YawTo(b->pos, d->pos);
+
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_ATTACK_SPEED * dt);
+
+        b->yaw = Lerp(b->yaw, b->targetYaw, dt * 5.0f);
+        b->pitch = Lerp(b->pitch, 90.0f, dt * 4.0f);
+
+        BG_UpdateMainBox(b);
+
+        bool closeEnough = Vector3DistanceSqr(b->pos, attackTarget) < 10.0f * 10.0f;
+        bool boxHit = CheckCollisionBoxes(b->box, d->outerBox) || CheckCollisionBoxes(b->box, d->box);
+
+        if (!b->attackLanded && HasTimerElapsed(&d->hitTimer) && (closeEnough || boxHit))
+        {
+            Vector3 dir = Vector3Subtract(d->pos, b->pos);
+            dir.y = 0;
+
+            if (Vector3LengthSqr(dir) < 0.0001f)
+            {
+                dir = BG_ForwardFromYawDeg(b->yaw);
+            }
+            else
+            {
+                dir = Vector3Normalize(dir);
+            }
+
+            d->health -= MECH_HIT_DAMAGE;
+            DonSetState(d, DONOGAN_STATE_HIT);
+            StartTimer(&d->hitTimer);
+
+            d->shook = fmaxf(d->shook, MECH_HIT_SHAKE);
+            d->velXZ = Vector3Scale(dir, MECH_HIT_KNOCKBACK);
+            d->velY = fmaxf(d->velY, 7.0f);
+
+            b->attackLanded = true;
+
+            DustPuff_Spawn(d->pos);
+        }
+
+        // Once it reaches the attack point, pop back up and plan another pass.
+        if (Vector3DistanceSqr(b->pos, b->targetPos) < 4.0f * 4.0f)
+        {
+            b->targetPos = b->pos;
+            b->targetPos.y += MECH_FLY_HEIGHT;
+
+            b->state = MECH_STATE_ACTIVE;
+        }
+    } break;
+
+    case MECH_STATE_DEFEATED:
+    {
+        b->targetPos = b->pos;
+        b->targetPos.y = BG_GroundY(b->pos);
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, 30.0f * dt);
+    } break;
+
+    default:
+    {
+        b->state = MECH_STATE_ACTIVE;
+    } break;
+    }
+
     BG_UpdateMainBox(b);
 }
 
@@ -2989,7 +3160,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos)
                         bg[b].spawnPoint.y = gy;
                         bg[b].pos = bg[b].spawnPoint;
                         bg[b].targetPos = bg[b].spawnPoint;
-                        bg[b].pos.y += 3.5;
+                        bg[b].pos.y += 3.7;
                         bg[b].vel = (Vector3){ 0 };
                         bg[b].yaw = 0;
                         bg[b].pitch = 0;
