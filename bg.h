@@ -2384,6 +2384,81 @@ static inline void Mech_PickFlyTarget(BadGuy* b, Donogan* d)
 }
 Vector3* aliPos;
 Vector3* mechPos;
+static inline float StepYaw(float current, float target, float maxStep)
+{
+    float delta = target - current;
+
+    //while (delta > PI) delta -= PI * 2.0f;
+    //while (delta < -PI) delta += PI * 2.0f;
+
+    if (delta > maxStep) delta = maxStep;
+    if (delta < -maxStep) delta = -maxStep;
+
+    return current + delta;
+}
+static inline float WrapRad(float a)
+{
+    while (a > PI) a -= PI * 2.0f;
+    while (a < -PI) a += PI * 2.0f;
+    return a;
+}
+
+static inline float StepYawRad(float current, float target, float maxStep)
+{
+    float delta = WrapRad(target - current);
+
+    if (delta > maxStep) delta = maxStep;
+    if (delta < -maxStep) delta = -maxStep;
+
+    return WrapRad(current + delta);
+}
+static inline float WrapDeg(float a)
+{
+    while (a > 180.0f) a -= 360.0f;
+    while (a < -180.0f) a += 360.0f;
+    return a;
+}
+
+static inline float StepYawDeg(float current, float target, float maxStep)
+{
+    float delta = WrapDeg(target - current);
+
+    if (delta > maxStep) delta = maxStep;
+    if (delta < -maxStep) delta = -maxStep;
+
+    return WrapDeg(current + delta);
+}
+
+static inline void Alister_TurnAndMoveForward(BadGuy* b, float dt, float speed)
+{
+    b->targetYaw = BG_YawTo(b->pos, b->targetPos);
+
+    // degrees per second
+    b->yaw = StepYawDeg(b->yaw, b->targetYaw, 180.0f * dt);
+
+    float yawRad = b->yaw * DEG2RAD;
+
+    Vector3 forward = {
+        sinf(yawRad),
+        0.0f,
+        cosf(yawRad)
+    };
+
+    b->pos = Vector3Add(b->pos, Vector3Scale(forward, speed * dt));
+}
+//static inline void Alister_TurnAndMoveForward(BadGuy* b, float dt, float speed)
+//{
+//    b->targetYaw = BG_YawTo(b->pos, b->targetPos);
+//    b->yaw = StepYawRad(b->yaw, b->targetYaw, 4.5f * dt);
+//
+//    Vector3 forward = {
+//        sinf(b->yaw),
+//        0.0f,
+//        cosf(b->yaw)
+//    };
+//
+//    b->pos = Vector3Add(b->pos, Vector3Scale(forward, speed * dt));
+//}
 static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 {
     if (!b || !d) return;
@@ -2435,13 +2510,13 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     case ALISTER_STATE_RETURN:
     {
         b->steerTimer -= dt;
-        b->pos = Vector3Lerp(b->pos, b->targetPos, dt);
+
+        Alister_TurnAndMoveForward(b, dt, 12.0f);
+
         if ((Vector3DistanceSqr(b->pos, b->targetPos) < ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST)
             || b->steerTimer < 0)
         {
             b->steerTimer = 0;
-            // If the Mech encounter has started, go back to command.
-            // Otherwise chill.
             b->state = ALISTER_STATE_COMMAND;
             b->targetPos = b->pos;
         }
@@ -2449,7 +2524,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     case ALISTER_STATE_RUN:
     {
         b->steerTimer -= dt;
-        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 2048 * dt);
+        Alister_TurnAndMoveForward(b, dt, ALISTER_RUN_SPEED);
         float gy = BG_GroundY(b->pos);
         if (donVeryNear || gy < WHALE_SURFACE || gy > WHALE_SURFACE + 336) //PLAYER_FLOAT_Y_POSITION
         {
@@ -2506,11 +2581,9 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     {
         b->pos.y = g_y + 3.7;
     }
-    b->yaw = Lerp(b->yaw, b->targetYaw, dt / 4);
+    b->yaw = WrapDeg(b->yaw);
     b->pitch = Lerp(b->pitch, b->targetPitch, dt);
     b->roll = Lerp(b->roll, b->targetRoll, dt);
-    if (b->yaw > 360) { b->yaw = 0; }
-    if (b->yaw < -360) { b->yaw = 0; }
     BG_UpdateMainBox(b);
 }
 static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
@@ -2713,6 +2786,9 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
     case MECH_STATE_DEFEATED:
     {
         b->targetPos = b->spawnPoint;
+        b->targetPitch = 0;
+        b->targetRoll = 0;
+        b->targetYaw = BG_YawTo(b->targetPos, d->pos);
         float targetY = BG_GroundY(b->pos) + 12;
         b->targetPos.y = targetY;
         b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, 30.0f * dt);
