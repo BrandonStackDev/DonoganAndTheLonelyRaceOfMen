@@ -2428,8 +2428,6 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 64 * dt);
 
         b->yaw = Lerp(b->yaw, b->targetYaw, dt * 7.0f);
-        b->pitch = Lerp(b->pitch, 0.0f, dt * 6.0f);
-        b->roll = Lerp(b->roll, 0.0f, dt * 6.0f);
 
         float gy = BG_GroundY(b->pos);
         if (gy < WHALE_SURFACE + 5) //PLAYER_FLOAT_Y_POSITION
@@ -2455,7 +2453,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 
     case ALISTER_STATE_DEFEATED:
     {
-        b->pitch = Lerp(b->pitch, -90.0f, dt * 4.0f);
+        b->targetPitch = -90.0f;
         if (fabsf(b->pitch + 90.0f) < 2.0f)
         {
             d->alisterDead = true;
