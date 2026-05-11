@@ -2366,9 +2366,9 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 
 #define MECH_GUARD_RANGE          120.0f
 #define MECH_THROW_RANGE           35.0f
-#define MECH_THROW_UP             64.0f
+#define MECH_THROW_UP             32.0f
 #define MECH_THROW_MIN_SPEED      16.0f
-#define MECH_THROW_MAX_SPEED      128.0f
+#define MECH_THROW_MAX_SPEED      52.0f
 #define MECH_THROW_COOLDOWN        5.0f
 #define MECH_THROW_RECOVER_TIME    0.65f
 
