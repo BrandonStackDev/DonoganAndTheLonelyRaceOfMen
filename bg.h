@@ -2492,7 +2492,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         d->alisterDead = false;
         if (donNear && Vector3DistanceSqr(b->pos, d->pos) > 4) 
         { 
-            b->targetYaw = BG_YawTo(b->pos, d->pos) * RAD2DEG;
+            b->targetYaw = BG_YawTo(b->pos, d->pos);
             b->yaw = StepYawDeg(b->yaw, b->targetYaw, 180.0f * dt);
         }
         return;
