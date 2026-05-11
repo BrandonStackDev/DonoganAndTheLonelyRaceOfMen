@@ -1290,6 +1290,12 @@ static void Preview_ResolveGroundGuitarHit(Donogan* d)
         impulse.z *= 1.20f;
         impulse.y *= 1.15f;
     }
+    else if (b->type == BG_ALISTER)
+    {
+        impulse.x *= 0.10f;
+        impulse.z *= 0.05f;
+        impulse.y *= 0.40f;
+    }
 
     // Separate him from Don before ragdoll so it does not immediately overlap.
     b->pos = Vector3Add(b->pos, Vector3Scale(dir, 1.25f));
@@ -1310,7 +1316,7 @@ static void Preview_ResolveGroundGuitarHit(Donogan* d)
     );
 }
 #define ALISTER_BOOK_GOAL 10
-#define ALISTER_BOOK_PRICE 80
+#define ALISTER_BOOK_PRICE 700
 
 static BadGuy* FindNearbyBadGuyByType(BadGuyType type, Vector3 pos, float radius)
 {

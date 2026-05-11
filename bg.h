@@ -2435,7 +2435,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     case ALISTER_STATE_RETURN:
     {
         b->steerTimer -= dt;
-        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 2048 * dt);
+        b->pos = Vector3Lerp(b->pos, b->targetPos, dt);
         if ((Vector3DistanceSqr(b->pos, b->targetPos) < ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST)
             || b->steerTimer < 0)
         {
@@ -2451,11 +2451,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         b->steerTimer -= dt;
         b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 2048 * dt);
         float gy = BG_GroundY(b->pos);
-        if (gy > -9000)
-        {
-            b->pos.y = gy+3.7;
-        }
-        if (gy < WHALE_SURFACE || gy > WHALE_SURFACE + 336) //PLAYER_FLOAT_Y_POSITION
+        if (donVeryNear || gy < WHALE_SURFACE || gy > WHALE_SURFACE + 336) //PLAYER_FLOAT_Y_POSITION
         {
             b->targetPos = b->spawnPoint;
             b->targetYaw = BG_YawTo(b->pos, b->spawnPoint);
@@ -2463,22 +2459,10 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
             b->steerTimer = 8;
             break;
         }
-        
-        if (donNear && !donVeryNear)
+        else if (donNear)
         {
             Alister_StartRunAwayFromDonogan(b, d);
             break;
-        }
-        else if (donVeryNear)
-        {
-            b->targetPos = b->spawnPoint;
-            b->targetYaw = BG_YawTo(b->pos, *mechPos);
-            b->state = ALISTER_STATE_RETURN;
-            b->steerTimer = 8;
-        }
-        else
-        {
-            b->yaw = Lerp(b->yaw, b->targetYaw, dt * 7.0f);
         }
         if ((Vector3DistanceSqr(b->pos, b->targetPos) < ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST)
             || b->steerTimer < 0)
@@ -2517,9 +2501,14 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         // Idle / talk
     } break;
     }
-    b->yaw = Lerp(b->yaw, b->targetYaw, dt * 2.0f);
-    b->pitch = Lerp(b->pitch, b->targetPitch, dt * 3.0f);
-    b->roll = Lerp(b->roll, b->targetRoll, dt * 2.0f);
+    float g_y = BG_GroundY(b->pos);
+    if (g_y > -9000)
+    {
+        b->pos.y = g_y + 3.7;
+    }
+    b->yaw = Lerp(b->yaw, b->targetYaw, dt / 4);
+    b->pitch = Lerp(b->pitch, b->targetPitch, dt);
+    b->roll = Lerp(b->roll, b->targetRoll, dt);
     if (b->yaw > 360) { b->yaw = 0; }
     if (b->yaw < -360) { b->yaw = 0; }
     BG_UpdateMainBox(b);
