@@ -2366,20 +2366,20 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 
 #define MECH_GUARD_RANGE          120.0f
 #define MECH_THROW_RANGE           35.0f
-#define MECH_THROW_UP             36.0f
-#define MECH_THROW_MIN_SPEED      34.0f
-#define MECH_THROW_MAX_SPEED      78.0f
+#define MECH_THROW_UP             64.0f
+#define MECH_THROW_MIN_SPEED      16.0f
+#define MECH_THROW_MAX_SPEED      128.0f
 #define MECH_THROW_COOLDOWN        5.0f
 #define MECH_THROW_RECOVER_TIME    0.65f
 
-#define MECH_STOMP_COUNT           5
+#define MECH_STOMP_COUNT           2
 #define MECH_STOMP_SIDE_DIST      22.0f
 #define MECH_STOMP_FWD_DIST       10.0f
-#define MECH_STOMP_LAND_HEIGHT     2.0f
+#define MECH_STOMP_LAND_HEIGHT     3.0f
 
 #define MECH_FINAL_WARN_BONUS      0.80f
 
-#define MECH_ARENA_CENTER ((Vector3){ -3793.96f, 331.29f, 1202.76f })
+#define MECH_ARENA_CENTER ((Vector3){ -3794, 332, 1203 })
 Vector3* aliPos;
 Vector3* mechPos;
 
@@ -2443,6 +2443,45 @@ static inline void Mech_ClampWarnPosToGround(BadGuy* b)
     }
 }
 
+static inline void ThrowHandle(BadGuy* b, Donogan* d)
+{
+    if (!b || !d) return;
+
+    Vector3 arena = MECH_ARENA_CENTER;
+
+    Vector3 dir = Vector3Subtract(arena, d->pos);
+    if (Vector3LengthSqr(dir) < 0.0001f)
+    {
+        dir = Vector3Subtract(d->pos, b->pos);
+        dir.y = 0;
+    }
+
+    if (Vector3LengthSqr(dir) < 0.0001f)
+    {
+        dir = BG_ForwardFromYawDeg(b->yaw);
+    }
+    else
+    {
+        dir = Vector3Normalize(dir);
+    }
+
+    float distToArena = Vector3Distance(
+        (Vector3) {
+        d->pos.x, 0, d->pos.z
+    },
+        (Vector3) {
+        arena.x, 0, arena.z
+    }
+    );
+
+    float throwSpeed = Clamp(distToArena * 1.35f, MECH_THROW_MIN_SPEED, MECH_THROW_MAX_SPEED);
+
+    DonSetState(d, DONOGAN_STATE_HIT);
+    StartTimer(&d->hitTimer);
+    d->pos = Vector3Add(Vector3Scale(dir, throwSpeed), d->pos);
+    //d->velY = fmaxf(d->velY, MECH_THROW_UP);
+}
+
 static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
 {
     if (!b || !d) return;
@@ -2450,7 +2489,6 @@ static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
     Vector3 arena = MECH_ARENA_CENTER;
 
     Vector3 dir = Vector3Subtract(arena, d->pos);
-
     if (Vector3LengthSqr(dir) < 0.0001f)
     {
         dir = Vector3Subtract(d->pos, b->pos);
@@ -2834,7 +2872,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
         return;
     }
     float gy = BG_GroundY(b->pos);
-    if (b->pos.y < gy + 8)
+    if (b->pos.y < gy + 8 && b->state != MECH_STATE_ATTACK)
     {
         b->pos.y = gy + 8;
     }
@@ -2990,6 +3028,10 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
                 Mech_StartThrowDon(b, d);
                 break;
             }
+        }
+        if (!HasTimerElapsed(&d->hitTimer))
+        {
+            ThrowHandle(b,d);
         }
         if (b->warnTimer <= 0 && b->steerTimer)
         {
