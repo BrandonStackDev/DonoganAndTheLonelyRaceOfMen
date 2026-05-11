@@ -2423,6 +2423,11 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         b->roll = Lerp(b->roll, 0.0f, dt * 6.0f);
 
         float gy = BG_GroundY(b->pos);
+        if (gy < WHALE_SURFACE + 5) //PLAYER_FLOAT_Y_POSITION
+        {
+            b->targetPos = b->spawnPoint;
+            b->targetYaw = BG_YawTo(b->pos,b->spawnPoint);
+        }
         if (gy > -9000)
         {
             b->pos.y = gy+3.7;
@@ -2446,6 +2451,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         {
             d->alisterDead = true;
             toast = "You defeated Alister! The land of Elyndor thanks you!";
+            StartTimer(&toastTimer);
             b->active = false;
             b->dead = true;
 
@@ -2506,20 +2512,21 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->yaw = Lerp(b->yaw, b->targetYaw, dt * 2.0f);
             break;
         }
+        Mech_PickFlyTarget(b, d);
         if (Vector3DistanceSqr(d->pos, *aliPos) < 120*120 
             && Vector3DistanceSqr(d->pos, *aliPos) < Vector3DistanceSqr(b->pos, *aliPos)) //120
         {
-            Vector3 blockPath = Vector3Scale(Vector3Normalize(Vector3Subtract(d->pos, *aliPos)), 28);
+            Vector3 blockPath = Vector3Negate(Vector3Scale(Vector3Normalize(Vector3Subtract(d->pos, *aliPos)), 28));
             b->targetPos = Vector3Add(d->pos, blockPath);
+            b->targetPos.y += 24;
             b->targetPitch = 15;
             b->targetYaw = BG_YawTo(b->pos, b->targetPos);
             b->state = MECH_STATE_FALLBACK;
         }
-        Mech_PickFlyTarget(b, d);
     } break;
     case MECH_STATE_FALLBACK:
     {
-        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_ATTACK_SPEED * dt);
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_ATTACK_SPEED * 4.2 * dt);
         if (Vector3DistanceSqr(b->pos, b->targetPos) < MECH_REPLAN_DIST * MECH_REPLAN_DIST)
         {
             // Decide the attack position ONCE.
@@ -2680,8 +2687,8 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
     }
 
     b->yaw = Lerp(b->yaw, b->targetYaw, dt * 5.0f);
-    b->pitch = Lerp(b->pitch, 15.0f, dt * 4.0f);
-    b->roll = Lerp(b->roll, b->targetYaw, dt * 3.0f);
+    b->pitch = Lerp(b->pitch, b->targetPitch, dt * 4.0f);
+    b->roll = Lerp(b->roll, b->targetRoll, dt * 3.0f);
     BG_UpdateMainBox(b);
 }
 
@@ -3450,6 +3457,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos, Donogan * d)
                         bg[b].pitch = 0;
                         bg[b].roll = 0;
                         bg[b].state = ALISTER_STATE_IDLE;
+                        aliPos = &bg[b].pos;
                         BG_UpdateMainBox(&bg[b]);
                     }
                     else if (bg[b].type == BG_MECH)
@@ -3459,7 +3467,6 @@ bool CheckSpawnAndActivateNext(Vector3 pos, Donogan * d)
 
                         bg[b].spawnPoint.y = gy;
                         bg[b].pos = bg[b].spawnPoint;
-                        aliPos = &bg[b].pos;
                         bg[b].targetPos = bg[b].spawnPoint;
                         bg[b].vel = (Vector3){ 0 };
                         bg[b].yaw = 0;

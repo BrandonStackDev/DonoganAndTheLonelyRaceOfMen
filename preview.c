@@ -4923,7 +4923,7 @@ int main(void) {
                 if (bg[b].dead) continue;
                 if (BG_IsActuallyDeadState(&bg[b])) continue;
                 if (bg[b].gbm_index < 0) continue;
-
+                if (bg[b].type == BG_ALISTER || bg[b].type == BG_MECH) { continue; }
                 if (!CheckCollisionBoxSphere(bg[b].box, gAirL2Slam.pos, gAirL2Slam.radius))
                 {
                     continue;
@@ -4984,10 +4984,6 @@ int main(void) {
                 else if (bg[b].type == BG_SKELETON)
                 {
                     Skeleton_KnockBackFromDonogan(&bg[b], &don, true);
-                }
-                else if (bg[b].type == BG_ALISTER)
-                {
-                    //what to do here?
                 }
             }
         }
