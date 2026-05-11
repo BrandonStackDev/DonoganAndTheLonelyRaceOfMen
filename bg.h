@@ -2382,6 +2382,7 @@ static inline void Mech_PickFlyTarget(BadGuy* b, Donogan* d)
     b->state = MECH_STATE_FLY;
 }
 Vector3* aliPos;
+Vector3* mechPos;
 static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 {
     if (!b || !d) return;
@@ -2407,6 +2408,14 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 
     switch (b->state)
     {
+    case ALISTER_STATE_COMMAND:
+    {
+        b->targetYaw = BG_YawTo(b->pos, *mechPos);
+        if (Vector3DistanceSqr(d->pos, b->pos) < 24 * 25)
+        {
+            b->state = ALISTER_STATE_HURT;
+        }
+    } //routing command, no break, goes straight there and must be below
     case ALISTER_STATE_HURT:
     {
         Alister_StartRunAwayFromDonogan(b, d);
@@ -2467,9 +2476,12 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 
     default:
     {
-        // Idle / talk / command do not need movement yet.
+        // Idle / talk
     } break;
     }
+    b->yaw = Lerp(b->yaw, b->targetYaw, dt * 2.0f);
+    b->pitch = Lerp(b->pitch, b->targetPitch, dt * 3.0f);
+    b->roll = Lerp(b->roll, b->targetRoll, dt * 2.0f);
     if (b->yaw > 360) { b->yaw = 0; }
     if (b->yaw < -360) { b->yaw = 0; }
     BG_UpdateMainBox(b);
@@ -3473,6 +3485,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos, Donogan * d)
                         bg[b].pitch = 90;
                         bg[b].roll = 0;
                         bg[b].state = MECH_STATE_IDLE;
+                        mechPos = &bg[b].pos;
                         BG_UpdateMainBox(&bg[b]);
                     }
                     return true;

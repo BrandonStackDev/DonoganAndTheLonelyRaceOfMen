@@ -4858,6 +4858,7 @@ int main(void) {
                     else if (bg[b].type == BG_ALISTER)
                     {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
+                        bg[b].state = ALISTER_STATE_HURT;
                     }
                 }
             }
@@ -4908,6 +4909,7 @@ int main(void) {
                 else if (bg[b].type == BG_ALISTER)
                 {
                     bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
+                    bg[b].state = ALISTER_STATE_HURT;
                 }
             }
         }
@@ -4984,6 +4986,10 @@ int main(void) {
                 else if (bg[b].type == BG_SKELETON)
                 {
                     Skeleton_KnockBackFromDonogan(&bg[b], &don, true);
+                }
+                else if (bg[b].type == BG_ALISTER)
+                {
+                    bg[b].state = ALISTER_STATE_HURT;
                 }
             }
         }
@@ -5185,7 +5191,7 @@ int main(void) {
                     {
                         if (wrenchHit || guitarHit || punchHit)
                         {
-                            if (bg[b].state == ALISTER_STATE_COMMAND)
+                            if (bg[b].state == ALISTER_STATE_COMMAND || bg[b].state == ALISTER_STATE_RUN)
                             {
                                 bg[b].health -= 25;
                                 bg[b].state = ALISTER_STATE_HURT;
