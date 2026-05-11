@@ -2473,8 +2473,8 @@ static inline void Alister_TurnAndMoveForward(BadGuy* b, float dt, float speed)
 static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 {
     if (!b || !d) return;
-    bool donNear = Vector3DistanceSqr(d->pos, b->pos) < 24 * 25;
-    bool donVeryNear = Vector3DistanceSqr(d->pos, b->pos) < 10 * 9;
+    bool donNear = Vector3DistanceSqr(d->pos, b->pos) < 1000;
+    bool donVeryNear = Vector3DistanceSqr(d->pos, b->pos) < 100;
 
     int ca = b->curAnim;
     if (b->state == ALISTER_STATE_TALK) { BG_SetAnimSafe(b, ALISTER_ANIM_TALK, false); }
@@ -2485,11 +2485,17 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     if (ca != b->curAnim) { b->animFrame = 0; }
     BG_UpdateAnim(b,dt);
 
-    if (b->health <= 0 && b->state < ALISTER_STATE_COMMAND)
+    if (b->state < ALISTER_STATE_COMMAND)
     {
         aliPos = &b->pos;
         b->health = b->startHealth;
         d->alisterDead = false;
+        if (donNear && Vector3DistanceSqr(b->pos, d->pos) > 4) 
+        { 
+            b->targetYaw = BG_YawTo(b->pos, d->pos) * RAD2DEG;
+            b->yaw = StepYawDeg(b->yaw, b->targetYaw, 180.0f * dt);
+        }
+        return;
     }
 
     if (d->alisterDead)
@@ -3323,7 +3329,6 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
     for (int b = 0; b < act_bg_count; b++) {
         int i = act_bg[b];
         if (!bg[i].active) { continue; }
-        if (bg[i].type == BG_ALISTER && bg[i].state < ALISTER_STATE_COMMAND) { continue; }
         if (bg[i].type == BG_MECH && bg[i].state < MECH_STATE_ACTIVE) { continue; }
         if (Vector3DistanceSqr(d->pos, bg[i].pos) > 800*800
             && bg[i].type != BG_ALISTER 

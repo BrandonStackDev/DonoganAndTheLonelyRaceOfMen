@@ -400,12 +400,11 @@ static TalkData talkData[] = {
     TALK_TYPE_ALISTER_1,
     "Alister",
     {
-        "Donogan. You found me.",
         "I require the shadow books.",
-        "Bring them to me. All ten.",
+        "Bring them to me. All ten. I'll pay you well.",
         "The work is almost complete."
     },
-    4,
+    3,
     TALK_OPTION_OK
 },
 {
