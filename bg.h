@@ -143,8 +143,17 @@ typedef enum {
     ALISTER_STATE_RUN,
     ALISTER_STATE_HURT,
     ALISTER_STATE_RETURN,
+    ALISTER_STATE_HIT,
     ALISTER_STATE_DEFEATED,
 } AlisterState;
+typedef enum {
+    ALISTER_ANIM_DYING,
+    ALISTER_ANIM_HIT,
+    ALISTER_ANIM_IDLE,
+    ALISTER_ANIM_RUN,
+    ALISTER_ANIM_T_POSE,
+    ALISTER_ANIM_TALK,
+} AlisterAnimation;
 typedef enum {
     MECH_STATE_IDLE,
     MECH_STATE_ACTIVE,
@@ -401,8 +410,10 @@ void InitBadGuyModels(Shader ghostShader)
     ModelAnimation* skel_anims = LoadModelAnimations("models/skeleton.glb", &skel_animCount);
 
     //alister and mech
-    Model ali_model = LoadModel("models/alister.obj");
+    Model ali_model = LoadModel("models/alister.glb");
     Texture ali_tex = LoadMyTexture("textures/alister.png");
+    int ali_animCount = 0;
+    ModelAnimation* ali_anims = LoadModelAnimations("models/alister.glb",&ali_animCount);
     Model mech_model = LoadModel("models/mech.obj");
     Texture mech_tex = LoadMyTexture("textures/mech.png");
     mechWarnTexture = LoadMyTexture("textures/warn.png");
@@ -486,8 +497,8 @@ void InitBadGuyModels(Shader ghostShader)
 
                 bgModelBorrower[index].origBox = ScaleBoundingBox(GetModelBoundingBox(bgModelBorrower[index].model), 4);
 
-                /*bgModelBorrower[index].anims = skel_anims;
-                bgModelBorrower[index].animCount = skel_animCount;*/
+                bgModelBorrower[index].anims = ali_anims;
+                bgModelBorrower[index].animCount = ali_animCount;
             }
             else if (bg_t == BG_MECH)
             {
@@ -2464,6 +2475,16 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     if (!b || !d) return;
     bool donNear = Vector3DistanceSqr(d->pos, b->pos) < 24 * 25;
     bool donVeryNear = Vector3DistanceSqr(d->pos, b->pos) < 10 * 9;
+
+    int ca = b->curAnim;
+    if (b->state == ALISTER_STATE_TALK) { BG_SetAnimSafe(b, ALISTER_ANIM_TALK, false); }
+    else if (b->state == ALISTER_STATE_RUN || b->state == ALISTER_STATE_RETURN) { BG_SetAnimSafe(b, ALISTER_ANIM_RUN, false); }
+    else if (b->state == ALISTER_STATE_HIT) { BG_SetAnimSafe(b, ALISTER_ANIM_HIT, false);}
+    else if (b->state == ALISTER_STATE_DEFEATED) { BG_SetAnimSafe(b, ALISTER_ANIM_DYING, false);}
+    else { BG_SetAnimSafe(b, ALISTER_ANIM_IDLE, false);}
+    if (ca != b->curAnim) { b->animFrame = 0; }
+    BG_UpdateAnim(b,dt);
+
     if (b->health <= 0 && b->state < ALISTER_STATE_COMMAND)
     {
         aliPos = &b->pos;
@@ -3577,6 +3598,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos, Donogan * d)
                         bg[b].pitch = 0;
                         bg[b].roll = 0;
                         bg[b].state = ALISTER_STATE_IDLE;
+                        BG_SetAnim(&bg[b], ALISTER_ANIM_IDLE, true);
                         aliPos = &bg[b].pos;
                         BG_UpdateMainBox(&bg[b]);
                     }
