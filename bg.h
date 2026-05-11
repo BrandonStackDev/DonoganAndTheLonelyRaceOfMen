@@ -2595,6 +2595,11 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
         BG_UpdateMainBox(b);
         return;
     }
+    float gy = BG_GroundY(b->pos);
+    if (b->pos.y < gy + 8)
+    {
+        b->pos.y = gy + 8;
+    }
     if (d->alisterDead)
     {
         b->state = MECH_STATE_DEFEATED;
