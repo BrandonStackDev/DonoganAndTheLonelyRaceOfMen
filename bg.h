@@ -2523,6 +2523,13 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
             b->state = ALISTER_STATE_HURT;
         }
     } break;
+    case ALISTER_STATE_HIT:
+    {
+        if (BG_AnimNearEnd(b))
+        {
+            b->state = ALISTER_STATE_HURT;
+        }
+    } break;
     case ALISTER_STATE_HURT:
     {
         Alister_StartRunAwayFromDonogan(b, d);

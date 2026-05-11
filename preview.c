@@ -4864,7 +4864,7 @@ int main(void) {
                     else if (bg[b].type == BG_ALISTER)
                     {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
-                        bg[b].state = ALISTER_STATE_HURT;
+                        bg[b].state = ALISTER_STATE_HIT;
                     }
                 }
             }
@@ -4915,7 +4915,7 @@ int main(void) {
                 else if (bg[b].type == BG_ALISTER)
                 {
                     bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
-                    bg[b].state = ALISTER_STATE_HURT;
+                    bg[b].state = ALISTER_STATE_HIT;
                 }
             }
         }
@@ -4995,7 +4995,7 @@ int main(void) {
                 }
                 else if (bg[b].type == BG_ALISTER)
                 {
-                    bg[b].state = ALISTER_STATE_HURT;
+                    bg[b].state = ALISTER_STATE_HIT;
                 }
             }
         }
@@ -5200,7 +5200,7 @@ int main(void) {
                             if (bg[b].state == ALISTER_STATE_COMMAND || bg[b].state == ALISTER_STATE_RUN)
                             {
                                 bg[b].health -= 25;
-                                bg[b].state = ALISTER_STATE_HURT;
+                                bg[b].state = ALISTER_STATE_HIT;
                                 TraceLog(LOG_WARNING, "Don hit Alister! hp=%d", bg[b].health);
                             }
                         }
