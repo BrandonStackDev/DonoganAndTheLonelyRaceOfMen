@@ -2450,13 +2450,17 @@ static inline void ThrowHandle(BadGuy* b, Donogan* d)
     Vector3 arena = MECH_ARENA_CENTER;
 
     Vector3 dir = Vector3Subtract(arena, d->pos);
-    if (Vector3LengthSqr(dir) < 0.0001f)
+    dir.y = 0; // IMPORTANT: throw horizontally toward arena, arc comes from velY
+
+    float distToArena = Vector3Length(dir);
+
+    if (distToArena < 0.001f)
     {
         dir = Vector3Subtract(d->pos, b->pos);
         dir.y = 0;
     }
 
-    if (Vector3LengthSqr(dir) < 0.0001f)
+    if (Vector3LengthSqr(dir) < 0.001f)
     {
         dir = BG_ForwardFromYawDeg(b->yaw);
     }
@@ -2465,21 +2469,29 @@ static inline void ThrowHandle(BadGuy* b, Donogan* d)
         dir = Vector3Normalize(dir);
     }
 
-    float distToArena = Vector3Distance(
-        (Vector3) {
-        d->pos.x, 0, d->pos.z
-    },
-        (Vector3) {
-        arena.x, 0, arena.z
-    }
+    // This aims toward the arena, but clamps to "enemy hit" levels.
+    // It will NOT try to guarantee that Don reaches the exact center.
+    float throwSpeed = Clamp(distToArena * 0.18f, MECH_THROW_MIN_SPEED, MECH_THROW_MAX_SPEED);
+
+    d->velXZ = Vector3Scale(dir, throwSpeed);
+    d->velY = MECH_THROW_UP;
+
+    d->shook = fmaxf(d->shook, MECH_HIT_SHAKE);
+
+    // Tiny separation only. Do NOT move him by throwSpeed.
+    d->pos = Vector3Add(d->pos, Vector3Scale(dir, 1.25f));
+    d->pos.y += 0.35f;
+
+    Don_UpdateBoxes(d);
+
+    TraceLog(LOG_WARNING,
+        "MECH THROW HIT dist=%.2f speed=%.2f velXZ=(%.2f %.2f) velY=%.2f",
+        distToArena,
+        throwSpeed,
+        d->velXZ.x,
+        d->velXZ.z,
+        d->velY
     );
-
-    float throwSpeed = Clamp(distToArena * 1.35f, MECH_THROW_MIN_SPEED, MECH_THROW_MAX_SPEED);
-
-    DonSetState(d, DONOGAN_STATE_HIT);
-    StartTimer(&d->hitTimer);
-    d->pos = Vector3Add(Vector3Scale(dir, throwSpeed), d->pos);
-    //d->velY = fmaxf(d->velY, MECH_THROW_UP);
 }
 
 static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
@@ -2523,6 +2535,7 @@ static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
     d->velXZ = Vector3Scale(dir, throwSpeed);
     d->velY = fmaxf(d->velY, MECH_THROW_UP);
     d->shook = fmaxf(d->shook, 0.75f);
+    d->health -= 10;
     d->pos.y += 3;
     d->state = DONOGAN_STATE_AIR_ROLL;
 
@@ -3029,7 +3042,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
                 break;
             }
         }
-        if (!HasTimerElapsed(&d->hitTimer))
+        if (!HasTimerElapsed(&d->hitTimer) && b->attackLanded)
         {
             ThrowHandle(b,d);
         }
