@@ -310,7 +310,7 @@ void BG_SetAnimSafe(BadGuy* b, int animIndex, bool forceRestart);
 Texture2D mechWarnTexture;
 
 #define ALISTER_RUN_AWAY_DIST      34.0f
-#define ALISTER_RUN_SPEED          15.0f
+#define ALISTER_RUN_SPEED          26.0f
 #define ALISTER_RUN_ARRIVE_DIST     3.5f
 
 static inline Vector3 BG_ForwardFromYawDeg(float yawDeg);
@@ -2490,7 +2490,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     {
         b->targetYaw = BG_YawTo(b->pos, *mechPos);
         float gy = BG_GroundY(b->pos);
-        if (donVeryNear || gy < WHALE_SURFACE || gy > WHALE_SURFACE + 336)
+        if ((donVeryNear && Vector3DistanceSqr(b->spawnPoint, b->pos) > 50 * 60) || gy < WHALE_SURFACE + 5 || gy > WHALE_SURFACE + 38)
         {
             b->targetPos = b->spawnPoint;
             b->targetYaw = BG_YawTo(b->pos, b->spawnPoint);
@@ -2526,7 +2526,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         b->steerTimer -= dt;
         Alister_TurnAndMoveForward(b, dt, ALISTER_RUN_SPEED);
         float gy = BG_GroundY(b->pos);
-        if (donVeryNear || gy < WHALE_SURFACE || gy > WHALE_SURFACE + 336) //PLAYER_FLOAT_Y_POSITION
+        if ((donVeryNear && Vector3DistanceSqr(b->spawnPoint, b->pos) > 50 * 60) || gy < WHALE_SURFACE || gy > WHALE_SURFACE + 336) //PLAYER_FLOAT_Y_POSITION
         {
             b->targetPos = b->spawnPoint;
             b->targetYaw = BG_YawTo(b->pos, b->spawnPoint);
