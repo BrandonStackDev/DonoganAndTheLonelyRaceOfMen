@@ -142,6 +142,7 @@ typedef enum {
     ALISTER_STATE_COMMAND,
     ALISTER_STATE_RUN,
     ALISTER_STATE_HURT,
+    ALISTER_STATE_RETURN,
     ALISTER_STATE_DEFEATED,
 } AlisterState;
 typedef enum {
@@ -2386,6 +2387,8 @@ Vector3* mechPos;
 static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 {
     if (!b || !d) return;
+    bool donNear = Vector3DistanceSqr(d->pos, b->pos) < 24 * 25;
+    bool donVeryNear = Vector3DistanceSqr(d->pos, b->pos) < 10 * 9;
     if (b->health <= 0 && b->state < ALISTER_STATE_COMMAND)
     {
         aliPos = &b->pos;
@@ -2411,36 +2414,73 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     case ALISTER_STATE_COMMAND:
     {
         b->targetYaw = BG_YawTo(b->pos, *mechPos);
-        if (Vector3DistanceSqr(d->pos, b->pos) < 24 * 25)
+        float gy = BG_GroundY(b->pos);
+        if (donVeryNear || gy < WHALE_SURFACE || gy > WHALE_SURFACE + 336)
+        {
+            b->targetPos = b->spawnPoint;
+            b->targetYaw = BG_YawTo(b->pos, b->spawnPoint);
+            b->state = ALISTER_STATE_RETURN;
+            b->steerTimer = 8;
+        }
+        if (donNear)
         {
             b->state = ALISTER_STATE_HURT;
         }
-    } //routing command, no break, goes straight there and must be below
+    } break;
     case ALISTER_STATE_HURT:
     {
         Alister_StartRunAwayFromDonogan(b, d);
-        b->steerTimer = 0.65;
+        b->steerTimer = 1;
     } break;
-
+    case ALISTER_STATE_RETURN:
+    {
+        b->steerTimer -= dt;
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 2048 * dt);
+        if ((Vector3DistanceSqr(b->pos, b->targetPos) < ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST)
+            || b->steerTimer < 0)
+        {
+            b->steerTimer = 0;
+            // If the Mech encounter has started, go back to command.
+            // Otherwise chill.
+            b->state = ALISTER_STATE_COMMAND;
+            b->targetPos = b->pos;
+        }
+    } break;
     case ALISTER_STATE_RUN:
     {
         b->steerTimer -= dt;
-        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 64 * dt);
-
-        b->yaw = Lerp(b->yaw, b->targetYaw, dt * 7.0f);
-
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, ALISTER_RUN_SPEED * 2048 * dt);
         float gy = BG_GroundY(b->pos);
-        if (gy < WHALE_SURFACE + 5) //PLAYER_FLOAT_Y_POSITION
-        {
-            b->targetPos = b->spawnPoint;
-            b->targetYaw = BG_YawTo(b->pos,b->spawnPoint);
-        }
         if (gy > -9000)
         {
             b->pos.y = gy+3.7;
         }
-
-        if (Vector3DistanceSqr(b->pos, b->targetPos) < ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST
+        if (gy < WHALE_SURFACE || gy > WHALE_SURFACE + 336) //PLAYER_FLOAT_Y_POSITION
+        {
+            b->targetPos = b->spawnPoint;
+            b->targetYaw = BG_YawTo(b->pos, b->spawnPoint);
+            b->state = ALISTER_STATE_RETURN;
+            b->steerTimer = 8;
+            break;
+        }
+        
+        if (donNear && !donVeryNear)
+        {
+            Alister_StartRunAwayFromDonogan(b, d);
+            break;
+        }
+        else if (donVeryNear)
+        {
+            b->targetPos = b->spawnPoint;
+            b->targetYaw = BG_YawTo(b->pos, *mechPos);
+            b->state = ALISTER_STATE_RETURN;
+            b->steerTimer = 8;
+        }
+        else
+        {
+            b->yaw = Lerp(b->yaw, b->targetYaw, dt * 7.0f);
+        }
+        if ((Vector3DistanceSqr(b->pos, b->targetPos) < ALISTER_RUN_ARRIVE_DIST * ALISTER_RUN_ARRIVE_DIST)
             || b->steerTimer < 0)
         {
             b->steerTimer = 0;
