@@ -2366,7 +2366,7 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 
 #define MECH_GUARD_RANGE          120.0f
 #define MECH_THROW_RANGE           35.0f
-#define MECH_THROW_UP             14.0f
+#define MECH_THROW_UP             36.0f
 #define MECH_THROW_MIN_SPEED      34.0f
 #define MECH_THROW_MAX_SPEED      78.0f
 #define MECH_THROW_COOLDOWN        5.0f
@@ -2450,7 +2450,6 @@ static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
     Vector3 arena = MECH_ARENA_CENTER;
 
     Vector3 dir = Vector3Subtract(arena, d->pos);
-    dir.y = 0;
 
     if (Vector3LengthSqr(dir) < 0.0001f)
     {
@@ -2486,10 +2485,12 @@ static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
     d->velXZ = Vector3Scale(dir, throwSpeed);
     d->velY = fmaxf(d->velY, MECH_THROW_UP);
     d->shook = fmaxf(d->shook, 0.75f);
+    d->pos.y += 3;
+    d->state = DONOGAN_STATE_AIR_ROLL;
 
     b->targetYaw = BG_YawTo(b->pos, d->pos);
     b->targetPos = b->pos;
-    b->targetPos.y = BG_GroundY(b->pos) + MECH_FLY_HEIGHT;
+    b->targetPos.y = BG_GroundY(b->pos) + 7;
 
     b->warnTimer = MECH_THROW_RECOVER_TIME;
     b->steerTimer = MECH_THROW_COOLDOWN;
@@ -2866,21 +2867,16 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->yaw = Lerp(b->yaw, b->targetYaw, dt * 2.0f);
             break;
         }
-        // Close enough: throw Don back toward the battle arena center.
-        bool throwRange =
-            Mech_DonInGuardZone(b, d, MECH_THROW_RANGE) ||
-            Vector3DistanceSqr(d->pos, b->pos) < MECH_THROW_RANGE * MECH_THROW_RANGE;
-
-        if (b->steerTimer <= 0 && throwRange && HasTimerElapsed(&d->hitTimer))
-        {
-            Mech_StartThrowDon(b, d);
-            break;
-        }
 
         // Normal guard behavior: old 120*120 logic, now shared.
         Mech_PickFlyTarget(b, d);
-
-        if (Mech_DonInGuardZone(b, d, MECH_GUARD_RANGE))
+        if (Mech_DonInGuardZone(b, d, MECH_THROW_RANGE))
+        {
+            b->steerTimer = 5;
+            b->warnTimer = 3;
+            b->state = MECH_STATE_THROW_DON;
+        }
+        else if (Mech_DonInGuardZone(b, d, MECH_GUARD_RANGE))
         {
             Vector3 toDonFromAli = Vector3Subtract(d->pos, *aliPos);
             toDonFromAli.y = 0;
@@ -2975,15 +2971,27 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
     case MECH_STATE_THROW_DON:
     {
         b->warnTimer -= dt;
-
-        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_FLY_SPEED * dt);
+        b->targetPos = d->pos;
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_ATTACK_SPEED * dt);
 
         b->targetYaw = BG_YawTo(b->pos, d->pos);
         b->yaw = Lerp(b->yaw, b->targetYaw, dt * 4.0f);
         b->pitch = Lerp(b->pitch, 15.0f, dt * 4.0f);
         b->roll = Lerp(b->roll, 0.0f, dt * 4.0f);
+        if (CheckCollisionBoxes(b->box, d->outerBox))
+        {
+            // Close enough: throw Don back toward the battle arena center.
+            bool throwRange =
+                Mech_DonInGuardZone(b, d, MECH_THROW_RANGE) ||
+                Vector3DistanceSqr(d->pos, b->pos) < MECH_THROW_RANGE * MECH_THROW_RANGE;
 
-        if (b->warnTimer <= 0)
+            if (throwRange && HasTimerElapsed(&d->hitTimer))
+            {
+                Mech_StartThrowDon(b, d);
+                break;
+            }
+        }
+        if (b->warnTimer <= 0 && b->steerTimer)
         {
             b->state = MECH_STATE_STOMP_COMBO;
         }
