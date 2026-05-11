@@ -161,6 +161,8 @@ typedef enum {
     MECH_STATE_WARN,
     MECH_STATE_ATTACK,   // drop toward Donogan and hit
     MECH_STATE_FALLBACK,
+    MECH_STATE_THROW_DON,     // NEW: close grab/throw recovery
+    MECH_STATE_STOMP_COMBO,   // NEW: starts queued stomp pattern
     MECH_STATE_DEFEATED,
 } MechState;
 
@@ -304,6 +306,9 @@ typedef struct {
     Vector3 ragdollSpinVel;
     float truckHitCooldown;
     float propHitCooldown;
+
+    int mechStompIndex;
+    bool mechStompCombo;
 } BadGuy;
 //instance of a bad guy, will borrow its model
 
@@ -540,6 +545,9 @@ static inline void BG_ClearRuntimeState(BadGuy* b)
     b->animFrame = 0;
     b->curAnim = 0;
     b->animFPS = 24.0f;
+    b->mechStompIndex = 0;
+    b->mechStompCombo = false;
+    b->steerTimer = 0;
 }
 //
 static inline bool BG_ActiveIndexOK(int idx)
@@ -2356,6 +2364,25 @@ static inline void BG_Update_Skeleton(Donogan* d, BadGuy* b, float dt)
 #define MECH_HIT_SHAKE            0.65f
 #define MECH_HIT_KNOCKBACK       16.0f
 
+#define MECH_GUARD_RANGE          120.0f
+#define MECH_THROW_RANGE           35.0f
+#define MECH_THROW_UP             14.0f
+#define MECH_THROW_MIN_SPEED      34.0f
+#define MECH_THROW_MAX_SPEED      78.0f
+#define MECH_THROW_COOLDOWN        5.0f
+#define MECH_THROW_RECOVER_TIME    0.65f
+
+#define MECH_STOMP_COUNT           5
+#define MECH_STOMP_SIDE_DIST      22.0f
+#define MECH_STOMP_FWD_DIST       10.0f
+#define MECH_STOMP_LAND_HEIGHT     2.0f
+
+#define MECH_FINAL_WARN_BONUS      0.80f
+
+#define MECH_ARENA_CENTER ((Vector3){ -3793.96f, 331.29f, 1202.76f })
+Vector3* aliPos;
+Vector3* mechPos;
+
 static inline Vector3 BG_MoveTowardVec3(Vector3 from, Vector3 to, float maxStep)
 {
     Vector3 delta = Vector3Subtract(to, from);
@@ -2393,8 +2420,180 @@ static inline void Mech_PickFlyTarget(BadGuy* b, Donogan* d)
 
     b->state = MECH_STATE_FLY;
 }
-Vector3* aliPos;
-Vector3* mechPos;
+static inline bool Mech_DonInGuardZone(BadGuy* b, Donogan* d, float range)
+{
+    if (!b || !d || !aliPos) return false;
+
+    float rangeSq = range * range;
+
+    float donToAliSq = Vector3DistanceSqr(d->pos, *aliPos);
+    float mechToAliSq = Vector3DistanceSqr(b->pos, *aliPos);
+
+    return donToAliSq < rangeSq && donToAliSq < mechToAliSq;
+}
+
+static inline void Mech_ClampWarnPosToGround(BadGuy* b)
+{
+    if (!b) return;
+
+    float gy = BG_GroundY(b->warnPos);
+    if (gy > -9000)
+    {
+        b->warnPos.y = gy + 0.08f;
+    }
+}
+
+static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
+{
+    if (!b || !d) return;
+
+    Vector3 arena = MECH_ARENA_CENTER;
+
+    Vector3 dir = Vector3Subtract(arena, d->pos);
+    dir.y = 0;
+
+    if (Vector3LengthSqr(dir) < 0.0001f)
+    {
+        dir = Vector3Subtract(d->pos, b->pos);
+        dir.y = 0;
+    }
+
+    if (Vector3LengthSqr(dir) < 0.0001f)
+    {
+        dir = BG_ForwardFromYawDeg(b->yaw);
+    }
+    else
+    {
+        dir = Vector3Normalize(dir);
+    }
+
+    float distToArena = Vector3Distance(
+        (Vector3) {
+        d->pos.x, 0, d->pos.z
+    },
+        (Vector3) {
+        arena.x, 0, arena.z
+    }
+    );
+
+    float throwSpeed = Clamp(distToArena * 1.35f, MECH_THROW_MIN_SPEED, MECH_THROW_MAX_SPEED);
+
+    DonSetState(d, DONOGAN_STATE_HIT);
+    StartTimer(&d->hitTimer);
+
+    d->onGround = false;
+    d->gluedToPlatform = false;
+    d->velXZ = Vector3Scale(dir, throwSpeed);
+    d->velY = fmaxf(d->velY, MECH_THROW_UP);
+    d->shook = fmaxf(d->shook, 0.75f);
+
+    b->targetYaw = BG_YawTo(b->pos, d->pos);
+    b->targetPos = b->pos;
+    b->targetPos.y = BG_GroundY(b->pos) + MECH_FLY_HEIGHT;
+
+    b->warnTimer = MECH_THROW_RECOVER_TIME;
+    b->steerTimer = MECH_THROW_COOLDOWN;
+    b->attackLanded = true;
+
+    b->state = MECH_STATE_THROW_DON;
+
+    DustPuff_Spawn(d->pos);
+}
+
+static inline Vector3 Mech_StompTargetForIndex(BadGuy* b, Donogan* d, int index)
+{
+    Vector3 base = d ? d->pos : MECH_ARENA_CENTER;
+
+    // Final stomp is directly at Don.
+    if (index >= 4)
+    {
+        Vector3 p = base;
+        float gy = BG_GroundY(p);
+        if (gy > -9000) p.y = gy + 0.08f;
+        return p;
+    }
+
+    Vector3 arena = MECH_ARENA_CENTER;
+
+    Vector3 fwd = Vector3Subtract(base, arena);
+    fwd.y = 0;
+
+    if (Vector3LengthSqr(fwd) < 0.0001f && b)
+    {
+        fwd = Vector3Subtract(base, b->pos);
+        fwd.y = 0;
+    }
+
+    if (Vector3LengthSqr(fwd) < 0.0001f)
+    {
+        fwd = (Vector3){ 0, 0, 1 };
+    }
+    else
+    {
+        fwd = Vector3Normalize(fwd);
+    }
+
+    Vector3 right = (Vector3){ fwd.z, 0, -fwd.x };
+
+    // left, right, left, right
+    float sideSign = (index % 2 == 0) ? -1.0f : 1.0f;
+
+    // make it feel diagonal instead of just side-to-side
+    float fwdSign = (index < 2) ? 1.0f : -1.0f;
+
+    Vector3 p = base;
+    p = Vector3Add(p, Vector3Scale(right, sideSign * MECH_STOMP_SIDE_DIST));
+    p = Vector3Add(p, Vector3Scale(fwd, fwdSign * MECH_STOMP_FWD_DIST));
+
+    float gy = BG_GroundY(p);
+    if (gy > -9000) p.y = gy + 0.08f;
+
+    return p;
+}
+
+static inline void Mech_StartStompAt(BadGuy* b, Donogan* d, int index)
+{
+    if (!b || !d) return;
+
+    b->warnPos = Mech_StompTargetForIndex(b, d, index);
+    Mech_ClampWarnPosToGround(b);
+
+    b->targetPos = b->warnPos;
+    b->targetPos.y = b->warnPos.y + MECH_ATTACK_HEIGHT;
+
+    b->warnTimer = MECH_WARN_TIME;
+
+    // Final direct-at-Don stomp gets the obvious warning.
+    if (index >= 4)
+    {
+        b->warnTimer += MECH_FINAL_WARN_BONUS;
+    }
+    else
+    {
+        b->warnTimer *= 0.55f;
+    }
+
+    if (gGame.diff == DIFF_EASY) b->warnTimer += 0.50f;
+    if (gGame.diff == DIFF_HARD) b->warnTimer -= 0.35f;
+    if (b->warnTimer < 0.35f) b->warnTimer = 0.35f;
+
+    b->warnSpin = 0;
+    b->attackLanded = false;
+
+    b->targetYaw = BG_YawTo(b->pos, b->warnPos);
+    b->state = MECH_STATE_WARN;
+}
+
+static inline void Mech_StartStompCombo(BadGuy* b, Donogan* d)
+{
+    if (!b || !d) return;
+
+    b->mechStompCombo = true;
+    b->mechStompIndex = 0;
+
+    Mech_StartStompAt(b, d, b->mechStompIndex);
+}
+
 static inline float StepYaw(float current, float target, float maxStep)
 {
     float delta = target - current;
@@ -2623,7 +2822,11 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
 {
     if (!d || !b) return;
-
+    if (b->steerTimer > 0)
+    {
+        b->steerTimer -= dt;
+        if (b->steerTimer < 0) b->steerTimer = 0;
+    }
     if (b->state < MECH_STATE_ACTIVE)
     {
         BG_UpdateMainBox(b);
@@ -2663,13 +2866,44 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->yaw = Lerp(b->yaw, b->targetYaw, dt * 2.0f);
             break;
         }
-        Mech_PickFlyTarget(b, d);
-        if (Vector3DistanceSqr(d->pos, *aliPos) < 120*120 
-            && Vector3DistanceSqr(d->pos, *aliPos) < Vector3DistanceSqr(b->pos, *aliPos)) //120
+        // Close enough: throw Don back toward the battle arena center.
+        bool throwRange =
+            Mech_DonInGuardZone(b, d, MECH_THROW_RANGE) ||
+            Vector3DistanceSqr(d->pos, b->pos) < MECH_THROW_RANGE * MECH_THROW_RANGE;
+
+        if (b->steerTimer <= 0 && throwRange && HasTimerElapsed(&d->hitTimer))
         {
-            Vector3 blockPath = Vector3Negate(Vector3Scale(Vector3Normalize(Vector3Subtract(d->pos, *aliPos)), 28));
+            Mech_StartThrowDon(b, d);
+            break;
+        }
+
+        // Normal guard behavior: old 120*120 logic, now shared.
+        Mech_PickFlyTarget(b, d);
+
+        if (Mech_DonInGuardZone(b, d, MECH_GUARD_RANGE))
+        {
+            Vector3 toDonFromAli = Vector3Subtract(d->pos, *aliPos);
+            toDonFromAli.y = 0;
+
+            if (Vector3LengthSqr(toDonFromAli) < 0.0001f)
+            {
+                toDonFromAli = Vector3Subtract(d->pos, b->pos);
+                toDonFromAli.y = 0;
+            }
+
+            if (Vector3LengthSqr(toDonFromAli) < 0.0001f)
+            {
+                toDonFromAli = BG_ForwardFromYawDeg(b->yaw);
+            }
+            else
+            {
+                toDonFromAli = Vector3Normalize(toDonFromAli);
+            }
+
+            Vector3 blockPath = Vector3Negate(Vector3Scale(toDonFromAli, 28));
             b->targetPos = Vector3Add(d->pos, blockPath);
             b->targetPos.y += 24;
+
             b->targetPitch = 15;
             b->targetYaw = BG_YawTo(b->pos, b->targetPos);
             b->state = MECH_STATE_FALLBACK;
@@ -2738,6 +2972,27 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->state = MECH_STATE_WARN;
         }
     } break;
+    case MECH_STATE_THROW_DON:
+    {
+        b->warnTimer -= dt;
+
+        b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, MECH_FLY_SPEED * dt);
+
+        b->targetYaw = BG_YawTo(b->pos, d->pos);
+        b->yaw = Lerp(b->yaw, b->targetYaw, dt * 4.0f);
+        b->pitch = Lerp(b->pitch, 15.0f, dt * 4.0f);
+        b->roll = Lerp(b->roll, 0.0f, dt * 4.0f);
+
+        if (b->warnTimer <= 0)
+        {
+            b->state = MECH_STATE_STOMP_COMBO;
+        }
+    } break;
+
+    case MECH_STATE_STOMP_COMBO:
+    {
+        Mech_StartStompCombo(b, d);
+    } break;
     case MECH_STATE_WARN:
     {
         b->warnTimer -= dt;
@@ -2769,7 +3024,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
     {
         // Slight homing while attacking. This makes it scary but not perfectly unfair.
         Vector3 attackTarget = b->warnPos;
-        attackTarget.y = b->warnPos.y + MECH_ATTACK_HEIGHT;
+        attackTarget.y = b->warnPos.y + MECH_STOMP_LAND_HEIGHT;
 
         b->targetPos = attackTarget;
         b->targetYaw = BG_YawTo(b->pos, b->warnPos);
@@ -2811,14 +3066,35 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             DustPuff_Spawn(d->pos);
         }
 
-        // Once it reaches the attack point, pop back up and plan another pass.
+        // Once it reaches the stomp point, either queue next stomp or return to planning.
         if (Vector3DistanceSqr(b->pos, b->targetPos) < 4.0f * 4.0f)
         {
-            b->targetPos = b->pos;
-            b->targetPos.y += MECH_FLY_HEIGHT;
+            DustPuff_Spawn(b->warnPos);
 
-            b->state = MECH_STATE_ACTIVE;
-            b->warnTimer = MECH_WARN_TIME;
+            b->targetPos = b->pos;
+            b->targetPos.y = b->warnPos.y + MECH_FLY_HEIGHT;
+
+            if (b->mechStompCombo)
+            {
+                b->mechStompIndex++;
+
+                if (b->mechStompIndex < MECH_STOMP_COUNT)
+                {
+                    Mech_StartStompAt(b, d, b->mechStompIndex);
+                }
+                else
+                {
+                    b->mechStompCombo = false;
+                    b->mechStompIndex = 0;
+                    b->state = MECH_STATE_ACTIVE;
+                    b->warnTimer = MECH_WARN_TIME;
+                }
+            }
+            else
+            {
+                b->state = MECH_STATE_ACTIVE;
+                b->warnTimer = MECH_WARN_TIME;
+            }
         }
     } break;
 

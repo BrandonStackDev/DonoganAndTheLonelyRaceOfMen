@@ -4861,7 +4861,7 @@ int main(void) {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
                         Skeleton_KnockBackFromDonogan(&bg[b], &don, false);
                     }
-                    else if (bg[b].type == BG_ALISTER)
+                    else if (bg[b].type == BG_ALISTER && bg[b].state != ALISTER_STATE_HIT)
                     {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
                         bg[b].state = ALISTER_STATE_HIT;
@@ -4912,7 +4912,7 @@ int main(void) {
                     Skeleton_KnockBackFromDonogan(&bg[b], &don, false);
                     TraceLog(LOG_INFO, "Spell ball hit skeleton! hp=%d", bg[b].health);
                 }
-                else if (bg[b].type == BG_ALISTER)
+                else if (bg[b].type == BG_ALISTER && bg[b].state != ALISTER_STATE_HIT)
                 {
                     bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
                     bg[b].state = ALISTER_STATE_HIT;
@@ -4992,10 +4992,6 @@ int main(void) {
                 else if (bg[b].type == BG_SKELETON)
                 {
                     Skeleton_KnockBackFromDonogan(&bg[b], &don, true);
-                }
-                else if (bg[b].type == BG_ALISTER)
-                {
-                    bg[b].state = ALISTER_STATE_HIT;
                 }
             }
         }
@@ -5193,7 +5189,7 @@ int main(void) {
                             // Skeleton damage is handled by its attack boxes in bg.h now.
                         }
                     }
-                    else if (bg[b].type == BG_ALISTER)
+                    else if (bg[b].type == BG_ALISTER && bg[b].state != ALISTER_STATE_HIT)
                     {
                         if (wrenchHit || guitarHit || punchHit)
                         {
