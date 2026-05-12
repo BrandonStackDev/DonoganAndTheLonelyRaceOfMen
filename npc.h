@@ -10,6 +10,7 @@
 #include <stdio.h> 
 #include <stdbool.h>
 #include "texture.h"
+#include "bg.h"
 
 // Type Definitions
 typedef enum {
@@ -56,6 +57,9 @@ typedef enum {
     CHICKEN_STATE_PLAN = 0,
     CHICKEN_STATE_WALK,
     CHICKEN_STATE_FOLLOW,
+    CHICKEN_STATE_BOSS_MARCH,
+    CHICKEN_STATE_BOSS_PECK,
+    CHICKEN_STATE_BOSS_DONE,
 } ChickenState;
 
 typedef enum {
@@ -560,6 +564,27 @@ static inline void NPC_Update_Chicken(NPC* n, const Donogan* d, float dt, bool l
         n->targetPos.x += 5;
         n->targetPos.z += 4;
     }
+    else if (n->state == CHICKEN_STATE_BOSS_MARCH)
+    {
+        if (gClarenceBossTarget)
+        {
+            n->targetPos = gClarenceBossTarget->pos;
+            n->targetPos.y = NPC_GroundY(n->targetPos);
+        }
+
+        if (Vector3DistanceSqr(n->pos, n->targetPos) < 4.0f * 4.0f)
+        {
+            n->state = CHICKEN_STATE_BOSS_PECK;
+        }
+    }
+    else if (n->state == CHICKEN_STATE_BOSS_PECK)
+    {
+        n->targetPos = n->pos;
+    }
+    else if (n->state == CHICKEN_STATE_BOSS_DONE)
+    {
+        n->targetPos = n->pos;
+    }
     else { return; } //not a valid state, dont update the chicken...
     //lerp target pos
     n->pos = Vector3Lerp(n->pos, n->targetPos, dt*n->speed);
@@ -575,9 +600,16 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     if (!n || !d) return;
 
     // Distance cull (skip everything if too far)
-    float dist = Vector3Distance(n->pos, d->pos);
+    float dist = Vector3DistanceSqr(n->pos, d->pos);
     float cutoff = 600; //was 1000
-    if (dist > cutoff) return;
+
+    bool forceUpdate =
+        n->type == NPC_CHICKEN &&
+        (n->state == CHICKEN_STATE_BOSS_MARCH ||
+            n->state == CHICKEN_STATE_BOSS_PECK ||
+            n->state == CHICKEN_STATE_BOSS_DONE);
+
+    if (dist > cutoff*cutoff && !forceUpdate) return;
 
     //put them on the ground always
     if (n->type != NPC_WIZARD)

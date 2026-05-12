@@ -42,14 +42,52 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void Alister_ActivateMech(void)
+
+static void Clarence_StartBossCheat(Donogan* d, BadGuy* alister)
 {
+    if (!d || !alister) return;
+    if (gClarenceBossCheatStarted) return;
+
+    NPC* c = &npcs[NPC_CHICKEN];
+
+    if (c->state != CHICKEN_STATE_FOLLOW) return;
+    if (!d->alisterEvilRevealed) return;
+
+    Vector3 away = Vector3Subtract(c->pos, alister->pos);
+    away.y = 0;
+
+    if (Vector3LengthSqr(away) < 0.001f)
+    {
+        away = (Vector3){ 1, 0, 0 };
+    }
+    else
+    {
+        away = Vector3Normalize(away);
+    }
+    c->pos = Vector3Add(alister->pos, Vector3Scale(away, 100.0f));
+    c->pos.y = NPC_GroundY(c->pos);
+
+    c->targetPos = alister->pos;
+    c->targetPos.y = NPC_GroundY(c->targetPos);
+
+    c->speed = 18.0f;
+    c->state = CHICKEN_STATE_BOSS_MARCH;
+
+    gClarenceBossCheatStarted = true;
+
+    toast = "Clarence has entered the final battle.";
+    StartTimer(&toastTimer);
+}
+static void Alister_ActivateMech(Donogan* d)
+{
+    d->alisterEvilRevealed = true;
     for (int i = 0; i < bg_count; i++)
     {
         if (bg[i].type == BG_ALISTER)
         {
             bg[i].state = ALISTER_STATE_COMMAND;
             bg[i].targetPos = bg[i].pos;
+            Clarence_StartBossCheat(d, &bg[i]);
         }
         else if (bg[i].type == BG_MECH)
         {
@@ -525,7 +563,7 @@ static void FinishTalking(Donogan* d)
     }
     if (d->who == TALK_TYPE_ALISTER_3)
     {
-        Alister_ActivateMech();
+        Alister_ActivateMech(d);
     }
     //abby not needed, galdriel not needed?, new guys not needed
 }
@@ -1368,7 +1406,7 @@ static void Alister_GiveBooks(Donogan* d)
     {
         d->who = TALK_TYPE_ALISTER_3;
         Talk_Reset(d->who);
-        Alister_ActivateMech();
+        Alister_ActivateMech(d);
         return;
     }
 
@@ -1408,7 +1446,7 @@ static void Alister_GiveBooks(Donogan* d)
         toast = "Alister activated the Mech!";
         StartTimer(&toastTimer);
 
-        Alister_ActivateMech();
+        Alister_ActivateMech(d);
 
         d->who = TALK_TYPE_ALISTER_3;
         Talk_Reset(d->who);
@@ -1910,6 +1948,8 @@ int main(void) {
     map_tol = &tolPos;
     map_atreyu = &atreyuPos;
     map_gal = &npcs[NPC_GALADRIEL].pos;
+    map_clarence = &npcs[NPC_CHICKEN].pos;
+    map_alister = aliPos;
     Corn_Init(instancingLightShader);
     DustPuff_Init();
     //init the stuff before launching thread launcher
@@ -2749,7 +2789,7 @@ int main(void) {
                         StartTimer(&toastTimer);
                         TraceLog(LOG_INFO, "Chicken follow");
                     }
-                    else //exit follow mode
+                    else if(Vector3DistanceSqr(*aliPos,don.pos)>500*600) //exit follow mode, unless don is near alister
                     {
                         toast = "Clarence is no longer following you";
                         StartTimer(&toastTimer);
@@ -5843,6 +5883,30 @@ int main(void) {
                     {
                         if (Vector3DistanceSqr(don.pos, npcs[i].pos) > 600*600) { continue; } //todo: add frustum culling here also
                         NPC_Draw(&npcs[i]);
+                    }
+                    if (gClarenceBossCheatStarted)
+                    {
+                        NPC_Draw(&npcs[NPC_CHICKEN]);
+                    }
+                    if (gClarenceBossCheatStarted &&
+                        npcs[NPC_CHICKEN].state == CHICKEN_STATE_BOSS_PECK &&
+                        gClarenceBossTarget &&
+                        !gClarenceBossTarget->dead)
+                    {
+                        gClarenceBossTarget->health -= 9999;
+                        gClarenceBossTarget->state = ALISTER_STATE_DEFEATED;
+                        gClarenceBossTarget->dead = true;
+
+                        npcs[NPC_CHICKEN].state = CHICKEN_STATE_BOSS_DONE;
+                        missions[MISSION_CLARENCE_CHICKEN].complete = true;
+                        //make clarence not follow us anymore
+                        //npcs[NPC_CHICKEN].state = CHICKEN_STATE_PLAN;
+                        npcs[NPC_CHICKEN].tether = npcs[NPC_CHICKEN].pos;
+
+                        toast = "Clarence pecked Alister to death.";
+                        StartTimer(&toastTimer);
+
+                        DustPuff_Spawn(gClarenceBossTarget->pos);
                     }
                 }
             }

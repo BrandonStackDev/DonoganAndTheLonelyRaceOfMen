@@ -19,9 +19,9 @@
 //holders for important people
 Vector3* map_tol;
 Vector3* map_atreyu;
-//Vector3* map_alister;
+Vector3* map_alister;
 Vector3* map_gal;
-//Vector3* map_wolf;
+Vector3* map_clarence;
 
 typedef enum {
     MAP_HOMES = 0,
@@ -217,15 +217,11 @@ static inline void DrawDisplayMaps(
     }
     else if (active == MAP_IMPORTANT)
     {
-        ////Vector3* map_alister;
-        ////Vector3* map_wolf;
-        /*
-                Color wolf = (Color){ 200, 200, 220, 255 };           // Wolf (pale silver/ice tone)
-                Color alistair = (Color){ 60, 60, 60, 255 };       // Alistair (bweare he is evil, run away!)
-        */
         MapDrawWorldCircle(*map_tol, dest, (Color) { 120, 255, 160, 255 });
         MapDrawWorldCircle(*map_atreyu, dest, (Color) { 80, 180, 255, 255 });
         MapDrawWorldCircle(*map_gal, dest, (Color) { 255, 240, 200, 255 });
+        MapDrawWorldCircle(*map_clarence, dest, (Color) { 200, 200, 220, 255 });
+        MapDrawWorldCircle(*map_alister, dest, (Color) { 60, 60, 60, 255 });
     }
 }
 

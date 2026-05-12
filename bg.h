@@ -316,6 +316,8 @@ int act_bg_count = 0;
 int act_bg[MAX_BG_PER_TYPE_AT_ONCE * BG_TYPE_COUNT]; //store indexes of active bg's so we dont loop alot ever (except for spawning check...)
 BadGuy * bg;
 int total_bg_models_all_types, bg_count;
+static bool gClarenceBossCheatStarted = false;
+static BadGuy* gClarenceBossTarget;
 
 void BG_SetAnimSafe(BadGuy* b, int animIndex, bool forceRestart);
 #define MECH_WARN_TIME          3
@@ -2572,6 +2574,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     if (!b || !d) return;
     bool donNear = Vector3DistanceSqr(d->pos, b->pos) < 1000;
     bool donVeryNear = Vector3DistanceSqr(d->pos, b->pos) < 100;
+    gClarenceBossTarget = b;
 
     int ca = b->curAnim;
     if (b->state == ALISTER_STATE_TALK) { BG_SetAnimSafe(b, ALISTER_ANIM_TALK, false); }
