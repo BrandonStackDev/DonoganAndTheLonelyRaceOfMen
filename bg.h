@@ -3046,7 +3046,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
         {
             ThrowHandle(b,d);
         }
-        if (b->warnTimer <= 0 && b->steerTimer)
+        if (b->warnTimer <= 0 && b->steerTimer <= 0)
         {
             b->state = MECH_STATE_STOMP_COMBO;
         }
