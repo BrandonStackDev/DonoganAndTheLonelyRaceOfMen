@@ -2660,19 +2660,7 @@ static inline void Alister_TurnAndMoveForward(BadGuy* b, float dt, float speed)
 
     b->pos = Vector3Add(b->pos, Vector3Scale(forward, speed * dt));
 }
-//static inline void Alister_TurnAndMoveForward(BadGuy* b, float dt, float speed)
-//{
-//    b->targetYaw = BG_YawTo(b->pos, b->targetPos);
-//    b->yaw = StepYawRad(b->yaw, b->targetYaw, 4.5f * dt);
-//
-//    Vector3 forward = {
-//        sinf(b->yaw),
-//        0.0f,
-//        cosf(b->yaw)
-//    };
-//
-//    b->pos = Vector3Add(b->pos, Vector3Scale(forward, speed * dt));
-//}
+
 static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 {
     if (!b || !d) return;
@@ -2823,6 +2811,8 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
     b->roll = Lerp(b->roll, b->targetRoll, dt);
     BG_UpdateMainBox(b);
 }
+#define MECH_Y_OFFSET 11
+
 static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
 {
     if (!d || !b) return;
@@ -2837,18 +2827,22 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
         return;
     }
     float gy = BG_GroundY(b->pos);
-    if (b->pos.y < gy + 8 && b->state != MECH_STATE_ATTACK)
+    if (b->pos.y < gy + MECH_Y_OFFSET) //&& b->state != MECH_STATE_ATTACK
     {
-        b->pos.y = gy + 8;
+        b->pos.y = gy + MECH_Y_OFFSET;
     }
     if (d->alisterDead)
     {
         b->state = MECH_STATE_DEFEATED;
     }
+    if (Vector3DistanceSqr(*aliPos, *mechPos) > 400 * 400)
+    {
+        b->state = MECH_STATE_FALLBACK;
+    }
 
     float distToDonSq = Vector3DistanceSqr(b->spawnPoint, d->pos);
     b->aware = distToDonSq < b->awareRadius * b->awareRadius;
-    if (!b->aware) { b->state = MECH_STATE_ACTIVE; }
+    if (!b->aware) { b->state = MECH_STATE_FALLBACK; }
     // Face Donogan unless we are flying to a chosen side point.
     b->targetYaw = BG_YawTo(b->pos, d->pos);
 
@@ -2926,7 +2920,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->targetPos = b->warnPos;
             b->targetPos.y = b->warnPos.y + MECH_ATTACK_HEIGHT;
 
-            b->warnTimer = MECH_WARN_TIME - 1;//less time here
+            b->warnTimer = MECH_WARN_TIME;//less time here
             if (gGame.diff == DIFF_EASY) { b->warnTimer++; }
             if (gGame.diff == DIFF_HARD) { b->warnTimer--; }
             b->warnSpin = 0;
@@ -2998,10 +2992,9 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
         if (b->warnTimer <= 0 && b->steerTimer <= 0)
         {
             //b->state = MECH_STATE_STOMP_COMBO;
-            b->state = MECH_STATE_ATTACK;
+            b->state = MECH_STATE_FALLBACK;
         }
     } break;
-
     case MECH_STATE_STOMP_COMBO:
     {
         Mech_StartStompCombo(b, d);
@@ -3031,13 +3024,15 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->attackLanded = false;
             b->state = MECH_STATE_ATTACK;
             b->warnTimer = MECH_WARN_TIME;
+            b->steerTimer = 5;
         }
     } break;
     case MECH_STATE_ATTACK:
     {
+        b->steerTimer -= dt;
         // Slight homing while attacking. This makes it scary but not perfectly unfair.
         Vector3 attackTarget = b->warnPos;
-        attackTarget.y = b->warnPos.y + MECH_STOMP_LAND_HEIGHT;
+        attackTarget.y = b->warnPos.y + MECH_Y_OFFSET;
 
         b->targetPos = attackTarget;
         b->targetYaw = BG_YawTo(b->pos, b->warnPos);
@@ -3079,35 +3074,12 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             DustPuff_Spawn(d->pos);
         }
 
-        // Once it reaches the stomp point, either queue next stomp or return to planning.
-        if (Vector3DistanceSqr(b->pos, b->targetPos) < 4.0f * 4.0f)
+        if (Vector3DistanceSqr(b->pos, b->targetPos) < 5.0f * 4.0f || b->steerTimer <= 0)
         {
-            DustPuff_Spawn(b->warnPos);
-
             b->targetPos = b->pos;
             b->targetPos.y = b->warnPos.y + MECH_FLY_HEIGHT;
-
-            if (b->mechStompCombo)
-            {
-                b->mechStompIndex++;
-
-                if (b->mechStompIndex < MECH_STOMP_COUNT)
-                {
-                    Mech_StartStompAt(b, d, b->mechStompIndex);
-                }
-                else
-                {
-                    b->mechStompCombo = false;
-                    b->mechStompIndex = 0;
-                    b->state = MECH_STATE_ACTIVE;
-                    b->warnTimer = MECH_WARN_TIME;
-                }
-            }
-            else
-            {
-                b->state = MECH_STATE_ACTIVE;
-                b->warnTimer = MECH_WARN_TIME;
-            }
+            b->state = MECH_STATE_ACTIVE;
+            b->warnTimer = MECH_WARN_TIME;
         }
     } break;
 
@@ -3117,7 +3089,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
         b->targetPitch = 0;
         b->targetRoll = 0;
         b->targetYaw = BG_YawTo(b->targetPos, d->pos);
-        float targetY = BG_GroundY(b->pos) + 12;
+        float targetY = BG_GroundY(b->pos) + MECH_Y_OFFSET;
         b->targetPos.y = targetY;
         b->pos = BG_MoveTowardVec3(b->pos, b->targetPos, 30.0f * dt);
         if (b->pos.y < targetY) {b->pos.y = targetY;}
