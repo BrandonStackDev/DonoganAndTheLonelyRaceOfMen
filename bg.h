@@ -2485,7 +2485,7 @@ static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
     d->velY = fmaxf(d->velY, MECH_THROW_UP);
     d->shook = fmaxf(d->shook, 0.75f);
     d->health -= 10;
-    d->pos.y += 3;
+
     //d->state = DONOGAN_STATE_HIT;
     d->bowMode = false;
     d->inWater = false;
@@ -2501,6 +2501,7 @@ static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
     b->state = MECH_STATE_THROW_DON;
 
     DustPuff_Spawn(d->pos);
+    d->pos.y += 3;
 }
 
 static inline Vector3 Mech_StompTargetForIndex(BadGuy* b, Donogan* d, int index)
