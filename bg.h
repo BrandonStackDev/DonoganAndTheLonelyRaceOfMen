@@ -162,7 +162,7 @@ typedef enum {
     MECH_STATE_ATTACK,   // drop toward Donogan and hit
     MECH_STATE_FALLBACK,
     MECH_STATE_THROW_DON,     // NEW: close grab/throw recovery
-    MECH_STATE_STOMP_COMBO,   // NEW: starts queued stomp pattern
+    //MECH_STATE_STOMP_COMBO,   // NEW: starts queued stomp pattern
     MECH_STATE_DEFEATED,
 } MechState;
 
@@ -2504,100 +2504,6 @@ static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
     d->pos.y += 3;
 }
 
-static inline Vector3 Mech_StompTargetForIndex(BadGuy* b, Donogan* d, int index)
-{
-    Vector3 base = d ? d->pos : MECH_ARENA_CENTER;
-
-    // Final stomp is directly at Don.
-    if (index >= 4)
-    {
-        Vector3 p = base;
-        float gy = BG_GroundY(p);
-        if (gy > -9000) p.y = gy + 0.08f;
-        return p;
-    }
-
-    Vector3 arena = MECH_ARENA_CENTER;
-
-    Vector3 fwd = Vector3Subtract(base, arena);
-    fwd.y = 0;
-
-    if (Vector3LengthSqr(fwd) < 0.0001f && b)
-    {
-        fwd = Vector3Subtract(base, b->pos);
-        fwd.y = 0;
-    }
-
-    if (Vector3LengthSqr(fwd) < 0.0001f)
-    {
-        fwd = (Vector3){ 0, 0, 1 };
-    }
-    else
-    {
-        fwd = Vector3Normalize(fwd);
-    }
-
-    Vector3 right = (Vector3){ fwd.z, 0, -fwd.x };
-
-    // left, right, left, right
-    float sideSign = (index % 2 == 0) ? -1.0f : 1.0f;
-
-    // make it feel diagonal instead of just side-to-side
-    float fwdSign = (index < 2) ? 1.0f : -1.0f;
-
-    Vector3 p = base;
-    p = Vector3Add(p, Vector3Scale(right, sideSign * MECH_STOMP_SIDE_DIST));
-    p = Vector3Add(p, Vector3Scale(fwd, fwdSign * MECH_STOMP_FWD_DIST));
-
-    float gy = BG_GroundY(p);
-    if (gy > -9000) p.y = gy + 0.08f;
-
-    return p;
-}
-
-static inline void Mech_StartStompAt(BadGuy* b, Donogan* d, int index)
-{
-    if (!b || !d) return;
-
-    b->warnPos = Mech_StompTargetForIndex(b, d, index);
-    Mech_ClampWarnPosToGround(b);
-
-    b->targetPos = b->warnPos;
-    b->targetPos.y = b->warnPos.y + MECH_ATTACK_HEIGHT;
-
-    b->warnTimer = MECH_WARN_TIME;
-
-    // Final direct-at-Don stomp gets the obvious warning.
-    if (index >= 4)
-    {
-        b->warnTimer += MECH_FINAL_WARN_BONUS;
-    }
-    else
-    {
-        b->warnTimer *= 0.55f;
-    }
-
-    if (gGame.diff == DIFF_EASY) b->warnTimer += 0.50f;
-    if (gGame.diff == DIFF_HARD) b->warnTimer -= 0.35f;
-    if (b->warnTimer < 0.35f) b->warnTimer = 0.35f;
-
-    b->warnSpin = 0;
-    b->attackLanded = false;
-
-    b->targetYaw = BG_YawTo(b->pos, b->warnPos);
-    b->state = MECH_STATE_WARN;
-}
-
-static inline void Mech_StartStompCombo(BadGuy* b, Donogan* d)
-{
-    if (!b || !d) return;
-
-    b->mechStompCombo = true;
-    b->mechStompIndex = 0;
-
-    Mech_StartStompAt(b, d, b->mechStompIndex);
-}
-
 static inline float StepYaw(float current, float target, float maxStep)
 {
     float delta = target - current;
@@ -2978,10 +2884,6 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
             b->state = MECH_STATE_FALLBACK;
             b->steerTimer = 5;
         }
-    } break;
-    case MECH_STATE_STOMP_COMBO:
-    {
-        Mech_StartStompCombo(b, d);
     } break;
     case MECH_STATE_WARN:
     {
