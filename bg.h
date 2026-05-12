@@ -2443,57 +2443,6 @@ static inline void Mech_ClampWarnPosToGround(BadGuy* b)
     }
 }
 
-static inline void ThrowHandle(BadGuy* b, Donogan* d)
-{
-    if (!b || !d) return;
-
-    Vector3 arena = MECH_ARENA_CENTER;
-
-    Vector3 dir = Vector3Subtract(arena, d->pos);
-    dir.y = 0; // IMPORTANT: throw horizontally toward arena, arc comes from velY
-
-    float distToArena = Vector3Length(dir);
-
-    if (distToArena < 0.001f)
-    {
-        dir = Vector3Subtract(d->pos, b->pos);
-        dir.y = 0;
-    }
-
-    if (Vector3LengthSqr(dir) < 0.001f)
-    {
-        dir = BG_ForwardFromYawDeg(b->yaw);
-    }
-    else
-    {
-        dir = Vector3Normalize(dir);
-    }
-
-    // This aims toward the arena, but clamps to "enemy hit" levels.
-    // It will NOT try to guarantee that Don reaches the exact center.
-    float throwSpeed = Clamp(distToArena * 0.18f, MECH_THROW_MIN_SPEED, MECH_THROW_MAX_SPEED);
-
-    d->velXZ = Vector3Scale(dir, throwSpeed);
-    d->velY = MECH_THROW_UP;
-
-    d->shook = fmaxf(d->shook, MECH_HIT_SHAKE);
-
-    // Tiny separation only. Do NOT move him by throwSpeed.
-    d->pos = Vector3Add(d->pos, Vector3Scale(dir, 1.25f));
-    d->pos.y += 0.35f;
-
-    Don_UpdateBoxes(d);
-
-    TraceLog(LOG_WARNING,
-        "MECH THROW HIT dist=%.2f speed=%.2f velXZ=(%.2f %.2f) velY=%.2f",
-        distToArena,
-        throwSpeed,
-        d->velXZ.x,
-        d->velXZ.z,
-        d->velY
-    );
-}
-
 static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
 {
     if (!b || !d) return;
@@ -2527,17 +2476,19 @@ static inline void Mech_StartThrowDon(BadGuy* b, Donogan* d)
 
     float throwSpeed = Clamp(distToArena * 1.35f, MECH_THROW_MIN_SPEED, MECH_THROW_MAX_SPEED);
 
-    DonSetState(d, DONOGAN_STATE_HIT);
+    DonSetState(d, DONOGAN_STATE_AIR_ROLL);
     StartTimer(&d->hitTimer);
 
     d->onGround = false;
     d->gluedToPlatform = false;
-    d->velXZ = Vector3Scale(dir, throwSpeed);
+    d->rollVel = Vector3Scale(dir, throwSpeed);
     d->velY = fmaxf(d->velY, MECH_THROW_UP);
     d->shook = fmaxf(d->shook, 0.75f);
     d->health -= 10;
     d->pos.y += 3;
-    d->state = DONOGAN_STATE_AIR_ROLL;
+    //d->state = DONOGAN_STATE_HIT;
+    d->bowMode = false;
+    d->inWater = false;
 
     b->targetYaw = BG_YawTo(b->pos, d->pos);
     b->targetPos = b->pos;
@@ -3038,17 +2989,15 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
 
             if (throwRange && HasTimerElapsed(&d->hitTimer))
             {
+                b->attackLanded = true;
                 Mech_StartThrowDon(b, d);
                 break;
             }
         }
-        if (!HasTimerElapsed(&d->hitTimer) && b->attackLanded)
-        {
-            ThrowHandle(b,d);
-        }
         if (b->warnTimer <= 0 && b->steerTimer <= 0)
         {
-            b->state = MECH_STATE_STOMP_COMBO;
+            //b->state = MECH_STATE_STOMP_COMBO;
+            b->state = MECH_STATE_ATTACK;
         }
     } break;
 
@@ -3100,7 +3049,7 @@ static inline void BG_Update_Mech(Donogan* d, BadGuy* b, float dt)
         BG_UpdateMainBox(b);
 
         //bool closeEnough = Vector3DistanceSqr(b->pos, attackTarget) < 10.0f * 10.0f;
-        bool boxHit = CheckCollisionBoxes(b->box, d->outerBox) || CheckCollisionBoxes(b->box, d->box);
+        bool boxHit = CheckCollisionBoxes(b->box, d->outerBox);
 
         if (!b->attackLanded && HasTimerElapsed(&d->hitTimer) && boxHit)
         {
