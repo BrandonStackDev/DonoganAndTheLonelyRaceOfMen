@@ -136,7 +136,7 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     fprintf(f, "don_startmana   = %d\n", d->maxMana);
     fprintf(f, "don_level  = %d\n", d->level);
     fprintf(f, "don_xp     = %d\n", d->xp);
-    fprintf(f, "don_money     = %f\n", d->money);
+    fprintf(f, "don_money     = %.2f\n", d->money);
     fprintf(f, "don_hover  = %d\n", d->canHasCheeseburger);
     fprintf(f, "don_wiz  = %d\n", d->talkedToBlueWizard);
     fprintf(f, "don_gal_books = %d\n", d->galBooksGiven);
@@ -271,99 +271,135 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
         }
         // scalars
         if (!strncmp(s, "don_pos", 7)) {
-            float x, y, z; if (sscanf(s, "don_pos = %f %f %f", &x, &y, &z) == 3) { d->pos.x = x; d->pos.y = y+3; d->pos.z = z; }
+            float x = 0, y = 0, z = 0;
+            if (sscanf(s, "don_pos = %f %f %f", &x, &y, &z) == 3) {
+                d->pos.x = x;
+                d->pos.y = y;      // no +3 here; add lift elsewhere if needed
+                d->pos.z = z;
+            }
         }
         else if (!strncmp(s, "don_bow", 7)) {
-            sscanf(s, "don_bow = %d", &d->hasBow);
+            int v = 0;
+            if (sscanf(s, "don_bow = %d", &v) == 1) d->hasBow = (v != 0);
         }
         else if (!strncmp(s, "don_wrench", 10)) {
-            sscanf(s, "don_wrench = %d", &d->hasWrench);
+            int v = 0;
+            if (sscanf(s, "don_wrench = %d", &v) == 1) d->hasWrench = (v != 0);
         }
         else if (!strncmp(s, "don_unlockedTruck", 17)) {
-            sscanf(s, "don_unlockedTruck = %d", &d->unlockedTruck);
+            int v = 0;
+            if (sscanf(s, "don_unlockedTruck = %d", &v) == 1) d->unlockedTruck = (v != 0);
         }
         else if (!strncmp(s, "don_health", 10)) {
-            sscanf(s, "don_health = %d", &d->health);
+            int v = 0;
+            if (sscanf(s, "don_health = %d", &v) == 1) d->health = v;
         }
         else if (!strncmp(s, "don_mana", 8)) {
-            sscanf(s, "don_mana = %d", &d->mana);
+            int v = 0;
+            if (sscanf(s, "don_mana = %d", &v) == 1) d->mana = v;
         }
         else if (!strncmp(s, "don_starthealth", 15)) {
-            sscanf(s, "don_starthealth = %d", &d->maxHealth);
+            int v = 0;
+            if (sscanf(s, "don_starthealth = %d", &v) == 1) d->maxHealth = v;
         }
         else if (!strncmp(s, "don_startmana", 13)) {
-            sscanf(s, "don_startmana = %d", &d->maxMana);
+            int v = 0;
+            if (sscanf(s, "don_startmana = %d", &v) == 1) d->maxMana = v;
         }
         else if (!strncmp(s, "don_level", 9)) {
-            sscanf(s, "don_level = %d", &d->level);
+            int v = 0;
+            if (sscanf(s, "don_level = %d", &v) == 1) d->level = v;
         }
         else if (!strncmp(s, "don_xp", 6)) {
-            sscanf(s, "don_xp = %d", &d->xp);
+            int v = 0;
+            if (sscanf(s, "don_xp = %d", &v) == 1) d->xp = v;
         }
         else if (!strncmp(s, "don_money", 9)) {
-            sscanf(s, "don_money = %f", &d->money);
+            float v = 0.0f;
+            if (sscanf(s, "don_money = %f", &v) == 1) {
+                d->money = v;
+
+                // optional safety clamp
+                if (d->money < 0.0f) d->money = 0.0f;
+                if (d->money > 9999999.0f) d->money = 9999999.0f;
+            }
         }
         else if (!strncmp(s, "don_hover", 9)) {
-            sscanf(s, "don_hover = %d", &d->canHasCheeseburger);
+            int v = 0;
+            if (sscanf(s, "don_hover = %d", &v) == 1) d->canHasCheeseburger = (v != 0);
         }
         else if (!strncmp(s, "don_wiz", 7)) {
-            sscanf(s, "don_wiz = %d", &d->talkedToBlueWizard);
+            int v = 0;
+            if (sscanf(s, "don_wiz = %d", &v) == 1) d->talkedToBlueWizard = (v != 0);
         }
         else if (!strncmp(s, "don_gal_books", 13)) {
-            sscanf(s, "don_gal_books = %d", &d->galBooksGiven);
+            int v = 0;
+            if (sscanf(s, "don_gal_books = %d", &v) == 1) {
+                d->galBooksGiven = v;
 
-            if (d->galBooksGiven < 0) d->galBooksGiven = 0;
-            if (d->galBooksGiven > 10) d->galBooksGiven = 10;//GALADRIEL_BOOK_GOAL
+                if (d->galBooksGiven < 0) d->galBooksGiven = 0;
+                if (d->galBooksGiven > 10) d->galBooksGiven = 10; // GALADRIEL_BOOK_GOAL
+            }
         }
         else if (!strncmp(s, "don_guitar", 10)) {
             int v = 0;
-            sscanf(s, "don_guitar = %d", &v);
-            d->hasGuitar = (v != 0);
+            if (sscanf(s, "don_guitar = %d", &v) == 1) d->hasGuitar = (v != 0);
         }
         else if (!strncmp(s, "don_ali_books", 13)) {
-            sscanf(s, "don_ali_books = %d", &d->aliBooksGiven);
+            int v = 0;
+            if (sscanf(s, "don_ali_books = %d", &v) == 1) {
+                d->aliBooksGiven = v;
 
-            if (d->aliBooksGiven < 0) d->aliBooksGiven = 0;
-            if (d->aliBooksGiven > 10) d->aliBooksGiven = 10;//ALISTER_BOOK_GOAL
+                if (d->aliBooksGiven < 0) d->aliBooksGiven = 0;
+                if (d->aliBooksGiven > 10) d->aliBooksGiven = 10; // ALISTER_BOOK_GOAL
+            }
         }
         //else if (!strncmp(s, "don_ali_evil", 12)) {
         //    int v = 0;
-        //    sscanf(s, "don_ali_evil = %d", &v);
-        //    d->alisterEvilRevealed = (v != 0);
-        //}
+        //    if (sscanf(s, "don_ali_evil = %d", &v) == 1) d->alisterEvilRevealed = (v != 0);
+        //} //I dont want this for now, I like that the lpayer can replay the boss battle after each restart.
         else if (!strncmp(s, "ja_l1_unlocked", 14)) {
             int v = 0;
-            sscanf(s, "ja_l1_unlocked = %d", &v);
-            d->ja_l1_unlocked = (v != 0);
+            if (sscanf(s, "ja_l1_unlocked = %d", &v) == 1) d->ja_l1_unlocked = (v != 0);
         }
         else if (!strncmp(s, "ja_l2_unlocked", 14)) {
             int v = 0;
-            sscanf(s, "ja_l2_unlocked = %d", &v);
-            d->ja_l2_unlocked = (v != 0);
+            if (sscanf(s, "ja_l2_unlocked = %d", &v) == 1) d->ja_l2_unlocked = (v != 0);
         }
         else if (!strncmp(s, "ja_r1_unlocked", 14)) {
             int v = 0;
-            sscanf(s, "ja_r1_unlocked = %d", &v);
-            d->ja_r1_unlocked = (v != 0);
+            if (sscanf(s, "ja_r1_unlocked = %d", &v) == 1) d->ja_r1_unlocked = (v != 0);
         }
         else if (!strncmp(s, "ja_r2_unlocked", 14)) {
             int v = 0;
-            sscanf(s, "ja_r2_unlocked = %d", &v);
-            d->ja_r2_unlocked = (v != 0);
+            if (sscanf(s, "ja_r2_unlocked = %d", &v) == 1) d->ja_r2_unlocked = (v != 0);
         }
         else if (!strncmp(s, "invY", 4)) {
-            int v = 0; sscanf(s, "invY = %d", &v); gs->invY = (v != 0);
+            int v = 0;
+            if (sscanf(s, "invY = %d", &v) == 1) gs->invY = (v != 0);
         }
         else if (!strncmp(s, "invX", 4)) {
-            int v = 0; sscanf(s, "invX = %d", &v); gs->invX = (v != 0);
+            int v = 0;
+            if (sscanf(s, "invX = %d", &v) == 1) gs->invX = (v != 0);
         }
         else if (!strncmp(s, "musicVol", 8)) {
-            sscanf(s, "musicVol = %f", &gs->musicVol);
+            float v = 0.0f;
+            if (sscanf(s, "musicVol = %f", &v) == 1) {
+                gs->musicVol = Clamp(v, 0.0f, 1.0f);
+            }
         }
         else if (!strncmp(s, "soundVol", 8)) {
-            sscanf(s, "soundVol = %f", &gs->soundVol);
+            float v = 0.0f;
+            if (sscanf(s, "soundVol = %f", &v) == 1) {
+                gs->soundVol = Clamp(v, 0.0f, 1.0f);
+            }
         }
-        else if (!strncmp(s, "difficulty", 10)) { int v = 0; sscanf(s, "difficulty = %d", &v); gs->diff = (Difficulty)v; }
+        else if (!strncmp(s, "difficulty", 10)) {
+            int v = 0;
+            if (sscanf(s, "difficulty = %d", &v) == 1) {
+                gs->diff = (Difficulty)v;
+            }
+        }
     }
     fclose(f);
 
