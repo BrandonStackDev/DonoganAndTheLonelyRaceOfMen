@@ -768,7 +768,7 @@ static void Shark_Draw(Shark* s, Donogan* d)
     );
 
     // Turn this on while tuning:
-    DrawBoundingBox(s->box, RED);
+    //DrawBoundingBox(s->box, RED);
 }
 static void Shark_Draw_Extremities(Shark* s, Donogan* d)
 {
