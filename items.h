@@ -54,7 +54,7 @@ typedef struct {
     bool collected; //this one means collected forever
 } TrackedItem; //for items on the map that do not respawn and are kept in the save file
 
-#define NUM_ITEMS 31
+#define NUM_ITEMS 98
 #define NUM_TRACKED_ITEMS 20 //all books
 #define MAX_CLOSE_ITEMS 32
 Item map_items[NUM_ITEMS];
@@ -248,6 +248,88 @@ void InitItems()
     map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -3855.96f, 329.53f, 960.88f }, INV_HEALTH_FULL, 1);
     map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -3848.36f, 329.53f, 956.02f }, INV_POTION, 1);
     map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -3856.60f, 329.53f, 956.69f }, INV_HEALTH, 1); //31
+    // new regular items
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 2641.69f, 363.95f, 4565.79f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { 2643.12f, 364.09f, 4535.16f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 2680.25f, 364.29f, 4534.53f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { 2715.01f, 364.23f, 4590.86f }, INV_HEALTH_FULL, 1);
+
+    // ruins / fields
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 1905.53f, 376.12f, 4169.48f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { 1831.57f, 370.82f, 4166.53f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 1843.82f, 376.40f, 4172.91f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { 1867.16f, 376.12f, 4175.48f }, INV_HEALTH, 1);
+
+    // castle road
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { 2680.58f, 428.06f, 1845.82f }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 2760.57f, 428.08f, 1885.17f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { 2784.73f, 420.05f, 1943.41f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 2743.59f, 408.30f, 1985.24f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { 2692.07f, 378.49f, 2096.32f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 2723.60f, 359.06f, 2226.51f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { 2773.58f, 349.67f, 2371.67f }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { 2735.85f, 344.55f, 2399.11f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { 2597.55f, 337.06f, 2363.37f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { 2600.59f, 337.06f, 2336.21f }, INV_HEALTH, 1);
+
+    // far west cluster
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -893.75f, 314.47f, -4749.62f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -881.72f, 314.47f, -4746.95f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -864.59f, 314.47f, -4742.98f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -865.60f, 314.47f, -4727.99f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -863.15f, 314.47f, -4714.33f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -875.21f, 314.47f, -4707.20f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -857.42f, 314.47f, -4697.05f }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -840.34f, 310.71f, -4685.58f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -834.58f, 310.71f, -4672.84f }, INV_POTION, 1);
+
+    // cottage / cinder village
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2652.91f, 397.29f, -2486.85f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2679.09f, 395.70f, -2502.92f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -2298.85f, 434.94f, -2247.39f }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2255.31f, 444.42f, -2215.83f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2200.99f, 450.00f, -2230.66f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2122.32f, 452.88f, -2362.40f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2131.79f, 452.86f, -2363.35f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2106.73f, 466.30f, -2198.76f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2100.06f, 467.87f, -2206.46f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2100.06f, 467.87f, -2206.46f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -2100.28f, 467.82f, -2195.87f }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2100.28f, 467.82f, -2195.87f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2102.99f, 467.18f, -2200.80f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2102.99f, 467.18f, -2200.80f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -2264.63f, 485.66f, -1871.35f }, INV_HEALTH_FULL, 1);
+
+    // windmill fields
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2183.20f, 498.94f, -1777.71f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2268.09f, 495.18f, -1745.97f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2466.39f, 472.59f, -1796.39f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2467.79f, 472.59f, -1803.16f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -2467.79f, 472.59f, -1803.16f }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2464.22f, 472.59f, -1810.78f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2464.22f, 472.59f, -1810.78f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2466.58f, 468.82f, -1841.95f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -2373.90f, 456.22f, -2117.57f }, INV_HEALTH_FULL, 1);
+
+    // cinder side / deep woods
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2544.85f, 397.29f, -2469.84f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2557.34f, 395.98f, -2485.58f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2576.75f, 395.90f, -2485.93f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -2585.28f, 400.23f, -2498.08f }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2573.31f, 400.23f, -2497.86f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2560.23f, 400.23f, -2498.23f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -2499.26f, 332.59f, -2992.00f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -2502.32f, 328.09f, -3140.83f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -2495.87f, 325.82f, -3286.31f }, INV_HEALTH_FULL, 1);
+
+    // yeti mountain
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -645.00f, 801.43f, 2842.42f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -642.80f, 804.17f, 2814.38f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -615.66f, 810.01f, 2789.96f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -602.24f, 811.41f, 2791.98f }, INV_HEALTH, 1);
+    map_items[mi_init++] = CreateRegularItem(health_full_model, (Vector3) { -565.05f, 806.46f, 2828.97f }, INV_HEALTH_FULL, 1);
+    map_items[mi_init++] = CreateRegularItem(mana_model, (Vector3) { -565.17f, 803.55f, 2849.40f }, INV_POTION, 1);
+    map_items[mi_init++] = CreateRegularItem(health_model, (Vector3) { -576.66f, 796.82f, 2878.02f }, INV_HEALTH, 1); //98
     ////setup tracked map items
     ////for testing: 3022.00f, 322.00f, 4042.42f
     //good book
