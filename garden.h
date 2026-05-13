@@ -111,7 +111,13 @@ static inline void Garden_Add(GardenType type, Vector3 pos, float yaw, float sca
     g->flowerColor = Garden_RandFlowerColor();
     g->leafColor = Garden_RandLeafColor();
 }
+static inline void Garden_AddRandomHomeOrWild(Vector3 pos, float yaw)
+{
+    GardenType type = (GetRandomValue(0, 1) == 0) ? GARDEN_WILD : GARDEN_HOME;
+    float scale = (type == GARDEN_HOME) ? 4.0f : 3.0f;
 
+    Garden_Add(type, pos, yaw, scale);
+}
 static inline void Garden_Init(void)
 {
     gGardenCount = 0;
@@ -149,6 +155,41 @@ static inline void Garden_Init(void)
     Garden_Add(GARDEN_WILD, (Vector3) { 1586.67f, 391.53f, -3172.58f }, 0, 3.0f);
     Garden_Add(GARDEN_WILD, (Vector3) { 1591.08f, 395.29f, -3151.57f }, 0, 3.0f);
     Garden_Add(GARDEN_WILD, (Vector3) { 1655.96f, 402.82f, -3146.91f }, 0, 3.0f);
+
+    // RANDOM gardens: wild flower OR pumpkin hopper
+
+    // cottage
+    Garden_AddRandomHomeOrWild((Vector3) { -1200.85f, 387.76f, 573.98f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { -1229.31f, 387.76f, 575.33f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { -1251.37f, 384.00f, 627.54f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { -1255.71f, 384.00f, 602.44f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { -1176.51f, 384.00f, 631.01f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { -1187.96f, 387.76f, 596.23f }, 0);
+
+    // castle town
+    Garden_AddRandomHomeOrWild((Vector3) { 2526.13f, 342.59f, 2246.25f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2515.58f, 338.82f, 2275.74f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2516.19f, 338.82f, 2297.47f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2627.92f, 335.06f, 2439.92f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2608.30f, 335.06f, 2439.45f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2597.86f, 335.06f, 2472.89f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2632.78f, 335.06f, 2489.08f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2608.96f, 337.28f, 2489.46f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2521.95f, 338.82f, 2455.90f }, 0);
+
+    // woods
+    Garden_AddRandomHomeOrWild((Vector3) { 2622.15f, 333.31f, 360.55f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2552.67f, 316.52f, 273.19f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2443.33f, 314.50f, 179.95f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2427.91f, 312.40f, 111.72f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2405.29f, 311.23f, 64.66f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 2375.06f, 314.57f, 32.54f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 3155.68f, 410.35f, 249.49f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 3127.87f, 408.44f, 205.71f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 3047.76f, 391.72f, 207.17f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 3458.53f, 420.26f, 211.36f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 3413.33f, 425.41f, 154.35f }, 0);
+    Garden_AddRandomHomeOrWild((Vector3) { 3383.10f, 429.18f, 116.58f }, 0);
 }
 
 static inline int Garden_FindFreeBorrower(BadGuyType type)
