@@ -637,7 +637,7 @@ static void Galadriel_GiveBooks(Donogan* d)
 
     if (available <= 0)
     {
-        toast = "You do not have any good books.";
+        toast = "You do not have any ashroot books.";
         StartTimer(&toastTimer);
         FinishTalking(d);
         return;
@@ -650,7 +650,7 @@ static void Galadriel_GiveBooks(Donogan* d)
     d->galBooksGiven += giveCount;
     d->money += (float)giveCount * GALADRIEL_BOOK_PRICE;
 
-    snprintf(galToast, sizeof(galToast), "Sold %d good book%s to Galadriel.", giveCount, giveCount == 1 ? "" : "s");
+    snprintf(galToast, sizeof(galToast), "Sold %d ashroot book%s to Galadriel.", giveCount, giveCount == 1 ? "" : "s");
     toast = galToast;
     StartTimer(&toastTimer);
     PlaySoundVolContinuousAllowed(menuSaveOrLoad);

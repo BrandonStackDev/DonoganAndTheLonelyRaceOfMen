@@ -247,7 +247,7 @@ static TalkData talkData[] = {
         "Blue Wizard",
         {
             "Ah, Donogan. The world is older than your map.",
-            "Find the good books. Beware the shadow books.",
+            "Find the ashroot books. Beware the shadow books.",
             "[Donogan] Why, what are they for?",
             "Because Donogan, you are the Queso Cataracts! The ultimate form of power this world has ever known!",
             "[Donogan] You want me to shove cheese into my eyeballs?!",
@@ -316,7 +316,7 @@ static TalkData talkData[] = {
         TALK_TYPE_GAL_1,
         "Galadriel",
         {
-            "Donogan, I seek the good books.",
+            "Donogan, I seek the ashroot books.",
             "Bring them to me, and I will pay you $80 for each one.",
             "Beware the shadow books. I have no use for those."
         },
@@ -336,7 +336,7 @@ static TalkData talkData[] = {
         TALK_TYPE_GAL_3,
         "Galadriel",
         {
-            "You have brought me all ten good books.",
+            "You have brought me all ten ashroot books.",
             "Take this guitar, Donogan.",
             "Press L1 to use it as an attack.",
             "May its song bonk evil directly in the forehead."
@@ -572,8 +572,8 @@ void InitMissions()
     //MISSION_GALADRIEL
     missions[MISSION_GALADRIEL].complete = false;
     missions[MISSION_GALADRIEL].type = MISSION_GALADRIEL;
-    missions[MISSION_GALADRIEL].name = "Give 10 good books to Galadriel";
-    missions[MISSION_GALADRIEL].desc = "Give 10 good books to Galadriel.";
+    missions[MISSION_GALADRIEL].name = "Give 10 ashroot books to Galadriel";
+    missions[MISSION_GALADRIEL].desc = "Give 10 ashroot books to Galadriel.";
     //MISSION_ALISTER
     missions[MISSION_ALISTER].complete = false;
     missions[MISSION_ALISTER].type = MISSION_ALISTER;

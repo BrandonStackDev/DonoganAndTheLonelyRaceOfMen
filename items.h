@@ -128,7 +128,7 @@ void ConsumeTrackedItems(Donogan* d)
             map_tracked_items[i].collected = true;
             inventory[map_tracked_items[i].type].count++;
             PlaySoundVol(menuSaveOrLoad);//todo: original sound for this
-            if (map_tracked_items[i].type == INV_BOOK) { toast = "Found a Good Book!"; }
+            if (map_tracked_items[i].type == INV_BOOK) { toast = "Found an Ashroot Book!"; }
             else if (map_tracked_items[i].type == INV_EVIL_BOOK) { toast = "Found a Book of Shadows!"; }
             StartTimer(&toastTimer);
             d->xp += 200;
@@ -206,7 +206,7 @@ void InitItems()
     inventory[INV_RX] = (InventoryItem){ INV_RX, "Medicine", "gives full mana and full health", 0 };
     inventory[INV_BERRY] = (InventoryItem){ INV_BERRY, "Berry", "gives +5 mana", 0 };
     inventory[INV_APPLE] = (InventoryItem){ INV_APPLE, "Apple", "gives +30 health and +40 xp", 0 };
-    inventory[INV_BOOK] = (InventoryItem){ INV_BOOK, "Book", "collect these, they might be useful.", 0 };
+    inventory[INV_BOOK] = (InventoryItem){ INV_BOOK, "Ashroot Book", "collect these, they might be useful.", 0 };
     inventory[INV_EVIL_BOOK] = (InventoryItem){ INV_EVIL_BOOK, "Book of Shadows", "hmmm, one of the many book of shadows?", 0 };
     //setup map items
     ////for testing: 3022.00f, 322.00f, 4042.42f (use below as examples if needed)
