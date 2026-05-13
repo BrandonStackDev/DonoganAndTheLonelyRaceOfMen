@@ -221,7 +221,7 @@ static inline void DrawDisplayMaps(
         MapDrawWorldCircle(*map_atreyu, dest, (Color) { 80, 180, 255, 255 });
         MapDrawWorldCircle(*map_gal, dest, (Color) { 255, 240, 200, 255 });
         MapDrawWorldCircle(*map_clarence, dest, (Color) { 200, 200, 220, 255 });
-        MapDrawWorldCircle(*map_alister, dest, (Color) { 60, 60, 60, 255 });
+        MapDrawWorldCircle((Vector3) { -3788.46, 327.53, 1524.95 }, dest, (Color) { 60, 60, 60, 255 });
     }
 }
 
