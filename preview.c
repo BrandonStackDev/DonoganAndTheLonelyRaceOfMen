@@ -5167,7 +5167,7 @@ int main(void) {
                     }
                     else if (bg[b].type == BG_PUMPKIN_HOPPER)
                     {
-                        if (don.state == DONOGAN_STATE_JUMPING || don.state == DONOGAN_STATE_JUMP_LAND)
+                        if (don.state == DONOGAN_STATE_JUMPING || don.state == DONOGAN_STATE_JUMP_LAND || don.state == DONOGAN_STATE_AIR_ROLL)
                         {
                             // hopped a hopper!
                             TraceLog(LOG_INFO, "hopped a hopper!");
