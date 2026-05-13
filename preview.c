@@ -4944,10 +4944,16 @@ int main(void) {
                     Skeleton_KnockBackFromDonogan(&bg[b], &don, false);
                     TraceLog(LOG_INFO, "Spell ball hit skeleton! hp=%d", bg[b].health);
                 }
-                else if (bg[b].type == BG_ALISTER && bg[b].state != ALISTER_STATE_HIT)
+                else if (bg[b].type == BG_ALISTER
+                    && don.alisterEvilRevealed
+                    && bg[b].state != ALISTER_STATE_HIT
+                    && bg[b].state != ALISTER_STATE_DEFEATED
+                    && bg[b].state > ALISTER_STATE_TALK
+                    && CheckCollisionBoxSphere(bg[b].box, balls[i].pos, balls[i].radius))
                 {
                     bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_BALL, bg[b].type);
                     bg[b].state = ALISTER_STATE_HIT;
+                    balls[i].alive = false;
                 }
             }
         }

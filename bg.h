@@ -2606,9 +2606,21 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
 
     if (b->health <= 0 && b->state != ALISTER_STATE_DEFEATED)
     {
-        b->state = ALISTER_STATE_DEFEATED;
-        b->targetPos = b->pos;
-        b->vel = (Vector3){ 0 };
+        if (!d->alisterEvilRevealed)
+        {
+            // Before the reveal / 10 shadow books, Alister cannot be defeated.
+            b->health = 1;
+            b->state = ALISTER_STATE_HURT;
+            b->targetPos = b->pos;
+            b->vel = (Vector3){ 0 };
+        }
+        else
+        {
+            b->state = ALISTER_STATE_DEFEATED;
+            b->targetPos = b->pos;
+            b->vel = (Vector3){ 0 };
+            b->health = b->startHealth;
+        }
     }
 
     switch (b->state)
