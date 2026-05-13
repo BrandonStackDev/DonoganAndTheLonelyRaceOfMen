@@ -1383,7 +1383,7 @@ static TALK_TYPE Alister_GetTalkType(Donogan* d)
 {
     if (!d) return TALK_TYPE_ALISTER_1;
 
-    if (d->aliBooksGiven >= ALISTER_BOOK_GOAL || missions[MISSION_ALISTER].complete)
+    if (d->alisterEvilRevealed) //d->aliBooksGiven >= ALISTER_BOOK_GOAL || missions[MISSION_ALISTER].complete
     {
         return TALK_TYPE_ALISTER_3;
     }
@@ -1401,14 +1401,6 @@ char alisterToast[128];
 static void Alister_GiveBooks(Donogan* d)
 {
     if (!d) return;
-
-    if (d->aliBooksGiven >= ALISTER_BOOK_GOAL)
-    {
-        d->who = TALK_TYPE_ALISTER_3;
-        Talk_Reset(d->who);
-        Alister_ActivateMech(d);
-        return;
-    }
 
     int needed = ALISTER_BOOK_GOAL - d->aliBooksGiven;
     int available = inventory[INV_EVIL_BOOK].count;
@@ -1439,7 +1431,7 @@ static void Alister_GiveBooks(Donogan* d)
 
     if (d->aliBooksGiven >= ALISTER_BOOK_GOAL)
     {
-        d->alisterEvilRevealed = 1;
+        d->alisterEvilRevealed = true;
         d->aliBooksGiven = ALISTER_BOOK_GOAL;
         missions[MISSION_ALISTER].complete = true;
 
