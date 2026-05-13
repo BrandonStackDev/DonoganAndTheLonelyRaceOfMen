@@ -5429,6 +5429,14 @@ int main(void) {
         }
         if (onLoad)
         {
+            bool jaredSquareHeld = false;
+
+            if (donnyMode && havePad)
+            {
+                jaredSquareHeld = gpad.btnSquare;
+            }
+
+            NPC_SetJaredSquareHeld(jaredSquareHeld);
             for (int i = 0; i < NPC_TOTAL; i++)
             {
                 if (Vector3DistanceSqr(don.pos, npcs[i].pos) > 1000*1000) { continue; }

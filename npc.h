@@ -125,6 +125,10 @@ typedef struct {
     bool isRescue;
     RescueState r_state;
     int cartIndex;
+
+    float magicLift;
+    float magicSpinSpeed;
+    float magicBaseY;
 } NPC;
 
 NPC npcs[NPC_TOTAL];
@@ -419,10 +423,23 @@ void InitAllNPC()
     npcs[NPC_JARED].model = jared_model;
     npcs[NPC_JARED].tex = jared_tex;
     npcs[NPC_JARED].model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = jared_tex;
-    npcs[NPC_JARED].pos = (Vector3){ 1700.91, 342, 3870.52 };
-    npcs[NPC_JARED].scale = 1.9;
-    npcs[NPC_MARY].yaw = 90;
+
+    npcs[NPC_JARED].pos = (Vector3){ 1700.91f, 342.0f, 3870.52f };
+    npcs[NPC_JARED].targetPos = npcs[NPC_JARED].pos;
+
+    npcs[NPC_JARED].scale = 1.9f;
+    npcs[NPC_JARED].yaw = 90.0f * DEG2RAD;
+
+    npcs[NPC_JARED].speed = 6.0f;
     npcs[NPC_JARED].isRescue = false;
+    npcs[NPC_JARED].state = WIZARD_STATE_HELLO;
+    npcs[NPC_JARED].curAnim = 0;
+    npcs[NPC_JARED].animFPS = 0;
+    npcs[NPC_JARED].animFrame = 0;
+
+    npcs[NPC_JARED].magicLift = 0.0f;
+    npcs[NPC_JARED].magicSpinSpeed = 0.0f;
+    npcs[NPC_JARED].magicBaseY = NPC_GroundY(npcs[NPC_JARED].pos);
 
 }
 
@@ -456,7 +473,81 @@ static inline bool NPC_AnimTick(NPC* n, float dt) {
     return looped;
 }
 
+//stuff
+#define JARED_MAGIC_RADIUS        75.0f
+#define JARED_MAGIC_MAX_LIFT      38.0f
+#define JARED_MAGIC_RISE_SPEED    18.0f
+#define JARED_MAGIC_FALL_SPEED     7.0f
+#define JARED_MAGIC_SPIN_ACCEL   520.0f
+#define JARED_MAGIC_SPIN_DECEL   180.0f
+#define JARED_MAGIC_MAX_SPIN    1800.0f
 
+static bool gJaredSquareHeld = false;
+
+static inline void NPC_SetJaredSquareHeld(bool held)
+{
+    gJaredSquareHeld = held;
+}
+
+static inline void NPC_Update_Jared(NPC* n, const Donogan* d, float dt)
+{
+    if (!n || !d) return;
+
+    float groundY = NPC_GroundY(n->pos);
+
+    // Keep a stable base height. This matters because normal NPC update snaps to ground.
+    n->magicBaseY = groundY + 3.33f;
+
+    Vector3 flatDon = d->pos;
+    Vector3 flatJared = n->pos;
+    flatDon.y = 0;
+    flatJared.y = 0;
+
+    bool donNear = Vector3DistanceSqr(flatDon, flatJared) <
+        JARED_MAGIC_RADIUS * JARED_MAGIC_RADIUS;
+
+    bool held = gJaredSquareHeld && donNear;
+
+    if (held)
+    {
+        n->magicSpinSpeed += JARED_MAGIC_SPIN_ACCEL * dt;
+        if (n->magicSpinSpeed > JARED_MAGIC_MAX_SPIN)
+        {
+            n->magicSpinSpeed = JARED_MAGIC_MAX_SPIN;
+        }
+
+        n->magicLift += JARED_MAGIC_RISE_SPEED * dt;
+        if (n->magicLift > JARED_MAGIC_MAX_LIFT)
+        {
+            n->magicLift = JARED_MAGIC_MAX_LIFT;
+        }
+    }
+    else
+    {
+        n->magicSpinSpeed -= JARED_MAGIC_SPIN_DECEL * dt;
+        if (n->magicSpinSpeed < 0)
+        {
+            n->magicSpinSpeed = 0;
+        }
+
+        n->magicLift -= JARED_MAGIC_FALL_SPEED * dt;
+        if (n->magicLift < 0)
+        {
+            n->magicLift = 0;
+        }
+    }
+
+    // Spin in radians. magicSpinSpeed is degrees/sec for easier tuning.
+    n->yaw += n->magicSpinSpeed * DEG2RAD * dt;
+
+    // Keep the angle bounded.
+    if (n->yaw > PI * 2.0f) n->yaw -= PI * 2.0f;
+    if (n->yaw < 0.0f) n->yaw += PI * 2.0f;
+
+    n->pos.y = n->magicBaseY + n->magicLift;
+
+    n->targetPos = n->pos;
+}
 // --- Case-specific handler for Darrel ---
 static inline void NPC_Update_Simple(NPC* n, const Donogan* d, float dt, bool looped) 
 {
@@ -612,7 +703,7 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     if (dist > cutoff*cutoff && !forceUpdate) return;
 
     //put them on the ground always
-    if (n->type != NPC_WIZARD)
+    if (n->type != NPC_WIZARD && n->type != NPC_JARED)
     {
         n->pos.y = NPC_GroundY(n->pos);
     }
@@ -631,7 +722,7 @@ static inline void NPC_Update(NPC* n, const Donogan* d, float dt)
     case NPC_ROGER: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_GEOFF: NPC_Update_Simple(n, d, dt, looped); break;
     case NPC_MARY: NPC_Update_Simple(n, d, dt, looped); break;
-    case NPC_JARED: NPC_Update_Simple(n, d, dt, looped); break;
+    case NPC_JARED: NPC_Update_Jared(n, d, dt); break;
     default: break;
     }
     //n->box = UpdateBoundingBox(n->origBox, n->pos);
