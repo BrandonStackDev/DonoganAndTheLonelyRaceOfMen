@@ -476,11 +476,11 @@ static inline bool NPC_AnimTick(NPC* n, float dt) {
 //stuff
 #define JARED_MAGIC_RADIUS        75.0f
 #define JARED_MAGIC_MAX_LIFT      38.0f
-#define JARED_MAGIC_RISE_SPEED    18.0f
+#define JARED_MAGIC_RISE_SPEED    3.0f
 #define JARED_MAGIC_FALL_SPEED     7.0f
-#define JARED_MAGIC_SPIN_DECEL   180.0f
-#define JARED_MAGIC_SPIN_ACCEL   2600.0f
-#define JARED_MAGIC_MAX_SPIN    12000.0f
+#define JARED_MAGIC_SPIN_DECEL   256
+#define JARED_MAGIC_SPIN_ACCEL   1024
+#define JARED_MAGIC_MAX_SPIN    2600.0f
 
 static bool gJaredSquareHeld = false;
 
