@@ -1,15 +1,15 @@
 DON_SAVE_V1
-don_pos = 2616.343 348.907 4633.883
+don_pos = -257.592 330.251 -1995.568
 don_bow = 0
 don_wrench = 1
 don_unlockedTruck = 1
-don_health = 93
-don_mana   = 20
+don_health = 97
+don_mana   = 55
 don_starthealth = 102
 don_startmana   = 102
 don_level  = 19
-don_xp     = 8369
-don_money     = 4040.000000
+don_xp     = 8398
+don_money     = 4040.500000
 don_hover  = 1
 don_wiz  = 1
 don_gal_books = 0
@@ -92,9 +92,9 @@ ITEM[18] = 1
 ITEM[19] = 0
 --ITEMS-END--
 --INV-BEGIN--
-INV[0] = 2
-INV[1] = 1
-INV[2] = 3
+INV[0] = 3
+INV[1] = 2
+INV[2] = 4
 INV[3] = 0
 INV[4] = 0
 INV[5] = 0

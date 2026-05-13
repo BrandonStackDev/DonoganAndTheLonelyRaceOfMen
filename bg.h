@@ -3189,7 +3189,7 @@ BadGuy CreateSkeleton(Vector3 pos)
 void InitBadGuys(Shader ghostShader)
 {
     InitBadGuyModels(ghostShader);
-    bg_count = 219; //increment this, every time, you add, a bg...
+    bg_count = 394; //increment this, every time, you add, a bg...
     bg = (BadGuy*)malloc(sizeof(BadGuy) * bg_count);
     bg[0] = CreateGhost((Vector3) { 237, 394, 1039 }); //for testing: 3022.00f, 322.00f, 4042.42f
     bg[1] = CreateGhost((Vector3) { -652, 404, 1005 });
@@ -3450,6 +3450,194 @@ void InitBadGuys(Shader ghostShader)
     //alister and the mech...
     bg[217] = CreateAlister((Vector3) { -3788.46, 327.53, 1524.95 });
     bg[218] = CreateMech((Vector3) { -3761.57, 327.53, 1545.34 });
+
+    //final stuff 1
+        // new badguys: road / field loop
+    bg[219] = CreateSkeleton((Vector3) { 838.69f, 323.76f, 2072.33f });
+    bg[220] = CreateSkeleton((Vector3) { 865.91f, 316.24f, 2169.33f });
+    bg[221] = CreateRobo((Vector3) { 1071.09f, 312.47f, 2104.01f }); // orb
+    bg[222] = CreateSkeleton((Vector3) { 864.87f, 327.53f, 1953.42f });
+    bg[223] = CreateGhost((Vector3) { 804.02f, 327.53f, 1929.30f });
+    bg[224] = CreateSkeleton((Vector3) { 851.02f, 338.82f, 1750.64f });
+    bg[225] = CreatePumpkinHopper((Vector3) { 788.65f, 337.23f, 1606.41f });
+    bg[226] = CreateSkeleton((Vector3) { 770.72f, 357.65f, 1479.98f });
+    bg[227] = CreateRobo((Vector3) { 749.43f, 372.11f, 1244.17f }); // orb
+    bg[228] = CreateSkeleton((Vector3) { 726.27f, 380.24f, 1139.61f });
+    bg[229] = CreateSkeleton((Vector3) { 784.48f, 389.12f, 1033.49f });
+    bg[230] = CreateGhost((Vector3) { 829.09f, 388.47f, 969.90f });
+    bg[231] = CreateSkeleton((Vector3) { 817.70f, 397.34f, 901.06f });
+    bg[232] = CreateSkeleton((Vector3) { 871.25f, 393.61f, 773.38f });
+    bg[233] = CreateRobo((Vector3) { 1015.22f, 393.60f, 356.24f }); // orb
+    bg[234] = CreateSkeleton((Vector3) { 1019.07f, 390.83f, 327.57f });
+    bg[235] = CreateGhost((Vector3) { 1032.31f, 385.89f, 305.81f });
+    bg[236] = CreateSkeleton((Vector3) { 1046.64f, 382.52f, 297.45f });
+    bg[237] = CreatePumpkinHopper((Vector3) { 1104.88f, 374.18f, 326.92f });
+    bg[238] = CreateSkeleton((Vector3) { 1195.66f, 388.79f, 473.47f });
+    bg[239] = CreateRobo((Vector3) { 1221.30f, 387.76f, 555.69f }); // orb
+    bg[240] = CreateSkeleton((Vector3) { 1244.51f, 384.00f, 631.45f });
+    bg[241] = CreateSkeleton((Vector3) { 1261.09f, 380.24f, 711.58f });
+    bg[242] = CreateGhost((Vector3) { 1261.95f, 373.19f, 845.87f });
+    bg[243] = CreateSkeleton((Vector3) { 1295.18f, 360.79f, 979.91f });
+    bg[244] = CreateSkeleton((Vector3) { 1360.17f, 350.12f, 1115.42f });
+    bg[245] = CreateRobo((Vector3) { 1264.02f, 335.06f, 1484.92f }); // orb
+    bg[246] = CreateSkeleton((Vector3) { 1273.54f, 331.29f, 1560.37f });
+    bg[247] = CreateGhost((Vector3) { 1131.51f, 342.59f, 1607.91f });
+    bg[248] = CreateSkeleton((Vector3) { 1092.80f, 344.65f, 1618.04f });
+    bg[249] = CreatePumpkinHopper((Vector3) { 1078.21f, 338.82f, 1702.59f });
+
+    // new badguys: bridge / high path
+    bg[250] = CreateSkeleton((Vector3) { 1720.88f, 547.15f, -1082.64f });
+    bg[251] = CreateRobo((Vector3) { 1770.57f, 513.17f, -1119.26f }); // orb
+    bg[252] = CreateSkeleton((Vector3) { 1817.42f, 476.78f, -1140.00f });
+    bg[253] = CreateSkeleton((Vector3) { 1765.47f, 528.41f, -1581.54f });
+    bg[254] = CreateGhost((Vector3) { 1788.23f, 514.89f, -1600.64f });
+    bg[255] = CreateSkeleton((Vector3) { 1805.56f, 502.59f, -1623.49f });
+    bg[256] = CreateSkeleton((Vector3) { 1788.70f, 512.10f, -1653.68f });
+    bg[257] = CreateRobo((Vector3) { 1808.33f, 500.71f, -1678.88f }); // orb
+    bg[258] = CreateSkeleton((Vector3) { 1837.14f, 476.50f, -1712.33f });
+    bg[259] = CreateGhost((Vector3) { 1868.19f, 454.73f, -1733.17f });
+    bg[260] = CreateSkeleton((Vector3) { 1875.24f, 446.98f, -1770.96f });
+    bg[261] = CreatePumpkinHopper((Vector3) { 1890.08f, 435.21f, -1793.35f });
+    bg[262] = CreateSkeleton((Vector3) { 1915.13f, 415.29f, -1793.52f });
+    bg[263] = CreateRobo((Vector3) { 1938.39f, 393.82f, -1781.58f }); // orb
+    bg[264] = CreateSkeleton((Vector3) { 1949.05f, 386.47f, -1775.32f });
+    bg[265] = CreateSkeleton((Vector3) { 1969.56f, 367.64f, -1792.07f });
+    bg[266] = CreateGhost((Vector3) { 1978.56f, 359.03f, -1849.50f });
+    bg[267] = CreateSkeleton((Vector3) { 1973.27f, 350.12f, -2243.39f });
+    bg[268] = CreateSkeleton((Vector3) { 1995.61f, 336.16f, -2328.58f });
+    bg[269] = CreateRobo((Vector3) { 2040.10f, 334.17f, -2580.88f }); // orb
+    bg[270] = CreateSkeleton((Vector3) { 2026.04f, 345.27f, -2607.09f });
+    bg[271] = CreateGhost((Vector3) { 2043.83f, 340.19f, -2653.39f });
+    bg[272] = CreateSkeleton((Vector3) { 2037.48f, 347.48f, -2700.70f });
+    bg[273] = CreatePumpkinHopper((Vector3) { 2048.16f, 346.35f, -2745.88f });
+
+    // new badguys: north ocean / hopper coast
+    bg[274] = CreateSkeleton((Vector3) { 2319.35f, 319.75f, -3133.44f });
+    bg[275] = CreateRobo((Vector3) { 2332.61f, 325.08f, -3170.51f }); // orb
+    bg[276] = CreateSkeleton((Vector3) { 2367.36f, 319.31f, -3196.22f });
+    bg[277] = CreateSkeleton((Vector3) { 2395.05f, 325.00f, -3264.46f });
+    bg[278] = CreateGhost((Vector3) { 2393.45f, 332.83f, -3346.54f });
+    bg[279] = CreateSkeleton((Vector3) { 2368.66f, 322.33f, -3510.31f });
+    bg[280] = CreateSkeleton((Vector3) { 2335.76f, 318.87f, -3524.85f });
+    bg[281] = CreateRobo((Vector3) { 2279.71f, 317.63f, -3530.12f }); // orb
+    bg[282] = CreateSkeleton((Vector3) { 2250.75f, 319.32f, -3522.71f });
+    bg[283] = CreateGhost((Vector3) { 2228.13f, 315.75f, -3538.38f });
+    bg[284] = CreateSkeleton((Vector3) { 2142.28f, 321.70f, -3513.92f });
+    bg[285] = CreatePumpkinHopper((Vector3) { 2129.18f, 328.28f, -3499.04f });
+    bg[286] = CreateSkeleton((Vector3) { 2121.86f, 330.74f, -3490.06f });
+    bg[287] = CreateRobo((Vector3) { 2102.87f, 337.73f, -3460.26f }); // orb
+    bg[288] = CreateSkeleton((Vector3) { 2089.82f, 344.15f, -3433.01f });
+    bg[289] = CreateSkeleton((Vector3) { 2061.10f, 347.14f, -3420.56f });
+    bg[290] = CreateGhost((Vector3) { 2012.14f, 361.00f, -3361.40f });
+    bg[291] = CreateSkeleton((Vector3) { 1974.66f, 371.01f, -3302.82f });
+    bg[292] = CreateSkeleton((Vector3) { 1909.93f, 374.95f, -3302.65f });
+    bg[293] = CreateRobo((Vector3) { 1894.61f, 371.73f, -3316.43f }); // orb
+    bg[294] = CreateSkeleton((Vector3) { 1828.47f, 368.30f, -3346.63f });
+    bg[295] = CreateGhost((Vector3) { 1724.42f, 363.21f, -3368.46f });
+    bg[296] = CreateSkeleton((Vector3) { 1707.23f, 363.11f, -3368.75f });
+    bg[297] = CreatePumpkinHopper((Vector3) { 1695.30f, 363.33f, -3367.89f });
+    bg[298] = CreateSkeleton((Vector3) { 1683.06f, 359.44f, -3382.15f });
+    bg[299] = CreateRobo((Vector3) { 1682.16f, 354.37f, -3392.44f }); // orb
+    bg[300] = CreateSkeleton((Vector3) { 1675.78f, 350.14f, -3408.04f });
+    bg[301] = CreateSkeleton((Vector3) { 1666.14f, 349.26f, -3411.81f });
+    bg[302] = CreateGhost((Vector3) { 1646.54f, 349.82f, -3409.16f });
+    bg[303] = CreateSkeleton((Vector3) { 1634.80f, 350.75f, -3405.23f });
+    bg[304] = CreateSkeleton((Vector3) { 1586.39f, 343.04f, -3422.23f });
+    bg[305] = CreateRobo((Vector3) { 1550.25f, 338.22f, -3426.52f }); // orb
+    bg[306] = CreateSkeleton((Vector3) { 1492.36f, 336.57f, -3406.89f });
+    bg[307] = CreateGhost((Vector3) { 1469.68f, 338.09f, -3394.89f });
+    bg[308] = CreateSkeleton((Vector3) { 1453.65f, 340.78f, -3381.38f });
+    bg[309] = CreatePumpkinHopper((Vector3) { 1443.66f, 339.98f, -3374.99f });
+    bg[310] = CreateSkeleton((Vector3) { 1424.84f, 339.32f, -3373.93f });
+    bg[311] = CreateRobo((Vector3) { 1413.76f, 338.82f, -3375.34f }); // orb
+    bg[312] = CreateSkeleton((Vector3) { 1354.98f, 331.51f, -3386.55f });
+    bg[313] = CreateSkeleton((Vector3) { 1314.94f, 331.29f, -3373.83f });
+    bg[314] = CreateGhost((Vector3) { 1284.29f, 327.53f, -3397.88f });
+    bg[315] = CreateSkeleton((Vector3) { 1263.87f, 323.76f, -3445.41f });
+    bg[316] = CreateSkeleton((Vector3) { 1277.55f, 320.00f, -3483.52f });
+    bg[317] = CreateRobo((Vector3) { 1283.34f, 316.24f, -3512.05f }); // orb
+    bg[318] = CreateSkeleton((Vector3) { 1257.61f, 312.07f, -3537.90f });
+    bg[319] = CreateGhost((Vector3) { -2228.96f, 493.18f, -1810.53f });
+    bg[320] = CreateSkeleton((Vector3) { -2199.66f, 496.94f, -1797.44f });
+    bg[321] = CreatePumpkinHopper((Vector3) { -2176.26f, 496.94f, -1766.08f });
+    bg[322] = CreateSkeleton((Vector3) { -2146.94f, 500.71f, -1762.92f });
+    bg[323] = CreateRobo((Vector3) { -2128.09f, 500.71f, -1817.56f }); // orb
+    bg[324] = CreateSkeleton((Vector3) { -2118.18f, 496.94f, -1885.43f });
+
+    // new badguys: cinder village / windmill fields
+    bg[325] = CreateSkeleton((Vector3) { -2075.16f, 496.94f, -1928.03f });
+    bg[326] = CreateGhost((Vector3) { -2037.87f, 500.71f, -1946.14f });
+    bg[327] = CreateSkeleton((Vector3) { -2032.25f, 496.94f, -1977.31f });
+    bg[328] = CreateSkeleton((Vector3) { -1991.25f, 495.91f, -2004.21f });
+    bg[329] = CreateRobo((Vector3) { -1793.72f, 500.10f, -2051.01f }); // orb
+    bg[330] = CreateSkeleton((Vector3) { -1803.53f, 496.94f, -2086.28f });
+    bg[331] = CreateGhost((Vector3) { -1805.51f, 496.35f, -2115.21f });
+    bg[332] = CreateSkeleton((Vector3) { -1786.49f, 493.18f, -2150.16f });
+    bg[333] = CreatePumpkinHopper((Vector3) { -1786.71f, 490.09f, -2173.55f });
+    bg[334] = CreateSkeleton((Vector3) { -1788.91f, 489.41f, -2182.82f });
+    bg[335] = CreateRobo((Vector3) { -1808.99f, 489.41f, -2219.31f }); // orb
+    bg[336] = CreateSkeleton((Vector3) { -1829.11f, 485.65f, -2243.58f });
+    bg[337] = CreateSkeleton((Vector3) { -1837.95f, 485.65f, -2264.14f });
+    bg[338] = CreateGhost((Vector3) { -1840.27f, 484.82f, -2275.91f });
+    bg[339] = CreateSkeleton((Vector3) { -1847.66f, 481.88f, -2295.49f });
+    bg[340] = CreateSkeleton((Vector3) { -1847.66f, 481.88f, -2295.49f });
+    bg[341] = CreateRobo((Vector3) { -1837.93f, 481.88f, -2297.35f }); // orb
+    bg[342] = CreateSkeleton((Vector3) { -1837.93f, 481.88f, -2297.35f });
+    bg[343] = CreateGhost((Vector3) { -1826.01f, 481.88f, -2296.30f });
+    bg[344] = CreateSkeleton((Vector3) { -1826.01f, 481.88f, -2296.30f });
+    bg[345] = CreatePumpkinHopper((Vector3) { -1815.04f, 480.33f, -2294.60f });
+    bg[346] = CreateSkeleton((Vector3) { -1815.04f, 480.33f, -2294.60f });
+    bg[347] = CreateRobo((Vector3) { -1539.01f, 460.00f, -2128.11f }); // orb
+    bg[348] = CreateSkeleton((Vector3) { -1509.33f, 458.59f, -2114.98f });
+    bg[349] = CreateSkeleton((Vector3) { -1491.78f, 455.09f, -2118.12f });
+    bg[350] = CreateGhost((Vector3) { -1481.58f, 453.68f, -2119.88f });
+    bg[351] = CreateSkeleton((Vector3) { -1464.60f, 455.01f, -2113.91f });
+    bg[352] = CreateSkeleton((Vector3) { -1458.30f, 455.53f, -2107.35f });
+
+    // new badguys: ruins / lower path
+    bg[353] = CreateRobo((Vector3) { -1446.85f, 457.55f, -2087.01f }); // orb
+    bg[354] = CreateSkeleton((Vector3) { -1447.28f, 459.29f, -2078.36f });
+    bg[355] = CreateGhost((Vector3) { -1443.07f, 460.10f, -2060.23f });
+    bg[356] = CreateSkeleton((Vector3) { -1438.06f, 461.53f, -2054.18f });
+    bg[357] = CreatePumpkinHopper((Vector3) { -1426.79f, 463.06f, -2045.29f });
+    bg[358] = CreateSkeleton((Vector3) { -1419.53f, 463.06f, -2042.29f });
+    bg[359] = CreateRobo((Vector3) { -1412.16f, 463.06f, -2039.55f }); // orb
+    bg[360] = CreateSkeleton((Vector3) { -1396.25f, 462.66f, -2033.61f });
+    bg[361] = CreateSkeleton((Vector3) { -1389.35f, 462.96f, -2032.32f });
+    bg[362] = CreateGhost((Vector3) { -1381.65f, 463.06f, -2030.67f });
+    bg[363] = CreateSkeleton((Vector3) { -1362.91f, 463.06f, -2027.34f });
+    bg[364] = CreateSkeleton((Vector3) { -1355.90f, 462.19f, -2026.93f });
+    bg[365] = CreateRobo((Vector3) { -1349.26f, 460.63f, -2027.03f }); // orb
+    bg[366] = CreateSkeleton((Vector3) { -1327.81f, 459.29f, -2027.84f });
+    bg[367] = CreateGhost((Vector3) { -1320.57f, 459.29f, -2029.47f });
+    bg[368] = CreateSkeleton((Vector3) { -1314.07f, 459.29f, -2030.60f });
+    bg[369] = CreatePumpkinHopper((Vector3) { -1307.41f, 458.23f, -2017.91f });
+    bg[370] = CreateSkeleton((Vector3) { -1306.82f, 458.07f, -2010.08f });
+    bg[371] = CreateRobo((Vector3) { -1308.67f, 458.49f, -2002.45f }); // orb
+    bg[372] = CreateSkeleton((Vector3) { -1310.71f, 458.96f, -1994.42f });
+    bg[373] = CreateSkeleton((Vector3) { -1314.26f, 459.29f, -1988.36f });
+    bg[374] = CreateGhost((Vector3) { -1316.67f, 459.29f, -1981.77f });
+    bg[375] = CreateSkeleton((Vector3) { -1318.16f, 459.29f, -1975.32f });
+    bg[376] = CreateSkeleton((Vector3) { -1319.01f, 459.29f, -1968.77f });
+    bg[377] = CreateRobo((Vector3) { -1319.07f, 459.29f, -1961.75f }); // orb
+    bg[378] = CreateSkeleton((Vector3) { -1317.98f, 459.29f, -1955.24f });
+    bg[379] = CreateGhost((Vector3) { -1163.26f, 471.61f, -1755.58f });
+    bg[380] = CreateSkeleton((Vector3) { -1134.33f, 475.39f, -1773.59f });
+    bg[381] = CreatePumpkinHopper((Vector3) { -1134.73f, 471.40f, -1822.24f });
+    bg[382] = CreateSkeleton((Vector3) { -1133.37f, 469.06f, -1849.47f });
+    bg[383] = CreateRobo((Vector3) { -1112.69f, 469.57f, -1867.20f }); // orb
+    bg[384] = CreateSkeleton((Vector3) { -1065.65f, 474.35f, -1877.14f });
+
+    // new badguys: skeleton road toward cinderspire
+    bg[385] = CreateSkeleton((Vector3) { -1045.05f, 478.12f, -1851.12f });
+    bg[386] = CreateGhost((Vector3) { -1027.08f, 484.83f, -1824.01f });
+    bg[387] = CreateSkeleton((Vector3) { -994.06f, 481.88f, -1864.50f });
+    bg[388] = CreateSkeleton((Vector3) { -348.48f, 312.47f, -1862.74f });
+    bg[389] = CreateRobo((Vector3) { -329.81f, 314.69f, -1913.85f }); // orb
+    bg[390] = CreateSkeleton((Vector3) { -349.74f, 319.27f, -1981.27f });
+    bg[391] = CreateGhost((Vector3) { -357.72f, 331.29f, -2072.10f });
+    bg[392] = CreateSkeleton((Vector3) { -371.92f, 327.53f, -2138.06f });
+    bg[393] = CreatePumpkinHopper((Vector3) { -400.95f, 323.76f, -2195.82f });
 }
 
 static inline bool BG_HornRecentlyActive(Donogan* d)
