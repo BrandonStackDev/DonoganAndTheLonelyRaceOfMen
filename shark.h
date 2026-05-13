@@ -45,6 +45,7 @@ typedef struct {
     Vector3 goal;
 
     float yaw;
+    float pitch;
     float speed;
 
     float wanderSpeed;
@@ -220,6 +221,42 @@ static Vector3 Shark_PickOuterRingGoalTowardTarget(const Shark* s, Vector3 targe
 
     return s->home;
 }
+#define SHARK_BITE_FORWARD  14.0f   // bigger = farther toward nose
+#define SHARK_BITE_UP        0.2f   // raise/lower bite box
+#define SHARK_BITE_HALF_X    3.8f
+#define SHARK_BITE_HALF_Y    2.8f
+#define SHARK_BITE_HALF_Z    3.4f
+
+static Vector3 SharkForward3D(const Shark* s)
+{
+    float yawRad = DEG2RAD * s->yaw;
+    float pitchRad = DEG2RAD * s->pitch;
+
+    return (Vector3) {
+        sinf(yawRad)* cosf(pitchRad),
+            sinf(pitchRad),
+            cosf(yawRad)* cosf(pitchRad)
+    };
+}
+
+static void Shark_UpdateBiteBox(Shark* s)
+{
+    Vector3 fwd = SharkForward3D(s);
+
+    Vector3 biteCenter = Vector3Add(
+        s->pos,
+        Vector3Scale(fwd, SHARK_BITE_FORWARD)
+    );
+
+    biteCenter.y += SHARK_BITE_UP;
+
+    BoundingBox biteLocal = {
+        .min = (Vector3){ -SHARK_BITE_HALF_X, -SHARK_BITE_HALF_Y, -SHARK_BITE_HALF_Z },
+        .max = (Vector3){  SHARK_BITE_HALF_X,  SHARK_BITE_HALF_Y,  SHARK_BITE_HALF_Z }
+    };
+
+    s->box = UpdateBoundingBox(biteLocal, biteCenter);
+}
 // =============================
 // INIT
 // =============================
@@ -230,6 +267,7 @@ static void InitShark(Shark* s, Vector3 home, float surfaceY)
     s->goal = home;
 
     s->yaw = 0;
+    s->pitch = 0;
     s->speed = 0;
 
     s->wanderSpeed = 3.4f;
@@ -278,10 +316,12 @@ static bool LoadShark(Shark* s)
         SetMaterialTexture(&s->model.materials[0], MATERIAL_MAP_ALBEDO, s->tex);
     }
 
-    s->origBox = (BoundingBox){ (Vector3) {-6,-6,-6}, (Vector3) {6,6,6} };//ScaleBoundingBox(GetModelBoundingBox(s->model), 0.8f);
-    Vector3 fwd = (Vector3){ sinf(DEG2RAD * s->yaw), 0, cosf(DEG2RAD * s->yaw) };
-    Vector3 nosePos = Vector3Add(s->pos, Vector3Scale(fwd, 10)); // tweak 10 to match your shark length
-    s->box = UpdateBoundingBox(s->origBox, nosePos);
+    s->origBox = (BoundingBox){
+    (Vector3){ -SHARK_BITE_HALF_X, -SHARK_BITE_HALF_Y, -SHARK_BITE_HALF_Z },
+    (Vector3){  SHARK_BITE_HALF_X,  SHARK_BITE_HALF_Y,  SHARK_BITE_HALF_Z }
+    };
+
+    Shark_UpdateBiteBox(s);
 
     s->bloodShader = LoadShader("shaders/120/blood.vs", "shaders/120/blood.fs");
     s->bloodShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(s->bloodShader, "mvp");
@@ -523,8 +563,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
             s->state = SHARK_STATE_ATTACK;
             s->stateTime = 0;
             s->hasEaten = false;
-            float r = s->yaw;
-            Vector3 fwd = (Vector3){ sinf(r), 0, cosf(r) };
+            Vector3 fwd = SharkForward3D(s);
             Vector3 toDon = Vector3Subtract(d->pos, Vector3Add(s->pos, Vector3Scale(fwd, 8)));
             toDon.y = 0;
 
@@ -554,7 +593,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
         // update box before testing
         Vector3 fwd = (Vector3){ sinf(DEG2RAD * s->yaw), 0, cosf(DEG2RAD * s->yaw) };
         Vector3 nosePos = Vector3Add(s->pos, Vector3Scale(fwd, 10)); // tweak 10 to match your shark length
-        s->box = UpdateBoundingBox(s->origBox, nosePos);
+        Shark_UpdateBiteBox(s);
 
         // if we hit Donny, eat him
         if (!d->eatenByShark && CheckCollisionBoxes(s->box, d->outerBox))
@@ -608,13 +647,33 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
     if (Vector3Length(dir) > 0.01f)
     {
         dir = Vector3Normalize(dir);
+
         s->pos = Vector3Add(s->pos, Vector3Scale(dir, s->speed * dt));
+
+        // yaw from XZ
         float targetYaw = atan2f(dir.x, dir.z) * RAD2DEG;
         float yawDiff = SharkAngleWrapDeg(targetYaw - s->yaw);
-        float maxTurn = 90 * dt; // deg/sec
+
+        float maxTurn = 90.0f * dt;
         if (yawDiff > maxTurn) yawDiff = maxTurn;
         if (yawDiff < -maxTurn) yawDiff = -maxTurn;
+
         s->yaw += yawDiff;
+
+        // pitch from vertical movement
+        float flatLen = sqrtf(dir.x * dir.x + dir.z * dir.z);
+        float targetPitch = atan2f(dir.y, flatLen) * RAD2DEG;
+
+        // keep it shark-like, not airplane crazy
+        targetPitch = Clamp(targetPitch, -28.0f, 28.0f);
+
+        float pitchDiff = targetPitch - s->pitch;
+        float maxPitchTurn = 65.0f * dt;
+
+        if (pitchDiff > maxPitchTurn) pitchDiff = maxPitchTurn;
+        if (pitchDiff < -maxPitchTurn) pitchDiff = -maxPitchTurn;
+
+        s->pitch += pitchDiff;
     }
 
     // clamp vertically ONLY (not XZ)
@@ -624,7 +683,7 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
     s->pos.y = Clamp(s->pos.y, minY, maxY);
     Vector3 fwd = (Vector3){ sinf(DEG2RAD * s->yaw), 0, cosf(DEG2RAD * s->yaw) };
     Vector3 nosePos = Vector3Add(s->pos, Vector3Scale(fwd, 10)); // tweak 10 to match your shark length
-    s->box = UpdateBoundingBox(s->origBox, nosePos);
+    Shark_UpdateBiteBox(s);
     
     //anims
     float t = (float)GetTime();
@@ -682,22 +741,34 @@ static void Shark_Update(Shark* s, Donogan* d, float dt)
 // =============================
 // DRAW
 // =============================
-static void Shark_Draw(Shark* s, Donogan *d)
+static void Shark_Draw(Shark* s, Donogan* d)
 {
     if (Vector3Distance(s->pos, d->pos) > 1024) { return; }
+
+    Quaternion q = QuaternionFromEuler(
+        DEG2RAD * s->pitch,
+        DEG2RAD * s->yaw,
+        0.0f
+    );
+
+    Vector3 axis = { 0, 1, 0 };
+    float angle = 0.0f;
+
+    QuaternionToAxisAngle(q, &axis, &angle);
+
     DrawModelEx(
         s->model,
         s->pos,
+        axis,
+        angle * RAD2DEG,
         (Vector3) {
-        0, 1, 0
-        },
-            s->yaw,
-            (Vector3) {
-            s->scale, s->scale, s->scale
-        },
+        s->scale, s->scale, s->scale
+    },
         WHITE
     );
-    //DrawBoundingBox(s->box, RED); //todo: remove
+
+    // Turn this on while tuning:
+    DrawBoundingBox(s->box, RED);
 }
 static void Shark_Draw_Extremities(Shark* s, Donogan* d)
 {
