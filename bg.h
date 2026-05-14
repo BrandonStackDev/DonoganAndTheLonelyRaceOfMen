@@ -2702,7 +2702,7 @@ static inline void BG_Update_Alister(Donogan* d, BadGuy* b, float dt)
         if (fabsf(b->pitch + 90.0f) < 2.0f)
         {
             d->alisterDead = true;
-            toast = "You defeated Alister! The land of Elyndor thanks you!";
+            toast = "You defeated Alister! The land of Mosswake thanks you!";
             StartTimer(&toastTimer);
             b->active = false;
             b->dead = true;
