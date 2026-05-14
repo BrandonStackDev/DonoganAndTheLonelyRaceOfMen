@@ -617,18 +617,33 @@ static void _DrawInventory(GameState* gs) {
         DrawTextEx(GetFontDefault(), buf, (Vector2) { rightX, y }, textSize, 1.0f, rightColor);
     }
 
-    //todo: one of these for alister
     if (donnyBoyInventory->galBooksGiven > 0)
     {
         char galBooksText[64];
         snprintf(galBooksText, sizeof(galBooksText),
-            "Galadriel Books: %d / 10",
+            "Galadriel Ashroot Books: %d / 10",
             donnyBoyInventory->galBooksGiven);
 
         DrawTextEx(GetFontDefault(),
             galBooksText,
             (Vector2) {
             panel.x + 12, panel.y + panel.height - 158
+        },
+            20,
+            1.0f,
+            MENU_DIM);
+    }
+    if (donnyBoyInventory->aliBooksGiven > 0)
+    {
+        char aliBooksText[64];
+        snprintf(aliBooksText, sizeof(aliBooksText),
+            "Alister Shadow Books: %d / 10",
+            donnyBoyInventory->aliBooksGiven);
+
+        DrawTextEx(GetFontDefault(),
+            aliBooksText,
+            (Vector2) {
+            panel.x + 12, panel.y + panel.height - 132
         },
             20,
             1.0f,
