@@ -25,6 +25,10 @@ typedef enum {
     LANDING
 } Truck_Air_State;
 
+bool truckAudioWasVehicleMode = false;
+bool truckAudioWaitingForStart = false;
+bool truckAudioEngineStarted = false;
+
 Timer truckInteractTimer;
 bool displayTruckPoints = false;
 bool displayTruckForward = false;

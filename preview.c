@@ -1558,6 +1558,8 @@ int main(void) {
     pick = LoadSound("sounds/pick.mp3");
     wrenchSound = LoadSound("sounds/wrench.mp3");
     sharkGulp = LoadSound("sounds/shark_gulp.mp3");
+    truckStart = LoadSound("sounds/truck_start.mp3");
+    truckEngine = LoadSound("sounds/truck.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -2439,6 +2441,69 @@ int main(void) {
             don.pos = truckPosition;
             donnyMode = false; 
         }//just make sure this is always exlusive or, one or the other, never both, and update his position for npc culling, so they appear
+        bool nowVehicle = vehicleMode && onLoad && don.unlockedTruck;
+
+        // Just entered vehicle mode
+        if (nowVehicle && !truckAudioWasVehicleMode)
+        {
+            StopSound(truckEngine);
+            StopSound(truckStart);
+
+            SetSoundPitch(truckStart, 1.0f);
+            SetSoundPitch(truckEngine, 1.0f);
+
+            PlaySoundVol(truckStart);
+
+            truckAudioWaitingForStart = true;
+            truckAudioEngineStarted = false;
+        }
+
+        // While in vehicle mode
+        if (nowVehicle)
+        {
+            float enginePitch = 1.0f + fabsf(truckSpeed/3.0f);
+            enginePitch = Clamp(enginePitch, 0.75f, 2.25f);
+
+            SetSoundPitch(truckEngine, enginePitch);
+
+            // Wait for start sound to finish before engine begins
+            if (truckAudioWaitingForStart)
+            {
+                if (!IsSoundPlaying(truckStart))
+                {
+                    truckAudioWaitingForStart = false;
+                    truckAudioEngineStarted = true;
+
+                    SetSoundPitch(truckEngine, enginePitch);
+                    PlaySoundVol(truckEngine);
+                }
+            }
+            else
+            {
+                // Raylib Sound does not have a normal loop flag, so restart when it ends.
+                if (!IsSoundPlaying(truckEngine))
+                {
+                    truckAudioEngineStarted = true;
+                    SetSoundPitch(truckEngine, enginePitch);
+                    PlaySoundVol(truckEngine);
+                }
+            }
+        }
+
+        // Just exited vehicle mode
+        if (!nowVehicle && truckAudioWasVehicleMode)
+        {
+            StopSound(truckStart);
+            StopSound(truckEngine);
+
+            SetSoundPitch(truckStart, 1.0f);
+            SetSoundPitch(truckEngine, 1.0f);
+
+            truckAudioWaitingForStart = false;
+            truckAudioEngineStarted = false;
+        }
+
+        truckAudioWasVehicleMode = nowVehicle;
         if (!vehicleMode && donnyMode && onLoad)
         {
             if (!don.hasWrench && CheckCollisionBoxes(wrenchBox,don.outerBox)) //get the wrench
@@ -6858,6 +6923,8 @@ int main(void) {
     UnloadSound(pick);
     UnloadSound(wrenchSound);
     UnloadSound(sharkGulp);
+    UnloadSound(truckStart);
+    UnloadSound(truckEngine);
 
     // ---- main character / actors ----
     FreeDonogan(&don);      // already exists in donogan.h

@@ -1388,6 +1388,8 @@ Sound grow;
 Sound pick;
 Sound wrenchSound;
 Sound sharkGulp;
+Sound truckStart;
+Sound truckEngine;
 
 
 char* toast;
