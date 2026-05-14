@@ -3081,7 +3081,29 @@ int main(void) {
                 don.xp += (int)(points / 1000);
                 don.money += ((float)points/1000.0);
                 points = 0;
-                don.pos = Vector3Add(truckPosition, (Vector3) {6,1,-5});//todo: why did I put a one here for y?
+                Vector3 exitPos = Vector3Add(truckPosition, (Vector3) { 6.0f, 0.0f, -5.0f });
+
+                float exitGroundY = GetTerrainHeightFromMeshXZ(exitPos.x, exitPos.z);
+                if (exitGroundY > -9000.0f)
+                {
+                    exitPos.y = exitGroundY + 0.15f;
+                }
+                else
+                {
+                    exitPos.y = truckPosition.y + 0.15f;
+                }
+
+                don.pos = exitPos;
+                don.groundY = exitGroundY > -9000.0f ? exitGroundY : exitPos.y - 0.15f;
+                don.velY = 0.0f;
+                don.onGround = true;
+                don.gluedToPlatform = false;
+                don.inWater = false;
+
+                DonSetState(&don, DONOGAN_STATE_IDLE);
+                Don_UpdateBoxes(&don);
+                Don_ResetPositionHistory(&don);
+                don.oldPos = don.pos;
             }
         }
         prevCross = cross; prevTri = tri; //set after this large block

@@ -509,7 +509,18 @@ void Menu_OnCross(GameState* gs, Donogan* d)
         // +5 X/Z away from center so we don't land ON the pit
         d->pos.x = fires[fireIdx].pos.x + 5.0f;
         d->pos.z = fires[fireIdx].pos.z + 5.0f;
-        DonSnapToGround(d);
+        d->pos.y = fires[fireIdx].pos.y + 8.0f;   // start above the pit and fall down
+
+        d->velY = 0.0f;
+        d->onGround = false;
+        d->gluedToPlatform = false;
+        d->gluedPlatId = -1;
+        d->inWater = false;
+
+        DonSetState(d, DONOGAN_STATE_JUMPING);
+        Don_UpdateBoxes(d);
+        Don_ResetPositionHistory(d);
+        d->oldPos = d->pos;
         Menu_Close(gs);
         return;
     }
