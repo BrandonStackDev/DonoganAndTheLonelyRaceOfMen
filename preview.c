@@ -2461,7 +2461,7 @@ int main(void) {
         // While in vehicle mode
         if (nowVehicle)
         {
-            float enginePitch = 1.0f + fabsf(truckSpeed/3.0f);
+            float enginePitch = 0.8f + fabsf(truckSpeed/2);
             enginePitch = Clamp(enginePitch, 0.75f, 2.25f);
 
             SetSoundPitch(truckEngine, enginePitch);
