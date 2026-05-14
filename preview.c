@@ -2443,6 +2443,11 @@ int main(void) {
         }//just make sure this is always exlusive or, one or the other, never both, and update his position for npc culling, so they appear
         bool nowVehicle = vehicleMode && onLoad && don.unlockedTruck;
 
+        // tuning
+        const float TRUCK_START_ENGINE_OVERLAP_TIME = 0.72f; // lower = engine comes in sooner
+        const float TRUCK_SHUTDOWN_DROP_RATE = 0.75f;        // pitch drop per second
+        const float TRUCK_SHUTDOWN_MIN_PITCH = 0.20f;
+
         // Just entered vehicle mode
         if (nowVehicle && !truckAudioWasVehicleMode)
         {
@@ -2454,22 +2459,26 @@ int main(void) {
 
             PlaySoundVol(truckStart);
 
+            truckAudioStartAge = 0.0f;
             truckAudioWaitingForStart = true;
             truckAudioEngineStarted = false;
+
+            truckAudioShutdownActive = false;
+            truckAudioShutdownPitch = 1.0f;
         }
 
         // While in vehicle mode
         if (nowVehicle)
         {
-            float enginePitch = 0.8f + fabsf(truckSpeed/2);
+            truckAudioStartAge += GetFrameTime();
+
+            float enginePitch = 0.8f + fabsf(truckSpeed / 2.0f);
             enginePitch = Clamp(enginePitch, 0.75f, 2.25f);
 
-            SetSoundPitch(truckEngine, enginePitch);
-
-            // Wait for start sound to finish before engine begins
+            // Wait only a little while, not for the start sound to totally finish.
             if (truckAudioWaitingForStart)
             {
-                if (!IsSoundPlaying(truckStart))
+                if (truckAudioStartAge >= TRUCK_START_ENGINE_OVERLAP_TIME || !IsSoundPlaying(truckStart))
                 {
                     truckAudioWaitingForStart = false;
                     truckAudioEngineStarted = true;
@@ -2480,6 +2489,8 @@ int main(void) {
             }
             else
             {
+                SetSoundPitch(truckEngine, enginePitch);
+
                 // Raylib Sound does not have a normal loop flag, so restart when it ends.
                 if (!IsSoundPlaying(truckEngine))
                 {
@@ -2494,13 +2505,47 @@ int main(void) {
         if (!nowVehicle && truckAudioWasVehicleMode)
         {
             StopSound(truckStart);
-            StopSound(truckEngine);
 
-            SetSoundPitch(truckStart, 1.0f);
-            SetSoundPitch(truckEngine, 1.0f);
+            // Start shutdown sound from normal pitch.
+            truckAudioShutdownActive = true;
+            truckAudioShutdownPitch = 1.0f;
+
+            SetSoundPitch(truckEngine, truckAudioShutdownPitch);
+
+            if (!IsSoundPlaying(truckEngine))
+            {
+                PlaySoundVol(truckEngine);
+            }
 
             truckAudioWaitingForStart = false;
             truckAudioEngineStarted = false;
+        }
+
+        // Shutdown phase after leaving vehicle mode
+        if (!nowVehicle && truckAudioShutdownActive)
+        {
+            truckAudioShutdownPitch -= TRUCK_SHUTDOWN_DROP_RATE * GetFrameTime();
+
+            if (truckAudioShutdownPitch <= TRUCK_SHUTDOWN_MIN_PITCH)
+            {
+                truckAudioShutdownPitch = TRUCK_SHUTDOWN_MIN_PITCH;
+                SetSoundPitch(truckEngine, truckAudioShutdownPitch);
+
+                StopSound(truckEngine);
+                SetSoundPitch(truckEngine, 1.0f);
+
+                truckAudioShutdownActive = false;
+            }
+            else
+            {
+                SetSoundPitch(truckEngine, truckAudioShutdownPitch);
+
+                // Keep it alive during the slowdown if the sample ends early.
+                if (!IsSoundPlaying(truckEngine))
+                {
+                    PlaySoundVol(truckEngine);
+                }
+            }
         }
 
         truckAudioWasVehicleMode = nowVehicle;

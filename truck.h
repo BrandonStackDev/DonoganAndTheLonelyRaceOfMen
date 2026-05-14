@@ -28,6 +28,9 @@ typedef enum {
 bool truckAudioWasVehicleMode = false;
 bool truckAudioWaitingForStart = false;
 bool truckAudioEngineStarted = false;
+bool truckAudioShutdownActive = false;
+float truckAudioStartAge = 0.0f;
+float truckAudioShutdownPitch = 1.0f;
 
 Timer truckInteractTimer;
 bool displayTruckPoints = false;
