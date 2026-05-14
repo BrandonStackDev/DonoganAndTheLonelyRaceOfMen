@@ -627,7 +627,7 @@ static void _DrawInventory(GameState* gs) {
         DrawTextEx(GetFontDefault(),
             galBooksText,
             (Vector2) {
-            panel.x + 12, panel.y + panel.height - 158
+            panel.x + 12, panel.y + panel.height - 180
         },
             20,
             1.0f,
@@ -643,7 +643,7 @@ static void _DrawInventory(GameState* gs) {
         DrawTextEx(GetFontDefault(),
             aliBooksText,
             (Vector2) {
-            panel.x + 12, panel.y + panel.height - 132
+            panel.x + 12, panel.y + panel.height - 158
         },
             20,
             1.0f,
