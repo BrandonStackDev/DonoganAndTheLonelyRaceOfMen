@@ -14,7 +14,7 @@
 #define CORN_MAX_INSTANCES 8192
 #endif
 
-#define CORN_DRAW_DISTANCE 4396.0f
+#define CORN_DRAW_DISTANCE 1024
 #define CORN_GROUND_Y_OFFSET 3.0f   // tweak if corn sinks/floats
 #define CORN_DEFAULT_SCALE  4.0f
 
