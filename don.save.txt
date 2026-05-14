@@ -1,15 +1,15 @@
 DON_SAVE_V1
-don_pos = 1905.008 374.119 4169.933
+don_pos = 887.391 316.235 2154.006
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
-don_health = 70
-don_mana   = 77
+don_health = 106
+don_mana   = 95
 don_starthealth = 106
 don_startmana   = 106
 don_level  = 28
-don_xp     = 16212
-don_money     = 11824.35
+don_xp     = 17086
+don_money     = 11850.05
 don_hover  = 1
 don_wiz  = 1
 don_gal_books = 10
@@ -21,8 +21,8 @@ ja_r1_unlocked = 1
 ja_r2_unlocked = 1
 invY = 0
 invX = 0
-musicVol = 0.3500
-soundVol = 1.0000
+musicVol = 0.0000
+soundVol = 0.8000
 difficulty = 1
 --FIREPLACES-BEGIN--
 FIRE[0] = 1
@@ -93,10 +93,10 @@ ITEM[19] = 1
 --ITEMS-END--
 --INV-BEGIN--
 INV[0] = 23
-INV[1] = 22
-INV[2] = 42
+INV[1] = 23
+INV[2] = 48
 INV[3] = 9
-INV[4] = 4
+INV[4] = 0
 INV[5] = 0
 INV[6] = 0
 INV[7] = 0
