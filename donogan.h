@@ -3408,6 +3408,7 @@ static inline void DonSpawnBubbles(Donogan* d, int count, float strength) {
         b->origBox = (BoundingBox){ (Vector3) { -1,-1,-1 },(Vector3) { 1,1,1 } };
         b->box = UpdateBoundingBox(b->origBox, b->pos);
     }
+    PlaySoundVol(bubblesSound);
 }
 
 static inline void DonUpdateBubbles(Donogan* d, float dt) {

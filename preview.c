@@ -1572,6 +1572,7 @@ int main(void) {
     laserBeam = LoadSound("sounds/laser.mp3");
     splat = LoadSound("sounds/splat.mp3");
     spawnGhost = LoadSound("sounds/ghost.mp3");
+    bubblesSound = LoadSound("sounds/bubbles.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);

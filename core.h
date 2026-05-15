@@ -1400,6 +1400,7 @@ Sound spellBall;
 Sound laserBeam;
 Sound splat;
 Sound spawnGhost;
+Sound bubblesSound;
 
 char* toast;
 Timer toastTimer;
