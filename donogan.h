@@ -3762,7 +3762,19 @@ static void DonSetState(Donogan* d, DonoganState s)
     if (!d) return;
     if (d->state == s) return;
     d->state = s;
-
+    // One-shot Donogan sounds on state entry.
+    if (s == DONOGAN_STATE_JUMP_START)
+    {
+        PlaySoundVol(grunt);
+    }
+    else if (s == DONOGAN_STATE_JUMP_LAND)
+    {
+        PlaySoundVol(groundHit);
+    }
+    else if (s == DONOGAN_STATE_HIT)
+    {
+        PlaySoundVol(gruntHit);
+    }
     // Loop only on locomotion/idle; jump phases don’t loop
     bool loop = (s == DONOGAN_STATE_IDLE 
                     || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN 

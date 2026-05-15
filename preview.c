@@ -1575,6 +1575,9 @@ int main(void) {
     bubblesSound = LoadSound("sounds/bubbles.mp3");
     underWater = LoadSound("sounds/under_water.mp3");
     splash = LoadSound("sounds/splash.mp3");
+    grunt = LoadSound("sounds/grunt.mp3");
+    gruntHit = LoadSound("sounds/grunt_hit.mp3");
+    groundHit = LoadSound("sounds/ground.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
