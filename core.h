@@ -1406,6 +1406,9 @@ Sound splash;
 Sound grunt;
 Sound gruntHit;
 Sound groundHit;
+Sound screech;
+
+
 
 char* toast;
 Timer toastTimer;

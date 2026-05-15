@@ -974,7 +974,7 @@ static void Truck_CollideBadGuys(float dt)
         if (TruckHitPart_IsTire(part) && speedAbs > 1.5f)
         {
             isTruckSliding = true;
-
+            if (!IsSoundPlaying(screech)) { PlaySoundVol(screech); }
             if (Vector3LengthSqr(dir) > 0.0001f)
             {
                 truckSlideForward = Vector3Scale(dir, 1.0f);
@@ -1578,6 +1578,7 @@ int main(void) {
     grunt = LoadSound("sounds/grunt.mp3");
     gruntHit = LoadSound("sounds/grunt_hit.mp3");
     groundHit = LoadSound("sounds/ground.mp3");
+    screech = LoadSound("sounds/screech.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -3772,6 +3773,7 @@ int main(void) {
                 {
                     //printf("sliding ... \n");
                     isTruckSliding = true;
+                    if (!IsSoundPlaying(screech)) { PlaySoundVol(screech); }
                     truckSlidePeek = false; // we just started
                     truckSlideSpeed += GetFrameTime();
                     rotSlide = gpad.normLX * -PI / 1.8f;//gpad.normLX>0?-PI/2.0f:PI/2.0f; //use this to control which way we slide
