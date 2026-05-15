@@ -1411,6 +1411,7 @@ Sound carImpact;
 Sound carCrash;
 Sound monster;
 Sound monster2;
+Sound throwFade;
 
 char* toast;
 Timer toastTimer;

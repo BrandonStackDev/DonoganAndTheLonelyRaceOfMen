@@ -3723,6 +3723,7 @@ static inline void BG_UpdateAll(Donogan *d, float dt)
         //handle square spell
         if (d->squareThrowRequest && bg[i].frozen)
         {
+            if (!IsSoundPlaying(throwFade)) { PlaySoundVol(throwFade); }
             TraceLog(LOG_INFO, "throwing request!");
             Vector3 dir = Vector3Normalize(Vector3Subtract(bg[i].pos, d->pos));
             bg[i].throwing = true;

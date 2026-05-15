@@ -1583,6 +1583,7 @@ int main(void) {
     carCrash = LoadSound("sounds/crash.mp3");
     monster = LoadSound("sounds/monster.mp3");
     monster2 = LoadSound("sounds/monster2.mp3");
+    throwFade = LoadSound("sounds/throw_fade.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
