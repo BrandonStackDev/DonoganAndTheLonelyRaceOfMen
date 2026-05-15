@@ -1402,6 +1402,7 @@ Sound splat;
 Sound spawnGhost;
 Sound bubblesSound;
 Sound underWater;
+Sound splash;
 
 char* toast;
 Timer toastTimer;
