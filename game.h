@@ -33,6 +33,7 @@ typedef struct {
     bool invY, invX;
     float musicVol, soundVol;
     Difficulty diff;
+    bool no_corn;
 
     // Playback state
     int   currentAlbumIndex;   // -1 if none selected

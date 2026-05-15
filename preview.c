@@ -6560,7 +6560,7 @@ int main(void) {
                 if (onLoad) //handle water last because of its transparency, only draw once loaded
                 {
                     //corn
-                    DrawCornFields(don.pos, frustumChunk8, displayBoxes);
+                    if (!gGame.no_corn) { DrawCornFields(don.pos, frustumChunk8, displayBoxes); }
                     //water
                     for (int cy = 0; cy < CHUNK_COUNT; cy++) {
                         for (int cx = 0; cx < CHUNK_COUNT; cx++) {

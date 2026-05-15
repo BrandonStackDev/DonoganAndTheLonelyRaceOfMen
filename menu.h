@@ -149,6 +149,7 @@ bool SaveGameToFile(char* path, GameState* gs, Donogan* d)
     fprintf(f, "ja_r2_unlocked = %d\n", d->ja_r2_unlocked ? 1 : 0);
 
     // GameState
+    fprintf(f, "no_corn = %d\n", gs->no_corn ? 1 : 0);
     fprintf(f, "invY = %d\n", gs->invY ? 1 : 0);
     fprintf(f, "invX = %d\n", gs->invX ? 1 : 0);
     fprintf(f, "musicVol = %.4f\n", gs->musicVol);
@@ -373,6 +374,10 @@ static bool LoadGameFromFile(const char* path, GameState* gs, Donogan* d)
         else if (!strncmp(s, "ja_r2_unlocked", 14)) {
             int v = 0;
             if (sscanf(s, "ja_r2_unlocked = %d", &v) == 1) d->ja_r2_unlocked = (v != 0);
+        }
+        else if (!strncmp(s, "no_corn", 7)) {
+            int v = 0;
+            if (sscanf(s, "no_corn = %d", &v) == 1) gs->no_corn = (v != 0);
         }
         else if (!strncmp(s, "invY", 4)) {
             int v = 0;
