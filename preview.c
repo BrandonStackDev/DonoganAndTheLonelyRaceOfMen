@@ -1581,6 +1581,8 @@ int main(void) {
     screech = LoadSound("sounds/screech.mp3");
     carImpact = LoadSound("sounds/car_impact.mp3");
     carCrash = LoadSound("sounds/crash.mp3");
+    monster = LoadSound("sounds/monster.mp3");
+    monster2 = LoadSound("sounds/monster2.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -3128,7 +3130,6 @@ int main(void) {
             if (hoverMode && gpad.btnCross) //&& !prevCross, I dont want pump, I want press
             {
                 truckAirState = AIRBORNE;
-                PlaySoundVol(carImpact);
                 gravityCollected = -2.8f;   // upward burst; tune
                 truckSpeed += 128 * GetFrameTime();
             }
@@ -3147,7 +3148,6 @@ int main(void) {
                 {
                     truckPosition.y = hoverY;
                     truckAirState = GROUND;
-                    PlaySoundVol(carImpact);
                     gravityCollected = 0;
                 }
             }

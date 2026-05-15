@@ -1174,6 +1174,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
         b->pos.y = groundY;
         b->state = YETI_STATE_PLANNING;
         BG_SetAnim(b, ANIM_YETI_ROAR, true);
+        PlaySoundVol(monster2);
         break;
 
     case YETI_STATE_PLANNING:
@@ -1232,6 +1233,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
 
     case YETI_STATE_ATTACK: // jump attack (ballistic)
     {
+        PlaySoundVol(monster2);
         // Advance physics
         b->pos.x += b->vel.x * dt * b->speed;
         b->pos.z += b->vel.z * dt * b->speed;
@@ -1264,6 +1266,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
 
     case YETI_STATE_HIT:
     {
+        PlaySoundVol(monster2);
         b->pos = Vector3Add(b->pos, Vector3Scale(b->vel, dt));
         b->vel.y -= 28.0f * dt;
 
@@ -1288,6 +1291,7 @@ static inline void BG_Update_Yeti(Donogan* d, BadGuy* b, float dt)
     } break;
 
     case YETI_STATE_DYING:
+        PlaySoundVol(monster2);
         b->pitch = Lerp(b->pitch, -90, Clamp(dt * 4.5f, 0.0f, 1.0f));
         if (b->drawColor.a != 0) { b->drawColor.a--; }
         if (b->drawColor.a == 0)
@@ -1715,6 +1719,7 @@ static inline bool Skeleton_IsAttackState(int state)
 
 static inline void Skeleton_StartJumpAttack(BadGuy* b, Donogan* d, float groundY)
 {
+    PlaySoundVol(monster);
     Vector3 toDon = Vector3Subtract(d->pos, b->pos);
     toDon.y = 0;
 

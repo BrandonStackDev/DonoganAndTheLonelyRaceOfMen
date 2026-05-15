@@ -1409,7 +1409,8 @@ Sound groundHit;
 Sound screech;
 Sound carImpact;
 Sound carCrash;
-
+Sound monster;
+Sound monster2;
 
 char* toast;
 Timer toastTimer;
