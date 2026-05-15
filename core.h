@@ -1398,6 +1398,8 @@ Sound punchLand;
 Sound spawnBot;
 Sound spellBall;
 Sound laserBeam;
+Sound splat;
+Sound spawnGhost;
 
 char* toast;
 Timer toastTimer;

@@ -1570,6 +1570,8 @@ int main(void) {
     spawnBot = LoadSound("sounds/spawn_bot.mp3");
     spellBall = LoadSound("sounds/spell_ball.mp3");
     laserBeam = LoadSound("sounds/laser.mp3");
+    splat = LoadSound("sounds/splat.mp3");
+    spawnGhost = LoadSound("sounds/ghost.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -5254,6 +5256,7 @@ int main(void) {
                         bg[b].vel = Vector3Scale(dir, 45.0f);
                         bg[b].vel.y = 18.0f;
                         bg[b].state = HOPPER_STATE_HURT;
+                        PlaySoundVol(splat);
                     }
                     else if (bg[b].type == BG_SKELETON)
                     {
@@ -5341,6 +5344,7 @@ int main(void) {
                             don.velY = don.jumpSpeed;   // or *1.1f for extra juice
                             don.state = DONOGAN_STATE_JUMPING;
                             don.onGround = false;
+                            PlaySoundVol(splat);
                         }
                         else if (wrenchHit || guitarHit)
                         {
@@ -5352,12 +5356,14 @@ int main(void) {
                             bg[b].vel = Vector3Scale(dir, 55.0f);
                             bg[b].vel.y = 22.0f;
                             bg[b].state = HOPPER_STATE_HURT;
+                            PlaySoundVol(splat);
                         }
                         else if (punchHit)
                         {
                             TraceLog(LOG_INFO, "punched a hopper!");
                             bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_PUNCH, bg[b].type);
                             Hopper_KnockBackFromDonogan(&bg[b], &don);
+                            PlaySoundVol(splat);
                         }
                         else if (HasTimerElapsed(&don.hitTimer)) {
                             TraceLog(LOG_INFO, "ouch! hopper oof!");

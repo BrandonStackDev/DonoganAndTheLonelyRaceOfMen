@@ -3912,6 +3912,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos, Donogan * d)
                     { 
                         bg[b].pos.y = GetTerrainHeightFromMeshXZ(bg[b].pos.x, bg[b].pos.z) - 30;
                         bg[b].state = GHOST_STATE_SPAWN;
+                        PlaySoundVol(spawnGhost);
                     }
                     else if (bg[b].type == BG_YETI) {
                         // snap to ground and start in SPAWN (will fall into PLANNING next update)
