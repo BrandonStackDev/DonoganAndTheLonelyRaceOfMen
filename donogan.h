@@ -3775,6 +3775,10 @@ static void DonSetState(Donogan* d, DonoganState s)
     {
         PlaySoundVol(gruntHit);
     }
+    else if (s == DONOGAN_STATE_SPELL_IDLE)
+    {
+        PlaySoundVol(spellBall);
+    }
     // Loop only on locomotion/idle; jump phases don’t loop
     bool loop = (s == DONOGAN_STATE_IDLE 
                     || s == DONOGAN_STATE_WALK || s == DONOGAN_STATE_RUN 
