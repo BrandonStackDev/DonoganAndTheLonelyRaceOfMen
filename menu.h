@@ -428,6 +428,7 @@ static void Menu_OnLeft(GameState* gs) {
         case 2: gs->musicVol -= 0.05f; Menu_ApplyVolumes(gs); break;
         case 3: gs->soundVol -= 0.05f; Menu_ApplyVolumes(gs); break;
         case 4: if (gs->diff > DIFF_EASY) gs->diff = (Difficulty)((int)gs->diff - 1); break;
+        case 5: gs->no_corn = !gs->no_corn; break;
         }
     }
 }
@@ -439,6 +440,7 @@ static void Menu_OnRight(GameState* gs) {
         case 2: gs->musicVol += 0.05f; Menu_ApplyVolumes(gs); break;
         case 3: gs->soundVol += 0.05f; Menu_ApplyVolumes(gs); break;
         case 4: if (gs->diff < DIFF_HARD) gs->diff = (Difficulty)((int)gs->diff + 1); break;
+        case 5: gs->no_corn = !gs->no_corn; break;
         }
     }
 }
@@ -686,7 +688,7 @@ static void _DrawOptions(GameState* gs) {
     Menu_DrawHeader("Options", panel);
     Menu_DrawBox(panel);
 
-    const char* rows[5]; char buf2[64], buf3[64];
+    const char* rows[6]; char buf2[64], buf3[64];
     snprintf(buf2, sizeof(buf2), "Music Volume: %.2f", gs->musicVol);
     snprintf(buf3, sizeof(buf3), "Sound Volume: %.2f", gs->soundVol);
     rows[0] = gs->invY ? "Invert Y: On" : "Invert Y: Off";
@@ -694,8 +696,9 @@ static void _DrawOptions(GameState* gs) {
     rows[2] = buf2; rows[3] = buf3;
     static char diffbuf[32]; snprintf(diffbuf, sizeof(diffbuf), "Difficulty: %s", _DiffName(gs->diff));
     rows[4] = diffbuf;
+    rows[5] = gs->no_corn ? "Corn: Off" : "Corn: On";
 
-    const int count = 5;
+    const int count = 6;
     Menu_ScrollClamp(count, &gs->menuSel, &gs->menuScroll);
 
     int row = 0;
