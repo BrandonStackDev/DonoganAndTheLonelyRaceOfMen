@@ -800,6 +800,7 @@ static inline bool Don_TryStartAirL2SphereSlam(Donogan* d)
     d->onGround = false;
 
     DonSetState(d, DONOGAN_STATE_AIR_L2_SPELL_SLAM);
+    PlaySoundVol(spellBall);
     return true;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1045,6 +1046,7 @@ static void SpawnAirR2DownBall(const Donogan* d, SpellBall* b)
     b->growRate = 3.5f;
     b->life = 3.12f;
     b->alive = 1;
+    PlaySoundVol(spellBall);
 }
 
 static inline bool Don_TryFireAirR2Spell(Donogan* d)
@@ -3872,6 +3874,7 @@ static void SpawnBall(const Donogan* d, SpellBall* b) {
     b->growRate = 3.5f; // m/s growth
     b->life = 3.12f;
     b->alive = 1;
+    PlaySoundVol(spellBall);
 }
 
 void UpdateBalls(float dt) {

@@ -1405,7 +1405,7 @@ static inline void BG_Update_Robo(Donogan* d, BadGuy* b, float dt)
         Vector3 to = (Vector3){ d->pos.x, d->pos.y + 1.2f, d->pos.z };   // Don chest-ish
 
         FireLaser(from, to, 0.16f);  // short flash; fades automatically
-
+        PlaySoundVol(laserBeam);
         // Immediate hit feedback & damage (simple gate via hitTimer)
         if (HasTimerElapsed(&d->hitTimer))
         {

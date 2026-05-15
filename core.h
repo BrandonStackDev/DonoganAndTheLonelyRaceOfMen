@@ -1396,6 +1396,8 @@ Sound clank;
 Sound bowRelease;
 Sound punchLand;
 Sound spawnBot;
+Sound spellBall;
+Sound laserBeam;
 
 char* toast;
 Timer toastTimer;

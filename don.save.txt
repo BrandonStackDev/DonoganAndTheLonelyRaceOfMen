@@ -1,15 +1,15 @@
 DON_SAVE_V1
-don_pos = 933.118 322.546 2021.182
+don_pos = 3283.737 410.353 392.510
 don_bow = 1
 don_wrench = 1
 don_unlockedTruck = 1
-don_health = 85
-don_mana   = 102
+don_health = 102
+don_mana   = 97
 don_starthealth = 102
 don_startmana   = 102
-don_level  = 21
-don_xp     = 9467
-don_money     = 2000.00
+don_level  = 23
+don_xp     = 11107
+don_money     = 3605.35
 don_hover  = 1
 don_wiz  = 1
 don_gal_books = 0
@@ -38,7 +38,7 @@ FIRE[8] = 0
 FIRE[9] = 0
 --FIREPLACES-END--
 --MACHINES-BEGIN--
-MACHINES[0] = 0
+MACHINES[0] = 1
 MACHINES[1] = 0
 MACHINES[2] = 0
 MACHINES[3] = 0
@@ -56,9 +56,9 @@ MISSION[0] = 0
 MISSION[1] = 0
 MISSION[2] = 0
 MISSION[3] = 0
-MISSION[4] = 0
+MISSION[4] = 1
 MISSION[5] = 0
-MISSION[6] = 0
+MISSION[6] = 1
 MISSION[7] = 0
 MISSION[8] = 0
 MISSION[9] = 0
@@ -94,7 +94,7 @@ ITEM[19] = 0
 --ITEMS-END--
 --INV-BEGIN--
 INV[0] = 2
-INV[1] = 1
+INV[1] = 0
 INV[2] = 2
 INV[3] = 0
 INV[4] = 0

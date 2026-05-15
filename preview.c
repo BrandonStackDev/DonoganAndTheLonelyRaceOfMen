@@ -1568,6 +1568,8 @@ int main(void) {
     bowRelease = LoadSound("sounds/bow.mp3");
     punchLand = LoadSound("sounds/punch.mp3");
     spawnBot = LoadSound("sounds/spawn_bot.mp3");
+    spellBall = LoadSound("sounds/spell_ball.mp3");
+    laserBeam = LoadSound("sounds/laser.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
