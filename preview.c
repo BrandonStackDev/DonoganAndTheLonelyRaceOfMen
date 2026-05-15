@@ -869,7 +869,7 @@ static void Truck_CollideBadGuys(float dt)
         TruckHitPart part;
 
         if (!Truck_FindBadGuyHit(b, &push, &part)) continue;
-
+        PlaySoundVol(punchLand);
         Vector3 dir = push;
         dir.y = 0;
 
@@ -1579,6 +1579,8 @@ int main(void) {
     gruntHit = LoadSound("sounds/grunt_hit.mp3");
     groundHit = LoadSound("sounds/ground.mp3");
     screech = LoadSound("sounds/screech.mp3");
+    carImpact = LoadSound("sounds/car_impact.mp3");
+    carCrash = LoadSound("sounds/crash.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -3126,6 +3128,7 @@ int main(void) {
             if (hoverMode && gpad.btnCross) //&& !prevCross, I dont want pump, I want press
             {
                 truckAirState = AIRBORNE;
+                PlaySoundVol(carImpact);
                 gravityCollected = -2.8f;   // upward burst; tune
                 truckSpeed += 128 * GetFrameTime();
             }
@@ -3144,6 +3147,7 @@ int main(void) {
                 {
                     truckPosition.y = hoverY;
                     truckAirState = GROUND;
+                    PlaySoundVol(carImpact);
                     gravityCollected = 0;
                 }
             }
@@ -3178,6 +3182,7 @@ int main(void) {
                     truckAirState = GROUND;
                     bounceCollector = 0;
                 }
+                PlaySoundVol(carImpact);
             }
             else //GROUND
             {
@@ -3949,6 +3954,7 @@ int main(void) {
             bool hitRock[4] = { false , false , false , false };
             bool anyHitRock = false;
             bool hitTree = false;
+            bool hitSomething = false;
             if (don.unlockedTruck && vehicleMode)
             {
                 //building/scene collision for truck
@@ -3968,6 +3974,7 @@ int main(void) {
                                 if (gEnvBoundingBoxes[i].type == EBBT_GROUND){continue;}
                                 else if (gEnvBoundingBoxes[i].type == EBBT_WALL)
                                 {
+                                    hitSomething = true;
                                     //stuff goes here
                                     // --- env wall collision response (MIT/MTD) ---
                                     const float SKIN = 0.02f;
@@ -4082,12 +4089,13 @@ int main(void) {
                             truckSpeed *= 0.6f;   // soften impact a bit
                             disableRoll = true;   // stabilize chassis for this frame
                             UpdateTruckBoxes();
-
+                            hitSomething = true;
                             // Optional: if one building hit is enough per frame, early-out the scene loop
                             // break;
                         }
                     }
                 }
+                if (hitSomething) { PlaySoundVol(carCrash);}
 
                 //truck static props collision
                 for (int i = 0; i < numCloseProps; i++)
@@ -4108,7 +4116,6 @@ int main(void) {
                             BoundingBox tb = TruckBoxTires[t];
 
                             if (!CheckCollisionBoxes(tb, tree.outerBox)) continue;
-
                             // if the tire bottom is below the rock top, lift the truck so it rests on it
                             float tireBottom = tb.min.y;
                             float desiredBottom = tree.outerBox.max.y;
@@ -4150,7 +4157,6 @@ int main(void) {
                         for (int b = 0; b < 4; ++b)
                         {
                             if (!CheckCollisionBoxes(body[b], prop)) continue;
-
                             // per-axis overlaps (positive => penetration depth)
                             float left = prop.max.x - body[b].min.x; // +X push
                             float right = body[b].max.x - prop.min.x;    // -X push
@@ -4183,6 +4189,7 @@ int main(void) {
                             disableRoll = true;        // lock roll for this frame on hard contact
                             UpdateTruckBoxes();
                             hitTree = true;
+                            PlaySoundVol(carCrash);
                         }
                     }
                 }
@@ -4249,6 +4256,7 @@ int main(void) {
                     if(!Menu_IsOpen(&gGame) && gpad.btnCross>0)
                     {
                         truckAirState=AIRBORNE;
+                        PlaySoundVol(carImpact);
                         truckPosition.y+=1.28;
                         verticalVelocity = 16.0f * truckSpeed * truckSpeed; //burst
                     }
@@ -4263,6 +4271,7 @@ int main(void) {
                             {
                                 //here, take off!
                                 truckAirState=AIRBORNE;
+                                PlaySoundVol(carImpact);
                                 verticalVelocity=3.2f * truckSpeed * dt; //natural
                             }
                         }

@@ -1407,7 +1407,8 @@ Sound grunt;
 Sound gruntHit;
 Sound groundHit;
 Sound screech;
-
+Sound carImpact;
+Sound carCrash;
 
 
 char* toast;
