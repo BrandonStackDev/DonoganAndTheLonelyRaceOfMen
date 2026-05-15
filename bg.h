@@ -3922,6 +3922,7 @@ bool CheckSpawnAndActivateNext(Vector3 pos, Donogan * d)
                     else if (bg[b].type == BG_ROBO)
                     {
                         bg[b].state = ROBO_STATE_SPAWN;
+                        PlaySoundVol(spawnBot);
                     }
                     else if (bg[b].type == BG_PUMPKIN_HOPPER)
                     {

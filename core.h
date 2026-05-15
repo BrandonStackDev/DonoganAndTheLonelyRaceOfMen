@@ -1393,6 +1393,9 @@ Sound truckEngine;
 Sound whoosh;
 Sound guitarSmash;
 Sound clank;
+Sound bowRelease;
+Sound punchLand;
+Sound spawnBot;
 
 char* toast;
 Timer toastTimer;

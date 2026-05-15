@@ -1359,6 +1359,7 @@ static void DonFireArrow(Donogan* d, Vector3 spawn, Vector3 dir, float speed) {
     a->vel = Vector3Scale(Vector3Normalize(dir), speed);
     a->life = d->arrowMaxLife;
     a->dir = Vector3Normalize(dir);
+    PlaySoundVol(bowRelease);
 }
 
 static void DonUpdateArrows(Donogan* d, float dt) {

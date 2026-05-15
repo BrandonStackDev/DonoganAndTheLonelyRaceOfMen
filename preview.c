@@ -1565,6 +1565,9 @@ int main(void) {
     whoosh = LoadSound("sounds/whoosh.mp3");
     guitarSmash = LoadSound("sounds/guitar_smash.mp3");
     clank = LoadSound("sounds/clank.mp3");
+    bowRelease = LoadSound("sounds/bow.mp3");
+    punchLand = LoadSound("sounds/punch.mp3");
+    spawnBot = LoadSound("sounds/spawn_bot.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -5196,6 +5199,10 @@ int main(void) {
                 else if (wrenchHit)
                 {
                     PlaySoundVol(clank);
+                }
+                else if (punchHit)
+                {
+                    PlaySoundVol(punchLand);
                 }
 
                 bool bgCannotDealDamage = bg[b].dead || bg[b].ragdoll || 
