@@ -1573,6 +1573,7 @@ int main(void) {
     splat = LoadSound("sounds/splat.mp3");
     spawnGhost = LoadSound("sounds/ghost.mp3");
     bubblesSound = LoadSound("sounds/bubbles.mp3");
+    underWater = LoadSound("sounds/under_water.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -2042,6 +2043,17 @@ int main(void) {
     // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     while (!WindowShouldClose() && keepAlive)
     {
+        // underwater ambience
+        if (!caveMode && don.pos.y < PLAYER_FLOAT_Y_POSITION - 2)
+        {
+            SetSoundVolume(underWater, gGame.soundVol);
+            if (!IsSoundPlaying(underWater))
+            {
+                PlaySound(underWater);
+            }
+        }
+        else if (IsSoundPlaying(underWater)) { StopSound(underWater); }
+
         if (!dream_land) { reality_cache = don.pos; }
         //shut off in water if in vehicle
         if (!donnyMode) { don.inWater = false; }

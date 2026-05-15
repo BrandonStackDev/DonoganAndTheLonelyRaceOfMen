@@ -1401,6 +1401,7 @@ Sound laserBeam;
 Sound splat;
 Sound spawnGhost;
 Sound bubblesSound;
+Sound underWater;
 
 char* toast;
 Timer toastTimer;
