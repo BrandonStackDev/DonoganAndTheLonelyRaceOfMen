@@ -1301,6 +1301,8 @@ static void Preview_ResolveGroundGuitarHit(Donogan* d)
     if (b->dead) return;
     if (BG_IsActuallyDeadState(b)) return;
 
+    PlaySoundVol(guitarSmash);
+
     Vector3 dir = Vector3Subtract(b->pos, d->pos);
     dir.y = 0.0f;
 
@@ -1560,6 +1562,8 @@ int main(void) {
     sharkGulp = LoadSound("sounds/shark_gulp.mp3");
     truckStart = LoadSound("sounds/truck_start.mp3");
     truckEngine = LoadSound("sounds/truck.mp3");
+    whoosh = LoadSound("sounds/whoosh.mp3");
+    guitarSmash = LoadSound("sounds/guitar_smash.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -5183,7 +5187,11 @@ int main(void) {
                 DonAttackType atk = (wrenchHit || guitarHit) ? ATTACK_THROW : ATTACK_PUNCH;
 
                 if (!bodyHit && !punchHit && !airR1Hit && !guitarHit) { continue; }
-                if (guitarHit) { bg[b].health -= 75; } //base guitar slam hit
+                if (guitarHit) 
+                { 
+                    bg[b].health -= 75; 
+                    PlaySoundVol(guitarSmash);
+                } //base guitar slam hit
 
                 bool bgCannotDealDamage = bg[b].dead || bg[b].ragdoll || 
                     (bg[b].type == BG_GHOST && (bg[b].state == GHOST_STATE_HIT || bg[b].state == GHOST_STATE_DEATH)) || 

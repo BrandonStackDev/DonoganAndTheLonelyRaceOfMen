@@ -1006,6 +1006,7 @@ static inline bool Don_TryStartGroundL1GuitarDash(Donogan* d)
 
     DonFacePointXZ(d, targetPos);
     DonSetState(d, DONOGAN_STATE_GROUND_L1_GUITAR_DASH);
+    PlaySoundVol(whoosh);
 
     return true;
 }
@@ -1166,6 +1167,7 @@ static inline bool Don_TryStartAirL1GuitarSlam(Donogan* d)
     d->onGround = false;
 
     DonSetState(d, DONOGAN_STATE_AIR_L1_GUITAR_SLAM);
+    PlaySoundVol(whoosh);
     return true;
 }
 //lasers
@@ -3822,6 +3824,7 @@ static inline void DonStartAirR1Release(Donogan* d)
 
     Don_UpdateBoxes(d);
     DonSetState(d, DONOGAN_STATE_AIR_R1_RELEASE);
+    PlaySoundVol(whoosh);
 }
 //water helpers------------------------------------------------------------------------------------
 static inline void DonClampToWater(Donogan* d) {
@@ -4056,6 +4059,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     d->ja_r1_unlocked)
                 {
                     DonSetState(d, DONOGAN_STATE_AIR_R1_HAND_STAND);
+                    PlaySoundVol(whoosh);
 
                     // Start the dive. If he was rising, stall it hard.
                     if (d->velY > -6.0f) d->velY = -6.0f;
@@ -4124,6 +4128,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         d->rollVel = (Vector3){ 0 };
                     }
                     DonSetState(d, DONOGAN_STATE_AIR_ROLL); // one-shot start
+                    PlaySoundVol(whoosh);
                     break;
                 }
 
@@ -4252,6 +4257,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 // wait until the enter animation finishes, then throw the jab
                 if (d->animFinished) {
                     DonSetState(d, DONOGAN_STATE_PUNCH_JAB);
+                    PlaySoundVol(whoosh);
                 }
             } break;
 
@@ -4274,6 +4280,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
             case DONOGAN_STATE_PUNCH_CROSS_ENTER: {
                 if (d->animFinished) {
                     DonSetState(d, DONOGAN_STATE_PUNCH_CROSS);
+                    PlaySoundVol(whoosh);
                 }
             } break;
 
@@ -4299,6 +4306,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     else if (R1Pressed) {
                         if (d->hasWrench) DonSetState(d, DONOGAN_STATE_WRENCH_SWING);
                         else              DonSetState(d, DONOGAN_STATE_PUNCH_CROSS);
+                        PlaySoundVol(whoosh);
                     }
                     else if (moveMag > 0.1f) {
                         bool wantsRun = d->runLock || d->runningHeld;
@@ -4326,6 +4334,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                             d->rollVel = (Vector3){ 0 };
                         }
                         DonSetState(d, DONOGAN_STATE_ROLL);
+                        PlaySoundVol(whoosh);
                     }
                     else if (!d->bowMode && //what if you dont have the wrench...?
                         L1Pressed &&
@@ -4458,6 +4467,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                         d->rollVel = (Vector3){ 0 };
                     }
                     DonSetState(d, DONOGAN_STATE_ROLL);
+                    PlaySoundVol(whoosh);
                     break;
                 }
                 if (!d->bowMode &&
@@ -4732,6 +4742,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                 {
                     DonFacePointXZ(d, d->guitarGroundTargetPos);
                     DonSetState(d, DONOGAN_STATE_GROUND_L1_GUITAR_SWING);
+                    PlaySoundVol(whoosh);
                     break;
                 }
 
@@ -4934,6 +4945,7 @@ static void DonUpdate(Donogan* d, const ControllerData* pad, float dt, bool free
                     if (R1Pressed) {
                         if (d->hasWrench) DonSetState(d, DONOGAN_STATE_WRENCH_SWING);
                         else              DonSetState(d, DONOGAN_STATE_PUNCH_CROSS_ENTER);
+                        PlaySoundVol(whoosh);
                     }
                     //DonSetState(d, DONOGAN_STATE_PUNCH_CROSS_ENTER);
                     break;

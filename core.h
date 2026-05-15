@@ -1390,7 +1390,8 @@ Sound wrenchSound;
 Sound sharkGulp;
 Sound truckStart;
 Sound truckEngine;
-
+Sound whoosh;
+Sound guitarSmash;
 
 char* toast;
 Timer toastTimer;
