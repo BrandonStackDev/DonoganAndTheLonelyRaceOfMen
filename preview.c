@@ -4448,6 +4448,7 @@ int main(void) {
                         if (CheckCollisionBoxes(don.arrows[a].box, Scenes[i].box))//stuck once in the box
                         {
                             don.arrows[a].stuck = true;
+                            PlaySoundVol(punchLand);
                         }
                     }
                     else // if we are inside the building
@@ -4455,6 +4456,7 @@ int main(void) {
                         if (!CheckCollisionBoxes(don.arrows[a].box, Scenes[i].box))//stuck when out of the box
                         {
                             don.arrows[a].stuck = true;
+                            PlaySoundVol(punchLand);
                         }
                     }
                 }
@@ -4912,6 +4914,7 @@ int main(void) {
                     if (!apples[i].spawned || apples[i].falling || apples[i].fallen) { continue; }
                     if (CheckCollisionBoxes(don.arrows[a].box, apples[i].box)) {
                         TraceLog(LOG_INFO, "Arrow hit apple %d -> falling", i);
+                        PlaySoundVol(punchLand);
                         don.arrows[a].stuck = true;
                         apples[i].falling = true;
                         apples[i].vel = (Vector3){ 0, -0.1f, 0 }; // initial drop
@@ -4932,6 +4935,7 @@ int main(void) {
                     if (CheckCollisionBoxes(don.arrows[a].box, tree.box))
                     {
                         don.arrows[a].stuck = true;
+                        PlaySoundVol(punchLand);
                     }
                 }
                 if (!CheckCollisionBoxes(don.outerBox, tree.outerBox)) continue;
@@ -5012,6 +5016,7 @@ int main(void) {
                 if (CheckCollisionBoxes(don.arrows[a].box, bg[b].box))
                 {
                     don.arrows[a].stuck = true;
+                    PlaySoundVol(punchLand);
                     if (bg[b].type == BG_YETI)
                     {
                         bg[b].health -= GetDamageDone(&gGame, &don, ATTACK_ARROW, bg[b].type);
