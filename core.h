@@ -1392,6 +1392,7 @@ Sound truckStart;
 Sound truckEngine;
 Sound whoosh;
 Sound guitarSmash;
+Sound clank;
 
 char* toast;
 Timer toastTimer;

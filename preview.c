@@ -1564,6 +1564,7 @@ int main(void) {
     truckEngine = LoadSound("sounds/truck.mp3");
     whoosh = LoadSound("sounds/whoosh.mp3");
     guitarSmash = LoadSound("sounds/guitar_smash.mp3");
+    clank = LoadSound("sounds/clank.mp3");
     //enable the cursor
     EnableCursor();//now that we default to donny boy, lets not capture the mouse
     SetTargetFPS(60);
@@ -5192,6 +5193,10 @@ int main(void) {
                     bg[b].health -= 75; 
                     PlaySoundVol(guitarSmash);
                 } //base guitar slam hit
+                else if (wrenchHit)
+                {
+                    PlaySoundVol(clank);
+                }
 
                 bool bgCannotDealDamage = bg[b].dead || bg[b].ragdoll || 
                     (bg[b].type == BG_GHOST && (bg[b].state == GHOST_STATE_HIT || bg[b].state == GHOST_STATE_DEATH)) || 
