@@ -3183,7 +3183,7 @@ int main(void) {
                     truckAirState = GROUND;
                     bounceCollector = 0;
                 }
-                PlaySoundVol(carImpact);
+                if (vehicleMode && !donnyMode) { PlaySoundVol(carImpact); }
             }
             else //GROUND
             {
@@ -4257,7 +4257,7 @@ int main(void) {
                     if(!Menu_IsOpen(&gGame) && gpad.btnCross>0)
                     {
                         truckAirState=AIRBORNE;
-                        if (vehicleMode) { PlaySoundVol(carImpact); }
+                        if (vehicleMode && !donnyMode) { PlaySoundVol(carImpact); }
                         truckPosition.y+=1.28;
                         verticalVelocity = 16.0f * truckSpeed * truckSpeed; //burst
                     }
@@ -4272,7 +4272,7 @@ int main(void) {
                             {
                                 //here, take off!
                                 truckAirState=AIRBORNE;
-                                if (vehicleMode) { PlaySoundVol(carImpact); }
+                                if (vehicleMode && !donnyMode) { PlaySoundVol(carImpact); }
                                 verticalVelocity=3.2f * truckSpeed * dt; //natural
                             }
                         }
