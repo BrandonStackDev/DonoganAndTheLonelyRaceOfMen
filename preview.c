@@ -4257,7 +4257,7 @@ int main(void) {
                     if(!Menu_IsOpen(&gGame) && gpad.btnCross>0)
                     {
                         truckAirState=AIRBORNE;
-                        PlaySoundVol(carImpact);
+                        if (vehicleMode) { PlaySoundVol(carImpact); }
                         truckPosition.y+=1.28;
                         verticalVelocity = 16.0f * truckSpeed * truckSpeed; //burst
                     }
@@ -4272,7 +4272,7 @@ int main(void) {
                             {
                                 //here, take off!
                                 truckAirState=AIRBORNE;
-                                PlaySoundVol(carImpact);
+                                if (vehicleMode) { PlaySoundVol(carImpact); }
                                 verticalVelocity=3.2f * truckSpeed * dt; //natural
                             }
                         }
