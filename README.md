@@ -2,8 +2,6 @@
 
 An open world raylib game!
 
-Back to this, aiming for May 2027 for something close to the final version.
-
 Check out the previews on itch - https://fiver-156.itch.io/donogan-light-preview
 
 
